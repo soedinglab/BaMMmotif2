@@ -8,7 +8,7 @@
 #ifndef MOTIFSET_H_
 #define MOTIFSET_H_
 
-#include "Global.h"
+//#include "Global.h"
 #include "Motif.h"
 
 class MotifSet {

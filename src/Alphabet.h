@@ -8,6 +8,8 @@
 #ifndef ALPHABET_H_
 #define ALPHABET_H_
 
+#include <stdint.h>
+
 class Alphabet {
 
 public:
@@ -28,7 +30,7 @@ private:
     static char* 	complementAlphabet;				// complementary alphabet bases ([N,T,G,C,A,G], [N,T,G,C,A,G], ...)
 
 	// conversion from encoding to bases
-	static char* codeToBase = {'N','A','C','G','T'}; // depending on alphabetString
+	static char* codeToBase = { 'N','A','C','G','T' }; // depending on alphabetString
 	// conversion from bases to encoding
 	static uint8_t baseToCode = ( uint8_t* )calloc( 127 * sizeof( uint8_t ) );
 	baseToCode[( int )'A'] = 1
@@ -47,7 +49,5 @@ inline char Alphabet::getCodeToBase( int code ){
 inline int Alphabet::getBaseToCode( char base ){
 	return baseToCode[base];
 };
-
-
 
 #endif /* ALPHABET_H_ */

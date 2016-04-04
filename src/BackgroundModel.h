@@ -20,7 +20,7 @@ public:
 	}
 	~BackgroundModel();
 
-	void init( std::vector<std::vector<int>> folds = NULL ){
+	void init( std::vector< std::vector<int> > folds = NULL ){
 
 		if( folds == NULL ){
 			std::vector<int> folds( Global::nFolds );

@@ -10,6 +10,8 @@
 
 #include "Sequence.h"
 
+#include <stdlib.h>
+
 class SequenceSet {
 
 public:

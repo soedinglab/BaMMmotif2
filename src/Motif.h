@@ -8,6 +8,8 @@
 #ifndef MOTIF_H_
 #define MOTIF_H_
 
+#include "Global.h"
+
 #include <assert.h>
 
 class Motif {
