@@ -166,6 +166,7 @@ void Global::createDirectory( const char* os ){
 
 };
 
+
 void Global::generateFolds(){
 	// generate posFoldIndices
 	if( negSequenceFilename == NULL ){
@@ -174,6 +175,4 @@ void Global::generateFolds(){
 		// generate negFoldIndices
 	}
 };
-
-
 
