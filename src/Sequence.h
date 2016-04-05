@@ -26,11 +26,11 @@ public:
 
 private:
 
-	int 	L;				// sequence length
-	char*	sequence;		// the base sequence as alphabet encoding
-	char* 	header;			// sequence header
-	float 	intensity;		// measured sequence intensity
-	float 	weight;			// sequence weight
+	int 	L_;				// sequence length
+	char*	sequence_;		// the base sequence as alphabet encoding
+	char* 	header_;			// sequence header
+	float 	intensity_;		// measured sequence intensity
+	float 	weight_;			// sequence weight
 };
 
 

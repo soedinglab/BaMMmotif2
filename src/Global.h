@@ -8,13 +8,16 @@
 #ifndef GLOBAL_H_
 #define GLOBAL_H_
 
-#include "SequenceSet.h"
-#include "Alphabet.h"
+#include <vector>
+#include <iostream>
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include <vector>
+
+#include "SequenceSet.h"
+#include "Alphabet.h"
 
 class Global {
 
@@ -25,7 +28,7 @@ public:
 	static char* 			posSequenceFilename;		// filename of positive sequence fasta file
 	static char* 			negSequenceFilename;		// filename of negative sequence fasta file
 
-	static char*			alphabetString;				// defaults to ACGT but may later be extended to ACGTH(hydroxymethylcytosine) or similar
+	static char const*		alphabetString;				// defaults to ACGT but may later be extended to ACGTH(hydroxymethylcytosine) or similar
 	static bool				revcomp;					// also search on reverse complement of sequences
 
 	static SequenceSet* 	posSequenceSet;				// positive Sequence Set
@@ -67,7 +70,7 @@ public:
 
 	static bool				verbose;					// verbose printouts
 
-	static void init( int nargs, char *args[] ){
+	static void init( int nargs, char* args[] ){
 		readArguments( nargs, args );
 		Alphabet::init( alphabetString );
 		// read in positive (and negative) sequence set
@@ -82,18 +85,10 @@ public:
 
 private:
 
-	static int readArguments( int nargs, char *args[] );
+	static int readArguments( int nargs, char* args[] );
 	static void printHelp();
-
-	static void createDirectory();
-	static void generateFolds(){
-		// generate posFoldIndices
-		if( negSequenceFilename == NULL ){
-			// assign reference to posFoldIndices
-		} else{
-			// generate negFoldIndices
-		}
-	};
+	static void createDirectory( const char* os );
+	static void generateFolds();
 };
 
 #endif /* GLOBAL_H_ */

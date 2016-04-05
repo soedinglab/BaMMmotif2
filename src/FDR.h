@@ -22,13 +22,13 @@ public:
 
 	void evaluateMotif(){
 
-		for( int fold = 0; fold < Global::nfolds; fold++ ){
+		for( int fold = 0; fold < Global::nFolds; fold++ ){
 
 			Motif* motif = new Motif( this.motif );
 
 			// assign training and test folds
 			std::vector<int> trainingFold;
-			for( f=0; f < Global::nfolds; f++ ){
+			for( int f = 0; f < Global::nFolds; f++ ){
 				if( f != fold ){
 					trainingFold.push_back( f );
 				}
@@ -57,13 +57,13 @@ public:
 
 private:
 
-	const Motif&	motif;				// motif learned on full SequenceSet
+	const Motif&	motif_;				// motif learned on full SequenceSet
 
-	float** 		posS[n][i];			// log-odds scores on positive test SequenceSets
-	float** 		negS[nm][i];		// log-odds scores on negative test SequenceSets
+	float** 		posS_[n][i];		// log-odds scores on positive test SequenceSets
+	float** 		negS_[nm][i];		// log-odds scores on negative test SequenceSets
 
-	float* 			P;					// precision
-	float* 			R;					// recall
+	float* 			P_;					// precision
+	float* 			R_;					// recall
 
 	SequenceSet*	sampleSequenceSet();
 	Sequence*		sampleSequence();

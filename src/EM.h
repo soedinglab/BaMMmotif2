@@ -50,20 +50,20 @@ public:
 
 private:
 
-	Motif* 				motif;			// motif to optimize within the em
-	BackgroundModel* 	bg;				// background model
+	Motif* 				motif_;			// motif to optimize within the em
+	BackgroundModel* 	bg_;			// background model
 
-	std::vector<int>	folds;			// folds to iterate over
+	std::vector<int>	folds_;			// folds to iterate over
 
-	float** 			r[n][i];		// responsibilities at position i in sequence n
-	float*** 			n[k][y][j];		// fractional counts n for k-mers y at motif position j
+	float** 			r_[n][i];		// responsibilities at position i in sequence n
+	float*** 			n_[k][y][j];	// fractional counts n for k-mers y at motif position j
 
-	float** 			alpha[k][j];	// pseudocount hyperparameter for order k and motif position j
-	float 				q; 				// hyperparameter q specifies the fraction of sequences with motif
+	float** 			alpha_[k][j];	// pseudocount hyperparameter for order k and motif position j
+	float 				q_; 			// hyperparameter q specifies the fraction of sequences with motif
 
-	float 				likelihood;		// value of Q function for current parameters
+	float 				likelihood_;	// value of Q function for current parameters
 
-	int 				EMIterations;	// counter for EM iterations
+	int 				EMIterations_;	// counter for EM iterations
 
 	void EStep();						// E-step
 	void MStep(){						// M-step

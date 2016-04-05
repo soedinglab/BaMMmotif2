@@ -5,13 +5,22 @@
  *      Author: wanwan
  */
 
-#include "MotifSet.h"
-#include "EM.h"
-#include "FDR.h"
+#include <list>
+#include <vector>
+/*
+#include <fstream>
+#include <string>
+#include <sstream>
+#include <vector>
+#include <iterator>
+*/
 
 #include <time.h>
 #include <stdio.h>
-#include <list>
+
+#include "MotifSet.h"
+#include "EM.h"
+#include "FDR.h"
 
 int main( int nargs, char *args[] ){
 
@@ -26,7 +35,7 @@ int main( int nargs, char *args[] ){
 	bg.init();
 
 	// learn motifs
-	for( std::list<Motif*>::const_iterator iter=motifs.getMotifs.begin(); iter != motifs.getMotifs.end(); iter++ ){
+	for( std::list<Motif*>::const_iterator iter = motifs.getMotifs.begin(); iter != motifs.getMotifs.end(); iter++ ){
 		EM em = new EM( *iter, bg );
 		em.learnMotif();
 		em.write();

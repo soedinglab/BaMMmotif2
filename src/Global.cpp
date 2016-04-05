@@ -5,6 +5,8 @@
  *      Author: wanwan
  */
 
+#include <sys/stat.h> // get file status
+
 #include "Global.h"
 
 char* 				Global::outputDirectory = NULL;        	// output directory
@@ -12,7 +14,7 @@ char* 				Global::outputDirectory = NULL;        	// output directory
 char* 				Global::posSequenceFilename = NULL;		// filename of positive sequence fasta file
 char* 				Global::negSequenceFilename = NULL;		// filename of negative sequence fasta file
 
-char*				Global::alphabetString = "ACGT";		// defaults to ACGT but may later be extended to ACGTH(hydroxymethylcytosine) or similar
+char const*			Global::alphabetString = "ACGT";		// defaults to ACGT but may later be extended to ACGTH(hydroxymethylcytosine) or similar
 bool				Global::revcomp = false;				// also search on reverse complement of sequences
 
 SequenceSet* 		Global::posSequenceSet = NULL;			// positive Sequence Set
@@ -28,17 +30,17 @@ char* 				Global::PWMFilename = NULL;				// filename of PWM file
 char* 				Global::iIMMFilename = NULL;			// filename of Markov model (.iimm) file
 
 // model options
-unsigned int 		Global::modelOrder = 0;					// model order
-float** 			Global::modelAlpha;					// initial alphas
-std::vector<int>	Global::addColumns(0,0);				// add columns to the left and right of models used to initialize Markov models
+unsigned int 		Global::modelOrder = 2;					// model order
+float** 			Global::modelAlpha;						// initial alphas
+std::vector<int>	Global::addColumns( 0, 0 );				// add columns to the left and right of models used to initialize Markov models
 bool				Global::noLengthOptimization = false;	// disable length optimization
 
 // background model options
 unsigned int 		Global::bgModelOrder = 2;				// background model order, defaults to 2
-float** 			Global::bgModelAlpha;				// background model alphas
+float** 			Global::bgModelAlpha;					// background model alphas
 
 // EM options
-unsigned int		Global::maxEMIterations;			// maximum number of iterations
+unsigned int		Global::maxEMIterations;				// maximum number of iterations
 float 				Global::epsilon = 0.001f;				// likelihood convergence parameter
 
 bool				Global::noAlphaOptimization = false;	// disable alpha optimization
@@ -54,13 +56,13 @@ std::vector< std::vector<int> > Global::negFoldIndices;		// sequence indices for
 
 bool				Global::verbose = false;				// verbose printouts
 
-int Global::readArguments( int nargs, char *args[] ){
+int Global::readArguments( int nargs, char* args[] ){
 
 	/*
 	 * Process input arguments:
 	 * 1. Essential parameters
-	 * 		* output directory
-	 * 		* positive sequence file
+	 * 		* output directory: the first argument
+	 * 		* positive sequence file: the second argument
 	 * 2. flags
 	 * 		* initial motif model
 	 * 			* GIMMEpattern file
@@ -79,9 +81,17 @@ int Global::readArguments( int nargs, char *args[] ){
 	 *
 	 */
 
-	if( nargs < 3 ) printHelp();	// At least 2 parameters are required: 1.outputDirectory; 2.posSequenceFilename.
+	if( nargs < 3 ) {		// At least 2 parameters are required:
+		printHelp();		// 1.outputDirectory; 2.posSequenceFilename.
+		exit( -1 );
+	}
 
-	for( int i = 2; i < nargs; i++ ){
+	outputDirectory = args[1];
+	createDirectory( outputDirectory );
+
+	posSequenceFilename = args[2];
+
+	for( int i = 3; i < nargs; i++ ){
 
 		if( strcmp( args[i], "--alphabetString" ) == 0 ){
 			alphabetString = args[i+1];
@@ -100,29 +110,30 @@ int Global::readArguments( int nargs, char *args[] ){
 		}else if( strcmp( args[i], "--iIMMFile" ) == 0 ){
 			iIMMFilename = args[i+1];
 		}else if( strcmp( args[i], "--modelOrder" ) == 0 ){
-			modelOrder = args[i+1];
+			modelOrder = atoi( args[i+1] );
 		}else if( strcmp( args[i], "--modelAlpha" ) == 0 ){
-			modelAlpha = args[i+1];
+			// ...
 		}else if( strcmp( args[i], "--addColumns" ) == 0 ){
-			addColumns( args[i+1], args[i+2] );
+			int left = atoi( args[i+1] ), right = atoi( args[i+2] );
+			// addColumns( left, right );
 		}else if( strcmp( args[i], "--noLengthOptimization" ) == 0 ){
 			noLengthOptimization = true;
 		}else if( strcmp( args[i], "--bgModelOrder" ) == 0 ){
-			bgModelOrder = args[i+1];
+			bgModelOrder = atoi( args[i+1] );
 		}else if( strcmp( args[i], "--bgModelAlpha" ) == 0 ){
-			bgModelAlpha = args[i+1];
+			// ...
 		}else if( strcmp( args[i], "--maxEMIterations" ) == 0 ){
-			maxEMIterations = args[i+1];
+			maxEMIterations = atoi( args[i+1] );
 		}else if( strcmp( args[i], "--epsilon" ) == 0 ){
-			epsilon = args[i+1];
+			epsilon = atof( args[i+1] );
 		}else if( strcmp( args[i], "--noAlphaOptimization" ) == 0 ){
 			noAlphaOptimization = true;
 		}else if( strcmp( args[i], "--noQOptimization" ) == 0 ){
 			noQOptimization = true;
 		}else if( strcmp( args[i], "--fdr" ) == 0 ){
 			FDR = true;
-			mFold = args[i+1];
-			nFolds = args[i+2];
+			mFold = atoi( args[i+1] );
+			nFolds = atoi( args[i+2] );
 		}else if( strcmp( args[i], "--verbose" ) == 0 ){
 			verbose = true;
 		}
@@ -132,11 +143,37 @@ int Global::readArguments( int nargs, char *args[] ){
 
 void Global::printHelp(){
 
-}
+};
 
-void Global::createDirectory(){
+void Global::createDirectory( const char* os ){
 
-}
+	/*
+	 * Create output directory
+	 * works for Unix-like operating systems
+	 */
+	struct stat fileStatus;
+	if( stat( os, &fileStatus ) != 0 ){
+		fprintf( stderr, "Output directory does not exist. "
+				"New directory is created automatically.\n" );
+		char* command = (char*)calloc( 1024, sizeof(char) );
+		sprintf( command, "mkdir %s", os );
+		if( system( command ) != 0 ){
+			fprintf( stderr, "Directory %s could not be created.\n", os );
+			exit( -1 );
+		}
+		free( command );
+	}
+
+};
+
+void Global::generateFolds(){
+	// generate posFoldIndices
+	if( negSequenceFilename == NULL ){
+		// assign reference to posFoldIndices
+	} else{
+		// generate negFoldIndices
+	}
+};
 
 
 

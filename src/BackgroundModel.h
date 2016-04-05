@@ -37,19 +37,17 @@ public:
 		// calculate v from k-mer counts n
 	}
 
-	float** getV();						// get conditional probabilites for k-mers y
+	float** getV();						// get conditional probabilities for k-mers y
 
 	void 	print();					// print background model to console
 	void 	write();					// write background model to file basename.imm in output directory
 
 private:
 
-	float** v;						// conditional probabilites for k-mers y
+	float** v;						// conditional probabilities for k-mers y
 
 	void calculateV( int** n ); 	// calculate v from k-mer counts n
 };
-
-
 
 
 #endif /* BACKGROUNDMODEL_H_ */

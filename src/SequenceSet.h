@@ -8,9 +8,9 @@
 #ifndef SEQUENCESET_H_
 #define SEQUENCESET_H_
 
-#include "Sequence.h"
-
 #include <stdlib.h>
+
+#include "Sequence.h"
 
 class SequenceSet {
 
@@ -32,15 +32,15 @@ public:
 
 private:
 
-	char* 		filename;					// input sequence filename
-	Sequence* 	sequences;					// sequences
-	int 		N;							// number of sequences
-	int 		minL;						// min. length of sequences
-	int 		maxL;						// max. length of sequences
-	float* 		baseFrequencies;			// mono-nucleotide frequencies
+	char* 		filename_;					// input sequence filename
+	Sequence* 	sequences_;					// sequences
+	int 		N_;							// number of sequences
+	int 		minL_;						// min. length of sequences
+	int 		maxL_;						// max. length of sequences
+	float* 		baseFrequencies_;			// mono-nucleotide frequencies
 
-	int 		readFASTA();				// read in FASTA file
-	int 		readIntensities();			// read in intensity file
+	int 		readFASTA_();				// read in FASTA file
+	int 		readIntensities_();			// read in intensity file
 };
 
 #endif /* SEQUENCESET_H_ */

@@ -14,7 +14,7 @@ class Alphabet {
 
 public:
 
-	static void 	init( char* alphabetString );	// alphabetString defaults to ACGT but may later be extended to ACGTH(ydroxymethylcytosine) or similar
+	static void 	init( char const* alphabetString );	// alphabetString defaults to ACGT but may later be extended to ACGTH(ydroxymethylcytosine) or similar
 	static void 	destruct();						// free space
 
 	static int 		getSize();						// get alphabet size
@@ -25,14 +25,14 @@ public:
 
 private:
 
-	static int 		size;							// alphabet size
-	static char* 	alphabet;						// alphabet bases ([N,A,C,G,T], [N,A,C,G,T,mC], ...)
-    static char* 	complementAlphabet;				// complementary alphabet bases ([N,T,G,C,A,G], [N,T,G,C,A,G], ...)
+	static int 		size_;							// alphabet size
+	static char* 	alphabet_;						// alphabet bases ([N,A,C,G,T], [N,A,C,G,T,mC], ...)
+    static char* 	complementAlphabet_;			// complementary alphabet bases ([N,T,G,C,A,G], [N,T,G,C,A,G], ...)
 
 	// conversion from encoding to bases
-	static char* codeToBase = { 'N','A','C','G','T' }; // depending on alphabetString
+	static char* codeToBase_ = { 'N','A','C','G','T' }; // depending on alphabetString
 	// conversion from bases to encoding
-	static uint8_t baseToCode = ( uint8_t* )calloc( 127 * sizeof( uint8_t ) );
+	static uint8_t baseToCode_ = ( uint8_t* )calloc( 127 * sizeof( uint8_t ) );
 	baseToCode[( int )'A'] = 1
 	baseToCode[( int )'C'] = 2
 	baseToCode[( int )'G'] = 3
