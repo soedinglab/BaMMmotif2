@@ -9,52 +9,52 @@
 
 #include "Global.h"
 
-char* 				Global::outputDirectory = NULL;        	// output directory
+char* 						Global::outputDirectory = NULL;        // output directory
 
-char* 				Global::posSequenceFilename = NULL;		// filename of positive sequence fasta file
-char* 				Global::negSequenceFilename = NULL;		// filename of negative sequence fasta file
+char* 						Global::posSequenceFilename = NULL;		// filename of positive sequence fasta file
+char* 						Global::negSequenceFilename = NULL;		// filename of negative sequence fasta file
 
-char const*			Global::alphabetString = "ACGT";		// defaults to ACGT but may later be extended to ACGTH(hydroxymethylcytosine) or similar
-bool				Global::revcomp = false;				// also search on reverse complement of sequences
+char const*				Global::alphabetString = "ACGT";			// defaults to ACGT but may later be extended to ACGTH(hydroxymethylcytosine) or similar
+bool							Global::revcomp = false;							// also search on reverse complement of sequences
 
-SequenceSet* 		Global::posSequenceSet = NULL;			// positive Sequence Set
-SequenceSet* 		Global::negSequenceSet = NULL;			// negative Sequence Set
+SequenceSet* 			Global::posSequenceSet = NULL;				// positive Sequence Set
+SequenceSet* 			Global::negSequenceSet = NULL;				// negative Sequence Set
 
-char* 				Global::intensityFilename = NULL;		// filename of intensity file (i.e. for HT-SELEX data)
+char* 						Global::intensityFilename = NULL;			// filename of intensity file (i.e. for HT-SELEX data)
 // further weighting options...
 
 // files to initialize model(s)
-char* 				Global::GIMMEpatternFilename = NULL;	// filename of GIMMEpattern file
-char* 				Global::bindingSitesFilename = NULL;	// filename of binding sites file
-char* 				Global::PWMFilename = NULL;				// filename of PWM file
-char* 				Global::iIMMFilename = NULL;			// filename of Markov model (.iimm) file
+char* 						Global::GIMMEpatternFilename = NULL;	// filename of GIMMEpattern file
+char* 						Global::bindingSitesFilename = NULL;	// filename of binding sites file
+char* 						Global::PWMFilename = NULL;						// filename of PWM file
+char* 						Global::iIMMFilename = NULL;					// filename of Markov model (.iimm) file
 
 // model options
-unsigned int 		Global::modelOrder = 2;					// model order
-float** 			Global::modelAlpha;						// initial alphas
-std::vector<int>	Global::addColumns( 0, 0 );				// add columns to the left and right of models used to initialize Markov models
-bool				Global::noLengthOptimization = false;	// disable length optimization
+unsigned int 			Global::modelOrder = 2;								// model order
+float** 					Global::modelAlpha;										// initial alphas
+std::vector<int>	Global::addColumns( 0, 0 );						// add columns to the left and right of models used to initialize Markov models
+bool							Global::noLengthOptimization = false;	// disable length optimization
 
 // background model options
-unsigned int 		Global::bgModelOrder = 2;				// background model order, defaults to 2
-float** 			Global::bgModelAlpha;					// background model alphas
+unsigned int 			Global::bgModelOrder = 2;							// background model order, defaults to 2
+float** 					Global::bgModelAlpha;									// background model alphas
 
 // EM options
-unsigned int		Global::maxEMIterations;				// maximum number of iterations
-float 				Global::epsilon = 0.001f;				// likelihood convergence parameter
+unsigned int			Global::maxEMIterations;							// maximum number of iterations
+float 						Global::epsilon = 0.001f;							// likelihood convergence parameter
 
-bool				Global::noAlphaOptimization = false;	// disable alpha optimization
-bool				Global::noQOptimization = false;		// disable q optimization
+bool							Global::noAlphaOptimization = false;	// disable alpha optimization
+bool							Global::noQOptimization = false;			// disable q optimization
 
 // FDR options
-bool				Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
-unsigned int 		Global::mFold = 20;						// number of negative sequences as multiple of positive sequences
-unsigned int 		Global::nFolds = 4;						// number of cross-validation folds
+bool							Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
+unsigned int 			Global::mFold = 20;						// number of negative sequences as multiple of positive sequences
+unsigned int 			Global::nFolds = 5;						// number of cross-validation folds
 std::vector< std::vector<int> > Global::posFoldIndices;		// sequence indices for each cross-validation fold
 std::vector< std::vector<int> > Global::negFoldIndices;		// sequence indices for each cross-validation fold
 // further FDR options...
 
-bool				Global::verbose = false;				// verbose printouts
+bool							Global::verbose = false;				// verbose printouts
 
 int Global::readArguments( int nargs, char* args[] ){
 
@@ -81,8 +81,8 @@ int Global::readArguments( int nargs, char* args[] ){
 	 *
 	 */
 
-	if( nargs < 3 ) {		// At least 2 parameters are required:
-		printHelp();		// 1.outputDirectory; 2.posSequenceFilename.
+	if( nargs < 3 ) {			// At least 2 parameters are required:
+		printHelp();				// 1.outputDirectory; 2.posSequenceFilename.
 		exit( -1 );
 	}
 
@@ -142,23 +142,33 @@ int Global::readArguments( int nargs, char* args[] ){
 };
 
 void Global::printHelp(){
-
+	printf("\n=================================================================\n");
+	printf("== Welcome to use BaMMmotif version 1.0 ==");
+	printf("\n=================================================================\n");
+	printf("\n Usage: BaMMmotif OUTDIR SEQFILE [options] \n\n");
+	printf("\t OUTDIR:  output directory for all results. \n");
+	printf("\t SEQFILE: file with sequences from positive set in FASTA format. \n");
+	printf("\n Options: \n");
+	// To be fulfilled ...
+	printf(" \n");
+	printf(" \n");
+	printf("\n=================================================================\n");
 };
 
-void Global::createDirectory( const char* os ){
+void Global::createDirectory( const char* dir ){
 
 	/*
 	 * Create output directory
 	 * works for Unix-like operating systems
 	 */
 	struct stat fileStatus;
-	if( stat( os, &fileStatus ) != 0 ){
+	if( stat( dir, &fileStatus ) != 0 ){
 		fprintf( stderr, "Output directory does not exist. "
 				"New directory is created automatically.\n" );
-		char* command = (char*)calloc( 1024, sizeof(char) );
-		sprintf( command, "mkdir %s", os );
+		char* command = ( char* )calloc( 1024, sizeof( char ) );
+		sprintf( command, "mkdir %s", dir );
 		if( system( command ) != 0 ){
-			fprintf( stderr, "Directory %s could not be created.\n", os );
+			fprintf( stderr, "Directory %s could not be created.\n", dir );
 			exit( -1 );
 		}
 		free( command );
@@ -166,13 +176,26 @@ void Global::createDirectory( const char* os ){
 
 };
 
-
-void Global::generateFolds(){
+void Global::generateFolds( int posCount, int negCount, int fold ){
 	// generate posFoldIndices
+	int i = 0;
+	while( i < posCount){
+		for( int j = 0; j < fold; j++ ){
+			posFoldIndices[j].push_back( i );
+			i++;
+		}
+	}
 	if( negSequenceFilename == NULL ){
 		// assign reference to posFoldIndices
+		negFoldIndices = posFoldIndices;
 	} else{
 		// generate negFoldIndices
+		i = 0;
+		while( i < negCount ){
+			for( int j = 0; j < fold; j++ ){
+				negFoldIndices[j].push_back( i );
+				i++;
+			}
+		}
 	}
 };
-

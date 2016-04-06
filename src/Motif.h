@@ -17,22 +17,22 @@ class Motif {
 public:
 
 	Motif( int length ){
-		// allocate memory for v
+		// allocate memory for v_
 	}
 	Motif( const Motif& other ){ //deep copy
-		length = other.length;
-		if( other.v != NULL ){
-			v = ( float*** )malloc( ( Global::modelOrder+1 )*sizeof( float** ) );
-			for( int k=0; k <= Global::modelOrder; k++ ){
-				v[k] = ( float** )malloc( pow( Alphabet::getSize(), k+1 ), sizeof( float* ) );
-				for( int y=0; y < pow( Alphabet::getSize(), k+1 ) ); y++ ){
-					v[k][y] = ( float* )calloc( length, sizeof( float ) );
-					memcpy( v[k][y], other.v[k][y], length * sizeof( float ));
+		length_ = other.length_;
+		if( other.v_ != NULL ){
+			v_ = ( float*** )malloc( ( Global::modelOrder+1 )*sizeof( float** ) );
+			for( int k = 0; k <= Global::modelOrder; k++ ){
+				v_[k] = ( float** )malloc( pow( Alphabet::getSize(), k+1 ), sizeof( float* ) );
+				for( int y = 0; y < pow( Alphabet::getSize(), k+1 ) ); y++ ){
+					v_[k][y] = ( float* )calloc( length_, sizeof( float ) );
+					memcpy( v_[k][y], other.v_[k][y], length_ * sizeof( float ) );
 				}
 			}
-			isInitialized = TRUE;
+			isInitialized_ = true;
 		} else{
-			v = NULL;
+			v_ = NULL;
 		}
 
 	}
@@ -66,7 +66,7 @@ public:
 	float*** 	getV();						// get v
 
 	void updateV( float*** n, float** alpha ){
-		assert( isInitialized );
+		assert( isInitialized_ );
 		// update v from fractional k-mer counts n and current alphas
 	}
 
@@ -75,10 +75,10 @@ public:
 
 private:
 
-	bool		isInitialized=FALSE;		// to assert in all public methods
+	bool		isInitialized_ = false;		// to assert in all public methods
 
-	int 		length;						// length of motif
-	float*** 	v[k][y][j];					// conditional probabilities for k-mers y at motif position j
+	int 		length_;						// length of motif
+	float*** 	v_[k][y][j];					// conditional probabilities for k-mers y at motif position j
 
 	void 		calculateV( int*** n );		//calculate v from k-mer counts n and global alphas
 };

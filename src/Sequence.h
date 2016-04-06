@@ -12,11 +12,11 @@ class Sequence {
 
 public:
 
-	Sequence( int* sequence, int L, char* header );
+	Sequence( char* sequence_, int L_, char* header_ );
 	~Sequence();
 
-	int		getL();			// get sequence length
-	int* 	getSequence();	// get base sequence as alphabet encoding
+	int			getL();				// get sequence length
+	int* 		getSequence();// get base sequence as alphabet encoding
 	char* 	getHeader();	// get sequence header
 	float 	getIntensity;	// get measured sequence intensity
 	float 	getWeight;		// get sequence weight
@@ -26,13 +26,11 @@ public:
 
 private:
 
-	int 	L_;				// sequence length
-	char*	sequence_;		// the base sequence as alphabet encoding
+	int 		L_;						// sequence length
+	char*		sequence_;		// the base sequence as alphabet encoding
 	char* 	header_;			// sequence header
 	float 	intensity_;		// measured sequence intensity
 	float 	weight_;			// sequence weight
 };
-
-
 
 #endif /* SEQUENCE_H_ */

@@ -19,7 +19,7 @@ public:
 
 		if( Global::GIMMEpatternFilename != NULL ){
 
-		    // scan file and conduct for IUPAC pattern p
+		   // scan file and conduct for IUPAC pattern p
 			// * Motif* motif = new Motif( length(p) )
 			// * motif.initFromIUPACPattern( p )
 			// motifs.push_back( motif )
@@ -48,16 +48,16 @@ public:
 	}
 	~MotifSet();
 
-	list<Motif*> getMotifs();	// get motifs
-	int			 getN();		// get number of motifs
+	list<Motif*> 	getMotifs();	// get motifs
+	int			 			getN();		// get number of motifs
 
-	void print(); 				// print motifs to console
-	void write();				// write motifs to files (basename.iimm)
+	void 					print(); 				// print motifs to console
+	void 					write();				// write motifs to files (basename.iimm)
 
 private:
 
-	list<Motif*> motifs;		// motifs
-	int          N;				// number of motifs
+	list<Motif*> 	motifs_;		// motifs
+	int          	N_;				// number of motifs
 };
 
 #endif /* MOTIFSET_H_ */

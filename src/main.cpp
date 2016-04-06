@@ -57,6 +57,3 @@ int main( int nargs, char *args[] ){
 			( float )( time( NULL )-timestamp )/60.0f );
 	return 0;
 }
-
-
-
