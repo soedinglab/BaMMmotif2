@@ -8,9 +8,9 @@
 #ifndef MOTIF_H_
 #define MOTIF_H_
 
-#include "Global.h"
-
 #include <assert.h>
+
+#include "Global.h"
 
 class Motif {
 
@@ -59,10 +59,10 @@ public:
 		// set isInitialized
 	}
 
-	// initialize v from inhomogeneous Markov model file and set isInitialized
-	void initFromInhomogeneousMarkovModel( char* filename );
+	// initialize v from Bayesian Markov model file and set isInitialized
+	void initFromBayesianMarkovModel( char* filename );
 
-	int 		getLength(); 				// get length
+	int 			getLength(); 				// get length
 	float*** 	getV();						// get v
 
 	void updateV( float*** n, float** alpha ){
@@ -70,17 +70,17 @@ public:
 		// update v from fractional k-mer counts n and current alphas
 	}
 
-	void 		print();					// print v to console
-	void 		write();					// write v (basename.iimm)
+	void 			print();					// print v to console
+	void 			write();					// write v (basename.iimm)
 
 private:
 
-	bool		isInitialized_ = false;		// to assert in all public methods
+	bool			isInitialized_ = false;		// to assert in all public methods
 
-	int 		length_;						// length of motif
+	int 			length_;						// length of motif
 	float*** 	v_[k][y][j];					// conditional probabilities for k-mers y at motif position j
 
-	void 		calculateV( int*** n );		//calculate v from k-mer counts n and global alphas
+	void 			calculateV( int*** n );		//calculate v from k-mer counts n and global alphas
 };
 
 #endif /* MOTIF_H_ */

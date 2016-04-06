@@ -24,10 +24,10 @@ char* 						Global::intensityFilename = NULL;			// filename of intensity file (i
 // further weighting options...
 
 // files to initialize model(s)
-char* 						Global::GIMMEpatternFilename = NULL;	// filename of GIMMEpattern file
+char* 						Global::BaMMpatternFilename = NULL;		// filename of BaMMpattern file
 char* 						Global::bindingSitesFilename = NULL;	// filename of binding sites file
 char* 						Global::PWMFilename = NULL;						// filename of PWM file
-char* 						Global::iIMMFilename = NULL;					// filename of Markov model (.iimm) file
+char* 						Global::BMMFilename = NULL;					// filename of Markov model (.bmm) file
 
 // model options
 unsigned int 			Global::modelOrder = 2;								// model order
@@ -65,7 +65,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	 * 		* positive sequence file: the second argument
 	 * 2. flags
 	 * 		* initial motif model
-	 * 			* GIMMEpattern file
+	 * 			* BaMMpattern file
 	 * 			* binding sites file
 	 * 			* PWM file
 	 * 			* iIMM file
@@ -101,14 +101,14 @@ int Global::readArguments( int nargs, char* args[] ){
 			negSequenceFilename = args[i+1];
 		}else if( strcmp( args[i], "--intensityFile" ) == 0 ){
 			intensityFilename = args[i+1];
-		}else if( strcmp( args[i], "--GIMMEpatternFile" ) == 0 ){
-			GIMMEpatternFilename = args[i+1];
+		}else if( strcmp( args[i], "--BaMMpatternFile" ) == 0 ){
+			BaMMpatternFilename = args[i+1];
 		}else if( strcmp( args[i], "--bindingSitesFile" ) == 0 ){
 			bindingSitesFilename = args[i+1];
 		}else if( strcmp( args[i], "--PWMFile" ) == 0 ){
 			PWMFilename = args[i+1];
-		}else if( strcmp( args[i], "--iIMMFile" ) == 0 ){
-			iIMMFilename = args[i+1];
+		}else if( strcmp( args[i], "--BMMFile" ) == 0 ){
+			BMMFilename = args[i+1];
 		}else if( strcmp( args[i], "--modelOrder" ) == 0 ){
 			modelOrder = atoi( args[i+1] );
 		}else if( strcmp( args[i], "--modelAlpha" ) == 0 ){

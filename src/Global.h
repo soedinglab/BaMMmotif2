@@ -38,10 +38,10 @@ public:
 	// further weighting options...
 
 	// files to initialize model(s)
-	static char* 				GIMMEpatternFilename;	// filename of GIMMEpattern file
+	static char* 				BaMMpatternFilename;	// filename of BaMMpattern file
 	static char* 				bindingSitesFilename;	// filename of binding sites file
 	static char* 				PWMFilename;					// filename of PWM file
-	static char* 				iIMMFilename;					// filename of Markov model (.iimm) file
+	static char* 				BMMFilename;					// filename of Markov model (.bmm) file
 
 	// model options
 	static unsigned int modelOrder;						// model order

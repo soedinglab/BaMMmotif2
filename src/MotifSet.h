@@ -17,7 +17,7 @@ public:
 
 	MotifSet(){
 
-		if( Global::GIMMEpatternFilename != NULL ){
+		if( Global::BaMMpatternFilename != NULL ){
 
 		   // scan file and conduct for IUPAC pattern p
 			// * Motif* motif = new Motif( length(p) )
@@ -38,7 +38,7 @@ public:
 			// motif.initFromPWM( file )
 			// motifs.push_back( motif )
 
-		} else if( Global::iIMMFilename != NULL ){
+		} else if( Global::BMMFilename != NULL ){
 
 			// read file to calculate motif length
 			// Motif* motif = new Motif( length )
@@ -48,16 +48,16 @@ public:
 	}
 	~MotifSet();
 
-	list<Motif*> 	getMotifs();	// get motifs
-	int			 			getN();		// get number of motifs
+	std::list<Motif*> getMotifs();// get motifs
+	int			 					getN();			// get number of motifs
 
-	void 					print(); 				// print motifs to console
-	void 					write();				// write motifs to files (basename.iimm)
+	void 							print(); 		// print motifs to console
+	void 							write();		// write motifs to files (basename.iimm)
 
 private:
 
-	list<Motif*> 	motifs_;		// motifs
-	int          	N_;				// number of motifs
+	std::list<Motif*> motifs_;		// motifs
+	int          			N_;					// number of motifs
 };
 
 #endif /* MOTIFSET_H_ */
