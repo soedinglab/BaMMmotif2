@@ -9,54 +9,54 @@
 
 #include "Global.h"
 
-char* 						Global::outputDirectory = NULL;       // output directory
+char*               Global::outputDirectory = NULL;     // output directory
 
-char* 						Global::posSequenceFilepath = NULL;		// filename of positive sequence fasta file
-char* 						Global::negSequenceFilepath = NULL;		// filename of negative sequence fasta file
+char*               Global::posSequenceFilepath = NULL; // filename of positive sequence fasta file
+char*               Global::negSequenceFilepath = NULL; // filename of negative sequence fasta file
 
-char const*				Global::alphabetString = "ACGT";			// defaults to ACGT but may later be extended to ACGTH(hydroxymethylcytosine) or similar
-bool							Global::revcomp = false;							// also search on reverse complement of sequences
+char const*         Global::alphabetString = "ACGT";    // defaults to ACGT but may later be extended to ACGTH(hydroxymethylcytosine) or similar
+bool                Global::revcomp = false;			// also search on reverse complement of sequences
 
-SequenceSet* 			Global::posSequenceSet = NULL;				// positive Sequence Set
-SequenceSet* 			Global::negSequenceSet = NULL;				// negative Sequence Set
+SequenceSet*        Global::posSequenceSet = NULL;		// positive Sequence Set
+SequenceSet*        Global::negSequenceSet = NULL;		// negative Sequence Set
 
-char* 						Global::intensityFilename = NULL;			// filename of intensity file (i.e. for HT-SELEX data)
+char*               Global::intensityFilename = NULL;	// filename of intensity file (i.e. for HT-SELEX data)
 // further weighting options...
 
 // files to initialize model(s)
-char* 						Global::BaMMpatternFilename = NULL;		// filename of BaMMpattern file
-char* 						Global::bindingSitesFilename = NULL;	// filename of binding sites file
-char* 						Global::PWMFilename = NULL;						// filename of PWM file
-char* 						Global::BMMFilename = NULL;						// filename of Markov model (.bmm) file
+char*               Global::BaMMpatternFilename = NULL;	// filename of BaMMpattern file
+char*               Global::bindingSitesFilename = NULL;// filename of binding sites file
+char*               Global::PWMFilename = NULL;			// filename of PWM file
+char*               Global::BMMFilename = NULL;			// filename of Markov model (.bmm) file
 
 // model options
-unsigned int 			Global::modelOrder = 2;								// model order
-float** 					Global::modelAlpha;										// initial alphas
-std::vector<int>	Global::addColumns( 0, 0 );						// add columns to the left and right of models used to initialize Markov models
-bool							Global::noLengthOptimization = false;	// disable length optimization
+unsigned int        Global::modelOrder = 2;				// model order
+float**             Global::modelAlpha;					// initial alphas
+std::vector<int>    Global::addColumns( 0, 0 );			// add columns to the left and right of models used to initialize Markov models
+bool                Global::noLengthOptimization = false;// disable length optimization
 
 // background model options
-unsigned int 			Global::bgModelOrder = 2;							// background model order, defaults to 2
-float** 					Global::bgModelAlpha;									// background model alphas
+unsigned int        Global::bgModelOrder = 2;			// background model order, defaults to 2
+float**             Global::bgModelAlpha;				// background model alphas
 
 // EM options
-unsigned int			Global::maxEMIterations;							// maximum number of iterations
-float 						Global::epsilon = 0.001f;							// likelihood convergence parameter
+unsigned int        Global::maxEMIterations;			// maximum number of iterations
+float               Global::epsilon = 0.001f;			// likelihood convergence parameter
 
-bool							Global::noAlphaOptimization = false;	// disable alpha optimization
-bool							Global::noQOptimization = false;			// disable q optimization
+bool                Global::noAlphaOptimization = false;// disable alpha optimization
+bool                Global::noQOptimization = false;	// disable q optimization
 
 // FDR options
-bool							Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
-unsigned int 			Global::mFold = 20;						// number of negative sequences as multiple of positive sequences
-unsigned int 			Global::nFolds = 5;						// number of cross-validation folds
-std::vector< std::vector<int> > Global::posFoldIndices;	// sequence indices for each cross-validation fold
-std::vector< std::vector<int> > Global::negFoldIndices;	// sequence indices for each cross-validation fold
+bool                Global::FDR = false;				// triggers False-Discovery-Rate (FDR) estimation
+unsigned int        Global::mFold = 20;					// number of negative sequences as multiple of positive sequences
+unsigned int        Global::nFolds = 5;					// number of cross-validation folds
+std::vector< std::vector<int> > Global::posFoldIndices; // sequence indices for each cross-validation fold
+std::vector< std::vector<int> > Global::negFoldIndices; // sequence indices for each cross-validation fold
 // further FDR options...
 
-bool							Global::verbose = false;				// verbose printouts
+bool                Global::verbose = false;            // verbose printouts
 
-int Global::readArguments_( int nargs, char* args[] ){
+int Global::readArguments( int nargs, char* args[] ){
 
 	/*
 	 * Process input arguments:
@@ -82,12 +82,12 @@ int Global::readArguments_( int nargs, char* args[] ){
 	 */
 
 	if( nargs < 3 ) {			// At least 2 parameters are required:
-		printHelp_();				// 1.outputDirectory; 2.posSequenceFilename.
+		printHelp();				// 1.outputDirectory; 2.posSequenceFilename.
 		exit( -1 );
 	}
 
 	outputDirectory = args[1];
-	createDirectory_( outputDirectory );
+	createDirectory( outputDirectory );
 
 	posSequenceFilepath = args[2];
 
@@ -141,7 +141,7 @@ int Global::readArguments_( int nargs, char* args[] ){
 	return 0;
 };
 
-void Global::printHelp_(){
+void Global::printHelp(){
 	printf("\n=================================================================\n");
 	printf("== Welcome to use BaMMmotif version 1.0 ==");
 	printf("\n=================================================================\n");
@@ -155,7 +155,7 @@ void Global::printHelp_(){
 	printf("\n=================================================================\n");
 };
 
-void Global::createDirectory_( const char* dir ){
+void Global::createDirectory( const char* dir ){
 
 	/*
 	 * Create output directory
@@ -176,7 +176,7 @@ void Global::createDirectory_( const char* dir ){
 
 };
 
-void Global::generateFolds_( int posCount, int negCount, int fold ){
+void Global::generateFolds( int posCount, int negCount, int fold ){
 	// generate posFoldIndices
 	int i = 0;
 	while( i < posCount){

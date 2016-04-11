@@ -71,13 +71,13 @@ public:
 	static bool			verbose;				// verbose printouts
 
 	static void init( int nargs, char* args[] ){
-		readArguments_( nargs, args );
-		createDirectory_( outputDirectory );
+		readArguments( nargs, args );
+		createDirectory( outputDirectory );
 		Alphabet::init( alphabetString );
 		// read in positive (and negative) sequence set
 
 		// generate folds (fill posFoldIndices and negFoldIndices)
-		generateFolds_( posSequenceSet->getN(), negSequenceSet->getN(), nFolds );
+		generateFolds( posSequenceSet->getN(), negSequenceSet->getN(), nFolds );
 		// optional: read in sequence intensities (header and intensity columns?)
 		if( intensityFilename != 0){
 			// read in sequence intensity
@@ -91,10 +91,10 @@ public:
 
 private:
 
-	static int	readArguments_( int nargs, char* args[] );
-	static void	printHelp_();
-	static void	createDirectory_( const char* dir );
-	static void	generateFolds_( int posCount, int negCount, int fold );
+	static int	readArguments( int nargs, char* args[] );
+	static void	printHelp();
+	static void	createDirectory( const char* dir );
+	static void	generateFolds( int posCount, int negCount, int fold );
 };
 
 #endif /* GLOBAL_H_ */
