@@ -64,8 +64,8 @@ public:
 	static bool			FDR;					// triggers False-Discovery-Rate (FDR) estimation
 	static unsigned int	mFold;					// number of negative sequences as multiple of positive sequences
 	static unsigned int	nFolds;					// number of cross-validation folds
-	static std::vector< std::vector<int> >	posFoldIndices;// sequence indices for each cross-validation fold
-	static std::vector< std::vector<int> >	negFoldIndices;// sequence indices for each cross-validation fold
+	static std::vector< std::vector<int> >	posFoldIndices;	// sequence indices for each cross-validation fold
+	static std::vector< std::vector<int> >	negFoldIndices;	// sequence indices for each cross-validation fold
 	// further FDR options...
 
 	static bool			verbose;				// verbose printouts
