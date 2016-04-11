@@ -199,3 +199,4 @@ void Global::generateFolds_( int posCount, int negCount, int fold ){
 		}
 	}
 };
+
