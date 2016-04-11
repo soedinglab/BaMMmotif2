@@ -25,8 +25,8 @@ public:
 
 	static char* 				outputDirectory;      // output directory
 
-	static char* 				posSequenceFilename;	// filename of positive sequence fasta file
-	static char* 				negSequenceFilename;	// filename of negative sequence fasta file
+	static char* 				posSequenceFilepath;	// filename of positive sequence fasta file
+	static char* 				negSequenceFilepath;	// filename of negative sequence fasta file
 
 	static char const*	alphabetString;				// defaults to ACGT but may later be extended to ACGTH(hydroxymethylcytosine) or similar
 	static bool					revcomp;							// also search on reverse complement of sequences
@@ -71,11 +71,17 @@ public:
 	static bool					verbose;							// verbose printouts
 
 	static void init( int nargs, char* args[] ){
-		readArguments( nargs, args );
+		readArguments_( nargs, args );
+		createDirectory_( outputDirectory );
 		Alphabet::init( alphabetString );
 		// read in positive (and negative) sequence set
+
 		// generate folds (fill posFoldIndices and negFoldIndices)
+		generateFolds_( posSequenceSet->getN(), negSequenceSet->getN(), nFolds );
 		// optional: read in sequence intensities (header and intensity columns?)
+		if( intensityFilename != 0){
+			// read in sequence intensity
+		}
 	}
 
 	static void destruct(){
@@ -85,10 +91,10 @@ public:
 
 private:
 
-	static int 	readArguments( int nargs, char* args[] );
-	static void printHelp();
-	static void createDirectory( const char* os );
-	static void generateFolds( int posCount, int negCount, int fold );
+	static int 	readArguments_( int nargs, char* args[] );
+	static void printHelp_();
+	static void createDirectory_( const char* dir );
+	static void generateFolds_( int posCount, int negCount, int fold );
 };
 
 #endif /* GLOBAL_H_ */

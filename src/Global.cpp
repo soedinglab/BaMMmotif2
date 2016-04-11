@@ -9,10 +9,10 @@
 
 #include "Global.h"
 
-char* 						Global::outputDirectory = NULL;        // output directory
+char* 						Global::outputDirectory = NULL;       // output directory
 
-char* 						Global::posSequenceFilename = NULL;		// filename of positive sequence fasta file
-char* 						Global::negSequenceFilename = NULL;		// filename of negative sequence fasta file
+char* 						Global::posSequenceFilepath = NULL;		// filename of positive sequence fasta file
+char* 						Global::negSequenceFilepath = NULL;		// filename of negative sequence fasta file
 
 char const*				Global::alphabetString = "ACGT";			// defaults to ACGT but may later be extended to ACGTH(hydroxymethylcytosine) or similar
 bool							Global::revcomp = false;							// also search on reverse complement of sequences
@@ -27,7 +27,7 @@ char* 						Global::intensityFilename = NULL;			// filename of intensity file (i
 char* 						Global::BaMMpatternFilename = NULL;		// filename of BaMMpattern file
 char* 						Global::bindingSitesFilename = NULL;	// filename of binding sites file
 char* 						Global::PWMFilename = NULL;						// filename of PWM file
-char* 						Global::BMMFilename = NULL;					// filename of Markov model (.bmm) file
+char* 						Global::BMMFilename = NULL;						// filename of Markov model (.bmm) file
 
 // model options
 unsigned int 			Global::modelOrder = 2;								// model order
@@ -50,13 +50,13 @@ bool							Global::noQOptimization = false;			// disable q optimization
 bool							Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
 unsigned int 			Global::mFold = 20;						// number of negative sequences as multiple of positive sequences
 unsigned int 			Global::nFolds = 5;						// number of cross-validation folds
-std::vector< std::vector<int> > Global::posFoldIndices;		// sequence indices for each cross-validation fold
-std::vector< std::vector<int> > Global::negFoldIndices;		// sequence indices for each cross-validation fold
+std::vector< std::vector<int> > Global::posFoldIndices;	// sequence indices for each cross-validation fold
+std::vector< std::vector<int> > Global::negFoldIndices;	// sequence indices for each cross-validation fold
 // further FDR options...
 
 bool							Global::verbose = false;				// verbose printouts
 
-int Global::readArguments( int nargs, char* args[] ){
+int Global::readArguments_( int nargs, char* args[] ){
 
 	/*
 	 * Process input arguments:
@@ -82,14 +82,14 @@ int Global::readArguments( int nargs, char* args[] ){
 	 */
 
 	if( nargs < 3 ) {			// At least 2 parameters are required:
-		printHelp();				// 1.outputDirectory; 2.posSequenceFilename.
+		printHelp_();				// 1.outputDirectory; 2.posSequenceFilename.
 		exit( -1 );
 	}
 
 	outputDirectory = args[1];
-	createDirectory( outputDirectory );
+	createDirectory_( outputDirectory );
 
-	posSequenceFilename = args[2];
+	posSequenceFilepath = args[2];
 
 	for( int i = 3; i < nargs; i++ ){
 
@@ -98,7 +98,7 @@ int Global::readArguments( int nargs, char* args[] ){
 		}else if( strcmp( args[i], "--revcomp" ) == 0 ){
 			revcomp = true;
 		}else if( strcmp( args[i], "--negSequenceFile" ) == 0 ){
-			negSequenceFilename = args[i+1];
+			negSequenceFilepath = args[i+1];
 		}else if( strcmp( args[i], "--intensityFile" ) == 0 ){
 			intensityFilename = args[i+1];
 		}else if( strcmp( args[i], "--BaMMpatternFile" ) == 0 ){
@@ -141,7 +141,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	return 0;
 };
 
-void Global::printHelp(){
+void Global::printHelp_(){
 	printf("\n=================================================================\n");
 	printf("== Welcome to use BaMMmotif version 1.0 ==");
 	printf("\n=================================================================\n");
@@ -155,7 +155,7 @@ void Global::printHelp(){
 	printf("\n=================================================================\n");
 };
 
-void Global::createDirectory( const char* dir ){
+void Global::createDirectory_( const char* dir ){
 
 	/*
 	 * Create output directory
@@ -176,7 +176,7 @@ void Global::createDirectory( const char* dir ){
 
 };
 
-void Global::generateFolds( int posCount, int negCount, int fold ){
+void Global::generateFolds_( int posCount, int negCount, int fold ){
 	// generate posFoldIndices
 	int i = 0;
 	while( i < posCount){
@@ -185,7 +185,7 @@ void Global::generateFolds( int posCount, int negCount, int fold ){
 			i++;
 		}
 	}
-	if( negSequenceFilename == NULL ){
+	if( negSequenceFilepath == NULL ){
 		// assign reference to posFoldIndices
 		negFoldIndices = posFoldIndices;
 	} else{

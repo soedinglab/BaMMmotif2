@@ -31,9 +31,9 @@ private:
 	static char* 		complementAlphabet_;								// complementary alphabet bases ([N,T,G,C,A,G], [N,T,G,C,A,G], ...)
 
 	// conversion from encoding to bases
-	static char* codeToBase = { 'N','A','C','G','T' }; 	// depending on alphabetString
+	static char* 		codeToBase = { 'N','A','C','G','T' }; // depending on alphabetString
 	// conversion from bases to encoding
-	static uint8_t baseToCode = ( uint8_t* )calloc( 127 * sizeof( uint8_t ) );
+	static uint8_t 	baseToCode = ( uint8_t* )calloc( 127 * sizeof( uint8_t ) );
 	baseToCode[( int )'A'] = 1
 	baseToCode[( int )'C'] = 2
 	baseToCode[( int )'G'] = 3

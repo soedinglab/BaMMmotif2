@@ -8,7 +8,7 @@
 #ifndef SEQUENCESET_H_
 #define SEQUENCESET_H_
 
-#include <stdlib.h>
+#include <stdlib.h>			/* NULL */
 
 #include "Sequence.h"
 
@@ -16,33 +16,32 @@ class SequenceSet {
 
 public:
 
-	SequenceSet( char* sequenceFilename, char* intensityFilename = NULL ){
-		/*
-		 * read in sequences
-		 * calculate mono-nucleotide frequencies
-		 * read in intensities (optional)
-		 */
-	}
+	SequenceSet( char* sequenceFilepath, char* intensityFilepath = NULL );
+	/*
+	 * read in sequences
+	 * calculate mono-nucleotide frequencies
+	 * read in intensities (optional)
+	*/
 	~SequenceSet();
 
-	char* 		getFilename();				// get input sequence filename
-	Sequence* getSequences();				// get sequences
-	int 			getN();								// get number of sequences
-	int 			getMinL();						// get min. length of sequences
-	int 			getMaxL();						// get max. length of sequences
-	float* 		getBaseFrequencies();	// get mono-nucleotide frequencies
+	char* 				getFilename(){ return filename_; };								// get input sequence filename
+	Sequence* 		getSequences(){ return sequences_; };							// get sequences
+	unsigned int 	getN(){ return N_; };															// get number of sequences
+	unsigned int 	getMinL(){ return minL_; };												// get min. length of sequences
+	unsigned int	getMaxL(){ return maxL_; };												// get max. length of sequences
+	float* 				getBaseFrequencies(){ return baseFrequencies_; };	// get mono-nucleotide frequencies
 
 private:
 
-	char* 		filename_;						// input sequence filename
-	Sequence* sequences_;						// sequences
-	int 			N_;										// number of sequences
-	int 			minL_;								// min. length of sequences
-	int 			maxL_;								// max. length of sequences
-	float* 		baseFrequencies_;			// mono-nucleotide frequencies
+	char* 				filename_;						// input sequence filename
+	Sequence* 		sequences_;						// sequences
+	unsigned int 	N_;										// number of sequences
+	unsigned int 	minL_;								// min. length of sequences
+	unsigned int 	maxL_;								// max. length of sequences
+	float* 				baseFrequencies_;			// mono-nucleotide frequencies
 
-	int 			readFASTA_();					// read in FASTA file
-	int 			readIntensities_();		// read in intensity file
+	int 					readFASTA_( char* sequenceFilepath );						// read in FASTA file
+	int 					readIntensities_( char* intensityFilepath );		// read in intensity file
 };
 
 #endif /* SEQUENCESET_H_ */
