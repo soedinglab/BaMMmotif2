@@ -62,8 +62,6 @@ int SequenceSet::readFASTA( char* sequenceFilepath ){
 	 */
     filename_ = extractFilenameFromPath( sequenceFilepath );
 	N_ = 0;
-	unsigned int sequence_length;
-	unsigned int sIndex;
 	unsigned int sum = 0;										// sum count of all the mono-nucleotides
 	unsigned int countA = 0, countT = 0, countC = 0, countG = 0;
 
@@ -79,8 +77,8 @@ int SequenceSet::readFASTA( char* sequenceFilepath ){
 		exit( -1 );
 	} else {
 		getline( sequence_file, each_sequence, '>' );			// read the first sequence on the second line
-		sequence_length = each_sequence.length();
-		minL_ = maxL_ = sequence_length;						// initialize minL_ and maxL_
+		sequences_->L_ = each_sequence.length();
+		minL_ = maxL_ = sequences_->L_;						// initialize minL_ and maxL_
 	}
 
 	while( getline( sequence_file, single_line ).good() ){
@@ -88,13 +86,13 @@ int SequenceSet::readFASTA( char* sequenceFilepath ){
 			N_++;												// count the sequence number
 			sequences_->header_() = single_line.substr( 1 );    // Take the header after the '>' sign.
 			if( each_sequence != NULL ){						// compute from the second sequence on
-				sequence_length = each_sequence.length();
-				sum += sequence_length;                         // count the total number of all nucleotides
-				if( sequence_length > maxL_ ){
-					maxL_ = sequence_length;
+			    sequences_->L_ = each_sequence.length();
+				sum += sequences_->L_;                         // count the total number of all nucleotides
+				if( sequences_->L_ > maxL_ ){
+					maxL_ = sequences_->L_;
 				}
-				if( sequence_length < minL_ ){
-					minL_ = sequence_length;
+				if( sequences_->L_ < minL_ ){
+					minL_ = sequences_->L_;
 				}
 				// Either ...
 				sequences.push_back( each_sequence );

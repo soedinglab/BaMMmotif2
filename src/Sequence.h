@@ -12,10 +12,12 @@ class Sequence {
 
 public:
 
-	Sequence( char* sequence, int L, char* header ){
+	Sequence( char* sequence, int L, char* header, float intensity, float weight ){
 	    sequence_ = sequence;
 	    L_ = L;
 	    header_ = header;
+	    intensity_ = intensity;
+	    weight_ = weight;
 	}
 	~Sequence();
 
