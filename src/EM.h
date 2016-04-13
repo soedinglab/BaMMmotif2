@@ -50,33 +50,33 @@ public:
 
 private:
 
-	Motif* 						motif_;				// motif to optimize within the em
-	BackgroundModel*	bg_;					// background model
+	Motif* 				motif_;			// motif to optimize within the em
+	BackgroundModel*	bg_;			// background model
 
-	std::vector<int>	folds_;				// folds to iterate over
+	std::vector<int>	folds_;		    // folds to iterate over
 
-	float** 					r_[n][i];			// responsibilities at position i in sequence n
-	float*** 					n_[k][y][j];	// fractional counts n for k-mers y at motif position j
+	float** 			r_;		        // responsibilities at position i in sequence n, r_[n][i]
+	float*** 			n_;	            // fractional counts n for k-mers y at motif position j, n_[k][y][j]
 
-	float** 					alpha_[k][j];	// pseudocount hyperparameter for order k and motif position j
-	float 						q_; 					// hyperparameter q specifies the fraction of sequences with motif
+	float** 			alpha_;	        // pseudocount hyperparameter for order k and motif position j, alpha_[k][j]
+	float 				q_; 			// hyperparameter q specifies the fraction of sequences with motif
 
-	float 						likelihood_;	// value of Q function for current parameters
+	float 				likelihood_;	// value of Q function for current parameters
 
-	int 							EMIterations_;// counter for EM iterations
+	int 				EMIterations_;  // counter for EM iterations
 
-	void EStep();										// E-step
-	void MStep(){										// M-step
+	void EStep();						// E-step
+	void MStep(){						// M-step
 		// resetN()
 		// M step
 	}
-	void optimizeAlphas(){					// optimize alpha hyper-parameters
+	void optimizeAlphas(){			    // optimize alpha hyper-parameters
 		// optimize alphas
 		// motif.updateV()
 	}
-	void optimizeQ();								// optimize hyper-parameter q
+	void optimizeQ();					// optimize hyper-parameter q
 
-	void resetN();									// reset fractional counts n
+	void resetN();						// reset fractional counts n
 };
 
 

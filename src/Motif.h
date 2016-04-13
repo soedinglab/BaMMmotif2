@@ -62,8 +62,8 @@ public:
 	// initialize v from Bayesian Markov model file and set isInitialized
 	void initFromBayesianMarkovModel( char* filename );
 
-	int 			getLength(); 				// get length
-	float*** 	getV();						// get v
+	int         getLength(){ return length_; }; // get length
+	float***    getV(){ return v_; };			// get v
 
 	void updateV( float*** n, float** alpha ){
 		assert( isInitialized_ );
@@ -77,8 +77,8 @@ private:
 
 	bool			isInitialized_ = false;		// to assert in all public methods
 
-	int 			length_;						// length of motif
-	float*** 	v_[k][y][j];					// conditional probabilities for k-mers y at motif position j
+	int 			length_;					// length of motif
+	float*** 	    v_;				            // conditional probabilities for k-mers y at motif position j, v_[k][y][j]
 
 	void 			calculateV( int*** n );		//calculate v from k-mer counts n and global alphas
 };

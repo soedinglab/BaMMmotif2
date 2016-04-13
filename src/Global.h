@@ -79,7 +79,7 @@ public:
 		// generate folds (fill posFoldIndices and negFoldIndices)
 		generateFolds( posSequenceSet->getN(), negSequenceSet->getN(), nFolds );
 		// optional: read in sequence intensities (header and intensity columns?)
-		if( intensityFilename != 0){
+		if( intensityFilename != 0 ){
 			// read in sequence intensity
 		}
 	}

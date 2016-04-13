@@ -59,23 +59,23 @@ private:
 
 	const Motif&	motif_;				// motif learned on full SequenceSet
 
-	float** 		posS_[n][i];		// log-odds scores on positive test SequenceSets
-	float** 		negS_[nm][i];		// log-odds scores on negative test SequenceSets
+	float** 		posS_;		        // log-odds scores on positive test SequenceSets, posS_[n][i]
+	float** 		negS_;		        // log-odds scores on negative test SequenceSets, negS_[nm][i]
 
 	float* 			P_;					// precision
 	float* 			R_;					// recall
 
 	SequenceSet*	sampleSequenceSet();
-	Sequence*			sampleSequence();
+	Sequence*		sampleSequence();
 
 					// score Global::posSequenceSet using Global::foldIndices and folds
-	void 		scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<int> folds, float** S );
+	void 	        scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<int> folds, float** S );
 					// score SequenceSet sequences
-	void 		scoreSequenceSet( Motif* motif, BackgroundModel* bg, SequenceSet* sequences, float** S );
+	void 		    scoreSequenceSet( Motif* motif, BackgroundModel* bg, SequenceSet* sequences, float** S );
 					// score Sequence sequence
-	float*	scoreSequence( Motif* motif, BackgroundModel* bg, Sequence* sequence );
+	float*	        scoreSequence( Motif* motif, BackgroundModel* bg, Sequence* sequence );
 
-	void 		calculatePR();
+	void 		    calculatePR();
 };
 
 

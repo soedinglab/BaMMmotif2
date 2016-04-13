@@ -48,16 +48,16 @@ public:
 	}
 	~MotifSet();
 
-	std::list<Motif*> getMotifs();// get motifs
-	int			 					getN();			// get number of motifs
+	std::list<Motif*> 	getMotifs(){ return motifs_; }; // get motifs
+	int			 		getN(){ return N_; };			// get number of motifs
 
-	void 							print(); 		// print motifs to console
-	void 							write();		// write motifs to files (basename.iimm)
+	void 				print(); 		                // print motifs to console
+	void 				write();		                // write motifs to files (basename.iimm)
 
 private:
 
-	std::list<Motif*> motifs_;		// motifs
-	int          			N_;					// number of motifs
+	std::list<Motif*> 	motifs_;		                // motifs
+	int          		N_;					            // number of motifs
 };
 
 #endif /* MOTIFSET_H_ */

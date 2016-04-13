@@ -82,7 +82,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	 */
 
 	if( nargs < 3 ) {			// At least 2 parameters are required:
-		printHelp();				// 1.outputDirectory; 2.posSequenceFilename.
+		printHelp();			// 1.outputDirectory; 2.posSequenceFilename.
 		exit( -1 );
 	}
 
