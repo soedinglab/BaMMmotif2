@@ -31,14 +31,14 @@ private:
 	static char* 		complementAlphabet_;				// complementary alphabet bases ([N,T,G,C,A,G], [N,T,G,C,A,G], ...)
 
 	// conversion from encoding to bases
-	static char* 		codeToBase_ = { 'A','C','G','T' }; // depending on alphabetString
+	static char* 		codeToBase_;                       // depending on alphabetString,codeToBase_ = { 'A','C','G','T' }
 	// conversion from bases to encoding
-	static uint8_t 	    baseToCode_ = ( uint8_t* )malloc( 127 * sizeof( uint8_t ) );
-
-	baseToCode_[( int )'A'] = 1
-	baseToCode_[( int )'C'] = 2
-	baseToCode_[( int )'G'] = 3
-	baseToCode_[( int )'T'] = 4 							// iterate over alphabetString
+	static uint8_t* 	baseToCode_;                       // baseToCode_ = ( uint8_t* )malloc( 127 * sizeof( uint8_t ) )
+	baseToCode_ = ( uint8_t* )malloc( 127 * sizeof( uint8_t ) );
+	baseToCode_[( int )'A'] = 1;
+	baseToCode_[( int )'C'] = 2;
+	baseToCode_[( int )'G'] = 3;
+	baseToCode_[( int )'T'] = 4; 							// iterate over alphabetString
 };
 
 inline int 		Alphabet::getSize(){ return size_; };
