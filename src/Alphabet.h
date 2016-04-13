@@ -33,8 +33,7 @@ private:
 	// conversion from encoding to bases
 	static char* 		codeToBase_;                       // depending on alphabetString,codeToBase_ = { 'A','C','G','T' }
 	// conversion from bases to encoding
-	static uint8_t* 	baseToCode_;                       // baseToCode_ = ( uint8_t* )malloc( 127 * sizeof( uint8_t ) )
-	baseToCode_ = ( uint8_t* )malloc( 127 * sizeof( uint8_t ) );
+	static uint8_t* 	baseToCode_ = ( uint8_t* )malloc( 127 * sizeof( uint8_t ) );
 	baseToCode_[( int )'A'] = 1;
 	baseToCode_[( int )'C'] = 2;
 	baseToCode_[( int )'G'] = 3;
