@@ -9,6 +9,7 @@
 #define GLOBAL_H_
 
 #include <vector>
+#include <string>
 #include <iostream>
 
 #include <stdlib.h>
@@ -25,10 +26,14 @@ public:
 
 	static char*		outputDirectory;      	// output directory
 
-	static char*		posSequenceFilepath;	// filename of positive sequence fasta file
-	static char*		negSequenceFilepath;	// filename of negative sequence fasta file
+	static char*		posSequenceFilename;	// filename of positive sequence FASTA file
+	static char*		negSequenceFilename;	// filename of negative sequence FASTA file
 
-	static char const*	alphabetString;			// defaults to ACGT but may later be extended to ACGTH(hydroxymethylcytosine) or similar
+	static char*		posSequenceBasename;	// basename of positive sequence FASTA file
+	static char*		negSequenceBasename;	// basename of negative sequence FASTA file
+
+
+	static char* 		alphabetType;			// provide alphabet type
 	static bool			revcomp;				// also search on reverse complement of sequences
 
 	static SequenceSet*	posSequenceSet;			// positive Sequence Set
@@ -70,31 +75,16 @@ public:
 
 	static bool			verbose;				// verbose printouts
 
-	static void init( int nargs, char* args[] ){
-		readArguments( nargs, args );
-		createDirectory( outputDirectory );
-		Alphabet::init( alphabetString );
-		// read in positive (and negative) sequence set
+	static void         init( int nargs, char* args[] );
 
-		// generate folds (fill posFoldIndices and negFoldIndices)
-		generateFolds( posSequenceSet->getN(), negSequenceSet->getN(), nFolds );
-		// optional: read in sequence intensities (header and intensity columns?)
-		if( intensityFilename != 0 ){
-			// read in sequence intensity
-		}
-	}
-
-	static void destruct(){
-		Alphabet::destruct();
-		// ...
-	}
+	static void         destruct();
 
 private:
 
-	static int	readArguments( int nargs, char* args[] );
-	static void	printHelp();
-	static void	createDirectory( const char* dir );
-	static void	generateFolds( int posCount, int negCount, int fold );
+	static int	        readArguments( int nargs, char* args[] );
+	static void	        createDirectory( char* dir );
+	static void	        generateFolds( int posCount, int negCount, int fold );
+	static void	        printHelp();
 };
 
 #endif /* GLOBAL_H_ */

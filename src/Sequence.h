@@ -8,32 +8,28 @@
 #ifndef SEQUENCE_H_
 #define SEQUENCE_H_
 
+#include <stdint.h>		// uint8_t
+
 class Sequence {
 
 public:
 
-	Sequence( char* sequence, int L, char* header, float intensity, float weight ){
-	    sequence_ = sequence;
-	    L_ = L;
-	    header_ = header;
-	    intensity_ = intensity;
-	    weight_ = weight;
-	}
+	Sequence( uint8_t* sequence, int L, char* header, float intensity, float weight);
 	~Sequence();
 
-	unsigned int    getL(){ return L_; };				                        // get sequence length
-	char*           getSequence(){ return sequence_; };	                        // get base sequence as alphabet encoding
-	char* 	        getHeader(){ return header_; };		                        // get sequence header
+	unsigned int    getL();				                // get sequence length
+	uint8_t*        getSequence();	                   	// get base sequence as alphabet encoding
+	char* 	        getHeader();		                // get sequence header
 
-	float 	        getIntensity(){ return intensity_; };                       // get measured sequence intensity
-	float 	        getWeight(){ return weight_; };		                        // get sequence weight
-	void 	        setIntensity( float intensity ){ intensity_ = intensity; };	// set measured sequence intensity
-	void 	        setWeight( float weight ){ weight_ = weight; };				// set sequence weight
+	float 	        getIntensity();                     // get measured sequence intensity
+	float 	        getWeight();		                // get sequence weight
+	void 	        setIntensity( float intensity );	// set measured sequence intensity
+	void 	        setWeight( float weight );			// set sequence weight
 
 private:
 
 	unsigned int    L_;			                        // sequence length
-	char*		    sequence_;		                    // the base sequence as alphabet encoding
+	uint8_t*	    sequence_;		                    // the base sequence as alphabet encoding
 	char* 	        header_;			                // sequence header
 	float 	        intensity_;		                    // measured sequence intensity from HT-SELEX data
 	float 	        weight_;			                // sequence weight from HT-SELEX data, based on the intensity

@@ -5,120 +5,223 @@
  *      Author: wanwan
  */
 
-#include <iostream>
-#include <string>			/* string, find_last_of, memcpy */
+#include <iostream>			// std::
+#include <fstream>			// std::fstream
+#include <string>			// string, find_last_of,
+#include <cstring>			// memcpy
+#include <algorithm>		// std::count
 
-#include <stdint.h>         /* uint8_t */
+#include <stdint.h>         // uint8_t
 
 #include "SequenceSet.h"
 
-char* extractFilenameFromPath( char* filePath ){
-    char* fileName;
-    std::string path = filePath;
-    std::size_t lastSlashIndex = path.find_last_of( "/\\" );
-    if( std::string::npos != lastSlashIndex ){
-        path.erase( 0, lastSlashIndex + 1 );
-    }
-    std::size_t periodIndex = path.rfind( '.' );
-    if( std::string::npos != periodIndex ){
-        path.erase( periodIndex );
-    }
-    fileName = path;            // after removing directory and extension
-    return fileName;
-};
+SequenceSet::SequenceSet( char* sequenceFilepath, char* intensityFilepath = NULL ){
+
+	sequenceFilepath_ = sequenceFilepath;
+	intensityFilepath_ = intensityFilepath;
+
+	// read in FASTA file
+	readFASTA();
+
+	// calculate mono-nucleotide frequencies
+	getBaseFrequencies();
+
+	// if intensity file is given, read in intensity file
+	if ( intensityFilepath != NULL )
+		readIntensities();
+}
+
+char* SequenceSet::getSequenceFilepath(){
+	return sequenceFilepath_;
+}
+
+char* SequenceSet::getIntensityFilepath(){
+	return intensityFilepath_;
+}
+
+Sequence* SequenceSet::getSequences(){
+	return sequences_;
+}
+
+unsigned int SequenceSet::getN(){
+	return N_;
+}
+
+unsigned int SequenceSet::getMinL(){
+	return minL_;
+}
+
+unsigned int SequenceSet::getMaxL(){
+	return maxL_;
+}
+
+float* SequenceSet::getBaseFrequencies(){
+	return baseFrequencies_;
+}
 
 void createRevComp( SequenceSet* sequence_set ){
     // create reverse complement sequences for the sequence set
-    for( uint8_t i = 1; i < sequence_set->N_; i++ ){
-        unsigned int l = sequence_set->sequences_->L_;
 
-        // reallocate the memory for storing reverse complement plus one after original sequence
-        sequence_set->sequences_->sequence_ = ( char* )realloc( sequence_set->sequences_->sequence_, l*2 + 2);
-
-        // set a 'N' character in the middle
-        sequence_set->sequences_->sequence_[l+1] = 'N';
-        for( int m = l+2, n = l; m <= 2*l + 1; m++, n-- ){
-            switch( sequence_set->sequences_->sequence_[n] ){
-            case 'A':  sequence_set->sequences_->sequence_[m] = 'T'; break;
-            case 'C':  sequence_set->sequences_->sequence_[m] = 'G'; break;
-            case 'G':  sequence_set->sequences_->sequence_[m] = 'C'; break;
-            case 'T':  sequence_set->sequences_->sequence_[m] = 'A'; break;
-            }
-        }
-    }
-    // update sequenceSet information
-    sequence_set->maxL_ =  sequence_set->maxL_*2 + 1;
-    sequence_set->minL_ =  sequence_set->minL_*2 + 1;
 }
 
-int SequenceSet::readFASTA( char* sequenceFilepath ){
+int SequenceSet::readFASTA(){
 
-	/*
+	/**
 	 * while reading in the sequences, do:
 	 * 1. extract the header for each sequence
 	 * 2. calculate the minimal and maximal length in the file
 	 * 3. count the number of sequences
 	 * 4. calculate mono-nucleotide frequencies
 	 */
-    filename_ = extractFilenameFromPath( sequenceFilepath );
-	N_ = 0;
-	unsigned int sum = 0;										// sum count of all the mono-nucleotides
-	unsigned int countA = 0, countT = 0, countC = 0, countG = 0;
 
-	std::ifstream sequence_file( sequenceFilepath );			// read file from path
-	std::string single_line;									// read each line from file
-	std::string each_sequence;									// get each sequence
-	std::vector<std::string> sequences;                         // store all the sequences in a vector array for sequence shuffling
+	unsigned int N = 0; 					// sequence counter
+	unsigned int L = 0;						// length counter
+	unsigned int sizeHeader = 100;			// initialize the size of header array as 100
+	unsigned int sizeSeq = 1000;			// initialize the size of sequence array as 1000
+	unsigned int* baseCounts = ( unsigned int* )calloc( Alphabet::getSize() + 1, sizeof( unsigned int ) );
+	unsigned int baseSumCount = 0;
 
-	getline( sequence_file, each_sequence );
-	if( each_sequence[0] != '>' ){								// read the first line, exit when it does not start with '>'
+	char* header = ( char* )calloc( sizeHeader, sizeof( char ) );
+	int* sequence = ( int* )calloc( sizeSeq, sizeof( int ) );
+
+	FILE* fp;
+	if( ( fp = fopen( sequenceFilepath_, "r" ) ) == NULL ){
+		fprintf( stderr, "Cannot open positive sequence file: %s\n", sequenceFilepath_ );
+		exit( -1 );
+	}
+
+	int base; // in ASCII code
+
+	base = fgetc( fp );
+
+	// skipping leading blank lines
+	while( ( base == '\n' || base == '\r' ) && base != EOF ){
+		base = fgetc( fp );
+	}
+
+	while( base != EOF ){
+		// reset the length of sequence to 0
+		L = 0;
+
+		if( base != '>' ){
+			fprintf( stderr, "Error: Not a FASTA format file!" );
+			exit( -1 );
+		}
+
+		base = fgetc( fp );	// read in the '>' sign
+		// count the number of header
+		N++;
+
+		while( ( base != '\n' && base != '\r' ) && base != EOF ) {
+			// read in header
+			base = fgetc( fp );
+
+			// memcpy header into header array
+			std::memcpy( &header, &base, sizeHeader);
+			// what if the header will be empty? => copy NULL to the header?
+
+		} // end of header or start of sequence line
+
+		while( base == '\n' || base == '\r' ){
+			base = fgetc( fp );
+		} // start of sequence line
+
+		while( base != '>' && base != EOF ){
+
+			// skip all the '\n' and '\r'
+			if( base == '\n' || base == '\r' ){
+				base = fgetc( fp );
+				continue;
+			}
+
+			// read in sequence
+			base = fgetc( fp );
+
+			// count the length of the sequence
+			L++;
+
+			// memcpy sequence into sequence array
+			if( L > sizeSeq ){
+				sequence = ( int* )realloc( sequence, sizeSeq*2 );
+			}
+			std::memcpy( &sequence, &base, sizeSeq );
+
+			// count the occurrence of mono-nucleotides and sum them up
+			baseCounts[ Alphabet::getCode( base ) ] += 1;
+		}
+
+		// check if sequence is empty
+		if( L == 0 ){
+			fprintf( stderr, "Empty sequence with the entry %d !\n ", N );
+		}
+
+	}
+/*
+	std::ifstream sequenceFile( sequenceFilepath_ );			// read file from path
+	if( !sequenceFile.is_open() ){
+		fprintf( stderr, "Failed to open the sequence file!");
+		exit( -1 );
+	}
+	std::string singleLine;										// read line after line from file
+	std::string eachSequence;									// temporarily store each sequence
+	std::vector<Sequence> sequences;							// store all the sequences in a vector, convenient for sequence shuffling
+	std::string header;
+	unsigned int maxL, minL;
+
+	std::getline( sequenceFile, eachSequence );
+	if( eachSequence[0] != '>' ){								// read the first line, exit when it does not start with '>'
 		fprintf( stderr, "file is not in FASTA format: "
 		        "Header does not start with \">\" " );
 		exit( -1 );
 	} else {
-		getline( sequence_file, each_sequence, '>' );			// read the first sequence on the second line
-		sequences_->L_ = each_sequence.length();
-		minL_ = maxL_ = sequences_->L_;						// initialize minL_ and maxL_
+		header = eachSequence.substr( 1 );
+		N++;
+		std::getline( sequenceFile, eachSequence, '>' );		// read the first sequence
+		minL = maxL = eachSequence.length();					// initialize minL and maxL
 	}
 
-	while( getline( sequence_file, single_line ).good() ){
-		if( single_line[0] == '>' ){
-			N_++;												// count the sequence number
-			sequences_->header_() = single_line.substr( 1 );    // Take the header after the '>' sign.
-			if( each_sequence != NULL ){						// compute from the second sequence on
-			    sequences_->L_ = each_sequence.length();
-				sum += sequences_->L_;                         // count the total number of all nucleotides
-				if( sequences_->L_ > maxL_ ){
-					maxL_ = sequences_->L_;
-				}
-				if( sequences_->L_ < minL_ ){
-					minL_ = sequences_->L_;
-				}
-				// Either ...
-				sequences.push_back( each_sequence );
-				// Or ...
-				sequences_->sequence_() = each_sequence;
+	while( std::getline( sequenceFile, singleLine ).good() ){
+		if( singleLine[0] == '>' ){
+			Sequence sequence = new Sequence(eachSequence, eachSequence.length(), header );
+			sequences.push_back( sequence );
+			N++;
+			header = singleLine.substr( 1 );
 
-				// count the occurrence of mono-nucleotides
-				countA += std::count(each_sequence.begin(), each_sequence.end(), 'A');
-				countC += std::count(each_sequence.begin(), each_sequence.end(), 'C');
-				countG += std::count(each_sequence.begin(), each_sequence.end(), 'G');
-				countT += std::count(each_sequence.begin(), each_sequence.end(), 'T');
-
-				each_sequence.clear();
+			if( sequence.getL() > maxL ){
+				maxL = sequence.getL();
+			}
+			if( sequence.getL() < minL ){
+				minL = sequence.getL();
 			}
 
+			// count the occurrence of mono-nucleotides
+			for( int i = 0; i < Alphabet::getSize(); i++ ){
+				baseCounts[i+1] += std::count(eachSequence.begin(), eachSequence.end(), Alphabet::getAlphabet()[i] );
+				baseSumCount += baseCounts[i+1];
+			}
+			eachSequence.clear();
+
 		} else {
-			each_sequence += single_line;
+			eachSequence += singleLine;
 		}
 	}
+	Sequence sequence = new Sequence(eachSequence, eachSequence.length(), header );
+	sequences.push_back( sequence );
 
-	/*
-	 * Calculate the frequencies of all mono-nucleotides
-	 * Then declare baseFrequencies_
-	 */
-	baseFrequencies_ = new float[4];
-	baseFrequencies_ = { countA / (float)sum, countC / (float)sum, countG / (float)sum, countT / (float)sum };
+	N_ = N;
+	sequences_ = sequences;
+	maxL_ = maxL;
+	minL_ = minL;
+*/
+
+	// Calculate the frequencies of all mono-nucleotides
+	for( int i = 0; i < Alphabet::getSize(); i++ ){
+		baseSumCount += baseCounts[i+1];
+	}
+	for( int i = 0; i < Alphabet::getSize(); i++ ){
+		baseFrequencies_[i] = baseCounts[i+1] / baseSumCount;
+	}
+
 
 	return 0;
 }

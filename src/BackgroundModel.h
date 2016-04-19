@@ -15,29 +15,12 @@ class BackgroundModel {
 
 public:
 
-	BackgroundModel(){
-		// allocate v
-	}
+	BackgroundModel();
 	~BackgroundModel();
 
-	void init( std::vector< std::vector<int> > folds = NULL ){
+	void init( std::vector< std::vector<int> > folds = NULL );
 
-		if( folds == NULL ){
-			std::vector<int> folds( Global::nFolds );
-			std::iota( std::begin( folds ), std::end( folds ), 0 );
-		}
-
-		// calculate k-mer counts n from SequenceSet using Global::negFoldIndices and folds
-		// for( f=0; f < folds.size() ; f++ ){
-		//   int fold = folds[f]
-		//   for( n=0; n < Global::negFoldIndices[fold].size(); n++ ){
-		//     Sequence* sequence = sequences.getSequences()[Global::negFoldIndices[fold][n]]
-		//   }
-		// }
-		// calculate v from k-mer counts n
-	}
-
-	float** getV(){ return v_; };	// get conditional probabilities for k-mers
+	float** getV();	                // get conditional probabilities for k-mers
 
 	void 	print();				// print background model to console
 	void 	write();			    // write background model to file basename.bmm in output directory

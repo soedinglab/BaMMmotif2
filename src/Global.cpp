@@ -5,17 +5,23 @@
  *      Author: wanwan
  */
 
-#include <sys/stat.h> // get file status
+#include <sys/stat.h>   		// get file status
+#include <libgen.h>				// basename, dirname
+#include <stdio.h>
 
 #include "Global.h"
+#include "lib/getopt_pp.h"		// GetOpt function
 
 char*               Global::outputDirectory = NULL;     // output directory
 
-char*               Global::posSequenceFilepath = NULL; // filename of positive sequence fasta file
-char*               Global::negSequenceFilepath = NULL; // filename of negative sequence fasta file
+char*               Global::posSequenceFilename = NULL; // filename of positive sequence FASTA file
+char*               Global::negSequenceFilename = NULL; // filename of negative sequence FASTA file
 
-char const*         Global::alphabetString = "ACGT";    // defaults to ACGT but may later be extended to ACGTH(hydroxymethylcytosine) or similar
-bool                Global::revcomp = false;			// also search on reverse complement of sequences
+char*				Global::posSequenceBasename = NULL;	// basename of positive sequence FASTA file
+char*				Global::negSequenceBasename = NULL;	// basename of negative sequence FASTA file
+
+char*				Global::alphabetType = "STANDARD";	// alphabet type is defaulted to standard which is ACGT
+bool                Global::revcomp = false;            // also search on reverse complement of sequences
 
 SequenceSet*        Global::posSequenceSet = NULL;		// positive Sequence Set
 SequenceSet*        Global::negSequenceSet = NULL;		// negative Sequence Set
@@ -56,6 +62,30 @@ std::vector< std::vector<int> > Global::negFoldIndices; // sequence indices for 
 
 bool                Global::verbose = false;            // verbose printouts
 
+void Global::init( int nargs, char* args[] ){
+	readArguments( nargs, args );
+	createDirectory( outputDirectory );
+	Alphabet::init( alphabetType );
+
+	// read in positive sequence set
+	posSequenceSet = new SequenceSet( posSequenceFilename );
+	if( negSequenceFilename == NULL ){
+		// use positive for negative sequence set
+		negSequenceSet = posSequenceSet;
+	} else{
+		// read in negative sequence set
+		negSequenceSet = new SequenceSet( negSequenceFilename );
+	}
+
+	// generate folds (fill posFoldIndices and negFoldIndices)
+	generateFolds( posSequenceSet->getN(), negSequenceSet->getN(), nFolds );
+
+	// optional: read in sequence intensities (header and intensity columns?)
+	if( intensityFilename != 0 ){
+		// read in sequence intensity
+	}
+}
+
 int Global::readArguments( int nargs, char* args[] ){
 
 	/*
@@ -76,7 +106,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	 * 		* --fdr
 	 * 			* mfold: for generating negative sequence file
 	 * 			* nfolds: for cross-validation
-	 * 		* alphabetString
+	 * 		* alphabetType
 	 * 			* if NULL, by default: ACGT
 	 *
 	 */
@@ -86,60 +116,119 @@ int Global::readArguments( int nargs, char* args[] ){
 		exit( -1 );
 	}
 
+	// read in the output directory and create it
 	outputDirectory = args[1];
 	createDirectory( outputDirectory );
 
-	posSequenceFilepath = args[2];
+	// read in the positive sequence file
+	posSequenceFilename = args[2];
+	posSequenceBasename = basename( posSequenceFilename );
 
-	for( int i = 3; i < nargs; i++ ){
+	/**
+	 * read command line to get options
+	 */
+	GetOpt::GetOpt_pp opt( nargs, args );
 
-		if( strcmp( args[i], "--alphabetString" ) == 0 ){
-			alphabetString = args[i+1];
-		}else if( strcmp( args[i], "--revcomp" ) == 0 ){
-			revcomp = true;
-		}else if( strcmp( args[i], "--negSequenceFile" ) == 0 ){
-			negSequenceFilepath = args[i+1];
-		}else if( strcmp( args[i], "--intensityFile" ) == 0 ){
-			intensityFilename = args[i+1];
-		}else if( strcmp( args[i], "--BaMMpatternFile" ) == 0 ){
-			BaMMpatternFilename = args[i+1];
-		}else if( strcmp( args[i], "--bindingSitesFile" ) == 0 ){
-			bindingSitesFilename = args[i+1];
-		}else if( strcmp( args[i], "--PWMFile" ) == 0 ){
-			PWMFilename = args[i+1];
-		}else if( strcmp( args[i], "--BMMFile" ) == 0 ){
-			BMMFilename = args[i+1];
-		}else if( strcmp( args[i], "--modelOrder" ) == 0 ){
-			modelOrder = atoi( args[i+1] );
-		}else if( strcmp( args[i], "--modelAlpha" ) == 0 ){
-			// ...
-		}else if( strcmp( args[i], "--addColumns" ) == 0 ){
-			int left = atoi( args[i+1] ), right = atoi( args[i+2] );
-			// addColumns( left, right );
-		}else if( strcmp( args[i], "--noLengthOptimization" ) == 0 ){
-			noLengthOptimization = true;
-		}else if( strcmp( args[i], "--bgModelOrder" ) == 0 ){
-			bgModelOrder = atoi( args[i+1] );
-		}else if( strcmp( args[i], "--bgModelAlpha" ) == 0 ){
-			// ...
-		}else if( strcmp( args[i], "--maxEMIterations" ) == 0 ){
-			maxEMIterations = atoi( args[i+1] );
-		}else if( strcmp( args[i], "--epsilon" ) == 0 ){
-			epsilon = atof( args[i+1] );
-		}else if( strcmp( args[i], "--noAlphaOptimization" ) == 0 ){
-			noAlphaOptimization = true;
-		}else if( strcmp( args[i], "--noQOptimization" ) == 0 ){
-			noQOptimization = true;
-		}else if( strcmp( args[i], "--fdr" ) == 0 ){
-			FDR = true;
-			mFold = atoi( args[i+1] );
-			nFolds = atoi( args[i+2] );
-		}else if( strcmp( args[i], "--verbose" ) == 0 ){
-			verbose = true;
+	// negative sequence set
+	if( opt >> GetOpt::OptionPresent( "negSeqFile", negSequenceFilename )){
+		negSequenceBasename = basename( negSequenceFilename );
+	}
+
+	// Alphabet Type
+	opt >> GetOpt::OptionPresent( "alphabetType", alphabetType );
+	opt >> GetOpt::OptionPresent( "revcomp", revcomp );
+
+	// for HT-SLEX data
+	opt >> GetOpt::OptionPresent( "intensityFile", intensityFilename );
+
+	// get initial motif files
+	opt >> GetOpt::OptionPresent( "BaMMpatternFile", BaMMpatternFilename );
+	opt >> GetOpt::OptionPresent( "bindingSitesFile", bindingSitesFilename );
+	opt >> GetOpt::OptionPresent( "PWMFile", PWMFilename );
+	opt >> GetOpt::OptionPresent( "BMMFile", BMMFilename );
+
+	// model options
+	opt >> GetOpt::OptionPresent( "modelOrder", modelOrder );
+	opt >> GetOpt::OptionPresent( "modelAlpha", modelAlpha );
+	if( opt >> GetOpt::OptionPresent( "addColums" ) ){
+		addColumns.clear();
+		opt >> GetOpt::OptionPresent( "addColumns", addColumns );
+		if( addColumns.size() < 1 || addColumns.size() > 2 ){
+			fprintf( stderr, "--addColumns format error.\n" );
+			exit( -1 );
+		}
+		if( addColumns.size() == 1 ){
+			addColumns.resize( 2, addColumns.back() );
+		}
+		// add columns to the initial motifs
+	}
+	opt >> GetOpt::OptionPresent( "noLengthOptimization", noLengthOptimization );
+
+	// background model options
+	opt >> GetOpt::OptionPresent( "bgModelOrder", bgModelOrder );
+	opt >> GetOpt::OptionPresent( "bgModelAlpha", bgModelAlpha );
+
+	// em options
+	opt >> GetOpt::OptionPresent( "maxEMIterations",  maxEMIterations );
+	opt >> GetOpt::OptionPresent( "epsilon", epsilon );
+	opt >> GetOpt::OptionPresent( "noAlphaOptimization", noAlphaOptimization );
+	opt >> GetOpt::OptionPresent( "noQOptimization", noQOptimization );
+
+	// FDR options
+	if( opt >> GetOpt::OptionPresent( "FDR" ) ){
+		opt >> GetOpt::OptionPresent( "FDR", FDR );
+		opt >> GetOpt::OptionPresent( "m", mFold  );
+		opt >> GetOpt::OptionPresent( "n", nFolds );
+	}
+
+	opt >> GetOpt::OptionPresent( "posFoldIndices", posFoldIndices );
+	opt >> GetOpt::OptionPresent( "posFoldIndices", posFoldIndices );
+
+	opt >> GetOpt::OptionPresent( "verbose", verbose );
+
+	return 0;
+}
+
+
+void Global::createDirectory( char* dir ){
+	struct stat fileStatus;
+	if( stat( dir, &fileStatus ) != 0 ){
+		fprintf( stderr, "Output directory does not exist. "
+				"New directory is created automatically.\n" );
+		char* command = ( char* )calloc( 1024, sizeof( char ) );
+		sprintf( command, "mkdir %s", dir );
+		if( system( command ) != 0 ){
+			fprintf( stderr, "Directory %s could not be created.\n", dir );
+			exit( -1 );
+		}
+		free( command );
+	}
+}
+
+void Global::generateFolds( int posCount, int negCount, int fold ){
+	// generate posFoldIndices
+	int i = 0;
+	while( i < posCount){
+		for( int j = 0; j < fold; j++ ){
+			posFoldIndices[j].push_back( i );
+			i++;
 		}
 	}
-	return 0;
-};
+	if( negSequenceFilename == NULL ){
+		// assign reference to posFoldIndices
+		negFoldIndices = posFoldIndices;
+
+	} else{
+		// generate negFoldIndices
+		i = 0;
+		while( i < negCount ){
+			for( int j = 0; j < fold; j++ ){
+				negFoldIndices[j].push_back( i );
+				i++;
+			}
+		}
+	}
+}
 
 void Global::printHelp(){
 	printf("\n=================================================================\n");
@@ -153,50 +242,10 @@ void Global::printHelp(){
 	printf(" \n");
 	printf(" \n");
 	printf("\n=================================================================\n");
-};
+}
 
-void Global::createDirectory( const char* dir ){
-
-	/*
-	 * Create output directory
-	 * works for Unix-like operating systems
-	 */
-	struct stat fileStatus;
-	if( stat( dir, &fileStatus ) != 0 ){
-		fprintf( stderr, "Output directory does not exist. "
-				"New directory is created automatically.\n" );
-		char* command = ( char* )calloc( 1024, sizeof( char ) );
-		sprintf( command, "mkdir %s", dir );
-		if( system( command ) != 0 ){
-			fprintf( stderr, "Directory %s could not be created.\n", dir );
-			exit( -1 );
-		}
-		free( command );
-	}
-
-};
-
-void Global::generateFolds( int posCount, int negCount, int fold ){
-	// generate posFoldIndices
-	int i = 0;
-	while( i < posCount){
-		for( int j = 0; j < fold; j++ ){
-			posFoldIndices[j].push_back( i );
-			i++;
-		}
-	}
-	if( negSequenceFilepath == NULL ){
-		// assign reference to posFoldIndices
-		negFoldIndices = posFoldIndices;
-	} else{
-		// generate negFoldIndices
-		i = 0;
-		while( i < negCount ){
-			for( int j = 0; j < fold; j++ ){
-				negFoldIndices[j].push_back( i );
-				i++;
-			}
-		}
-	}
-};
+void Global::destruct(){
+		Alphabet::destruct();
+		// ...
+}
 
