@@ -33,6 +33,7 @@ private:
 	char* 	        header_;			                // sequence header
 	float 	        intensity_;		                    // measured sequence intensity from HT-SELEX data
 	float 	        weight_;			                // sequence weight from HT-SELEX data, based on the intensity
-};
 
+	uint8_t* 		createRevComp( uint8_t* seq );		// create reverse complement sequences for each sequence
+};
 #endif /* SEQUENCE_H_ */
