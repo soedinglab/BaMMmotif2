@@ -7,7 +7,7 @@
 
 #include <Sequence.h>
 
-Sequence::Sequence( uint8_t* sequence, int L, char* header, float intensity, float weight ){
+Sequence::Sequence( uint8_t* sequence, int L, char* header, float intensity = 0.0f, float weight = 1.0f ){
 	sequence_ = sequence ;
 	L_ = L;
 	header_ = header;

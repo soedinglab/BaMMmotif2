@@ -79,7 +79,8 @@ int SequenceSet::readFASTA(){
 	unsigned int sizeHeader = 100;			// initialize the size of header array as 100
 	unsigned int sizeSeq = 1000;			// initialize the size of sequence array as 1000
 	unsigned int* baseCounts = ( unsigned int* )calloc( Alphabet::getSize() + 1, sizeof( unsigned int ) );
-	unsigned int baseSumCount = 0;
+	unsigned int baseSumCount = 0;			// total number of nucleotides in the FASTA file
+	unsigned int maxL = 0, minL = 1000;		// initialize the min. and max. length
 
 	char* header = ( char* )calloc( sizeHeader, sizeof( char ) );
 	int* sequence = ( int* )calloc( sizeSeq, sizeof( int ) );
@@ -118,10 +119,11 @@ int SequenceSet::readFASTA(){
 
 			// memcpy header into header array
 			std::memcpy( &header, &base, sizeHeader);
-			// what if the header will be empty? => copy NULL to the header?
+			// what if the header will be empty? => copy NULL to the header? => yes!
 
 		} // end of header or start of sequence line
 
+		// skipping blank lines in between
 		while( base == '\n' || base == '\r' ){
 			base = fgetc( fp );
 		} // start of sequence line
@@ -140,22 +142,52 @@ int SequenceSet::readFASTA(){
 			// count the length of the sequence
 			L++;
 
-			// memcpy sequence into sequence array
-			if( L > sizeSeq ){
-				sequence = ( int* )realloc( sequence, sizeSeq*2 );
-			}
-			std::memcpy( &sequence, &base, sizeSeq );
-
 			// count the occurrence of mono-nucleotides and sum them up
 			baseCounts[ Alphabet::getCode( base ) ] += 1;
+
+			// before memcpy, check if the sequence length exceeds the size of array
+			while( L > sizeSeq ){
+				sizeSeq *= 2;
+				sequence = ( int* )realloc( sequence, sizeSeq );
+			}
+
+			// memcpy sequence into sequence array
+			std::memcpy( &sequence, &base, sizeSeq );
 		}
+
+		// create the sequence object to sequences_
+//		Sequence eachSequence = new Sequence( sequence, L, header );
+		sequences_[N-1] = new Sequence( sequence, L, header );
 
 		// check if sequence is empty
 		if( L == 0 ){
 			fprintf( stderr, "Empty sequence with the entry %d !\n ", N );
 		}
 
+		// check the length of each sequence if it is min or max
+		if ( L > maxL )
+			maxL = L;
+		if (L < minL )
+			minL = L;
+
+		// free the arrays for reusing them for the next sequence
+		free( header );
+		free( sequence );
 	}
+
+	// Calculate the frequencies of all mono-nucleotides
+	for( int i = 0; i < Alphabet::getSize(); i++ ){
+		baseSumCount += baseCounts[i+1];
+	}
+	for( int i = 0; i < Alphabet::getSize(); i++ ){
+		baseFrequencies_[i] = baseCounts[i+1] / baseSumCount;
+	}
+
+	// assign the maxL_, minL_ and N_
+	maxL_ = maxL;
+	minL_ = minL;
+	N_ = N;
+
 /*
 	std::ifstream sequenceFile( sequenceFilepath_ );			// read file from path
 	if( !sequenceFile.is_open() ){
@@ -213,15 +245,6 @@ int SequenceSet::readFASTA(){
 	maxL_ = maxL;
 	minL_ = minL;
 */
-
-	// Calculate the frequencies of all mono-nucleotides
-	for( int i = 0; i < Alphabet::getSize(); i++ ){
-		baseSumCount += baseCounts[i+1];
-	}
-	for( int i = 0; i < Alphabet::getSize(); i++ ){
-		baseFrequencies_[i] = baseCounts[i+1] / baseSumCount;
-	}
-
 
 	return 0;
 }
