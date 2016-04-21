@@ -4,7 +4,7 @@
  *  Created on: Apr 19, 2016
  *      Author: administrator
  */
-
+/*
 #include <FDR.h>
 
 void FDR::evaluateMotif(){
@@ -42,3 +42,4 @@ void FDR::evaluateMotif(){
 void FDR::print(){};
 void FDR::write(){};
 
+*/

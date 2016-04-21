@@ -7,7 +7,7 @@
 
 #ifndef EM_H_
 #define EM_H_
-
+/*
 #include "BackgroundModel.h"
 #include "Motif.h"
 
@@ -53,6 +53,6 @@ private:
 	void resetN();						// reset fractional counts n
 };
 
-
+*/
 
 #endif /* EM_H_ */

@@ -16,7 +16,7 @@ class SequenceSet {
 
 public:
 
-	SequenceSet( char* sequenceFilepath, char* intensityFilepath = NULL );
+	SequenceSet( char* sequenceFilepath, char* intensityFilepath);
 	~SequenceSet();
 
 	char* 			getSequenceFilepath();	            // get input sequence filename
@@ -29,8 +29,8 @@ public:
 
 private:
 
-	char const*		sequenceFilepath_;		            // input sequence filename
-	char const*		intensityFilepath_;		            // input intensity filename
+	char*			sequenceFilepath_;		            // input sequence filename
+	char*			intensityFilepath_;		            // input intensity filename
 	Sequence*       sequences_;							// sequences
 	unsigned int 	N_;						            // number of sequences
 	unsigned int 	minL_;					            // min. length of sequences

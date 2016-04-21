@@ -13,7 +13,7 @@
 
 #include "Alphabet.h"
 
-void Alphabet::init( char* alphabetType ){
+void Alphabet::init( char const* alphabetType ){
 
 	if( strcmp( alphabetType, "STANDARD" ) == 0 ){
 		size_ = 4;
@@ -56,9 +56,12 @@ char const* Alphabet::getComplementAlphabet(){
 	return complementAlphabet_;
 }
 
-void destruct(){
+void Alphabet::destruct(){
 	// free memory allocated to the pointers
-	// ...
+	if( alphabet_ ) delete alphabet_;
+	if( complementAlphabet_ ) delete complementAlphabet_;
+	if( baseToCode_ ) free( baseToCode_ );
+	if( codeToComplementCode_ ) free( codeToComplementCode_ );
 }
 
 

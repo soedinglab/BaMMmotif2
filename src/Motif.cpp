@@ -4,14 +4,12 @@
  *  Created on: Apr 19, 2016
  *      Author: administrator
  */
-
+/*
 #include "Motif.h"
 
 Motif::Motif( int length ){
 	// allocate memory for v_
 	length_ = length;
-
-
 }
 
 Motif::Motif( const Motif& other ){ //deep copy
@@ -32,7 +30,7 @@ Motif::Motif( const Motif& other ){ //deep copy
 
 }
 
-// initialize v from IUPAC pattern
+// initialize v from IUPAC pattern (BAMM pattern)
 void Motif::initFromIUPACPattern( char* pattern ){
 	// calculate k-mer counts n
 	// calculate v from k-mer counts n using calculateV(n)
@@ -54,11 +52,14 @@ void Motif::initFromPWM( char* filename ){
 }
 
 // initialize v from Bayesian Markov model file and set isInitialized
-void Motif::initFromBayesianMarkovModel( char* filename ){}
+void Motif::initFromBayesianMarkovModel( char* filename ){
+
+}
 
 int Motif::getLength(){
 	return length_;
 }
+
 float*** Motif::getV(){
 	return v_;
 }
@@ -72,4 +73,4 @@ void Motif::print(){}
 void Motif::write(){}
 
 
-
+*/

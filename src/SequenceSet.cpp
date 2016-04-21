@@ -11,9 +11,8 @@
 #include <cstring>			// memcpy
 #include <algorithm>		// std::count
 
-#include <stdint.h>         // uint8_t
-
 #include "SequenceSet.h"
+#include "Alphabet.h"
 
 SequenceSet::SequenceSet( char* sequenceFilepath, char* intensityFilepath = NULL ){
 
@@ -59,11 +58,6 @@ float* SequenceSet::getBaseFrequencies(){
 	return baseFrequencies_;
 }
 
-void createRevComp( SequenceSet* sequence_set ){
-    // create reverse complement sequences for the sequence set
-
-}
-
 int SequenceSet::readFASTA(){
 
 	/**
@@ -74,13 +68,14 @@ int SequenceSet::readFASTA(){
 	 * 4. calculate mono-nucleotide frequencies
 	 */
 
-	unsigned int N = 0; 					// sequence counter
-	unsigned int L = 0;						// length counter
-	unsigned int sizeHeader = 100;			// initialize the size of header array as 100
-	unsigned int sizeSeq = 1000;			// initialize the size of sequence array as 1000
+	unsigned int N = 0; 							// sequence counter
+	unsigned int LS = 0;							// length of the sequence
+	unsigned int LH = 0;							// length of the header
+	unsigned int sizeHeader = 100;					// initialize the size of header array as 100
+	unsigned int sizeSeq = 1000;					// initialize the size of sequence array as 1000
 	unsigned int* baseCounts = ( unsigned int* )calloc( Alphabet::getSize() + 1, sizeof( unsigned int ) );
-	unsigned int baseSumCount = 0;			// total number of nucleotides in the FASTA file
-	unsigned int maxL = 0, minL = 1000;		// initialize the min. and max. length
+	unsigned int baseSumCount = 0;					// total number of nucleotides in the FASTA file
+	unsigned int maxL = 0, minL = 1000;				// initialize the min. and max. length
 
 	char* header = ( char* )calloc( sizeHeader, sizeof( char ) );
 	int* sequence = ( int* )calloc( sizeSeq, sizeof( int ) );
@@ -102,25 +97,29 @@ int SequenceSet::readFASTA(){
 
 	while( base != EOF ){
 		// reset the length of sequence to 0
-		L = 0;
+		LS = 0;
+		LH = 0;
 
 		if( base != '>' ){
 			fprintf( stderr, "Error: Not a FASTA format file!" );
 			exit( -1 );
 		}
 
-		base = fgetc( fp );	// read in the '>' sign
+		// if everything is fine, now base = '>'
+
 		// count the number of header
 		N++;
 
+		base = fgetc( fp ); // read in the first char after '>' in the header
 		while( ( base != '\n' && base != '\r' ) && base != EOF ) {
-			// read in header
-			base = fgetc( fp );
+
+			LH++;
 
 			// memcpy header into header array
-			std::memcpy( &header, &base, sizeHeader);
-			// what if the header will be empty? => copy NULL to the header? => yes!
+			std::memcpy( &header[LH-1], &base, 1);
 
+			// what if the header will be empty? => copy '\n' into the header? => yes!
+			base = fgetc( fp );
 		} // end of header or start of sequence line
 
 		// skipping blank lines in between
@@ -136,50 +135,48 @@ int SequenceSet::readFASTA(){
 				continue;
 			}
 
-			// read in sequence
-			base = fgetc( fp );
+			// if everything is fine, now base is the first nucleobase
 
 			// count the length of the sequence
-			L++;
+			LS++;
 
 			// count the occurrence of mono-nucleotides and sum them up
-			baseCounts[ Alphabet::getCode( base ) ] += 1;
+			baseCounts[ Alphabet::getCode( base ) ]++;
 
 			// before memcpy, check if the sequence length exceeds the size of array
-			while( L > sizeSeq ){
+			if( LS > sizeSeq ){
 				sizeSeq *= 2;
 				sequence = ( int* )realloc( sequence, sizeSeq );
 			}
 
 			// memcpy sequence into sequence array
-			std::memcpy( &sequence, &base, sizeSeq );
+			std::memcpy( &sequence[LS-1], &base, 1 );
+
+			// read in the next nucleobase
+			base = fgetc( fp );
 		}
 
 		// create the sequence object to sequences_
-//		Sequence eachSequence = new Sequence( sequence, L, header );
-		sequences_[N-1] = new Sequence( sequence, L, header );
+		sequences_[N-1] = new Sequence( sequence, LS, header );
 
 		// check if sequence is empty
-		if( L == 0 ){
+		if( LS == 0 ){
 			fprintf( stderr, "Empty sequence with the entry %d !\n ", N );
 		}
 
 		// check the length of each sequence if it is min or max
-		if ( L > maxL )
-			maxL = L;
-		if (L < minL )
-			minL = L;
+		if ( LS > maxL )
+			maxL = LS;
+		if ( LS < minL )
+			minL = LS;
 
-		// free the arrays for reusing them for the next sequence
-		free( header );
-		free( sequence );
 	}
 
 	// Calculate the frequencies of all mono-nucleotides
-	for( int i = 0; i < Alphabet::getSize(); i++ ){
+	for( unsigned int i = 0; i < Alphabet::getSize(); i++ ){
 		baseSumCount += baseCounts[i+1];
 	}
-	for( int i = 0; i < Alphabet::getSize(); i++ ){
+	for( unsigned int i = 0; i < Alphabet::getSize(); i++ ){
 		baseFrequencies_[i] = baseCounts[i+1] / baseSumCount;
 	}
 

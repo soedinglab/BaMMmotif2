@@ -8,7 +8,7 @@
 #ifndef MOTIFSET_H_
 #define MOTIFSET_H_
 
-//#include "Global.h"
+/*
 #include "Motif.h"
 
 class MotifSet {
@@ -59,5 +59,5 @@ private:
 	std::list<Motif*> 	motifs_;            // motifs
 	int          		N_;	                // number of motifs
 };
-
+*/
 #endif /* MOTIFSET_H_ */

@@ -14,7 +14,7 @@ class Sequence {
 
 public:
 
-	Sequence( uint8_t* sequence, int L, char* header, float intensity, float weight);
+	Sequence( uint8_t* sequence, int L, char* header );
 	~Sequence();
 
 	unsigned int    getL();				                // get sequence length
@@ -36,4 +36,5 @@ private:
 
 	uint8_t* 		createRevComp( uint8_t* seq );		// create reverse complement sequences for each sequence
 };
+
 #endif /* SEQUENCE_H_ */

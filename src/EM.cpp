@@ -4,7 +4,7 @@
  *  Created on: Apr 18, 2016
  *      Author: administrator
  */
-
+/*
 #include <EM.h>
 
 EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds = NULL ){
@@ -44,5 +44,5 @@ void EM::write(){
 
 }
 
-
+*/
 

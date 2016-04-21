@@ -12,6 +12,11 @@
 #include "Global.h"
 #include "lib/getopt_pp.h"		// GetOpt function
 
+using GetOpt::GetOpt_pp;
+using GetOpt::GlobalOption;
+using GetOpt::Option;
+using GetOpt::OptionPresent;
+
 char*               Global::outputDirectory = NULL;     // output directory
 
 char*               Global::posSequenceFilename = NULL; // filename of positive sequence FASTA file
@@ -20,7 +25,7 @@ char*               Global::negSequenceFilename = NULL; // filename of negative 
 char*				Global::posSequenceBasename = NULL;	// basename of positive sequence FASTA file
 char*				Global::negSequenceBasename = NULL;	// basename of negative sequence FASTA file
 
-char*				Global::alphabetType = "STANDARD";	// alphabet type is defaulted to standard which is ACGT
+char const*			Global::alphabetType = "STANDARD";	// alphabet type is defaulted to standard which is ACGT
 bool                Global::revcomp = false;            // also search on reverse complement of sequences
 
 SequenceSet*        Global::posSequenceSet = NULL;		// positive Sequence Set
@@ -90,7 +95,7 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	/*
 	 * Process input arguments:
-	 * 1. Essential parameters
+	 * 1. Essential parameters:
 	 * 		* output directory: the first argument
 	 * 		* positive sequence file: the second argument
 	 * 2. flags
@@ -111,8 +116,8 @@ int Global::readArguments( int nargs, char* args[] ){
 	 *
 	 */
 
-	if( nargs < 3 ) {			// At least 2 parameters are required:
-		printHelp();			// 1.outputDirectory; 2.posSequenceFilename.
+	if( nargs < 3 ) {			// At least 2 parameters are required
+		printHelp();
 		exit( -1 );
 	}
 
@@ -124,35 +129,43 @@ int Global::readArguments( int nargs, char* args[] ){
 	posSequenceFilename = args[2];
 	posSequenceBasename = basename( posSequenceFilename );
 
+
 	/**
 	 * read command line to get options
+	 * process flags from user
 	 */
-	GetOpt::GetOpt_pp opt( nargs, args );
 
+	GetOpt::GetOpt_pp opt( nargs, args );
+/*
 	// negative sequence set
-	if( opt >> GetOpt::OptionPresent( "negSeqFile", negSequenceFilename )){
+	if( opt >> GetOpt::Option( "negSeqFile", negSequenceFilename ) ){
 		negSequenceBasename = basename( negSequenceFilename );
 	}
 
 	// Alphabet Type
-	opt >> GetOpt::OptionPresent( "alphabetType", alphabetType );
+	opt >> GetOpt::Option( "alphabet", alphabetType );
 	opt >> GetOpt::OptionPresent( "revcomp", revcomp );
 
 	// for HT-SLEX data
-	opt >> GetOpt::OptionPresent( "intensityFile", intensityFilename );
+	opt >> GetOpt::Option( "intensityFile", intensityFilename );
 
 	// get initial motif files
-	opt >> GetOpt::OptionPresent( "BaMMpatternFile", BaMMpatternFilename );
-	opt >> GetOpt::OptionPresent( "bindingSitesFile", bindingSitesFilename );
-	opt >> GetOpt::OptionPresent( "PWMFile", PWMFilename );
-	opt >> GetOpt::OptionPresent( "BMMFile", BMMFilename );
+	if( opt >> GetOpt::OptionPresent( "BaMMpatternFile" ) ){
+		opt >> GetOpt::Option( "BaMMpatternFile", BaMMpatternFilename );
+	} else if ( opt >> GetOpt::OptionPresent( "bindingSitesFile" ) ){
+		opt >> GetOpt::Option( "bindingSitesFile", bindingSitesFilename );
+	} else if ( opt >> GetOpt::OptionPresent( "PWMFile" ) ){
+		opt >> GetOpt::Option( "PWMFile", PWMFilename );
+	} else if( opt >> GetOpt::OptionPresent( "BMMFile" ) ){
+		opt >> GetOpt::Option( "BMMFile", BMMFilename );
+	}
 
 	// model options
-	opt >> GetOpt::OptionPresent( "modelOrder", modelOrder );
-	opt >> GetOpt::OptionPresent( "modelAlpha", modelAlpha );
+	opt >> GetOpt::Option( 'k', "modelOrder", modelOrder );
+	opt >> GetOpt::Option( 'a', "modelAlpha", modelAlpha );
 	if( opt >> GetOpt::OptionPresent( "addColums" ) ){
 		addColumns.clear();
-		opt >> GetOpt::OptionPresent( "addColumns", addColumns );
+		opt >> GetOpt::Option( "addColumns", addColumns );
 		if( addColumns.size() < 1 || addColumns.size() > 2 ){
 			fprintf( stderr, "--addColumns format error.\n" );
 			exit( -1 );
@@ -165,30 +178,25 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "noLengthOptimization", noLengthOptimization );
 
 	// background model options
-	opt >> GetOpt::OptionPresent( "bgModelOrder", bgModelOrder );
-	opt >> GetOpt::OptionPresent( "bgModelAlpha", bgModelAlpha );
+	opt >> GetOpt::Option( 'K', "bgModelOrder", bgModelOrder );
+	opt >> GetOpt::Option( 'A', "bgModelAlpha", bgModelAlpha );
 
 	// em options
-	opt >> GetOpt::OptionPresent( "maxEMIterations",  maxEMIterations );
-	opt >> GetOpt::OptionPresent( "epsilon", epsilon );
+	opt >> GetOpt::Option( "maxEMIterations",  maxEMIterations );
+	opt >> GetOpt::Option( "epsilon", epsilon );
 	opt >> GetOpt::OptionPresent( "noAlphaOptimization", noAlphaOptimization );
 	opt >> GetOpt::OptionPresent( "noQOptimization", noQOptimization );
 
 	// FDR options
-	if( opt >> GetOpt::OptionPresent( "FDR" ) ){
-		opt >> GetOpt::OptionPresent( "FDR", FDR );
-		opt >> GetOpt::OptionPresent( "m", mFold  );
-		opt >> GetOpt::OptionPresent( "n", nFolds );
+	if( opt >> GetOpt::OptionPresent( "FDR", FDR) ){
+		opt >> GetOpt::Option( "m", mFold  );
+		opt >> GetOpt::Option( "n", nFolds );
 	}
 
-	opt >> GetOpt::OptionPresent( "posFoldIndices", posFoldIndices );
-	opt >> GetOpt::OptionPresent( "posFoldIndices", posFoldIndices );
-
 	opt >> GetOpt::OptionPresent( "verbose", verbose );
-
+*/
 	return 0;
 }
-
 
 void Global::createDirectory( char* dir ){
 	struct stat fileStatus;
@@ -245,7 +253,20 @@ void Global::printHelp(){
 }
 
 void Global::destruct(){
-		Alphabet::destruct();
-		// ...
-}
+	if( outputDirectory ) free( outputDirectory );
+	if( posSequenceFilename ) free( posSequenceFilename );
+	if( negSequenceFilename ) free( negSequenceFilename );
+	if( posSequenceBasename ) free( posSequenceBasename );
+	if( negSequenceBasename ) free( negSequenceBasename );
+	if( alphabetType ) delete alphabetType;
+	if( posSequenceSet ) free( posSequenceSet );
+	if( negSequenceSet ) free( negSequenceSet );
+	if( intensityFilename ) free( intensityFilename );
+	if( BaMMpatternFilename ) free( BaMMpatternFilename );
+	if( bindingSitesFilename ) free( bindingSitesFilename );
+	if( PWMFilename ) free( PWMFilename );
+	if( BMMFilename ) free( BMMFilename );
+	if( modelAlpha ) free( modelAlpha );
 
+	Alphabet::destruct();
+}

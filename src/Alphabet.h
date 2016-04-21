@@ -14,7 +14,7 @@ class Alphabet {
 
 public:
 
-	static void 		init( char* alphabetType );
+	static void 		init( char const* alphabetType );
 	static void 		destruct();					        // free space
 
 	static unsigned int getSize();							// get alphabet size
@@ -38,10 +38,10 @@ inline unsigned int Alphabet::getSize(){
 
 inline uint8_t Alphabet::getCode( char base ){
 	return baseToCode_[( int )base];
-};
+}
 
 inline uint8_t Alphabet::getComplementCode( uint8_t code ){
 	return codeToComplementCode_[code];
-};
+}
 
 #endif /* ALPHABET_H_ */

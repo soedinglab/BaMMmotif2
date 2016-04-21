@@ -5,7 +5,7 @@
  *      Author: wanwan
  */
 
-#include <list>
+#include <list>		// list, list::begin, list::end
 #include <vector>
 
 #include <time.h>
@@ -15,14 +15,14 @@
 #include "EM.h"
 #include "FDR.h"
 
-int main( int nargs, char *args[] ){
+int main( int nargs, char* args[] ){
 
 	long timestamp = time( NULL );
 
 	// initialization
 	Global::init( nargs, args );
 
-	MotifSet motifs;
+/*	MotifSet motifs;
 
 	BackgroundModel bg;
 	bg.init();
@@ -43,7 +43,7 @@ int main( int nargs, char *args[] ){
 		fdr.evaluateMotif();
 		fdr.write();
 	}
-
+*/
 	Global::destruct();
 
 	fprintf( stdout, "\nRuntime: %ld seconds (%0.2f minutes)\n", time( NULL )-timestamp,

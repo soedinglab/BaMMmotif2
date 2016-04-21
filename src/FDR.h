@@ -7,7 +7,7 @@
 
 #ifndef FDR_H_
 #define FDR_H_
-
+/*
 #include "BackgroundModel.h"
 #include "Motif.h"
 
@@ -47,6 +47,6 @@ private:
 	void 		    calculatePR();
 };
 
-
+*/
 
 #endif /* FDR_H_ */

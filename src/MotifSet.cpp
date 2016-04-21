@@ -4,11 +4,11 @@
  *  Created on: Apr 18, 2016
  *      Author: administrator
  */
-
+/*
 #include <MotifSet.h>
 
 
-std::list<Motif*>   MotifSet::getMotifs(){
+std::list<Motif*> MotifSet::getMotifs(){
     return motifs_;
 }
 
@@ -22,3 +22,4 @@ void MotifSet::print(){
 void MotifSet::write(){
 
 }
+*/

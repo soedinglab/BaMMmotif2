@@ -7,7 +7,7 @@
 
 #ifndef MOTIF_H_
 #define MOTIF_H_
-
+/*
 #include <assert.h>
 
 #include "Global.h"
@@ -20,7 +20,7 @@ public:
 	Motif( const Motif& other );
 	~Motif();
 
-	void initFromIUPACPattern( char* pattern );			// initialize v from IUPAC pattern
+	void initFromIUPACPattern( char* pattern );			// initialize v from IUPAC pattern  (BAMM pattern)
 
 	void initFromBindingSites( char* filename );		// initialize v from binding site file
 
@@ -34,7 +34,7 @@ public:
 	void        updateV( float*** n, float** alpha );
 
 	void 		print();					   			// print v to console
-	void 		write();					    		// write v (basename.bmm). Include header with alphabetString
+	void 		write();					    		// write v (basename.bmm). Include header with alphabetType
 
 private:
 
@@ -45,5 +45,5 @@ private:
 
 	void 		calculateV( int*** n );		    		// calculate v from k-mer counts n and global alphas
 };
-
+*/
 #endif /* MOTIF_H_ */

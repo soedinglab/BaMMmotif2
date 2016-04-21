@@ -19,6 +19,7 @@
 
 #include "SequenceSet.h"
 #include "Alphabet.h"
+#include "lib/getopt_pp.h"		// GetOpt function
 
 class Global {
 
@@ -33,8 +34,8 @@ public:
 	static char*		negSequenceBasename;	// basename of negative sequence FASTA file
 
 
-	static char* 		alphabetType;			// provide alphabet type
-	static bool			revcomp;				// also search on reverse complement of sequences
+	static char const* 	alphabetType;			// provide alphabet type
+	static bool			revcomp;				// also search on reverse complement of sequences, defaults to false
 
 	static SequenceSet*	posSequenceSet;			// positive Sequence Set
 	static SequenceSet*	negSequenceSet;			// negative Sequence Set
@@ -73,7 +74,7 @@ public:
 	static std::vector< std::vector<int> >	negFoldIndices;	// sequence indices for each cross-validation fold
 	// further FDR options...
 
-	static bool			verbose;				// verbose printouts
+	static bool			verbose;				// verbose printouts, defaults to false
 
 	static void         init( int nargs, char* args[] );
 
