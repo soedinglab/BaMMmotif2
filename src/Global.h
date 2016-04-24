@@ -34,7 +34,7 @@ public:
 	static char*		negSequenceBasename;	// basename of negative sequence FASTA file
 
 
-	static char const* 	alphabetType;			// provide alphabet type
+	static char* 		alphabetType;			// provide alphabet type
 	static bool			revcomp;				// also search on reverse complement of sequences, defaults to false
 
 	static SequenceSet*	posSequenceSet;			// positive Sequence Set
@@ -51,13 +51,13 @@ public:
 
 	// model options
 	static unsigned int	modelOrder;				// model order
-	static float**		modelAlpha;				// initial alphas
-	static std::vector<int>	addColumns;			// add columns to the left and right of models used to initialize Markov models
+	static std::vector<float>	modelAlpha;		// initial alphas
+	static std::vector<int>		addColumns;		// add columns to the left and right of models used to initialize Markov models
 	static bool			noLengthOptimization;	// disable length optimization
 
 	// background model options
 	static unsigned int	bgModelOrder;			// background model order, defaults to 2
-	static float**		bgModelAlpha;			// background model alphas
+	static float		bgModelAlpha;	// background model alpha
 
 	// EM options
 	static unsigned int	maxEMIterations;		// maximum number of iterations

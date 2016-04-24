@@ -8,18 +8,20 @@
 #ifndef SEQUENCE_H_
 #define SEQUENCE_H_
 
+#include <string>		// std::string
+
 #include <stdint.h>		// uint8_t
 
 class Sequence {
 
 public:
 
-	Sequence( uint8_t* sequence, int L, char* header );
+	Sequence( uint8_t* sequence, unsigned int L, std::string header );
 	~Sequence();
 
 	unsigned int    getL();				                // get sequence length
 	uint8_t*        getSequence();	                   	// get base sequence as alphabet encoding
-	char* 	        getHeader();		                // get sequence header
+	std::string		getHeader();		                // get sequence header
 
 	float 	        getIntensity();                     // get measured sequence intensity
 	float 	        getWeight();		                // get sequence weight
@@ -30,7 +32,7 @@ private:
 
 	unsigned int    L_;			                        // sequence length
 	uint8_t*	    sequence_;		                    // the base sequence as alphabet encoding
-	char* 	        header_;			                // sequence header
+	std::string		header_;			                // sequence header
 	float 	        intensity_;		                    // measured sequence intensity from HT-SELEX data
 	float 	        weight_;			                // sequence weight from HT-SELEX data, based on the intensity
 

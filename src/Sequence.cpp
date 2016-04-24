@@ -11,15 +11,21 @@
 #include "Global.h"
 #include "Alphabet.h"
 
-Sequence::Sequence( uint8_t* sequence, int L, char* header ){
+Sequence::Sequence( uint8_t* sequence, unsigned int LS, std::string header ){
+
 	if( ! Global::revcomp ){
-		std::memcpy( sequence_, sequence, L ) ;
+		std::memcpy( sequence_, sequence, LS );
 	} else {
 		createRevComp( sequence );
 	}
 
-	L_ = L;
-	header_ = header;
+	L_ = LS;
+	header_.assign( header );
+
+}
+
+Sequence::~Sequence(){
+	std::cout << " This is a distructor to be fulfilled. " << std::endl;
 }
 
 uint8_t* Sequence::createRevComp( uint8_t* seq ){
@@ -38,7 +44,7 @@ uint8_t* Sequence::getSequence(){
 	return sequence_;
 }
 
-char* Sequence::getHeader(){
+std::string Sequence::getHeader(){
 	return header_;
 }
 

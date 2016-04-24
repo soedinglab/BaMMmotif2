@@ -13,7 +13,13 @@
 
 #include "Alphabet.h"
 
-void Alphabet::init( char const* alphabetType ){
+unsigned int 	Alphabet::size_;					// alphabet size, count the number of letters
+char const* 	Alphabet::alphabet_;				// alphabet bases ([N,A,C,G,T], [N,A,C,G,T,mC], ...)
+char const* 	Alphabet::complementAlphabet_;		// complementary alphabet bases ([N,T,G,C,A,G], [N,T,G,C,A,G], ...)
+uint8_t* 		Alphabet::baseToCode_;				// conversion from bases to encoding
+uint8_t* 		Alphabet::codeToComplementCode_;	// conversion from encoding to complement encoding
+
+void Alphabet::init( char* alphabetType ){
 
 	if( strcmp( alphabetType, "STANDARD" ) == 0 ){
 		size_ = 4;
@@ -32,15 +38,17 @@ void Alphabet::init( char const* alphabetType ){
 		alphabet_ = "ACGTMH";
 		complementAlphabet_ = "TGCAGG";
 	} else {
+		fprintf( stderr, "The alphabet type you choose is: %s \n", alphabetType );
 		fprintf( stderr, "Please provide one of the following alphabet types: "
 		        "STANDARD, METHYLC, HYDROXYMETHYLC, EXTENDED.\n" );
 		exit( -1 );
 	}
 
 	baseToCode_ = ( uint8_t* )calloc( 128, sizeof( uint8_t ) );
+
 	for( unsigned int i = 0; i < size_; i++ ){
-	  	baseToCode_[( int )alphabet_[i]] = i + 1;
-	  	baseToCode_[( int )tolower( alphabet_[i] )] = i + 1;
+	  	baseToCode_[( int )alphabet_[i]] = ( uint8_t )( i + 1 );
+	  	baseToCode_[( int )tolower( alphabet_[i] )] = ( uint8_t )( i + 1 );		// for alphabet of lower case
 	}
 	codeToComplementCode_ = ( uint8_t* )calloc( size_+1, sizeof( uint8_t ) );
 	for( unsigned int i = 0; i < size_; i++ ){
@@ -54,6 +62,10 @@ char const* Alphabet::getAlphabet(){
 
 char const* Alphabet::getComplementAlphabet(){
 	return complementAlphabet_;
+}
+
+void Alphabet::setSize( unsigned int size ){
+	size_ = size;
 }
 
 void Alphabet::destruct(){

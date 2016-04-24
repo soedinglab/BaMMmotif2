@@ -5,17 +5,14 @@
  *      Author: wanwan
  */
 
+#include <string>
+
 #include <sys/stat.h>   		// get file status
 #include <libgen.h>				// basename, dirname
 #include <stdio.h>
 
 #include "Global.h"
 #include "lib/getopt_pp.h"		// GetOpt function
-
-using GetOpt::GetOpt_pp;
-using GetOpt::GlobalOption;
-using GetOpt::Option;
-using GetOpt::OptionPresent;
 
 char*               Global::outputDirectory = NULL;     // output directory
 
@@ -25,7 +22,7 @@ char*               Global::negSequenceFilename = NULL; // filename of negative 
 char*				Global::posSequenceBasename = NULL;	// basename of positive sequence FASTA file
 char*				Global::negSequenceBasename = NULL;	// basename of negative sequence FASTA file
 
-char const*			Global::alphabetType = "STANDARD";	// alphabet type is defaulted to standard which is ACGT
+char*				Global::alphabetType;				// alphabet type is defaulted to standard which is ACGT
 bool                Global::revcomp = false;            // also search on reverse complement of sequences
 
 SequenceSet*        Global::posSequenceSet = NULL;		// positive Sequence Set
@@ -42,13 +39,13 @@ char*               Global::BMMFilename = NULL;			// filename of Markov model (.
 
 // model options
 unsigned int        Global::modelOrder = 2;				// model order
-float**             Global::modelAlpha;					// initial alphas
+std::vector<float>	Global::modelAlpha;					// initial alphas
 std::vector<int>    Global::addColumns( 0, 0 );			// add columns to the left and right of models used to initialize Markov models
 bool                Global::noLengthOptimization = false;// disable length optimization
 
 // background model options
 unsigned int        Global::bgModelOrder = 2;			// background model order, defaults to 2
-float**             Global::bgModelAlpha;				// background model alphas
+float				Global::bgModelAlpha;				// background model alpha
 
 // EM options
 unsigned int        Global::maxEMIterations;			// maximum number of iterations
@@ -68,27 +65,32 @@ std::vector< std::vector<int> > Global::negFoldIndices; // sequence indices for 
 bool                Global::verbose = false;            // verbose printouts
 
 void Global::init( int nargs, char* args[] ){
+
 	readArguments( nargs, args );
-	createDirectory( outputDirectory );
+	fprintf( stderr, "readArguments() works fine. \n" );
+
 	Alphabet::init( alphabetType );
+	fprintf( stderr, "Alphabet::init() works fine. \n" );
 
 	// read in positive sequence set
 	posSequenceSet = new SequenceSet( posSequenceFilename );
-	if( negSequenceFilename == NULL ){
-		// use positive for negative sequence set
-		negSequenceSet = posSequenceSet;
-	} else{
-		// read in negative sequence set
-		negSequenceSet = new SequenceSet( negSequenceFilename );
-	}
+	fprintf( stderr, "pos seq is read in successfully. \n" );
 
-	// generate folds (fill posFoldIndices and negFoldIndices)
-	generateFolds( posSequenceSet->getN(), negSequenceSet->getN(), nFolds );
-
-	// optional: read in sequence intensities (header and intensity columns?)
-	if( intensityFilename != 0 ){
+//	if( negSequenceFilename == NULL ){
+//		// use positive for negative sequence set
+//		negSequenceSet = posSequenceSet;
+//	} else{
+//		// read in negative sequence set
+//		negSequenceSet = new SequenceSet( negSequenceFilename );
+//	}
+//
+//	// generate folds (fill posFoldIndices and negFoldIndices)
+//	generateFolds( posSequenceSet->getN(), negSequenceSet->getN(), nFolds );
+//
+//	// optional: read in sequence intensities (header and intensity columns?)
+//	if( intensityFilename != 0 ){
 		// read in sequence intensity
-	}
+//	}
 }
 
 int Global::readArguments( int nargs, char* args[] ){
@@ -117,6 +119,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	 */
 
 	if( nargs < 3 ) {			// At least 2 parameters are required
+		fprintf( stderr, "\nNecessary arguments are missing! \n" );
 		printHelp();
 		exit( -1 );
 	}
@@ -129,25 +132,30 @@ int Global::readArguments( int nargs, char* args[] ){
 	posSequenceFilename = args[2];
 	posSequenceBasename = basename( posSequenceFilename );
 
-
 	/**
 	 * read command line to get options
 	 * process flags from user
 	 */
 
 	GetOpt::GetOpt_pp opt( nargs, args );
-/*
+
 	// negative sequence set
 	if( opt >> GetOpt::Option( "negSeqFile", negSequenceFilename ) ){
 		negSequenceBasename = basename( negSequenceFilename );
 	}
 
 	// Alphabet Type
+	std::string defaultType = "STANDARD";
+	alphabetType = const_cast<char*>( defaultType.c_str() );		// force to cast const char* to char*
+
+
 	opt >> GetOpt::Option( "alphabet", alphabetType );
+
 	opt >> GetOpt::OptionPresent( "revcomp", revcomp );
 
 	// for HT-SLEX data
 	opt >> GetOpt::Option( "intensityFile", intensityFilename );
+
 
 	// get initial motif files
 	if( opt >> GetOpt::OptionPresent( "BaMMpatternFile" ) ){
@@ -163,7 +171,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	// model options
 	opt >> GetOpt::Option( 'k', "modelOrder", modelOrder );
 	opt >> GetOpt::Option( 'a', "modelAlpha", modelAlpha );
-	if( opt >> GetOpt::OptionPresent( "addColums" ) ){
+	if( opt >> GetOpt::OptionPresent( "addColumns" ) ){
 		addColumns.clear();
 		opt >> GetOpt::Option( "addColumns", addColumns );
 		if( addColumns.size() < 1 || addColumns.size() > 2 ){
@@ -194,12 +202,14 @@ int Global::readArguments( int nargs, char* args[] ){
 	}
 
 	opt >> GetOpt::OptionPresent( "verbose", verbose );
-*/
+
 	return 0;
 }
 
 void Global::createDirectory( char* dir ){
+
 	struct stat fileStatus;
+
 	if( stat( dir, &fileStatus ) != 0 ){
 		fprintf( stderr, "Output directory does not exist. "
 				"New directory is created automatically.\n" );
@@ -253,20 +263,20 @@ void Global::printHelp(){
 }
 
 void Global::destruct(){
-	if( outputDirectory ) free( outputDirectory );
-	if( posSequenceFilename ) free( posSequenceFilename );
-	if( negSequenceFilename ) free( negSequenceFilename );
-	if( posSequenceBasename ) free( posSequenceBasename );
-	if( negSequenceBasename ) free( negSequenceBasename );
-	if( alphabetType ) delete alphabetType;
-	if( posSequenceSet ) free( posSequenceSet );
-	if( negSequenceSet ) free( negSequenceSet );
-	if( intensityFilename ) free( intensityFilename );
-	if( BaMMpatternFilename ) free( BaMMpatternFilename );
-	if( bindingSitesFilename ) free( bindingSitesFilename );
-	if( PWMFilename ) free( PWMFilename );
-	if( BMMFilename ) free( BMMFilename );
-	if( modelAlpha ) free( modelAlpha );
 
-	Alphabet::destruct();
+//	if( outputDirectory ) delete outputDirectory ;
+//	if( posSequenceFilename ) free( posSequenceFilename );
+//	if( negSequenceFilename ) free( negSequenceFilename );
+//	if( posSequenceBasename ) free( posSequenceBasename );
+//	if( negSequenceBasename ) free( negSequenceBasename );
+//	if( alphabetType ) delete alphabetType;
+//	if( posSequenceSet ) free( posSequenceSet );
+//	if( negSequenceSet ) free( negSequenceSet );
+//	if( intensityFilename ) free( intensityFilename );
+//	if( BaMMpatternFilename ) free( BaMMpatternFilename );
+//	if( bindingSitesFilename ) free( bindingSitesFilename );
+//	if( PWMFilename ) free( PWMFilename );
+//	if( BMMFilename ) free( BMMFilename );
+
+//	Alphabet::destruct();
 }

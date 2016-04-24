@@ -14,7 +14,7 @@ class Alphabet {
 
 public:
 
-	static void 		init( char const* alphabetType );
+	static void 		init( char* alphabetType );
 	static void 		destruct();					        // free space
 
 	static unsigned int getSize();							// get alphabet size
@@ -22,6 +22,8 @@ public:
 	static char const* 	getComplementAlphabet();			// get complementary alphabet bases
 	static uint8_t 	    getCode( char base );				// get conversion from bases to encoding
 	static uint8_t 	    getComplementCode( uint8_t code );	// get conversion from encoding to complement encoding
+
+	static void setSize( unsigned int size);
 
 private:
 

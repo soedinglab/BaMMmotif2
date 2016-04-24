@@ -14,7 +14,8 @@
 #include "SequenceSet.h"
 #include "Alphabet.h"
 
-SequenceSet::SequenceSet( char* sequenceFilepath, char* intensityFilepath = NULL ){
+
+SequenceSet::SequenceSet( char* sequenceFilepath, char* intensityFilepath ){
 
 	sequenceFilepath_ = sequenceFilepath;
 	intensityFilepath_ = intensityFilepath;
@@ -38,7 +39,7 @@ char* SequenceSet::getIntensityFilepath(){
 	return intensityFilepath_;
 }
 
-Sequence* SequenceSet::getSequences(){
+std::vector<Sequence*> SequenceSet::getSequences(){
 	return sequences_;
 }
 
@@ -69,26 +70,27 @@ int SequenceSet::readFASTA(){
 	 */
 
 	unsigned int N = 0; 							// sequence counter
-	unsigned int LS = 0;							// length of the sequence
-	unsigned int LH = 0;							// length of the header
-	unsigned int sizeHeader = 100;					// initialize the size of header array as 100
+	unsigned int LS;								// length of the sequence
+	unsigned int LH;								// length of the header
 	unsigned int sizeSeq = 1000;					// initialize the size of sequence array as 1000
 	unsigned int* baseCounts = ( unsigned int* )calloc( Alphabet::getSize() + 1, sizeof( unsigned int ) );
 	unsigned int baseSumCount = 0;					// total number of nucleotides in the FASTA file
 	unsigned int maxL = 0, minL = 1000;				// initialize the min. and max. length
 
-	char* header = ( char* )calloc( sizeHeader, sizeof( char ) );
-	int* sequence = ( int* )calloc( sizeSeq, sizeof( int ) );
-
+	std::string header;
+	uint8_t* sequence = ( uint8_t* )calloc( sizeSeq, sizeof( uint8_t ) );
 	FILE* fp;
+	Sequence* seq;
+
 	if( ( fp = fopen( sequenceFilepath_, "r" ) ) == NULL ){
 		fprintf( stderr, "Cannot open positive sequence file: %s\n", sequenceFilepath_ );
 		exit( -1 );
 	}
 
 	int base; // in ASCII code
-
 	base = fgetc( fp );
+
+	fprintf( stderr, "Start reading in the fasta file! \n" );
 
 	// skipping leading blank lines
 	while( ( base == '\n' || base == '\r' ) && base != EOF ){
@@ -96,12 +98,15 @@ int SequenceSet::readFASTA(){
 	}
 
 	while( base != EOF ){
-		// reset the length of sequence to 0
+		// reset the parameters to 0 or empty
 		LS = 0;
 		LH = 0;
+		header.clear();
+		memset( sequence, 0, sizeSeq );
 
 		if( base != '>' ){
-			fprintf( stderr, "Error: Not a FASTA format file!" );
+			fprintf( stderr, "Error: Not a FASTA format file! \n"
+					"Please check the content in the file. \n" );
 			exit( -1 );
 		}
 
@@ -111,14 +116,12 @@ int SequenceSet::readFASTA(){
 		N++;
 
 		base = fgetc( fp ); // read in the first char after '>' in the header
+		fprintf( stderr, "Start reading in the header! \n" );
+
 		while( ( base != '\n' && base != '\r' ) && base != EOF ) {
-
 			LH++;
-
-			// memcpy header into header array
-			std::memcpy( &header[LH-1], &base, 1);
-
-			// what if the header will be empty? => copy '\n' into the header? => yes!
+			// append each letter to the header
+			header += ( char )base;
 			base = fgetc( fp );
 		} // end of header or start of sequence line
 
@@ -128,25 +131,21 @@ int SequenceSet::readFASTA(){
 		} // start of sequence line
 
 		while( base != '>' && base != EOF ){
-
 			// skip all the '\n' and '\r'
 			if( base == '\n' || base == '\r' ){
 				base = fgetc( fp );
 				continue;
 			}
-
-			// if everything is fine, now base is the first nucleobase
-
 			// count the length of the sequence
 			LS++;
 
 			// count the occurrence of mono-nucleotides and sum them up
-			baseCounts[ Alphabet::getCode( base ) ]++;
+			baseCounts[ Alphabet::getCode( ( char )base ) ]++;				// convert char to int
 
 			// before memcpy, check if the sequence length exceeds the size of array
 			if( LS > sizeSeq ){
 				sizeSeq *= 2;
-				sequence = ( int* )realloc( sequence, sizeSeq );
+				sequence = ( uint8_t* )realloc( sequence, sizeSeq );
 			}
 
 			// memcpy sequence into sequence array
@@ -156,8 +155,20 @@ int SequenceSet::readFASTA(){
 			base = fgetc( fp );
 		}
 
+		fprintf( stderr, "Finish reading in the sequence! \n" );
+		fprintf( stderr, "The header is %s \n", header.c_str() );
+		fprintf( stderr, "The sequence is %s \n", sequence );
+		fprintf( stderr, "The length of sequence is %d \n", LS );
+		for(int i = 1; i < 5; i++ ){
+			fprintf( stderr, " The base count is %d \n", baseCounts[i] );
+		}
 		// create the sequence object to sequences_
-		sequences_[N-1] = new Sequence( sequence, LS, header );
+		seq = new Sequence( sequence, LS, header );
+		fprintf( stderr, "A new sequence object is created! \n" );
+
+		sequences_.push_back( seq );
+
+		fprintf( stderr, "A new sequence object is push to the sequences vector! \n" );
 
 		// check if sequence is empty
 		if( LS == 0 ){
@@ -169,15 +180,25 @@ int SequenceSet::readFASTA(){
 			maxL = LS;
 		if ( LS < minL )
 			minL = LS;
-
+		fprintf( stderr, "header of sequence is %s \n", sequences_[N-1]->getHeader().c_str());
+//		fprintf( stderr, "the sequence is %s \n", sequences_[N-1]->getSequence() );
+//		fprintf( stderr, "the length is %d \n", sequences_[N-1]->getL() );
 	}
+
+	for( unsigned int i = 0; i < N; i++ ){
+		fprintf( stderr, "header of sequence is %s \n", sequences_[i]->getHeader().c_str());
+		fprintf( stderr, "the sequence is %s \n", sequences_[i]->getSequence() );
+		fprintf( stderr, "the length is %d \n", sequences_[i]->getL() );
+	}
+	fprintf( stderr, "I am here! \n" );
+	exit( -1 );
 
 	// Calculate the frequencies of all mono-nucleotides
 	for( unsigned int i = 0; i < Alphabet::getSize(); i++ ){
 		baseSumCount += baseCounts[i+1];
 	}
 	for( unsigned int i = 0; i < Alphabet::getSize(); i++ ){
-		baseFrequencies_[i] = baseCounts[i+1] / baseSumCount;
+		baseFrequencies_[i] = ( float )baseCounts[i+1] / ( float )baseSumCount;
 	}
 
 	// assign the maxL_, minL_ and N_
@@ -185,67 +206,28 @@ int SequenceSet::readFASTA(){
 	minL_ = minL;
 	N_ = N;
 
-/*
-	std::ifstream sequenceFile( sequenceFilepath_ );			// read file from path
-	if( !sequenceFile.is_open() ){
-		fprintf( stderr, "Failed to open the sequence file!");
-		exit( -1 );
-	}
-	std::string singleLine;										// read line after line from file
-	std::string eachSequence;									// temporarily store each sequence
-	std::vector<Sequence> sequences;							// store all the sequences in a vector, convenient for sequence shuffling
-	std::string header;
-	unsigned int maxL, minL;
+	delete baseCounts;
+	delete sequence;
+	delete fp;
+	delete seq;
 
-	std::getline( sequenceFile, eachSequence );
-	if( eachSequence[0] != '>' ){								// read the first line, exit when it does not start with '>'
-		fprintf( stderr, "file is not in FASTA format: "
-		        "Header does not start with \">\" " );
-		exit( -1 );
-	} else {
-		header = eachSequence.substr( 1 );
-		N++;
-		std::getline( sequenceFile, eachSequence, '>' );		// read the first sequence
-		minL = maxL = eachSequence.length();					// initialize minL and maxL
-	}
-
-	while( std::getline( sequenceFile, singleLine ).good() ){
-		if( singleLine[0] == '>' ){
-			Sequence sequence = new Sequence(eachSequence, eachSequence.length(), header );
-			sequences.push_back( sequence );
-			N++;
-			header = singleLine.substr( 1 );
-
-			if( sequence.getL() > maxL ){
-				maxL = sequence.getL();
-			}
-			if( sequence.getL() < minL ){
-				minL = sequence.getL();
-			}
-
-			// count the occurrence of mono-nucleotides
-			for( int i = 0; i < Alphabet::getSize(); i++ ){
-				baseCounts[i+1] += std::count(eachSequence.begin(), eachSequence.end(), Alphabet::getAlphabet()[i] );
-				baseSumCount += baseCounts[i+1];
-			}
-			eachSequence.clear();
-
-		} else {
-			eachSequence += singleLine;
-		}
-	}
-	Sequence sequence = new Sequence(eachSequence, eachSequence.length(), header );
-	sequences.push_back( sequence );
-
-	N_ = N;
-	sequences_ = sequences;
-	maxL_ = maxL;
-	minL_ = minL;
-*/
+	fprintf( stderr, "max length is %d \n", maxL_ );
+	fprintf( stderr, "min length is %d \n", minL_ );
+	fprintf( stderr, "number of sequences is %d \n", N_ );
+	fprintf( stderr, "I am here! \n" );
+	exit( -1 );
 
 	return 0;
 }
 
+int SequenceSet::readIntensities(){
+	return -1;
+}
 
-
-
+SequenceSet::~SequenceSet(){
+	std::cout << " This is a distructor to be fulfilled. " << std::endl;
+	delete sequenceFilepath_;
+	if( intensityFilepath_ ) delete intensityFilepath_;
+//	delete sequences_;
+//	delete baseFrequencies_;
+}
