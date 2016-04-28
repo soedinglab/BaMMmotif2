@@ -16,10 +16,10 @@ class Sequence {
 
 public:
 
-	Sequence( uint8_t* sequence, unsigned int L, std::string header );
+	Sequence( uint8_t* sequence, int L, std::string header );
 	~Sequence();
 
-	unsigned int    getL();				                // get sequence length
+	int    			getL();				                // get sequence length
 	uint8_t*        getSequence();	                   	// get base sequence as alphabet encoding
 	std::string		getHeader();		                // get sequence header
 
@@ -30,7 +30,7 @@ public:
 
 private:
 
-	unsigned int    L_;			                        // sequence length
+	int    			L_;			                        // sequence length
 	uint8_t*	    sequence_;		                    // the base sequence as alphabet encoding
 	std::string		header_;			                // sequence header
 	float 	        intensity_;		                    // measured sequence intensity from HT-SELEX data

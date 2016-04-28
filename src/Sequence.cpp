@@ -11,32 +11,33 @@
 #include "Global.h"
 #include "Alphabet.h"
 
-Sequence::Sequence( uint8_t* sequence, unsigned int LS, std::string header ){
+Sequence::Sequence( uint8_t* sequence, int L, std::string header ){
 
 	if( ! Global::revcomp ){
-		std::memcpy( sequence_, sequence, LS );
+		sequence_ = ( uint8_t* )malloc( L );
+		std::memcpy( sequence_, sequence, L );
 	} else {
 		createRevComp( sequence );
 	}
 
-	L_ = LS;
+	L_ = L;
 	header_.assign( header );
-
 }
 
 Sequence::~Sequence(){
-	std::cout << " This is a distructor to be fulfilled. " << std::endl;
+//	std::cout << "This is a destructor for Sequence class. " << std::endl;
+	// No need to free sequence_, => temporary objects are automatically destroyed when loop out
 }
 
-uint8_t* Sequence::createRevComp( uint8_t* seq ){
-	for( unsigned int i = 0; i < L_; i++ ){								// deep copy
-		sequence_[i] = seq[i];											// the original sequence
-		sequence_[2*L_-i -1] = Alphabet::getComplementCode( seq[i] );	// the reverse complementary
+uint8_t* Sequence::createRevComp( uint8_t* sequence ){
+	for( int i = 0; i < L_; i++ ){										// deep copy
+		sequence_[i] = sequence[i];											// the original sequence
+		sequence_[2*L_-i-1] = Alphabet::getComplementCode( sequence[i] );	// the reverse complementary
 	}
 	return sequence_;
 }
 
-unsigned int Sequence::getL(){
+int Sequence::getL(){
 	return L_;
 }
 
