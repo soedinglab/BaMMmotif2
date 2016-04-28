@@ -84,7 +84,7 @@ private:
 
 	static int	        readArguments( int nargs, char* args[] );
 	static void	        createDirectory( char* dir );
-	static void	        generateFolds( int posCount, int negCount, int fold );
+	static void	        generateFolds( unsigned int posN,unsigned int negN, unsigned int fold );
 	static void	        printHelp();
 };
 

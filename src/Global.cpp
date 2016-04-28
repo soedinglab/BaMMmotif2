@@ -74,23 +74,44 @@ void Global::init( int nargs, char* args[] ){
 
 	// read in positive sequence set
 	posSequenceSet = new SequenceSet( posSequenceFilename );
-	fprintf( stderr, "pos seq is read in successfully. \n" );
+	if( verbose ){
+		std::cout << "For positive set:	" << posSequenceSet->getN() << " sequences. "
+				"max.length: " << posSequenceSet->getMaxL() << ", min.length: " <<
+				posSequenceSet->getMinL() << std::endl << "			base frequences: " ;
+		for( unsigned int i = 0; i < Alphabet::getSize(); i++ ){
+			std::cout << Alphabet::getAlphabet()[i] << " " << posSequenceSet->getBaseFrequencies()[i] << ", ";
+		}
+		std::cout << std::endl;
+	}
 
-//	if( negSequenceFilename == NULL ){
-//		// use positive for negative sequence set
-//		negSequenceSet = posSequenceSet;
-//	} else{
-//		// read in negative sequence set
-//		negSequenceSet = new SequenceSet( negSequenceFilename );
-//	}
-//
-//	// generate folds (fill posFoldIndices and negFoldIndices)
-//	generateFolds( posSequenceSet->getN(), negSequenceSet->getN(), nFolds );
-//
-//	// optional: read in sequence intensities (header and intensity columns?)
-//	if( intensityFilename != 0 ){
-		// read in sequence intensity
-//	}
+	// read in or generate negative sequence set
+	if( negSequenceFilename == NULL ){
+		// use positive for negative sequence set
+		negSequenceSet = posSequenceSet;
+	} else{
+		// read in negative sequence set
+		negSequenceSet = new SequenceSet( negSequenceFilename );
+	}
+	if( verbose ){
+		std::cout << "For negative set:	" << negSequenceSet->getN() << " sequences. "
+				"max.length: " << negSequenceSet->getMaxL() << ", min.length: " <<
+				negSequenceSet->getMinL() << std::endl << "			base frequences: " ;
+		for( unsigned int i = 0; i < Alphabet::getSize(); i++ ){
+			std::cout << Alphabet::getAlphabet()[i] << " " << negSequenceSet->getBaseFrequencies()[i] << ", ";
+		}
+		std::cout << std::endl;
+	}
+
+	// generate folds (fill posFoldIndices and negFoldIndices)
+	std::cout << posSequenceSet->getN() << std::endl;
+	std::cout << negSequenceSet->getN() << std::endl;
+	std::cout << nFolds << std::endl;
+	generateFolds( posSequenceSet->getN(), negSequenceSet->getN(), nFolds );
+
+	// optional: read in sequence intensities (header and intensity columns?)
+	if( intensityFilename != 0 ){
+		;// read in sequence intensity
+	}
 }
 
 int Global::readArguments( int nargs, char* args[] ){
@@ -118,8 +139,8 @@ int Global::readArguments( int nargs, char* args[] ){
 	 *
 	 */
 
-	if( nargs < 3 ) {			// At least 2 parameters are required
-		fprintf( stderr, "\nNecessary arguments are missing! \n" );
+	if( nargs < 3 ) {			// At least 2 parameters are required, but this is not precision, needed to be specified!!
+		fprintf( stderr, "\nArguments are missing! \n" );
 		printHelp();
 		exit( -1 );
 	}
@@ -146,6 +167,7 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	// Alphabet Type
 	std::string defaultType = "STANDARD";
+
 	alphabetType = const_cast<char*>( defaultType.c_str() );		// force to cast const char* to char*
 
 
@@ -223,24 +245,28 @@ void Global::createDirectory( char* dir ){
 	}
 }
 
-void Global::generateFolds( int posCount, int negCount, int fold ){
+void Global::generateFolds( unsigned int posN, unsigned int negN, unsigned int fold ){
+
+	posFoldIndices.resize( fold );
+	negFoldIndices.resize( fold );
 	// generate posFoldIndices
-	int i = 0;
-	while( i < posCount){
-		for( int j = 0; j < fold; j++ ){
+	unsigned int i = 0;
+
+	while( i < posN ){
+		for( unsigned int j = 0; j < fold; j++ ){
 			posFoldIndices[j].push_back( i );
 			i++;
 		}
 	}
+	// generate negFoldIndices
 	if( negSequenceFilename == NULL ){
 		// assign reference to posFoldIndices
 		negFoldIndices = posFoldIndices;
-
 	} else{
 		// generate negFoldIndices
 		i = 0;
-		while( i < negCount ){
-			for( int j = 0; j < fold; j++ ){
+		while( i < negN ){
+			for( unsigned int j = 0; j < fold; j++ ){
 				negFoldIndices[j].push_back( i );
 				i++;
 			}
@@ -264,10 +290,11 @@ void Global::printHelp(){
 
 void Global::destruct(){
 
-//	if( outputDirectory ) delete outputDirectory ;
-//	if( posSequenceFilename ) free( posSequenceFilename );
-//	if( negSequenceFilename ) free( negSequenceFilename );
-//	if( posSequenceBasename ) free( posSequenceBasename );
+	std::cout << "Destructor for Global class." << std::endl;
+//	if( outputDirectory ) delete outputDirectory;
+//	if( posSequenceFilename ) delete posSequenceFilename;
+//	if( negSequenceFilename ) delete negSequenceFilename;
+//	if( posSequenceBasename ) delete posSequenceBasename;
 //	if( negSequenceBasename ) free( negSequenceBasename );
 //	if( alphabetType ) delete alphabetType;
 //	if( posSequenceSet ) free( posSequenceSet );

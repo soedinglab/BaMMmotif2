@@ -23,9 +23,8 @@ int main( int nargs, char* args[] ){
 	// initialization
 	Global::init( nargs, args );
 
-	fprintf( stderr, "Global constructor works fine. \n" );
-
-/*	MotifSet motifs;
+	MotifSet motifs;
+/*
 
 	BackgroundModel bg;
 	bg.init();
@@ -47,8 +46,8 @@ int main( int nargs, char* args[] ){
 		fdr.write();
 	}
 */
-
-	Global::destruct();
+	fprintf( stderr, "It seems that Global destructor doesn't work. \n" );
+//	Global::destruct();
 
 	fprintf( stdout, "\nRuntime: %ld seconds (%0.2f minutes)\n", time( NULL )-timestamp,
 			( float )( time( NULL )-timestamp )/60.0f );
