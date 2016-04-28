@@ -233,13 +233,6 @@ int SequenceSet::readFASTA(){
 					if ( L < minL )
 						minL = L;
 
-					fprintf( stderr, "One header is read in: %s\n", sequences_[N-1].getHeader().c_str() );
-					fprintf( stderr, "Its sequence is: %s\n", sequence.c_str() );
-					fprintf( stderr, "Its encoding form is:" );
-					for( int i = 0; i < L; i++ ){
-						fprintf( stderr, "%d",  sequences_[N-1].getSequence()[i]);
-					}
-					fprintf( stderr, "\nThe length of sequence is: %d\n\n", L );
 					sequence.clear();
 					header.clear();
 					delete []encodeSeq;
@@ -279,13 +272,6 @@ int SequenceSet::readFASTA(){
 				maxL = L;
 			if ( L < minL )
 				minL = L;
-			fprintf( stderr, "One header is read in: %s\n", sequences_[N-1].getHeader().c_str() );
-			fprintf( stderr, "Its sequence is: %s\n", sequence.c_str() );
-			fprintf( stderr, "Its encoding form is:" );
-			for( int i = 0; i < L; i++ ){
-				fprintf( stderr, "%d",  sequences_[N-1].getSequence()[i]);
-			}
-			fprintf( stderr, "\nThe length of sequence is: %d\n\n", L );
 			sequence.clear();
 			header.clear();
 			delete []encodeSeq;

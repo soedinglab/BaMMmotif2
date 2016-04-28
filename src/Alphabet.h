@@ -20,7 +20,7 @@ public:
 	static unsigned int getSize();							// get alphabet size
 	static char const* 	getAlphabet();						// get alphabet bases
 	static char const* 	getComplementAlphabet();			// get complementary alphabet bases
-	static uint8_t 	    getCode( char base );				// get conversion from bases to encoding
+	static uint8_t 	    getCode( char base );				// get conversion from base to encoding
 	static uint8_t 	    getComplementCode( uint8_t code );	// get conversion from encoding to complement encoding
 
 	static void setSize( unsigned int size);
@@ -30,7 +30,8 @@ private:
 	static unsigned int size_;							    // alphabet size, count the number of letters
 	static char const* 	alphabet_;							// alphabet bases ([N,A,C,G,T], [N,A,C,G,T,mC], ...)
 	static char const* 	complementAlphabet_;				// complementary alphabet bases ([N,T,G,C,A,G], [N,T,G,C,A,G], ...)
-	static uint8_t* 	baseToCode_;						// conversion from bases to encoding
+	static uint8_t* 	baseToCode_;						// conversion from base to encoding
+
 	static uint8_t* 	codeToComplementCode_;				// conversion from encoding to complement encoding
 };
 

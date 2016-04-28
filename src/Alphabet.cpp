@@ -45,14 +45,14 @@ void Alphabet::init( char* alphabetType ){
 	}
 
 	baseToCode_ = ( uint8_t* )calloc( 128, sizeof( uint8_t ) );
-
 	for( unsigned int i = 0; i < size_; i++ ){
 	  	baseToCode_[( int )alphabet_[i]] = ( uint8_t )( i + 1 );
 	  	baseToCode_[( int )tolower( alphabet_[i] )] = ( uint8_t )( i + 1 );		// for alphabet of lower case
 	}
+
 	codeToComplementCode_ = ( uint8_t* )calloc( size_+1, sizeof( uint8_t ) );
 	for( unsigned int i = 0; i < size_; i++ ){
-		codeToComplementCode_[i+1] = baseToCode_[( int )complementAlphabet_[i+1]];
+		codeToComplementCode_[i+1] = baseToCode_[( int )complementAlphabet_[i]];
 	}
 }
 

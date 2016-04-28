@@ -6,6 +6,7 @@
  */
 
 #include <cstring>			// memcpy
+#include <array>
 
 #include "Sequence.h"
 #include "Global.h"
@@ -14,13 +15,13 @@
 Sequence::Sequence( uint8_t* sequence, int L, std::string header ){
 
 	if( ! Global::revcomp ){
-		sequence_ = ( uint8_t* )malloc( L );
-		std::memcpy( sequence_, sequence, L );
+		L_ = L;
+		sequence_ = ( uint8_t* )malloc( L_ );
+		std::memcpy( sequence_, sequence, L_ );
 	} else {
-		createRevComp( sequence );
+		L_ = 2 * L;
+		createRevComp( sequence, L );
 	}
-
-	L_ = L;
 	header_.assign( header );
 }
 
@@ -29,10 +30,11 @@ Sequence::~Sequence(){
 	// No need to free sequence_, => temporary objects are automatically destroyed when loop out
 }
 
-uint8_t* Sequence::createRevComp( uint8_t* sequence ){
-	for( int i = 0; i < L_; i++ ){										// deep copy
+uint8_t* Sequence::createRevComp( uint8_t* sequence, int L ){
+	sequence_ = ( uint8_t* )malloc( 2* L );
+	for( unsigned int i = 0; i < L; i++ ){
 		sequence_[i] = sequence[i];											// the original sequence
-		sequence_[2*L_-i-1] = Alphabet::getComplementCode( sequence[i] );	// the reverse complementary
+		sequence_[2*L-i-1] = Alphabet::getComplementCode( sequence[i] );	// the reverse complementary
 	}
 	return sequence_;
 }
