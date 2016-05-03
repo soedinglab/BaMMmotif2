@@ -7,7 +7,7 @@
 
 #ifndef MOTIF_H_
 #define MOTIF_H_
-/*
+
 #include <assert.h>
 
 #include "Global.h"
@@ -20,9 +20,9 @@ public:
 	Motif( const Motif& other );
 	~Motif();
 
-	void initFromIUPACPattern( char* pattern );			// initialize v from IUPAC pattern  (BAMM pattern)
+	void initFromIUPACPattern( char* pattern );			// initialize v from IUPAC pattern  (BMM pattern)
 
-	void initFromBindingSites( char* filename );		// initialize v from binding site file
+	void initFromBindingSites( char const* filename );	// initialize v from binding site file
 
 	void initFromPWM( char* filename );					// initialize v from PWM file
 
@@ -31,6 +31,7 @@ public:
 	int         getLength(); 							// get length
 	float***    getV();									// get v
 
+	void		initN( int*** n );						// initialize n
 	void        updateV( float*** n, float** alpha );
 
 	void 		print();					   			// print v to console
@@ -43,7 +44,8 @@ private:
 	int 		length_;					    		// length of motif
 	float***    v_;				                		// conditional probabilities for k-mers y at motif position j, v_[k][y][j]
 
-	void 		calculateV( int*** n );		    		// calculate v from k-mer counts n and global alphas
+	void 		calculateV( int*** n, int sum );		// calculate v from k-mer counts n and global alphas
 };
-*/
+
+
 #endif /* MOTIF_H_ */
