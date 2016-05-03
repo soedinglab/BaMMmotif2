@@ -23,7 +23,7 @@ public:
 	static uint8_t 	    getCode( char base );				// get conversion from base to encoding
 	static uint8_t 	    getComplementCode( uint8_t code );	// get conversion from encoding to complement encoding
 
-	static void setSize( unsigned int size);
+	static void 		setSize( unsigned int size);
 
 private:
 

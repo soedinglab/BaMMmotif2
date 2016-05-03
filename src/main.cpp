@@ -23,12 +23,13 @@ int main( int nargs, char* args[] ){
 	// initialization
 	Global::init( nargs, args );
 
-	MotifSet motifs;
-/*
+	MotifSet motifs;	// here need to check if the motif length exceeds the min. posSeq length!
 
 	BackgroundModel bg;
-	bg.init();
+	std::vector< std::vector<int> > folds;
+	bg.init( folds );	// not sure about the input folds parameter
 
+/*
 	// learn motifs
 	for( std::list<Motif*>::const_iterator iter = motifs.getMotifs.begin(); iter != motifs.getMotifs.end(); iter++ ){
 		EM em = new EM( *iter, bg );

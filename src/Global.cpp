@@ -39,7 +39,7 @@ char*               Global::BMMFilename = NULL;			// filename of Markov model (.
 
 // model options
 unsigned int        Global::modelOrder = 2;				// model order
-std::vector<float>	Global::modelAlpha;					// initial alphas
+std::vector<float>	Global::modelAlpha( modelOrder+1, 10.0f );// initial alphas
 std::vector<int>    Global::addColumns( 0, 0 );			// add columns to the left and right of models used to initialize Markov models
 bool                Global::noLengthOptimization = false;// disable length optimization
 
@@ -82,6 +82,16 @@ void Global::init( int nargs, char* args[] ){
 			std::cout << Alphabet::getAlphabet()[i] << " " << posSequenceSet->getBaseFrequencies()[i] << ", ";
 		}
 		std::cout << std::endl;
+	}
+
+	// only for testing:
+	for( unsigned int i = 0; i < posSequenceSet->getN(); i++ ){
+		std::cout << posSequenceSet->getSequences()[i].getHeader() << std::endl;
+		for( int j = 0; j < posSequenceSet->getSequences()[i].getL(); j++){
+			fprintf( stderr, "%d", posSequenceSet->getSequences()[i].getSequence()[j] );
+		}
+		std::cout << std::endl;
+		std::cout << posSequenceSet->getSequences()[i].getL() <<std::endl;
 	}
 
 	// read in or generate negative sequence set

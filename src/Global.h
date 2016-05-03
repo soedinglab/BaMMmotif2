@@ -57,7 +57,7 @@ public:
 
 	// background model options
 	static unsigned int	bgModelOrder;			// background model order, defaults to 2
-	static float		bgModelAlpha;	// background model alpha
+	static float		bgModelAlpha;			// background model alpha
 
 	// EM options
 	static unsigned int	maxEMIterations;		// maximum number of iterations

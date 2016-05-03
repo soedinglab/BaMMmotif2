@@ -7,7 +7,7 @@
 
 #ifndef BACKGROUNDMODEL_H_
 #define BACKGROUNDMODEL_H_
-/*
+
 #include "Global.h"
 #include "SequenceSet.h"
 
@@ -32,5 +32,5 @@ private:
 	void 	calculateV( int** n );  // calculate v from k-mer counts n
 };
 
-*/
+
 #endif /* BACKGROUNDMODEL_H_ */
