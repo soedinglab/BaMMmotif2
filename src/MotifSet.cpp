@@ -18,15 +18,18 @@ MotifSet::MotifSet(){
 		// * motif.initFromIUPACPattern( p )
 		// motifs.push_back( motif )
 
-	} else if( Global::bindingSitesFilename != NULL ){
+	} else if( Global::bindingSitesFilename ){
 
-		std::ifstream file( Global::bindingSitesFilename );
+		std::cout << "Reading in the binding sites file: " << Global::bindingSitesFilename << std::endl;
+
+		std::ifstream file;
+		file.open( Global::bindingSitesFilename, std::ifstream::in );
 		std::string seq;
 		int length;
 
-		if( !file ){
-			fprintf( stderr, "Cannot open positive sequence file: %s\n",
-					Global::bindingSitesFilename );
+		if( !file.good() ){
+			std::cout << "Error: Cannot open bindingSitesFile sequence file: "
+					<< Global::bindingSitesFilename << std::endl;
 			exit( -1 );
 		} else {
 			getline( file, seq );					// get length of the first sequence
@@ -35,7 +38,11 @@ MotifSet::MotifSet(){
 
 		Motif* motif = new Motif( length );
 
+		std::cout << "Initializing motif from bindingSitesFile..." << std::endl;
+
 		motif->initFromBindingSites( Global::bindingSitesFilename );
+
+		std::cout << "Motif from bindingSitesFile has been initialized." << std::endl;
 
 		motifs_.push_back( motif );
 		N_ = 1;
@@ -57,6 +64,8 @@ MotifSet::MotifSet(){
 		// motifs.push_back( motif )
 	}
 
+	print();
+	write();
 }
 
 MotifSet::~MotifSet(){
@@ -71,6 +80,12 @@ int MotifSet::getN(){
     return N_;
 }
 
-void MotifSet::print(){}
-void MotifSet::write(){}
+void MotifSet::print(){
+	for( int n = 0; n < N_; n++ ){
+
+	}
+}
+void MotifSet::write(){
+
+}
 

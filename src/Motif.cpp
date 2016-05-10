@@ -5,13 +5,16 @@
  *      Author: administrator
  */
 
+#include <fstream>
+#include <iomanip>			// std::setprecision
+
 #include "Motif.h"
 
 Motif::Motif( int length ){					// allocate memory for v
 	length_ = length;
 	v_ = ( float*** )calloc( ( Global::modelOrder+1 ), sizeof( float** ) );
-	for( unsigned int k = 0; k <= Global::modelOrder; k++ ){
-		v_[k] = ( float** )calloc( pow( Alphabet::getSize(), k+1 ), sizeof( float* ) );
+	for( int k = 0; k <= Global::modelOrder; k++ ){
+		v_[k] = ( float** )calloc( int( pow( Alphabet::getSize(), k+1 ) ), sizeof( float* ) );
 		for( int y = 0; y < pow( Alphabet::getSize(), k+1 ); y++ ){
 			v_[k][y] = ( float* )calloc( length_, sizeof( float ) );
 		}
@@ -22,8 +25,8 @@ Motif::Motif( const Motif& other ){ 		// deep copy
 	length_ = other.length_;
 	if( other.v_ != NULL ){
 		v_ = ( float*** )calloc( ( Global::modelOrder+1 ), sizeof( float** ) );
-		for( unsigned int k = 0; k <= Global::modelOrder; k++ ){
-			v_[k] = ( float** )calloc( pow( Alphabet::getSize(), k+1 ), sizeof( float* ) );
+		for( int k = 0; k <= Global::modelOrder; k++ ){
+			v_[k] = ( float** )calloc( int( pow( Alphabet::getSize(), k+1 ) ), sizeof( float* ) );
 			for( int y = 0; y < pow( Alphabet::getSize(), k+1 ); y++ ){
 				v_[k][y] = ( float* )calloc( length_, sizeof( float ) );
 				memcpy( v_[k][y], other.v_[k][y], length_ * sizeof( float ) );
@@ -50,49 +53,64 @@ void Motif::initFromIUPACPattern( char* pattern ){
 // initialize v from binding site file
 void Motif::initFromBindingSites( char const* filename ){
 
+	// initialize n
+	int*** n;
+	n = new int**[Global::modelOrder + 1];
+	for( int k = 0; k < Global::modelOrder + 1; k++ ){
+		int sizeY = int( pow( Alphabet::getSize(), k + 1 ) );
+		n[k] = new int*[sizeY];
+		for( int y = 0; y < pow( Alphabet::getSize(), k + 1 ); y++ ){
+			n[k][y] = new int[length_];
+			for( int j = 0; j < length_; j++ ){
+				n[k][y][j] = 0;
+			}
+		}
+	}
+
 	std::ifstream file( filename );				// read file
 	std::string seq;							// read each sequence from single line
 	int length;
-	int lineNum;
-	int*** n;
-	initN( n );
+	unsigned int lineNum = 0;
 
 	while( getline( file, seq ).good() ){
-
 		length = seq.length();
 		lineNum ++;
 
-		// all the binding sites should have the same length
-		if( length != length_ ){
-			fprintf( stderr, "Length of sequence at line %d differs.\n"
+		if( length != length_ ){								// all the binding sites should have the same length
+			fprintf( stderr, "Error: Length of sequence at line %d differs.\n"
 					"Binding sites should have the same length.\n", lineNum );
 			exit( -1 );
 		}
-
-		// binding sites should be longer than the order of model
-		if( length <= Global::modelOrder + 1 ){
-			fprintf( stderr, "Length of sequences exceeds length of model.\n" );
+		if( length <= Global::modelOrder + 1 ){					// binding sites should be longer than the order of model
+			fprintf( stderr, "Error: Length of sequence at line %d exceeds length of model.\n", lineNum );
+			exit( -1 );
+		}
+		if( length > Global::posSequenceSet->getMinL() ){		// binding sites should be shorter than the shortest posSeq
+			fprintf( stderr, "Error: Length of sequence at line %d exceeds length of posSet sequence.\n", lineNum );
 			exit( -1 );
 		}
 
 		// scan binding sites and calculate k-mer counts n
-		for( unsigned int k = 0; k < Global::modelOrder + 1; k++ ){		// k runs over all orders
+		for( int k = 0; k < Global::modelOrder + 1; k++ ){				// k runs over all orders
 			for( int j = k; j < length_; j++ ){							// j runs over all motif position
 				int y = 0;
 				for( int i = 0; i <= k; i++ ){							// calculate y based on (k+1)-mer bases
-					y += pow( Alphabet::getSize(), i ) * ( Alphabet::getCode( seq[j-k+i] ) - 1 );
+					y += int( pow( Alphabet::getSize(), i ) * ( Alphabet::getCode( seq[j-k+i] ) - 1 ) );
 				}
 				n[k][y][j]++;
 			}
 		}
-
 	}
 
 	// calculate v from k-mer counts n using calculateV(n)
 	calculateV( n, length_ * lineNum );
 
+	print();
+	write();
 	// set isInitialized
 	isInitialized_ = true;
+
+	delete n;
 }
 
 // initialize v from PWM file
@@ -111,31 +129,23 @@ int Motif::getLength(){
 	return length_;
 }
 
-void Motif::initN( int*** n ){
-	for( unsigned int k = 0; k < Global::modelOrder + 1; k++ ){
-		for( int y = 0; y < pow( Alphabet::getSize(), k + 1 ); y++ ){
-			for( int j = k; j < length_; j++ ){
-				n[k][y][j] = 0;
-			}
-		}
-	}
-}
-
 void Motif::calculateV( int*** n, int sum ){
 
 	// for k = 0:
-	for( int y = 0; y < pow( Alphabet::getSize(), 1 ); y++ ){
+	for( int y = 0, k = 0; y < pow( Alphabet::getSize(), k + 1 ); y++ ){
 		for( int j = 0; j < length_; j++ ){
-			v_[0][y][j] = n[0][y][j] / sum;
+			v_[k][y][j] = n[k][y][j] / float( sum );
 		}
 	}
 
 	// for k > 0:
-	for( unsigned int k = 1; k < Global::modelOrder + 1; k++ ){
+	for( int k = 1; k < Global::modelOrder + 1; k++ ){
 		for( int y = 0; y < pow( Alphabet::getSize(), k + 1 ); y++ ){
+			int y2 = y / pow( Alphabet::getSize(), k );				// cut off first base in (k+1)-mer y
+			int yk = y % int( pow( Alphabet::getSize(), k ) ) ;		// cut off last base in (k+1)-mer y
 			for( int j = 1; j <= length_; j++ ){
-				v_[k][y][j] = ( n[k][y][j] + Global::modelAlpha[k] * v_[k-1][y][j] )
-						/ ( n[k-1][y][j-1] + Global::modelAlpha[k] );
+				v_[k][y][j] = ( n[k][y][j] + Global::modelAlpha[k] * v_[k-1][y2][j] )
+						/ ( n[k-1][yk][j-1] + Global::modelAlpha[k] );
 			}
 		}
 	}
@@ -150,19 +160,31 @@ void Motif::updateV( float*** n, float** alpha ){
 	// update v from fractional k-mer counts n and current alphas
 }
 
-void Motif::print(){}
+void Motif::print(){
+	std::cout << "Initial probability model from posSequence (float*** v) is:" << std::endl;
+	for( int j = 0; j < length_; j++ ){
+		std::cout << "At position " << j+1 << std::endl;
+		for( int k = 0; k < Global::modelOrder + 1; k++ ){
+			for( int y = 0; y < pow( Alphabet::getSize(), k + 1 ); y++ ){
+				std::cout << std::fixed << std::setprecision(4) << v_[k][y][j] << '\t';
+			}
+			std::cout << std::endl;
+		}
+	}
+}
 
 void Motif::write(){
-	std::string opath = Global::outputDirectory  + '/' + Global::posSequenceBasename + ".probs";
-	std::ofstream ofile(opath);
+	std::string opath = std::string( Global::outputDirectory )  + '/' + std::string( Global::posSequenceBasename ) + "Init.probs";
+	std::ofstream ofile( opath.c_str() );
+	ofile << std::endl;
 	for( int j = 0; j < length_; j++ ){
-		for( int k = 0; k < Alphabet::getSize(); k++ ){
+		for( int k = 0; k < Global::modelOrder + 1; k++ ){
 			for( int y = 0; y < pow( Alphabet::getSize(), k+1 ); y++ ){
-				ofile << v_[k][y][j] << '\t';
+				ofile << std::fixed << std::setprecision(4) << v_[k][y][j] << '\t';
 			}
 			ofile << std::endl;
 		}
-		ofile << std::endl << std::endl;
+		ofile << std::endl;
 	}
 }
 

@@ -31,7 +31,6 @@ public:
 	int         getLength(); 							// get length
 	float***    getV();									// get v
 
-	void		initN( int*** n );						// initialize n
 	void        updateV( float*** n, float** alpha );
 
 	void 		print();					   			// print v to console
