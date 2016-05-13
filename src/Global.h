@@ -81,10 +81,11 @@ public:
 
 	static bool			verbose;				// verbose printouts, defaults to false
 
+
 	static void         init( int nargs, char* args[] );
 	static void         destruct();
-//	Global( int nargs, char* args[] );
-//	~Global();
+
+	static char* 		String(const char *s);	// convert const char* to string
 
 private:
 
@@ -95,4 +96,17 @@ private:
 	static void	        printHelp();
 };
 
+inline char* Global::String(const char *s){
+  return strdup(s);
+}
+namespace GetOpt
+{
+	template <> inline _Option::Result convert<char*>(const std::string& s, char*& d, std::ios::fmtflags)
+	{
+		_Option::Result ret = _Option::BadType;
+		d = Global::String(s.c_str());
+		ret = _Option::OK;
+		return ret;
+	}
+}
 #endif /* GLOBAL_H_ */

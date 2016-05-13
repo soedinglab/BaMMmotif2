@@ -209,10 +209,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	if( opt >> GetOpt::OptionPresent( "BaMMpatternFile" ) ){
 		opt >> GetOpt::Option( "BaMMpatternFile", BaMMpatternFilename );
 	} else if ( opt >> GetOpt::OptionPresent( "bindingSitesFile" ) ){
-		std::string bindingSitesFile;
-		bindingSitesFilename = const_cast<char*>( bindingSitesFile.c_str() );
 		opt >> GetOpt::Option( "bindingSitesFile", bindingSitesFilename );
-		fprintf( stderr, "binding Site file is %s\n", bindingSitesFilename );
 	} else if ( opt >> GetOpt::OptionPresent( "PWMFile" ) ){
 		opt >> GetOpt::Option( "PWMFile", PWMFilename );
 	} else if( opt >> GetOpt::OptionPresent( "BMMFile" ) ){
