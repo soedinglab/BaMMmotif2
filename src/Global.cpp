@@ -7,12 +7,10 @@
 
 #include <string>
 
-#include <sys/stat.h>   		// get file status
-#include <libgen.h>				// basename, dirname
+#include <sys/stat.h>   			// get file status
 #include <stdio.h>
 
 #include "Global.h"
-#include "lib/getopt_pp.h"		// GetOpt function
 
 char*               Global::outputDirectory = NULL;     // output directory
 
@@ -21,7 +19,6 @@ char*               Global::negSequenceFilename = NULL; // filename of negative 
 
 char*				Global::posSequenceBasename = NULL;	// basename of positive sequence FASTA file
 char*				Global::negSequenceBasename = NULL;	// basename of negative sequence FASTA file
-
 char*				Global::alphabetType;				// alphabet type is defaulted to standard which is ACGT
 bool                Global::revcomp = false;            // also search on reverse complement of sequences
 
@@ -35,10 +32,10 @@ char*               Global::intensityFilename = NULL;	// filename of intensity f
 char*               Global::BaMMpatternFilename = NULL;	// filename of BaMMpattern file
 char*               Global::bindingSitesFilename = NULL;// filename of binding sites file
 char*               Global::PWMFilename = NULL;			// filename of PWM file
-char*               Global::BMMFilename = NULL;			// filename of Markov model (.bmm) file
+char*               Global::BaMMFilename = NULL;			// filename of Markov model (.bmm) file
 
 // model options
-unsigned int        Global::modelOrder = 2;				// model order
+int        			Global::modelOrder = 2;				// model order
 std::vector<float>	Global::modelAlpha( modelOrder+1, 10.0f );// initial alphas
 std::vector<int>    Global::addColumns( 0, 0 );			// add columns to the left and right of models used to initialize Markov models
 bool                Global::noLengthOptimization = false;// disable length optimization
@@ -67,32 +64,13 @@ bool                Global::verbose = false;            // verbose printouts
 void Global::init( int nargs, char* args[] ){
 
 	readArguments( nargs, args );
-	fprintf( stderr, "readArguments() works fine. \n" );
+	fprintf( stderr, "\n******* readArguments() works fine. *******\n\n" );
 
 	Alphabet::init( alphabetType );
-	fprintf( stderr, "Alphabet::init() works fine. \n" );
+	fprintf( stderr, "******* Alphabet::init() works fine. *******\n\n" );
 
 	// read in positive sequence set
 	posSequenceSet = new SequenceSet( posSequenceFilename );
-	if( verbose ){
-		std::cout << "For positive set:	" << posSequenceSet->getN() << " sequences. "
-				"max.length: " << posSequenceSet->getMaxL() << ", min.length: " <<
-				posSequenceSet->getMinL() << std::endl << "			base frequences: " ;
-		for( unsigned int i = 0; i < Alphabet::getSize(); i++ ){
-			std::cout << Alphabet::getAlphabet()[i] << " " << posSequenceSet->getBaseFrequencies()[i] << ", ";
-		}
-		std::cout << std::endl;
-	}
-
-	// only for testing:
-	for( unsigned int i = 0; i < posSequenceSet->getN(); i++ ){
-		std::cout << posSequenceSet->getSequences()[i].getHeader() << std::endl;
-		for( int j = 0; j < posSequenceSet->getSequences()[i].getL(); j++){
-			fprintf( stderr, "%d", posSequenceSet->getSequences()[i].getSequence()[j] );
-		}
-		std::cout << std::endl;
-		std::cout << posSequenceSet->getSequences()[i].getL() <<std::endl;
-	}
 
 	// read in or generate negative sequence set
 	if( negSequenceFilename == NULL ){
@@ -102,21 +80,56 @@ void Global::init( int nargs, char* args[] ){
 		// read in negative sequence set
 		negSequenceSet = new SequenceSet( negSequenceFilename );
 	}
+
 	if( verbose ){
+		printf( " ___________________________\n"
+				"|                           |\n"
+				"|  Statistic for posSeqSet  |\n"
+				"|___________________________|\n\n" );
+		std::cout << "For positive set:	" << posSequenceSet->getN() << " sequences. "
+				"max.length: " << posSequenceSet->getMaxL() << ", min.length: " <<
+				posSequenceSet->getMinL() << std::endl << "			base frequences: " ;
+		for( unsigned int i = 0; i < Alphabet::getSize(); i++ ){
+			std::cout << std::fixed << std::setprecision(4) << Alphabet::getAlphabet()[i] << " " << posSequenceSet->getBaseFrequencies()[i] << ", ";
+		}
+		std::cout << std::endl;
+		printf( " ___________________________\n"
+				"|                           |\n"
+				"|  Statistic for negSeqSet  |\n"
+				"|___________________________|\n\n" );
 		std::cout << "For negative set:	" << negSequenceSet->getN() << " sequences. "
 				"max.length: " << negSequenceSet->getMaxL() << ", min.length: " <<
 				negSequenceSet->getMinL() << std::endl << "			base frequences: " ;
 		for( unsigned int i = 0; i < Alphabet::getSize(); i++ ){
-			std::cout << Alphabet::getAlphabet()[i] << " " << negSequenceSet->getBaseFrequencies()[i] << ", ";
+			std::cout << std::fixed << std::setprecision(4) << Alphabet::getAlphabet()[i] << " " << negSequenceSet->getBaseFrequencies()[i] << ", ";
 		}
 		std::cout << std::endl;
 	}
 
+	// only for testing:
+	fprintf( stderr, "\n*****************pos Seq*********************\n" );
+	for( unsigned int i = 0; i < posSequenceSet->getN(); i++ ){
+		std::cout << posSequenceSet->getSequences()[i].getHeader() << std::endl;
+		for( int j = 0; j < posSequenceSet->getSequences()[i].getL(); j++){
+			fprintf( stderr, "%d", posSequenceSet->getSequences()[i].getSequence()[j] );
+		}
+		std::cout << std::endl;
+		std::cout << posSequenceSet->getSequences()[i].getL() <<std::endl;
+	}
+	fprintf( stderr, "\n*********************************************\n" );
+
+
 	// generate folds (fill posFoldIndices and negFoldIndices)
-	std::cout << posSequenceSet->getN() << std::endl;
-	std::cout << negSequenceSet->getN() << std::endl;
-	std::cout << nFolds << std::endl;
 	generateFolds( posSequenceSet->getN(), negSequenceSet->getN(), nFolds );
+
+	// only for testing:
+	std::cout << "for the generateFolds() function: \nFor posFoldIndices" << std::endl;
+	for( unsigned int f = 0; f < nFolds; f++ ){
+		for( unsigned int t = 0; t < posFoldIndices[f].size(); t++ ){
+			std::cout << posFoldIndices[f][t] << '\t';
+		}
+		std::cout << std::endl;
+	}
 
 	// optional: read in sequence intensities (header and intensity columns?)
 	if( intensityFilename != 0 ){
@@ -150,7 +163,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	 */
 
 	if( nargs < 3 ) {			// At least 2 parameters are required, but this is not precision, needed to be specified!!
-		fprintf( stderr, "\nArguments are missing! \n" );
+		fprintf( stderr, "Error: Arguments are missing! \n" );
 		printHelp();
 		exit( -1 );
 	}
@@ -161,7 +174,7 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	// read in the positive sequence file
 	posSequenceFilename = args[2];
-	posSequenceBasename = basename( posSequenceFilename );
+	posSequenceBasename = baseName( posSequenceFilename );
 
 	/**
 	 * read command line to get options
@@ -171,33 +184,42 @@ int Global::readArguments( int nargs, char* args[] ){
 	GetOpt::GetOpt_pp opt( nargs, args );
 
 	// negative sequence set
-	if( opt >> GetOpt::Option( "negSeqFile", negSequenceFilename ) ){
-		negSequenceBasename = basename( negSequenceFilename );
+//	std::string negSequenceFile;
+//	negSequenceFilename = const_cast<char*>( negSequenceFile.c_str() );
+	if( opt >> GetOpt::OptionPresent( "negSeqFile" ) ){
+		opt >> GetOpt::Option( "negSeqFile", negSequenceFilename );
+		negSequenceBasename = baseName( negSequenceFilename );
 	}
 
 	// Alphabet Type
 	std::string defaultType = "STANDARD";
 
-	alphabetType = const_cast<char*>( defaultType.c_str() );		// force to cast const char* to char*
-
+	alphabetType = const_cast<char*>( defaultType.c_str() );		// force to cast from const char* to char*
+	fprintf( stderr, "default alphabet type is %s\n", alphabetType );
 
 	opt >> GetOpt::Option( "alphabet", alphabetType );
+	fprintf( stderr, "chosen alphabet type is %s\n", alphabetType );
 
 	opt >> GetOpt::OptionPresent( "revcomp", revcomp );
 
 	// for HT-SLEX data
 	opt >> GetOpt::Option( "intensityFile", intensityFilename );
 
-
 	// get initial motif files
 	if( opt >> GetOpt::OptionPresent( "BaMMpatternFile" ) ){
 		opt >> GetOpt::Option( "BaMMpatternFile", BaMMpatternFilename );
 	} else if ( opt >> GetOpt::OptionPresent( "bindingSitesFile" ) ){
+		std::string bindingSitesFile;
+		bindingSitesFilename = const_cast<char*>( bindingSitesFile.c_str() );
 		opt >> GetOpt::Option( "bindingSitesFile", bindingSitesFilename );
+		fprintf( stderr, "binding Site file is %s\n", bindingSitesFilename );
 	} else if ( opt >> GetOpt::OptionPresent( "PWMFile" ) ){
 		opt >> GetOpt::Option( "PWMFile", PWMFilename );
 	} else if( opt >> GetOpt::OptionPresent( "BMMFile" ) ){
-		opt >> GetOpt::Option( "BMMFile", BMMFilename );
+		opt >> GetOpt::Option( "BMMFile", BaMMFilename );
+	} else {
+		fprintf( stderr, "Error: No initial model is provided.\n" );
+		exit( -1 );
 	}
 
 	// model options
@@ -243,7 +265,7 @@ void Global::createDirectory( char* dir ){
 	struct stat fileStatus;
 
 	if( stat( dir, &fileStatus ) != 0 ){
-		fprintf( stderr, "Output directory does not exist. "
+		fprintf( stderr, "Status: Output directory does not exist. "
 				"New directory is created automatically.\n" );
 		char* command = ( char* )calloc( 1024, sizeof( char ) );
 		sprintf( command, "mkdir %s", dir );
@@ -255,13 +277,31 @@ void Global::createDirectory( char* dir ){
 	}
 }
 
-void Global::generateFolds( unsigned int posN, unsigned int negN, unsigned int fold ){
+char* Global::baseName( char* filepath ){
+	std::string path = filepath;
+	char* base;
+	int i = 0, start = 0, end = 0;
+	while( path[++i] != '\0' ){
+		if( path[i] == '.' )
+			end = i - 1;
+	}
+	while( --i != 0 && path[i] != '/' );
+	if( i ==0 ) start = 0;
+	else start = i + 1;
+	base = ( char* )malloc( ( end-start+2 ) * sizeof( char ) );
+	for( i=start; i <= end; i++ ){
+		base[i - start] = path[i];
+	}
+	base[i - start] = '\0';
 
+	return base;
+}
+
+void Global::generateFolds( unsigned int posN, unsigned int negN, unsigned int fold ){
 	posFoldIndices.resize( fold );
 	negFoldIndices.resize( fold );
 	// generate posFoldIndices
 	unsigned int i = 0;
-
 	while( i < posN ){
 		for( unsigned int j = 0; j < fold; j++ ){
 			posFoldIndices[j].push_back( i );
@@ -299,21 +339,30 @@ void Global::printHelp(){
 }
 
 void Global::destruct(){
-
+/*
 	std::cout << "Destructor for Global class." << std::endl;
-//	if( outputDirectory ) delete outputDirectory;
-//	if( posSequenceFilename ) delete posSequenceFilename;
-//	if( negSequenceFilename ) delete negSequenceFilename;
+	std::cout << outputDirectory << std::endl;
+	if( outputDirectory != NULL ){
+		free( outputDirectory );
+	}
+	std::cout << "1" << std::endl;
+	if( posSequenceFilename ) delete[] posSequenceFilename ;
+	std::cout << "2" << std::endl;
+	if( negSequenceFilename ) free( negSequenceFilename );
+	std::cout << "3" << std::endl;
 //	if( posSequenceBasename ) delete posSequenceBasename;
 //	if( negSequenceBasename ) free( negSequenceBasename );
-//	if( alphabetType ) delete alphabetType;
+	if( alphabetType ) free( alphabetType );
+	std::cout << "4" << std::endl;
 //	if( posSequenceSet ) free( posSequenceSet );
 //	if( negSequenceSet ) free( negSequenceSet );
 //	if( intensityFilename ) free( intensityFilename );
 //	if( BaMMpatternFilename ) free( BaMMpatternFilename );
-//	if( bindingSitesFilename ) free( bindingSitesFilename );
+	if( bindingSitesFilename ) free( bindingSitesFilename );
+	std::cout << "5" << std::endl;
 //	if( PWMFilename ) free( PWMFilename );
 //	if( BMMFilename ) free( BMMFilename );
 
 //	Alphabet::destruct();
+*/
 }

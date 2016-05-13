@@ -10,16 +10,21 @@
 
 #include <vector>
 #include <string>
+#include <list>
 #include <iostream>
+#include <numeric>						// std::iota
+#include <iomanip>						// std::setprecision
+#include <fstream>
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 
+
 #include "SequenceSet.h"
 #include "Alphabet.h"
-#include "lib/getopt_pp.h"		// GetOpt function
+#include "getopt_pp/getopt_pp.h"		// GetOpt function
 
 class Global {
 
@@ -47,10 +52,10 @@ public:
 	static char*		BaMMpatternFilename;	// filename of BaMMpattern file
 	static char*		bindingSitesFilename;	// filename of binding sites file
 	static char*		PWMFilename;			// filename of PWM file
-	static char*		BMMFilename;			// filename of Markov model (.bmm) file
+	static char*		BaMMFilename;			// filename of Markov model (.bmm) file
 
 	// model options
-	static unsigned int	modelOrder;				// model order
+	static int			modelOrder;				// model order
 	static std::vector<float>	modelAlpha;		// initial alphas
 	static std::vector<int>		addColumns;		// add columns to the left and right of models used to initialize Markov models
 	static bool			noLengthOptimization;	// disable length optimization
@@ -77,13 +82,15 @@ public:
 	static bool			verbose;				// verbose printouts, defaults to false
 
 	static void         init( int nargs, char* args[] );
-
 	static void         destruct();
+//	Global( int nargs, char* args[] );
+//	~Global();
 
 private:
 
 	static int	        readArguments( int nargs, char* args[] );
 	static void	        createDirectory( char* dir );
+	static char*		baseName( char* path );
 	static void	        generateFolds( unsigned int posN,unsigned int negN, unsigned int fold );
 	static void	        printHelp();
 };
