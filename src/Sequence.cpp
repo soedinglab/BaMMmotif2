@@ -27,12 +27,11 @@ Sequence::Sequence( uint8_t* sequence, int L, std::string header ){
 
 Sequence::~Sequence(){
 //	std::cout << "This is a destructor for Sequence class. " << std::endl;
-	// No need to free sequence_, => temporary objects are automatically destroyed when loop out
 }
 
 uint8_t* Sequence::createRevComp( uint8_t* sequence, int L ){
 	sequence_ = ( uint8_t* )malloc( 2* L );
-	for( unsigned int i = 0; i < L; i++ ){
+	for( int i = 0; i < L; i++ ){
 		sequence_[i] = sequence[i];											// the original sequence
 		sequence_[2*L-i-1] = Alphabet::getComplementCode( sequence[i] );	// the reverse complementary
 	}

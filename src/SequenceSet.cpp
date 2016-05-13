@@ -218,11 +218,10 @@ int SequenceSet::readFASTA(){
 					for( int i = 0; i < L; i++ ){
 						encodeSeq[i] = Alphabet::getCode( sequence[i] );
 						if( encodeSeq[i] == 0 ){
-							fprintf( stderr, "The FASTA file contains other alphabet(s) "
+							fprintf( stderr, "Error: The FASTA file contains other alphabet(s) "
 									"than %s on line %d.\n", Alphabet::getAlphabet(), N );
 							exit( -1 );
 						}
-
 						baseCounts[encodeSeq[i]-1]++;			// count the occurrence of mono-nucleotides
 					}
 
@@ -262,7 +261,7 @@ int SequenceSet::readFASTA(){
 			for( int i = 0; i < L; i++ ){
 				encodeSeq[i] = Alphabet::getCode( sequence[i] );
 				if( encodeSeq[i] == 0 ){
-					fprintf( stderr, "The FASTA file contains other alphabet(s) "
+					fprintf( stderr, "Error: The FASTA file contains other alphabet(s) "
 							"than %s on line %d.\n", Alphabet::getAlphabet(), N );
 					exit( -1 );
 				}
@@ -279,7 +278,7 @@ int SequenceSet::readFASTA(){
 			delete []encodeSeq;
 		}
 	} else {
-		fprintf( stderr, "Cannot open positive sequence file: %s\n", sequenceFilepath_ );
+		fprintf( stderr, "Error: Cannot open positive sequence file: %s\n", sequenceFilepath_ );
 		exit( -1 );
 	}
 
@@ -296,10 +295,12 @@ int SequenceSet::readFASTA(){
 
 	baseFrequencies_ = new float[Alphabet::getSize()];
 
+	fprintf( stderr, "[Statistic] The base counts are: \n" );
 	for( unsigned int i = 0; i < Alphabet::getSize(); i++ ){	// Calculate the frequencies of all mono-nucleotides
 		baseFrequencies_[i] = ( float )baseCounts[i] / ( float )baseSumCount;
-		fprintf( stderr, "The base count is: %d\n", baseCounts[i] );
+		fprintf( stderr, "%d ( %c )\t", baseCounts[i], Alphabet::getAlphabet()[i] );
 	}
+	fprintf( stderr, "\n\n" );
 	delete []baseCounts;
 
 	return 0;
