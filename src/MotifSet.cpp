@@ -45,6 +45,7 @@ MotifSet::MotifSet(){
 		std::cout << "Motif from bindingSitesFile has been initialized." << std::endl;
 
 		motifs_.push_back( motif );
+
 		N_ = 1;
 
 		delete motif;
@@ -56,7 +57,7 @@ MotifSet::MotifSet(){
 		// motif.initFromPWM( file )
 		// motifs.push_back( motif )
 
-	} else if( Global::BMMFilename != NULL ){
+	} else if( Global::BaMMFilename != NULL ){
 
 		// read file to calculate motif length
 		// Motif* motif = new Motif( length )
@@ -64,12 +65,12 @@ MotifSet::MotifSet(){
 		// motifs.push_back( motif )
 	}
 
-	print();
-	write();
+	if( Global::verbose ) print();
+	//write();
 }
 
 MotifSet::~MotifSet(){
-
+	motifs_.clear();
 }
 
 std::list<Motif*> MotifSet::getMotifs(){
@@ -81,11 +82,16 @@ int MotifSet::getN(){
 }
 
 void MotifSet::print(){
-	for( int n = 0; n < N_; n++ ){
-
+	for( std::list<Motif*>::const_iterator iterator = motifs_.begin(); iterator != motifs_.end(); ++iterator ){
+		Motif* motif = *iterator;
+		motif->print();
 	}
 }
 void MotifSet::write(){
+	for( std::list<Motif*>::const_iterator iterator = motifs_.begin(); iterator != motifs_.end(); ++iterator ){
+		Motif* motif = *iterator;
+		motif->write();
+	}
 
 }
 

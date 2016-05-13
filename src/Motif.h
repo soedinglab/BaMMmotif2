@@ -22,7 +22,7 @@ public:
 
 	void initFromIUPACPattern( char* pattern );			// initialize v from IUPAC pattern  (BMM pattern)
 
-	void initFromBindingSites( char const* filename );	// initialize v from binding site file
+	void initFromBindingSites( char* filename );		// initialize v from binding site file
 
 	void initFromPWM( char* filename );					// initialize v from PWM file
 

@@ -5,9 +5,6 @@
  *      Author: administrator
  */
 
-#include <fstream>
-#include <iomanip>			// std::setprecision
-
 #include "Motif.h"
 
 Motif::Motif( int length ){					// allocate memory for v
@@ -51,7 +48,7 @@ void Motif::initFromIUPACPattern( char* pattern ){
 }
 
 // initialize v from binding site file
-void Motif::initFromBindingSites( char const* filename ){
+void Motif::initFromBindingSites( char* filename ){
 
 	// initialize n
 	int*** n;
@@ -70,7 +67,7 @@ void Motif::initFromBindingSites( char const* filename ){
 	std::ifstream file( filename );				// read file
 	std::string seq;							// read each sequence from single line
 	int length;
-	unsigned int lineNum = 0;
+	int lineNum = 0;
 
 	while( getline( file, seq ).good() ){
 		length = seq.length();
@@ -105,12 +102,20 @@ void Motif::initFromBindingSites( char const* filename ){
 	// calculate v from k-mer counts n using calculateV(n)
 	calculateV( n, length_ * lineNum );
 
-	print();
-	write();
+	if( Global::verbose ) print();
+
 	// set isInitialized
 	isInitialized_ = true;
 
-	delete n;
+	// free memory
+//	for( int k = 0; k < Global::modelOrder + 1; k++ ){
+//		for( int y = 0; y < pow( Alphabet::getSize(), k + 1 ); y++ ){
+//			delete[] n[k][y];
+//		}
+//		delete[] n[k];
+//	}
+//	delete[] n;
+
 }
 
 // initialize v from PWM file
@@ -142,7 +147,7 @@ void Motif::calculateV( int*** n, int sum ){
 	for( int k = 1; k < Global::modelOrder + 1; k++ ){
 		for( int y = 0; y < pow( Alphabet::getSize(), k + 1 ); y++ ){
 			int y2 = y / pow( Alphabet::getSize(), k );				// cut off first base in (k+1)-mer y
-			int yk = y % int( pow( Alphabet::getSize(), k ) ) ;		// cut off last base in (k+1)-mer y
+			int yk = y % int( pow( Alphabet::getSize(), k ) );		// cut off last base in (k+1)-mer y
 			for( int j = 1; j <= length_; j++ ){
 				v_[k][y][j] = ( n[k][y][j] + Global::modelAlpha[k] * v_[k-1][y2][j] )
 						/ ( n[k-1][yk][j-1] + Global::modelAlpha[k] );
@@ -161,8 +166,12 @@ void Motif::updateV( float*** n, float** alpha ){
 }
 
 void Motif::print(){
-	std::cout << "Initial probability model from posSequence (float*** v) is:" << std::endl;
-	for( int j = 0; j < length_; j++ ){
+	printf( " ___________________________\n"
+			"|                           |\n"
+			"| INITIALIZED PROBABILITIES |\n"
+			"|___________________________|\n\n" );
+
+	for( int j = 0; j < this->getLength(); j++ ){
 		std::cout << "At position " << j+1 << std::endl;
 		for( int k = 0; k < Global::modelOrder + 1; k++ ){
 			for( int y = 0; y < pow( Alphabet::getSize(), k + 1 ); y++ ){
@@ -174,9 +183,8 @@ void Motif::print(){
 }
 
 void Motif::write(){
-	std::string opath = std::string( Global::outputDirectory )  + '/' + std::string( Global::posSequenceBasename ) + "Init.probs";
+	std::string opath = std::string( Global::outputDirectory )  + '/' + std::string( Global::posSequenceBasename ) + ".condsInit";
 	std::ofstream ofile( opath.c_str() );
-	ofile << std::endl;
 	for( int j = 0; j < length_; j++ ){
 		for( int k = 0; k < Global::modelOrder + 1; k++ ){
 			for( int y = 0; y < pow( Alphabet::getSize(), k+1 ); y++ ){
