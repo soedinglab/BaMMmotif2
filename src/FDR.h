@@ -5,19 +5,18 @@
  *      Author: wanwan
  */
 
+
 #ifndef FDR_H_
 #define FDR_H_
-/*
+
 #include "BackgroundModel.h"
 #include "Motif.h"
+#include "EM.h"
 
 class FDR {
-
 public:
 
-	FDR( const Motif& motif ){
-		// allocate memory for posLogOddsScore, negLogOddsScore, P, and R
-	}
+	FDR( const Motif& motif );
 	~FDR();
 
 	void evaluateMotif();
@@ -28,8 +27,8 @@ private:
 
 	const Motif&	motif_;				// motif learned on full SequenceSet
 
-	float** 		posS_;		        // log-odds scores on positive test SequenceSets, posS_[n][i]
-	float** 		negS_;		        // log-odds scores on negative test SequenceSets, negS_[nm][i]
+	float** 		posS_;				// log-odds scores on positive test SequenceSets, posS_[n][i]
+	float** 		negS_;				// log-odds scores on negative test SequenceSets, negS_[nm][i]
 
 	float* 			P_;					// precision
 	float* 			R_;					// recall
@@ -47,6 +46,5 @@ private:
 	void 		    calculatePR();
 };
 
-*/
-
 #endif /* FDR_H_ */
+
