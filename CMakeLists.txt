@@ -14,6 +14,11 @@ SET (CMKAE_CXX_COMPILER /usr/bin/c++)
 set(CMAKE_CXX_FLAGS "-std=c++11 -DLOG_MAX_LEVEL=0 -D__GXX_EXPERIMENTAL_CXX0X__ -D__cplusplus=201103L -O0 -g3 -pedantic -pedantic-errors -Wall -fmessage-length=0 -fno-strict-aliasing -Wconversion")
 
 set(CMAKE_C_FLAGS "-D__GXX_EXPERIMENTAL_CXX0X__ -O0 -pedantic -pedantic-errors -Wall -fmessage-length=0 -Wconversion")
-
-file(GLOB SOURCES "src/*.cpp" "src/*.h" "src/lib/*.h" "src/lib/*.cpp")
+ 
+file(GLOB SOURCES "src/*.cpp" "src/*.h" "src/getopt_pp/*.h" "src/getopt_pp/*.cpp")
 add_executable(BaMMmotif ${SOURCES})
+
+
+
+
+
