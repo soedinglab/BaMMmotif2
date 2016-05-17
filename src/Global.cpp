@@ -19,7 +19,7 @@ char*               Global::negSequenceFilename = NULL; // filename of negative 
 
 char*				Global::posSequenceBasename = NULL;	// basename of positive sequence FASTA file
 char*				Global::negSequenceBasename = NULL;	// basename of negative sequence FASTA file
-char*				Global::alphabetType;				// alphabet type is defaulted to standard which is ACGT
+char*				Global::alphabetType = NULL;		// alphabet type is defaulted to standard which is ACGT
 bool                Global::revcomp = false;            // also search on reverse complement of sequences
 
 SequenceSet*        Global::posSequenceSet = NULL;		// positive Sequence Set
@@ -36,7 +36,7 @@ char*               Global::BaMMFilename = NULL;			// filename of Markov model (
 
 // model options
 int        			Global::modelOrder = 2;				// model order
-std::vector<float>	Global::modelAlpha( modelOrder+1, 10.0f );// initial alphas
+std::vector<float>	Global::modelAlpha( modelOrder+1, 10.0f ); // initial alphas
 std::vector<int>    Global::addColumns( 0, 0 );			// add columns to the left and right of models used to initialize Markov models
 bool                Global::noLengthOptimization = false;// disable length optimization
 
@@ -184,21 +184,18 @@ int Global::readArguments( int nargs, char* args[] ){
 	GetOpt::GetOpt_pp opt( nargs, args );
 
 	// negative sequence set
-//	std::string negSequenceFile;
-//	negSequenceFilename = const_cast<char*>( negSequenceFile.c_str() );
 	if( opt >> GetOpt::OptionPresent( "negSeqFile" ) ){
 		opt >> GetOpt::Option( "negSeqFile", negSequenceFilename );
 		negSequenceBasename = baseName( negSequenceFilename );
 	}
 
 	// Alphabet Type
-	std::string defaultType = "STANDARD";
-
-	alphabetType = const_cast<char*>( defaultType.c_str() );		// force to cast from const char* to char*
-	fprintf( stderr, "default alphabet type is %s\n", alphabetType );
-
-	opt >> GetOpt::Option( "alphabet", alphabetType );
-	fprintf( stderr, "chosen alphabet type is %s\n", alphabetType );
+	if( opt >> GetOpt::OptionPresent( "alphabet" ) ){
+		opt >> GetOpt::Option( "alphabet", alphabetType );
+	} else {
+		alphabetType = new char[9];
+		strcpy( alphabetType, "STANDARD");
+	}
 
 	opt >> GetOpt::OptionPresent( "revcomp", revcomp );
 
@@ -258,9 +255,7 @@ int Global::readArguments( int nargs, char* args[] ){
 }
 
 void Global::createDirectory( char* dir ){
-
 	struct stat fileStatus;
-
 	if( stat( dir, &fileStatus ) != 0 ){
 		fprintf( stderr, "Status: Output directory does not exist. "
 				"New directory is created automatically.\n" );
@@ -322,8 +317,6 @@ void Global::generateFolds( unsigned int posN, unsigned int negN, unsigned int f
 }
 
 void Global::printHelp(){
-	printf("\n=================================================================\n");
-	printf("== Welcome to use BaMMmotif version 1.0 ==");
 	printf("\n=================================================================\n");
 	printf("\n Usage: BaMMmotif OUTDIR SEQFILE [options] \n\n");
 	printf("\t OUTDIR:  output directory for all results. \n");

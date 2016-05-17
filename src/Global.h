@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <string>
+#include <cstring> 						// std::strcpy
 #include <list>
 #include <iostream>
 #include <numeric>						// std::iota
