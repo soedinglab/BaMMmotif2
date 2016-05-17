@@ -5,7 +5,8 @@
  *      Author: wanwan
  */
 
-#include <cstring>      // strlen
+#include <cstring>      // strlen, strcpy
+
 
 #include <stdlib.h>		// malloc, calloc, exit, free
 #include <stdio.h>		// stderr
@@ -25,11 +26,11 @@ void Alphabet::init( char* alphabetType ){
 		size_ = 4;
 		alphabet_ = "ACGT";
 		complementAlphabet_ = "TGCA";
-	} else if( strcmp( alphabetType, "METHYLC" ) == 0 ){
+	} else if( strcmp( alphabetType, "METHYLCY" ) == 0 ){
 		size_ = 5;
 		alphabet_ = "ACGTM";
 		complementAlphabet_ = "TGCAG";
-	} else if( strcmp( alphabetType, "HYDROXYMETHYLC" ) == 0 ){
+	} else if( strcmp( alphabetType, "HYDRMETC" ) == 0 ){
 		size_ = 5;
 		alphabet_ = "ACGTH";
 		complementAlphabet_ = "TGCAG";
@@ -38,9 +39,8 @@ void Alphabet::init( char* alphabetType ){
 		alphabet_ = "ACGTMH";
 		complementAlphabet_ = "TGCAGG";
 	} else {
-		fprintf( stderr, "The alphabet type you choose is: %s \n", alphabetType );
 		fprintf( stderr, "Please provide one of the following alphabet types: "
-		        "STANDARD, METHYLC, HYDROXYMETHYLC, EXTENDED.\n" );
+		        "STANDARD, METHYLCY, HYDRMETC, EXTENDED.\n" );
 		exit( -1 );
 	}
 
@@ -75,6 +75,3 @@ void Alphabet::destruct(){
 	if( baseToCode_ ) free( baseToCode_ );
 	if( codeToComplementCode_ ) free( codeToComplementCode_ );
 }
-
-
-
