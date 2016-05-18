@@ -284,6 +284,11 @@ int SequenceSet::readFASTA(){
 
 	seqfile.close();											// close sequence file
 
+	if( minL == 0 ){											// exclude format with empty sequence under '>'
+		fprintf( stderr, "Error: Wrong FASTA format file!\n" );
+		exit( -1 );
+	}
+
 	maxL_ = maxL;
 	minL_ = minL;
 	N_ = N;
