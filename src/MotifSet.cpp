@@ -18,10 +18,7 @@ MotifSet::MotifSet(){
 		// * motif.initFromIUPACPattern( p )
 		// motifs.push_back( motif )
 
-	} else if( Global::bindingSitesFilename ){
-
-		std::cout << "Reading in the binding sites file: " << Global::bindingSitesFilename << std::endl;
-
+	} else if( Global::bindingSitesFilename != NULL ){
 		std::ifstream file;
 		file.open( Global::bindingSitesFilename, std::ifstream::in );
 		std::string seq;
@@ -36,19 +33,12 @@ MotifSet::MotifSet(){
 			length = seq.length();
 		}
 
+		length += Global::addColumns.at(0) + Global::addColumns.at(1);
+
 		Motif* motif = new Motif( length );
-
-		std::cout << "Initializing motif from bindingSitesFile..." << std::endl;
-
 		motif->initFromBindingSites( Global::bindingSitesFilename );
-
-		std::cout << "Motif from bindingSitesFile has been initialized." << std::endl;
-
 		motifs_.push_back( motif );
-
 		N_ = 1;
-
-		delete motif;
 
 	} else if( Global::PWMFilename != NULL ){
 
@@ -66,7 +56,7 @@ MotifSet::MotifSet(){
 	}
 
 	if( Global::verbose ) print();
-	//write();
+	write();
 }
 
 MotifSet::~MotifSet(){
@@ -82,16 +72,27 @@ int MotifSet::getN(){
 }
 
 void MotifSet::print(){
+	printf( " ____________________________\n"
+			"|                            |\n"
+			"| PROBABILITIES for MotifSet |\n"
+			"|____________________________|\n\n" );
+
+	int N = 0;
 	for( std::list<Motif*>::const_iterator iterator = motifs_.begin(); iterator != motifs_.end(); ++iterator ){
-		Motif* motif = *iterator;
-		motif->print();
+		printf( " ________________________________________\n"
+				"|                                        |\n"
+				"| INITIALIZED PROBABILITIES for Motif %d  |\n"
+				"|________________________________________|\n\n", N );
+		(*iterator)->print();
+		N++;
 	}
 }
 void MotifSet::write(){
-	for( std::list<Motif*>::const_iterator iterator = motifs_.begin(); iterator != motifs_.end(); ++iterator ){
-		Motif* motif = *iterator;
-		motif->write();
-	}
-
+	// before writing, remove the previous file
+	std::string opath = std::string( Global::outputDirectory )  + '/'
+			+ std::string( Global::posSequenceBasename ) + ".condsInit";
+	remove( opath.c_str() );
+	for( std::list<Motif*>::const_iterator iterator = motifs_.begin(); iterator != motifs_.end(); ++iterator )
+		(*iterator)->write();
 }
 

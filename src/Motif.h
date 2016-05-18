@@ -20,7 +20,7 @@ public:
 	Motif( const Motif& other );
 	~Motif();
 
-	void initFromIUPACPattern( char* pattern );			// initialize v from IUPAC pattern  (BMM pattern)
+	void initFromBaMMPattern( char* pattern );			// initialize v from IUPAC pattern  (BMM pattern)
 
 	void initFromBindingSites( char* filename );		// initialize v from binding site file
 
