@@ -66,3 +66,10 @@ void Sequence::setWeight( float weight ){
 	weight_ = weight;
 }
 
+int	Sequence::extractKmer( int i, int k ){
+	int y = 0;
+	for( int n = 0; n <= k; n++ )
+		y += sequence_[i-k+n] * pow( Alphabet::getSize(), n );
+	return y;
+}
+

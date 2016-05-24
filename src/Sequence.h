@@ -22,11 +22,11 @@ public:
 	int    			getL();				                // get sequence length
 	uint8_t*        getSequence();	                   	// get base sequence as alphabet encoding
 	std::string		getHeader();		                // get sequence header
-
 	float 	        getIntensity();                     // get measured sequence intensity
 	float 	        getWeight();		                // get sequence weight
 	void 	        setIntensity( float intensity );	// set measured sequence intensity
 	void 	        setWeight( float weight );			// set sequence weight
+	int				extractKmer( int i, int k );		// extract k-mer from positions(i-k, ..., i) of the sequence
 
 private:
 
