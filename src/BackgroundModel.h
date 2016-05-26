@@ -18,17 +18,18 @@ public:
 	BackgroundModel();
 	~BackgroundModel();
 
-	void 	init();
 	void 	init( std::vector<int> folds );
-	float** getV();	                		// get conditional probabilities for k-mers
+	float* 	getV();	                		// get conditional probabilities for k-mers
 
 	void 	print();						// print background model to console
 	void 	write();			   			// write background model to file basename.bmm in output directory
 
 private:
 
-	float** v_;					    		// conditional probabilities for k-mers
-	void 	calculateV( int** n );  		// calculate v from k-mer counts n
+	float* 	v_;					    		// conditional probabilities for k-mers
+	void 	calculateV( int* n );  			// calculate v from k-mer counts n
+	int*	powA_;							// alphabetSize to the power k
+	int		Y_;								// total number of (k+1)-mers
 };
 
 

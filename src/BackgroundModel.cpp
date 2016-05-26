@@ -9,174 +9,101 @@
 #include "SequenceSet.h"
 
 BackgroundModel::BackgroundModel(){
+	powA_ = new int[Global::bgModelOrder+2];
+	for( int k = 0; k < Global::bgModelOrder + 2; k++ )
+		powA_[k] = Global::ipow( Alphabet::getSize(), k );
+	Y_ = 0;
+	for( int k = 0; k < Global::bgModelOrder + 1; k++ )
+		Y_ += powA_[k+1];
 	// allocate memory for v
-	v_ = ( float** )calloc( ( Global::bgModelOrder+1 ), sizeof( float* ) );
-	for( int k = 0; k <= Global::bgModelOrder; k++ )
-		v_[k] = ( float* )calloc( pow( Alphabet::getSize(), k+1 ), sizeof( float ) );
+	v_ = ( float* )calloc( Y_, sizeof( float ) );
+	std::cout << "Number of (k+1)-mers: " << Y_ << std::endl;
 }
 
 BackgroundModel::~BackgroundModel(){
-	if( v_ ) free( v_ );					// is it correct?
+	if( v_ ) free( v_ );
 }
 
-void BackgroundModel::init(){				// when full negSeqSet is applied
+void BackgroundModel::init( std::vector<int> folds = std::vector<int> () ){
+    // initialize n_occ[y]
+    int* n_occ;
+	n_occ = new int[Y_];
+	for( int y = 0; y < Y_; y++ )
+		n_occ[y] = 0;
 
-    // initialize n
-    int** n;
-	n = new int*[Global::bgModelOrder + 1];
-	for( int k = 0; k < Global::bgModelOrder + 1; k++ ){
-		int sizeY = int( pow( Alphabet::getSize(), k + 1 ) );
-		n[k] = new int[sizeY];
-		for( int y = 0; y < pow( Alphabet::getSize(), k + 1 ); y++ )
-			n[k][y] = 0;
-	}
-
-	// count n
-	for( unsigned int i = 0; i < Global::negSequenceSet->getN(); i++ ){
-		Sequence sequence = Global::negSequenceSet->getSequences()[i];
-
-		int l;								// cut seq by half when revcomp is true
-		if( Global::revcomp )
-			l = sequence.getL()/2;
-		else
-			l = sequence.getL();
-
-		for( int k = 0; k < Global::bgModelOrder + 1; k++ ){
-			for( int j = k; j < l; j++ ){
-				int y = 0;
-				for( int i = 0; i <= k; i++ )
-					y += int( pow( Alphabet::getSize(), i ) * ( sequence.getSequence()[j-k+i] - 1 ) );
-				n[k][y]++;
-			}
-		}
-	}
-
-	if( Global::verbose ){
-		printf( " ___________________________\n"
-				"|                           |\n"
-				"| k-mer counts for bgModel  |\n"
-				"|___________________________|\n\n" );
-		for( int k = 0; k < Global::bgModelOrder + 1; k++ ){
-			std::cout << "k = " << k << std::endl;
-			for( int y = 0; y < pow( Alphabet::getSize(), k + 1 ); y++ ){
-				std::cout << std::fixed << std::setprecision(4) << n[k][y] << '\t';
-			}
-			std::cout << std::endl;
-		}
-	}
-
-    // calculate v from k-mer counts n
-	calculateV( n );
-
-	if( Global::verbose ) print();
-
-	// free memory
-	for( int i = 0; i < Global::bgModelOrder + 1; i++ ){
-		delete[] n[i];
-	}
-	delete[] n;
-
-}
-
-void BackgroundModel::init( std::vector<int> folds ){		// for training sets in cross-validation
-
-    // initialize n
-    int** n;
-	n = new int*[Global::bgModelOrder + 1];
-	for( int k = 0; k < Global::bgModelOrder + 1; k++ ){
-		int sizeY = int( pow( Alphabet::getSize(), k + 1 ) );
-		n[k] = new int[sizeY];
-		for( int y = 0; y < pow( Alphabet::getSize(), k + 1 ); y++ ){
-			n[k][y] = 0;
-		}
-	}
-
-	for( unsigned int f = 0; f < folds.size(); f++ ){
-		// count n
-		for( unsigned int r = 0; r < Global::negFoldIndices[f].size(); r++ ){
-			unsigned int idx = Global::negFoldIndices[f][r];
-
-			std::cout << "For negSequence " << idx << ":" << std::endl;
-
-			Sequence sequence = Global::negSequenceSet->getSequences()[idx];
-
-			int l;							// cut seq by half when revcomp is true
-			if( Global::revcomp )
-				l = sequence.getL()/2;
-			else
-				l = sequence.getL();
-
+	// count n_occ[y]
+	if( folds.size() == 0 ){
+		// when full negSeqSet is applied
+		for( unsigned int n = 0; n < Global::negSequenceSet->getN(); n++ ){
+			Sequence seq = Global::negSequenceSet->getSequences()[n];
 			for( int k = 0; k < Global::bgModelOrder + 1; k++ ){
-				std::cout << "k = " << k << std::endl;
-				for( int j = k; j < l; j++ ){
-					int y = 0;
-					for( int i = 0; i <= k; i++ )
-						y += int( pow( Alphabet::getSize(), i ) * ( sequence.getSequence()[j-k+i] - 1 ) );
-					n[k][y]++;
-					std::cout << n[k][y] << '\t';
+				for( int i = k; i < seq.getL(); i++ ){
+					int y = seq.extractKmerbg( i, k );
+					if( y >= 0 )				// skip the non-set alphabets, such as N
+						n_occ[y]++;
 				}
-				std::cout << std::endl;
 			}
-			std::cout << std::endl << std::endl;
 		}
-		std::cout << std::endl << std::endl;
+	} else {
+		// for training sets in cross-validation
+		for( unsigned int f = 0; f < folds.size(); f++ ){
+			for( unsigned int r = 0; r < Global::negFoldIndices[f].size(); r++ ){
+				unsigned int idx = Global::negFoldIndices[f][r];
+				Sequence seq = Global::negSequenceSet->getSequences()[idx];
+				for( int k = 0; k < Global::bgModelOrder + 1; k++ ){
+					for( int i = k; i < seq.getL(); i++ ){
+						int y = seq.extractKmerbg( i, k );
+						if( y >= 0 )			// skip the non-set alphabets, such as N
+							n_occ[y]++;
+					}
+				}
+			}
+		}
 	}
 
-	if( Global::verbose ){
+	if( Global::verbose ){		// Only for testing
 		printf( " ___________________________\n"
 				"|                           |\n"
 				"| k-mer counts for bgModel  |\n"
 				"|___________________________|\n\n" );
-		for( int k = 0; k < Global::bgModelOrder + 1; k++ ){
-			std::cout << "k = " << k << std::endl;
-			for( int y = 0; y < pow( Alphabet::getSize(), k + 1 ); y++ ){
-				std::cout << std::fixed << std::setprecision(4) << n[k][y] << '\t';
-			}
-			std::cout << std::endl;
-		}
+
+		for( int y = 0; y < Y_; y++ )
+			std::cout << n_occ[y] << '\t';
+		std::cout << std::endl;
 	}
 
-    // calculate v from k-mer counts n
-	calculateV( n );
+    // calculate v from k-mer counts n_occ
+	calculateV( n_occ );
 
 	if( Global::verbose ) print();
 
 	// free memory
-	for( int i = 0; i < Global::bgModelOrder + 1; i++ ){
-		delete[] n[i];
-	}
-	delete[] n;
+	delete[] n_occ;
 }
 
-void BackgroundModel::calculateV( int** n ){
+void BackgroundModel::calculateV( int* n_occ ){
 
-	// sum of the counts n[k]
-	int* N = new int[Global::bgModelOrder + 1];
-	for( int k = 0; k < Global::bgModelOrder + 1; k++ ){
-		N[k] = 0;
-		for( int y = 0; y < pow( Alphabet::getSize(), k + 1 ); y++ ){
-			N[k] += n[k][y] ;
-		}
-	}
+	// sum of the counts n[y]
+	float sum = 0.0f;
+	for( int y = 0; y < powA_[1]; y++ )
+		sum += float( n_occ[y] );
 
-	// for k = 0:
-	for( int y = 0, k = 0; y < pow( Alphabet::getSize(), k + 1 ); y++ )
-		v_[k][y] = n[k][y] / float( N[k] );					// when k = 0, v = freqs
+	// for k = 0: v = freqs
+	for( int y = 0; y < powA_[1]; y++ )
+		v_[y] = float( n_occ[y] ) / sum ;
 
 	// for k > 0:
-	for( int k = 1; k < Global::bgModelOrder + 1; k++ ){
-		for( int y = 0; y < pow( Alphabet::getSize(), k + 1 ); y++ ){
-			int y2 = y / Alphabet::getSize();						// cut off the first nucleotide, e.g. from ACGT to CGT
-			int yk = y % int( pow( Alphabet::getSize(), k ) );		// cut off the last nucleotide, e.g. from ACGT to ACG
-			v_[k][y] = ( n[k][y] + Global::modelAlpha[k] * v_[k-1][y2] )
-					/ ( n[k-1][yk] + Global::modelAlpha[k] );
+	for( int y = powA_[1]; y < Y_; y++ ){
+		int y2 = y / powA_[1] - 1;						// cut off the first nucleotide, e.g. from ACGT to CGT
+		for( int k = 1; k < Global::bgModelOrder; k++ ){
+			int yk = y % powA_[k];						// cut off the last nucleotide, e.g. from ACGT to ACG
+			v_[y] = ( n_occ[y] + Global::bgModelAlpha * v_[y2] ) / ( n_occ[yk] + Global::bgModelAlpha );
+//			v_[y] =  float( n_occ[y] ) / n_occ[yk];		// without interpolation of alpha
 		}
 	}
-
-	delete[] N;
 }
 
-float** BackgroundModel::getV(){
+float* BackgroundModel::getV(){
     return v_;
 }
 
@@ -186,11 +113,9 @@ void BackgroundModel::print(){
 			"|                           |\n"
 			"| probabilities for bgModel |\n"
 			"|___________________________|\n\n" );
-	for( int k = 0; k < Global::bgModelOrder + 1; k++ ){
-		std::cout << "when k = " << k << std::endl;
-		for( int y = 0; y < pow( Alphabet::getSize(), k + 1 ); y++ ){
-			std::cout << std::fixed << std::setprecision(4) << v_[k][y] << '\t';
-		}
+	for( int k = 0, y = 0; k < Global::bgModelOrder + 1; k ++ ){
+		for( int i = 0; i < powA_[k+1]; i ++, y++ )
+			std::cout << std::fixed << std::setprecision(4) << v_[y] << '\t';
 		std::cout << std::endl;
 	}
 }
@@ -198,10 +123,9 @@ void BackgroundModel::print(){
 void BackgroundModel::write(){
 	std::string opath = std::string( Global::outputDirectory )  + '/' + std::string( Global::posSequenceBasename ) + ".probsBg";
 	std::ofstream ofile( opath.c_str() );
-	for( int k = 0; k < Global::bgModelOrder + 1; k++ ){
-		for( int y = 0; y < pow( Alphabet::getSize(), k+1 ); y++ ){
-			ofile << std::fixed << std::setprecision(4) << v_[k][y] << '\t';
-		}
+	for( int k = 0, y = 0; k < Global::bgModelOrder + 1; k++){
+		for( int i = 0; i < powA_[k+1]; i ++, y++ )
+			ofile << std::fixed << std::setprecision(4) << v_[y] << '\t';
 		ofile << std::endl;
 	}
 }
