@@ -17,7 +17,6 @@ BackgroundModel::BackgroundModel(){
 		Y_ += powA_[k+1];
 	// allocate memory for v
 	v_ = ( float* )calloc( Y_, sizeof( float ) );
-	std::cout << "Number of (k+1)-mers: " << Y_ << std::endl;
 }
 
 BackgroundModel::~BackgroundModel(){
@@ -115,7 +114,7 @@ void BackgroundModel::print(){
 			"|___________________________|\n\n" );
 	for( int k = 0, y = 0; k < Global::bgModelOrder + 1; k ++ ){
 		for( int i = 0; i < powA_[k+1]; i ++, y++ )
-			std::cout << std::fixed << std::setprecision(4) << v_[y] << '\t';
+			std::cout << std::scientific << v_[y] << '\t';
 		std::cout << std::endl;
 	}
 }
@@ -125,7 +124,7 @@ void BackgroundModel::write(){
 	std::ofstream ofile( opath.c_str() );
 	for( int k = 0, y = 0; k < Global::bgModelOrder + 1; k++){
 		for( int i = 0; i < powA_[k+1]; i ++, y++ )
-			ofile << std::fixed << std::setprecision(4) << v_[y] << '\t';
+			ofile << std::scientific << v_[y] << '\t';
 		ofile << std::endl;
 	}
 }

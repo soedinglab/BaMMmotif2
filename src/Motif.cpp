@@ -154,20 +154,21 @@ int Motif::getW(){
 
 void Motif::calculateV( int*** n, int N ){					// N is the number of motifs
 
+	BackgroundModel bg;
+	bg.init( std::vector<int> () );
 	// for k = 0, v_ = freqs:
 	for( int y = 0, k = 0; y < powA_[k+1]; y++ )
 		// j runs over the true motif positions
 		for( int j = 0; j < w_; j++ )
-			v_[k][y][j] = n[k][y][j] / float( N );
+			v_[k][y][j] = ( n[k][y][j] + Global::modelAlpha.at(k) * bg.getV()[y] ) / ( N + Global::modelAlpha.at(k) );
 
 	// for k > 0:
 	for( int k = 1; k < Global::modelOrder + 1; k++ ){
 		for( int y = 0; y < powA_[k+1]; y++ ){
 			int y2 = y / powA_[1];							// cut off the first nucleotide in (k+1)-mer y
 			int yk = y % powA_[k];							// cut off the last nucleotide in (k+1)-mer y
-			for( int j = k; j < w_; j++ ){
+			for( int j = k; j < w_; j++ )
 				v_[k][y][j] = ( n[k][y][j] + Global::modelAlpha.at(k) * v_[k-1][y2][j] ) / ( n[k-1][yk][j-1] + Global::modelAlpha.at(k) );
-			}
 		}
 	}
 
@@ -192,7 +193,7 @@ void Motif::print(){
 		std::cout << "when k = " << k << std::endl;
 		for( int y = 0; y < powA_[k+1]; y++ ){
 			for( int j = 0; j < w_; j++ ){
-				std::cout << std::fixed << std::setprecision(4) << v_[k][y][j] << '\t' << '\t';
+				std::cout << std::scientific << v_[k][y][j] << '\t' << '\t';
 			}
 			std::cout << std::endl;
 		}
@@ -219,7 +220,7 @@ void Motif::write(){
 	for( int j = 0; j < w_; j++ ){
 		for( int k = 0; k < Global::modelOrder + 1; k++ ){
 			for( int y = 0; y < powA_[k+1]; y++ ){
-				ofile << std::fixed << std::setprecision(4) << v_[k][y][j] << '\t';
+				ofile << std::scientific << v_[k][y][j] << '\t';
 			}
 			ofile << std::endl;
 		}
