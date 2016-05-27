@@ -19,7 +19,7 @@ Sequence::Sequence( uint8_t* sequence, int L, std::string header ){
 		sequence_ = ( uint8_t* )malloc( L_ );
 		std::memcpy( sequence_, sequence, L_ );
 	} else {
-		L_ = 2 * L;
+		L_ = 2 * L + 1;
 		createRevComp( sequence, L );
 	}
 	header_.assign( header );
@@ -27,13 +27,15 @@ Sequence::Sequence( uint8_t* sequence, int L, std::string header ){
 
 Sequence::~Sequence(){
 //	std::cout << "This is a destructor for Sequence class. " << std::endl;
+//	if( sequence_ ) free( sequence_ );
 }
 
 uint8_t* Sequence::createRevComp( uint8_t* sequence, int L ){
-	sequence_ = ( uint8_t* )malloc( 2* L );
+	sequence_ = ( uint8_t* )malloc( 2*L + 1);
 	for( int i = 0; i < L; i++ ){
 		sequence_[i] = sequence[i];											// the original sequence
-		sequence_[2*L-i-1] = Alphabet::getComplementCode( sequence[i] );	// the reverse complementary
+		sequence_[i+1] = -1;												// add a -1 at the junction
+		sequence_[2*L-i] = Alphabet::getComplementCode( sequence[i] );		// the reverse complementary
 	}
 	return sequence_;
 }
@@ -68,8 +70,18 @@ void Sequence::setWeight( float weight ){
 
 int	Sequence::extractKmer( int i, int k ){
 	int y = 0;
-	for( int n = 0; n <= k; n++ )
-		y += sequence_[i-k+n] * pow( Alphabet::getSize(), n );
+	if( sequence_[i] != 0 )
+		for( int n = 0; n <= k; n++ )
+			y += ( sequence_[i-k+n] -1 ) * Global::ipow( Alphabet::getSize(), n );
+	else
+		y = -1;
 	return y;
 }
 
+int	Sequence::extractKmerbg( int i, int k ){
+	int y = -1;
+	if( sequence_[i] != 0 )
+		for( int n = 0; n <= k; n++ )
+			y += sequence_[i-k+n] * Global::ipow( Alphabet::getSize(), n );
+	return y;
+}

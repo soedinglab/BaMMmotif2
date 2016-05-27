@@ -27,6 +27,7 @@ public:
 	void 	        setIntensity( float intensity );	// set measured sequence intensity
 	void 	        setWeight( float weight );			// set sequence weight
 	int				extractKmer( int i, int k );		// extract k-mer from positions(i-k, ..., i) of the sequence
+	int				extractKmerbg( int i, int k );		// extract k-mer from positions(i-k, ..., i) of the sequence for bgModel
 
 private:
 
