@@ -56,7 +56,6 @@ MotifSet::MotifSet(){
 	}
 
 	if( Global::verbose ) print();
-	write();
 }
 
 MotifSet::~MotifSet(){
@@ -82,7 +81,7 @@ void MotifSet::print(){
 		printf( " ________________________________________\n"
 				"|                                        |\n"
 				"| INITIALIZED PROBABILITIES for Motif %d  |\n"
-				"|________________________________________|\n\n", N );
+				"|________________________________________|\n\n", N+1 );
 		(*iterator)->print();
 		N++;
 	}
@@ -91,7 +90,7 @@ void MotifSet::write(){
 	// before writing, remove the previous file
 	std::string opath = std::string( Global::outputDirectory )  + '/'
 			+ std::string( Global::posSequenceBasename ) + ".condsInit";
-	remove( opath.c_str() );
+	remove( opath.c_str() );					// avoid appending if the file already exists
 	for( std::list<Motif*>::const_iterator iterator = motifs_.begin(); iterator != motifs_.end(); ++iterator )
 		(*iterator)->write();
 }

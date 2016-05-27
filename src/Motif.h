@@ -28,10 +28,10 @@ public:
 
 	void initFromBayesianMarkovModel( char* filename );	// initialize v from Bayesian Markov model file and set isInitialized
 
-	int         getLength(); 							// get length
-	float***    getV();									// get v
+	int         getW(); 								// get motif length w
+	float***    getV();									// get conditional probabilities v
 
-	void        updateV( float*** n, float** alpha );
+	void        updateV( int*** n, float** alpha );
 
 	void 		print();					   			// print v to console
 	void 		write();					    		// write v (basename.bmm). Include header with alphabetType
@@ -40,10 +40,10 @@ private:
 
 	bool		isInitialized_ = false;		    		// to assert in all public methods
 
-	int 		length_;					    		// length of motif
-	float***    v_;				                		// conditional probabilities for k-mers y at motif position j, v_[k][y][j]
-
-	void 		calculateV( int*** n, int sum );		// calculate v from k-mer counts n and global alphas
+	int 		w_;					    				// motif length
+	float***    v_;				                		// conditional probabilities for k-mers y at motif position j
+	int*		powA_;									// alphabetSize to the power k
+	void 		calculateV( int*** n, int N );			// calculate v from k-mer counts n and global alphas, N is number of motifs
 };
 
 
