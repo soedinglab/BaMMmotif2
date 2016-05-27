@@ -14,10 +14,11 @@
 
 #include "Alphabet.h"
 
-unsigned int 	Alphabet::size_;					// alphabet size, count the number of letters
+int 			Alphabet::size_;					// alphabet size, count the number of letters
 char const* 	Alphabet::alphabet_;				// alphabet bases ([N,A,C,G,T], [N,A,C,G,T,mC], ...)
 char const* 	Alphabet::complementAlphabet_;		// complementary alphabet bases ([N,T,G,C,A,G], [N,T,G,C,A,G], ...)
 uint8_t* 		Alphabet::baseToCode_;				// conversion from bases to encoding
+char* 			Alphabet::codeToBase_;						// conversion from encoding to base
 uint8_t* 		Alphabet::codeToComplementCode_;	// conversion from encoding to complement encoding
 
 void Alphabet::init( char* alphabetType ){
@@ -45,15 +46,19 @@ void Alphabet::init( char* alphabetType ){
 	}
 
 	baseToCode_ = ( uint8_t* )calloc( 128, sizeof( uint8_t ) );
-	for( unsigned int i = 0; i < size_; i++ ){
+	codeToBase_ = ( char* )calloc( 128, sizeof( char ) );
+	for( int i = 0; i < size_; i++ ){
+	  	// base:	A	C	T	G	...		N
+	  	// code:	1	2	3	4	...		0
 	  	baseToCode_[( int )alphabet_[i]] = ( uint8_t )( i + 1 );
-	  	baseToCode_[( int )tolower( alphabet_[i] )] = ( uint8_t )( i + 1 );		// for alphabet of lower case
+	  	baseToCode_[( int )tolower( alphabet_[i] )] = ( uint8_t )( i + 1 );		// for lower case
+	  	codeToBase_[i+1] = alphabet_[i];
 	}
 
 	codeToComplementCode_ = ( uint8_t* )calloc( size_+1, sizeof( uint8_t ) );
-	for( unsigned int i = 0; i < size_; i++ ){
+	for( int i = 0; i < size_; i++ )
 		codeToComplementCode_[i+1] = baseToCode_[( int )complementAlphabet_[i]];
-	}
+
 }
 
 char const* Alphabet::getAlphabet(){
@@ -64,7 +69,7 @@ char const* Alphabet::getComplementAlphabet(){
 	return complementAlphabet_;
 }
 
-void Alphabet::setSize( unsigned int size ){
+void Alphabet::setSize( int size ){
 	size_ = size;
 }
 
