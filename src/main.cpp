@@ -23,24 +23,18 @@ int main( int nargs, char* args[] ){
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "=================================\n" );
-	fprintf( stderr, "=   Welcome to use BaMM MOTIF   =\n" );
+	fprintf( stderr, "=    Welcome to use BaMMmotif   =\n" );
 	fprintf( stderr, "=================================\n" );
 
 	// initialization
 	Global::init( nargs, args );
 
 	fprintf( stderr, "\n" );
-	fprintf( stderr, "******************\n" );
-	fprintf( stderr, "*   Statistics   *\n" );
-	fprintf( stderr, "******************\n" );
-	std::cout << "Chosen positive sequence set is " << Global::posSequenceFilename << std::endl;
-	//std::cout << "Chosen negative sequence set is " << Global::negSequenceFilename << std::endl;
-	std::cout << "Chosen alphabet type is " << Alphabet::getAlphabet() << std::endl;
-	//std::cout << "Chosen binding site file is:" << Global::bindingSitesFilename << std::endl;
-	std::cout << "Folds for FDR estimation: " << Global::nFolds << std::endl;
-
+	fprintf( stderr, "************************\n" );
+	fprintf( stderr, "*   Background Model   *\n" );
+	fprintf( stderr, "************************\n" );
 	BackgroundModel bgModel;
-	bgModel.init();
+	bgModel.init( std::vector<int> () );
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "*********************\n" );
@@ -48,26 +42,43 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*********************\n" );
 
 	MotifSet motifs;
-	/*
+
 	// learn motifs
+	fprintf( stderr, "\n" );
+	fprintf( stderr, "**********\n" );
+	fprintf( stderr, "*   EM   *\n" );
+	fprintf( stderr, "**********\n" );
 	for( std::list<Motif*>::iterator iter = motifs.getMotifs().begin(); iter != motifs.getMotifs().end(); iter++ ){
-		EM em = new EM( *iter, bgModel );
+		EM em( *iter, bgModel, std::vector<int> () );
 		em.learnMotif();
 		em.write();
 	}
 
 	// write motifs
 	motifs.write();
-
+/*
 	// evaluate motifs
-	for( std::list<Motif*>::const_iterator iter=motifs.getMotifs.begin(); iter != motifs.getMotifs.end(); iter++ ){
-		FDR fdr = new FDR( *iter );
+	fprintf( stderr, "\n" );
+	fprintf( stderr, "***********\n" );
+	fprintf( stderr, "*   FDR   *\n" );
+	fprintf( stderr, "***********\n" );
+	for( std::list<Motif*>::const_iterator iter = motifs.getMotifs().begin(); iter != motifs.getMotifs().end(); iter++ ){
+		FDR fdr( *iter );
 		fdr.evaluateMotif();
 		fdr.write();
 	}
 */
-
 //	Global::destruct();
+
+	fprintf( stderr, "\n" );
+	fprintf( stderr, "******************\n" );
+	fprintf( stderr, "*   Statistics   *\n" );
+	fprintf( stderr, "******************\n" );
+	std::cout << "Chosen positive sequence set is " << Global::posSequenceFilename << std::endl;
+	if(Global::negSequenceFilename )
+		std::cout << "Chosen negative sequence set is " << Global::negSequenceFilename << std::endl;
+	std::cout << "Chosen alphabet type is " << Alphabet::getAlphabet() << std::endl;
+	std::cout << "Folds for FDR estimation: " << Global::cvFold << std::endl;
 
 	fprintf( stdout, "\nRuntime: %ld seconds (%0.2f minutes)\n", time( NULL )-timestamp,
 			( float )( time( NULL )-timestamp )/60.0f );
