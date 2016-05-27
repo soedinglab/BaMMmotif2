@@ -9,13 +9,13 @@
 #define EM_H_
 
 #include "BackgroundModel.h"
-#include "Motif.h"
+#include "MotifSet.h"
 
 class EM {
 
 public:
-	EM( Motif* motif, BackgroundModel* bg );							// for full posSet
-	EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds );	// for cross-validation
+
+	EM( Motif* motif, BackgroundModel bg, std::vector<int> folds );
 	~EM();
 
 	int                 learnMotif();
@@ -24,23 +24,26 @@ public:
 
 private:
 
-	Motif* 				motif_;			// motif to optimize within the em
-	BackgroundModel*	bg_;			// background model
+	Motif* 				motif_;			// motif to optimize within the EM
+	BackgroundModel		bg_;			// background model
 
 	std::vector<int>	folds_;		    // folds to iterate over, for cross-validation
 
-	float** 			r_;		        // responsibilities at position i in sequence n, r_[n][i]
-	float*** 			n_;	            // fractional counts n for k-mers y at motif position j, n_[k][y][j]
-
-	float** 			alpha_;	        // pseudocount hyperparameter for order k and motif position j, alpha_[k][j]
-	float 				q_; 			// hyperparameter q specifies the fraction of sequences with motif
+	float**				s_;				// log odds scores of each (k+1)-mer at each position
+	float** 			r_;		        // responsibilities at position i in sequence n
+	float*** 			n_;	            // fractional counts n for (k+1)-mers y at motif position j
+	float** 			alpha_;	        // pseudo-count hyper-parameter for order k and motif position j
+	float 				q_; 			// hyper-parameter q specifies the fraction of sequences with motif
 
 	float 				likelihood_;	// value of Q function for current parameters
-
 	int 				EMIterations_;  // counter for EM iterations
+	int*				powA_;			// alphabetSize to the power k
+	int					Y_;				// number of all (k+1)-mers
 
 	void EStep();						// E-step
 	void MStep();						// M-step
+
+	void score();						// compute log odds scores at each position
 
 	void optimizeAlphas();			    // optimize alpha hyper-parameters
 	void optimizeQ();					// optimize hyper-parameter q
