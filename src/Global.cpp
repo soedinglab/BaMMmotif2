@@ -12,62 +12,68 @@
 
 #include "Global.h"
 
-char*               Global::outputDirectory = NULL;     // output directory
+char*               Global::outputDirectory = NULL;			// output directory
 
-char*               Global::posSequenceFilename = NULL; // filename of positive sequence FASTA file
-char*               Global::negSequenceFilename = NULL; // filename of negative sequence FASTA file
+char*               Global::posSequenceFilename = NULL;		// filename of positive sequence FASTA file
+char*               Global::negSequenceFilename = NULL;		// filename of negative sequence FASTA file
 
-char*				Global::posSequenceBasename = NULL;	// basename of positive sequence FASTA file
-char*				Global::negSequenceBasename = NULL;	// basename of negative sequence FASTA file
-char*				Global::alphabetType = NULL;		// alphabet type is defaulted to standard which is ACGT
-bool                Global::revcomp = false;            // also search on reverse complement of sequences
+char*				Global::posSequenceBasename = NULL;		// basename of positive sequence FASTA file
+char*				Global::negSequenceBasename = NULL;		// basename of negative sequence FASTA file
+char*				Global::alphabetType = NULL;			// alphabet type is defaulted to standard which is ACGT
+bool                Global::revcomp = false;				// also search on reverse complement of sequences
 
-SequenceSet*        Global::posSequenceSet = NULL;		// positive Sequence Set
-SequenceSet*        Global::negSequenceSet = NULL;		// negative Sequence Set
+SequenceSet*        Global::posSequenceSet = NULL;			// positive Sequence Set
+SequenceSet*        Global::negSequenceSet = NULL;			// negative Sequence Set
 
-char*               Global::intensityFilename = NULL;	// filename of intensity file (i.e. for HT-SELEX data)
+char*               Global::intensityFilename = NULL;		// filename of intensity file (i.e. for HT-SELEX data)
 // further weighting options...
 
 // files to initialize model(s)
-char*               Global::BaMMpatternFilename = NULL;	// filename of BaMMpattern file
-char*               Global::bindingSitesFilename = NULL;// filename of binding sites file
-char*               Global::PWMFilename = NULL;			// filename of PWM file
+char*               Global::BaMMpatternFilename = NULL;		// filename of BaMMpattern file
+char*               Global::bindingSitesFilename = NULL;	// filename of binding sites file
+char*               Global::PWMFilename = NULL;				// filename of PWM file
 char*               Global::BaMMFilename = NULL;			// filename of Markov model (.bmm) file
 
 // model options
-int        			Global::modelOrder = 2;				// model order
-std::vector<float>	Global::modelAlpha( modelOrder+1, 10.0f ); // initial alphas
-std::vector<int>    Global::addColumns( 0, 0 );			// add columns to the left and right of models used to initialize Markov models
-bool                Global::noLengthOptimization = false;// disable length optimization
+int        			Global::modelOrder = 2;					// model order
+std::vector<float> 	Global::modelAlpha;						// initial alphas
+std::vector<int>    Global::addColumns(2);					// add columns to the left and right of models used to initialize Markov models
+bool                Global::noLengthOptimization = false;	// disable length optimization
 
 // background model options
-unsigned int        Global::bgModelOrder = 2;			// background model order, defaults to 2
-float				Global::bgModelAlpha;				// background model alpha
+int        			Global::bgModelOrder = 2;				// background model order, defaults to 2
+float				Global::bgModelAlpha = 10.0f;			// background model alpha
 
 // EM options
-unsigned int        Global::maxEMIterations;			// maximum number of iterations
-float               Global::epsilon = 0.001f;			// likelihood convergence parameter
+unsigned int        Global::maxEMIterations;				// maximum number of iterations
+float               Global::epsilon = 0.001f;				// likelihood convergence parameter
 
-bool                Global::noAlphaOptimization = false;// disable alpha optimization
-bool                Global::noQOptimization = false;	// disable q optimization
+bool                Global::noAlphaOptimization = false;	// disable alpha optimization
+bool                Global::noQOptimization = false;		// disable q optimization
 
 // FDR options
-bool                Global::FDR = false;				// triggers False-Discovery-Rate (FDR) estimation
-unsigned int        Global::mFold = 20;					// number of negative sequences as multiple of positive sequences
-unsigned int        Global::nFolds = 5;					// number of cross-validation folds
-std::vector< std::vector<int> > Global::posFoldIndices; // sequence indices for each cross-validation fold
-std::vector< std::vector<int> > Global::negFoldIndices; // sequence indices for each cross-validation fold
+bool                Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
+unsigned int        Global::mFold = 20;						// number of negative sequences as multiple of positive sequences
+unsigned int        Global::cvFold = 5;						// size of cross-validation folds
+std::vector< std::vector<int> > Global::posFoldIndices; 	// sequence indices for each cross-validation fold
+std::vector< std::vector<int> > Global::negFoldIndices; 	// sequence indices for each cross-validation fold
 // further FDR options...
 
 bool                Global::verbose = false;            // verbose printouts
 
 void Global::init( int nargs, char* args[] ){
 
+	fprintf( stderr, "\n" );
+	fprintf( stderr, "*************************\n" );
+	fprintf( stderr, "*   Read Arguments...   *\n" );
+	fprintf( stderr, "*************************\n" );
 	readArguments( nargs, args );
-	fprintf( stderr, "\n******* readArguments() works fine. *******\n\n" );
 
+	fprintf( stderr, "\n" );
+	fprintf( stderr, "*************************\n" );
+	fprintf( stderr, "*   Setup Alphabet...   *\n" );
+	fprintf( stderr, "*************************\n" );
 	Alphabet::init( alphabetType );
-	fprintf( stderr, "******* Alphabet::init() works fine. *******\n\n" );
 
 	// read in positive sequence set
 	posSequenceSet = new SequenceSet( posSequenceFilename );
@@ -88,10 +94,10 @@ void Global::init( int nargs, char* args[] ){
 				"|___________________________|\n\n" );
 		std::cout << "For positive set:	" << posSequenceSet->getN() << " sequences. "
 				"max.length: " << posSequenceSet->getMaxL() << ", min.length: " <<
-				posSequenceSet->getMinL() << std::endl << "			base frequences: " ;
-		for( unsigned int i = 0; i < Alphabet::getSize(); i++ ){
-			std::cout << std::fixed << std::setprecision(4) << Alphabet::getAlphabet()[i] << " " << posSequenceSet->getBaseFrequencies()[i] << ", ";
-		}
+				posSequenceSet->getMinL() << std::endl << "			base frequencies: " ;
+		for( int i = 0; i < Alphabet::getSize(); i++ )
+			std::cout << std::fixed << std::setprecision(4) << Alphabet::getAlphabet()[i]
+			          << " " << posSequenceSet->getBaseFrequencies()[i] << ", ";
 		std::cout << std::endl;
 		printf( " ___________________________\n"
 				"|                           |\n"
@@ -99,10 +105,10 @@ void Global::init( int nargs, char* args[] ){
 				"|___________________________|\n\n" );
 		std::cout << "For negative set:	" << negSequenceSet->getN() << " sequences. "
 				"max.length: " << negSequenceSet->getMaxL() << ", min.length: " <<
-				negSequenceSet->getMinL() << std::endl << "			base frequences: " ;
-		for( unsigned int i = 0; i < Alphabet::getSize(); i++ ){
-			std::cout << std::fixed << std::setprecision(4) << Alphabet::getAlphabet()[i] << " " << negSequenceSet->getBaseFrequencies()[i] << ", ";
-		}
+				negSequenceSet->getMinL() << std::endl << "			base frequencies: " ;
+		for( int i = 0; i < Alphabet::getSize(); i++ )
+			std::cout << std::fixed << std::setprecision(4) << Alphabet::getAlphabet()[i]
+			          << " " << negSequenceSet->getBaseFrequencies()[i] << ", ";
 		std::cout << std::endl;
 	}
 
@@ -113,18 +119,20 @@ void Global::init( int nargs, char* args[] ){
 		for( int j = 0; j < posSequenceSet->getSequences()[i].getL(); j++){
 			fprintf( stderr, "%d", posSequenceSet->getSequences()[i].getSequence()[j] );
 		}
-		std::cout << std::endl;
-		std::cout << posSequenceSet->getSequences()[i].getL() <<std::endl;
+		std::cout << std::endl << "sequence length is: " << posSequenceSet->getSequences()[i].getL() << std::endl;
 	}
-	fprintf( stderr, "\n*********************************************\n" );
-
+	fprintf( stderr, "*********************************************\n" );
 
 	// generate folds (fill posFoldIndices and negFoldIndices)
-	generateFolds( posSequenceSet->getN(), negSequenceSet->getN(), nFolds );
+	generateFolds( posSequenceSet->getN(), negSequenceSet->getN(), cvFold );
 
 	// only for testing:
-	std::cout << "for the generateFolds() function: \nFor posFoldIndices" << std::endl;
-	for( unsigned int f = 0; f < nFolds; f++ ){
+	printf( " __________________\n"
+			"|                  |\n"
+			"|  posFoldIndices  |\n"
+			"|__________________|\n\n" );
+
+	for( unsigned int f = 0; f < cvFold; f++ ){
 		for( unsigned int t = 0; t < posFoldIndices[f].size(); t++ ){
 			std::cout << posFoldIndices[f][t] << '\t';
 		}
@@ -218,7 +226,12 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	// model options
 	opt >> GetOpt::Option( 'k', "modelOrder", modelOrder );
-	opt >> GetOpt::Option( 'a', "modelAlpha", modelAlpha );
+	if( opt >> GetOpt::OptionPresent( "modelAlpha" ) || opt >> GetOpt::OptionPresent( 'a' ) )
+		opt >> GetOpt::Option( 'a', "modelAlpha", modelAlpha );
+	else 		// defaults modelAlpha.at(k) to 10.0
+		for( int k = 0; k < modelOrder+1; k++ )
+			modelAlpha.push_back( 10.0f );
+
 	if( opt >> GetOpt::OptionPresent( "addColumns" ) ){
 		addColumns.clear();
 		opt >> GetOpt::Option( "addColumns", addColumns );
@@ -226,11 +239,15 @@ int Global::readArguments( int nargs, char* args[] ){
 			fprintf( stderr, "--addColumns format error.\n" );
 			exit( -1 );
 		}
-		if( addColumns.size() == 1 ){
+		if( addColumns.size() == 1 )
 			addColumns.resize( 2, addColumns.back() );
-		}
+
 		// add columns to the initial motifs
+	} else {
+		addColumns.at(0) = 0;
+		addColumns.at(1) = 0;
 	}
+
 	opt >> GetOpt::OptionPresent( "noLengthOptimization", noLengthOptimization );
 
 	// background model options
@@ -246,7 +263,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	// FDR options
 	if( opt >> GetOpt::OptionPresent( "FDR", FDR) ){
 		opt >> GetOpt::Option( "m", mFold  );
-		opt >> GetOpt::Option( "n", nFolds );
+		opt >> GetOpt::Option( "n", cvFold );
 	}
 
 	opt >> GetOpt::OptionPresent( "verbose", verbose );
@@ -273,19 +290,19 @@ char* Global::baseName( char* filepath ){
 	std::string path = filepath;
 	char* base;
 	int i = 0, start = 0, end = 0;
-	while( path[++i] != '\0' ){
+	while( path[++i] != '\0' )
 		if( path[i] == '.' )
 			end = i - 1;
-	}
-	while( --i != 0 && path[i] != '/' );
-	if( i ==0 ) start = 0;
-	else start = i + 1;
+	while( --i != 0 && path[i] != '/' )
+		;
+	if( i == 0 )
+		start = 0;
+	else
+		start = i + 1;
 	base = ( char* )malloc( ( end-start+2 ) * sizeof( char ) );
-	for( i=start; i <= end; i++ ){
-		base[i - start] = path[i];
-	}
-	base[i - start] = '\0';
-
+	for( i = start; i <= end; i++ )
+		base[i-start] = path[i];
+	base[i-start] = '\0';
 	return base;
 }
 
@@ -302,9 +319,8 @@ void Global::generateFolds( unsigned int posN, unsigned int negN, unsigned int f
 	}
 	// generate negFoldIndices
 	if( negSequenceFilename == NULL ){
-		// assign reference to posFoldIndices
 		negFoldIndices = posFoldIndices;
-	} else{
+	} else {
 		// generate negFoldIndices
 		i = 0;
 		while( i < negN ){
@@ -314,6 +330,18 @@ void Global::generateFolds( unsigned int posN, unsigned int negN, unsigned int f
 			}
 		}
 	}
+}
+
+// power function for integers
+int Global::ipow( unsigned int base, int exp ){
+    int result = 1;
+    while( exp ){
+        if( exp & 1 )
+        	result *= base;
+        exp >>= 1;
+        base *= base;
+    }
+    return result;
 }
 
 void Global::printHelp(){
