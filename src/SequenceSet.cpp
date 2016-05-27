@@ -218,9 +218,9 @@ int SequenceSet::readFASTA(){
 					for( int i = 0; i < L; i++ ){
 						encodeSeq[i] = Alphabet::getCode( sequence[i] );
 						if( encodeSeq[i] == 0 ){
-							fprintf( stderr, "Error: The FASTA file contains other alphabet(s) "
+							fprintf( stderr, "Warning: The FASTA file contains other alphabet(s) "
 									"than %s on line %d.\n", Alphabet::getAlphabet(), N );
-							exit( -1 );
+							continue;
 						}
 						baseCounts[encodeSeq[i]-1]++;			// count the occurrence of mono-nucleotides
 					}
@@ -261,9 +261,9 @@ int SequenceSet::readFASTA(){
 			for( int i = 0; i < L; i++ ){
 				encodeSeq[i] = Alphabet::getCode( sequence[i] );
 				if( encodeSeq[i] == 0 ){
-					fprintf( stderr, "Error: The FASTA file contains other alphabet(s) "
+					fprintf( stderr, "Warning: The FASTA file contains other alphabet(s) "
 							"than %s on line %d.\n", Alphabet::getAlphabet(), N );
-					exit( -1 );
+					continue;
 				}
 				baseCounts[encodeSeq[i]-1]++;					// count the occurrence of mono-nucleotides
 			}
