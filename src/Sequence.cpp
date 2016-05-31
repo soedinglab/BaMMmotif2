@@ -20,6 +20,7 @@ Sequence::Sequence( uint8_t* sequence, int L, std::string header ){
 		std::memcpy( sequence_, sequence, L_ );
 	} else {
 		L_ = 2 * L + 1;
+		sequence_ = ( uint8_t* )malloc( L_ );
 		createRevComp( sequence, L );
 	}
 	header_.assign( header );
@@ -31,10 +32,9 @@ Sequence::~Sequence(){
 }
 
 uint8_t* Sequence::createRevComp( uint8_t* sequence, int L ){
-	sequence_ = ( uint8_t* )malloc( 2*L + 1);
 	for( int i = 0; i < L; i++ ){
 		sequence_[i] = sequence[i];											// the original sequence
-		sequence_[i+1] = -1;												// add a -1 at the junction
+		sequence_[i+1] = 0;													// add a '0' at the junction site
 		sequence_[2*L-i] = Alphabet::getComplementCode( sequence[i] );		// the reverse complementary
 	}
 	return sequence_;
@@ -70,7 +70,7 @@ void Sequence::setWeight( float weight ){
 
 int	Sequence::extractKmer( int i, int k ){
 	int y = 0;
-	if( sequence_[i] != 0 )
+	if( sequence_[i] > 0 )
 		for( int n = 0; n <= k; n++ )
 			y += ( sequence_[i-k+n] -1 ) * Global::ipow( Alphabet::getSize(), n );
 	else

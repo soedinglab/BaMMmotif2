@@ -202,7 +202,7 @@ int SequenceSet::readFASTA(){
 
 	int maxL = 0, minL = 1000;									// initialize the min. and max. length
 	unsigned int* baseCounts = new unsigned int[Alphabet::getSize()];
-	for( unsigned int i = 0; i < Alphabet::getSize(); i++ ){
+	for( int i = 0; i < Alphabet::getSize(); i++ ){
 		baseCounts[i]= 0;
 	}
 	unsigned int N = 0;
@@ -294,14 +294,14 @@ int SequenceSet::readFASTA(){
 	N_ = N;
 
 	unsigned int baseSumCount = 0;
-	for( unsigned int i = 0; i < Alphabet::getSize(); i++ ){	// Calculate the sum of all mono-nucleotides
+	for( int i = 0; i < Alphabet::getSize(); i++ ){	// Calculate the sum of all mono-nucleotides
 		baseSumCount += baseCounts[i];
 	}
 
 	baseFrequencies_ = new float[Alphabet::getSize()];
 
 	fprintf( stderr, "[Statistic] The base counts are: \n" );
-	for( unsigned int i = 0; i < Alphabet::getSize(); i++ ){	// Calculate the frequencies of all mono-nucleotides
+	for( int i = 0; i < Alphabet::getSize(); i++ ){	// Calculate the frequencies of all mono-nucleotides
 		baseFrequencies_[i] = ( float )baseCounts[i] / ( float )baseSumCount;
 		fprintf( stderr, "%d ( %c )\t", baseCounts[i], Alphabet::getAlphabet()[i] );
 	}
