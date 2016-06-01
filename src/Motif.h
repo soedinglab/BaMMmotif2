@@ -32,7 +32,7 @@ public:
 	int         getW(); 								// get motif length w
 	float***    getV();									// get conditional probabilities v
 
-	void        updateV( int*** n, float** alpha );
+	void        updateV( float*** n, float** alpha );
 
 	void 		print();					   			// print v to console
 	void 		write();					    		// write v (basename.bmm). Include header with alphabetType

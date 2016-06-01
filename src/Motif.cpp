@@ -9,10 +9,12 @@
 
 Motif::Motif( int length ){					// allocate memory for v_
 	w_ = length;
-	v_ = ( float*** )calloc( ( Global::modelOrder+1 ), sizeof( float** ) );
+
 	powA_ = new int[Global::modelOrder+2];
 	for( int k = 0; k < Global::modelOrder + 2; k++ )
 		powA_[k] = Global::ipow( Alphabet::getSize(), k );
+
+	v_ = ( float*** )calloc( ( Global::modelOrder+1 ), sizeof( float** ) );
 	for( int k = 0; k <= Global::modelOrder; k++ ){
 		v_[k] = ( float** )calloc( powA_[k+1], sizeof( float* ) );
 		for( int y = 0; y < powA_[k+1]; y++ ){
@@ -183,18 +185,26 @@ float*** Motif::getV(){
 	return v_;
 }
 
-void Motif::updateV( int*** n, float** alpha ){
+void Motif::updateV( float*** n, float** alpha ){
 	assert( isInitialized_ );
-	// update v from fractional k-mer counts n and current alphas
+	// update v from fractional k-mer counts n and current alphas, k > 0
+	for( int k = 1; k < Global::modelOrder + 1; k++ ){
+		for( int y = 0; y < powA_[k+1]; y++ ){
+			int y2 = y / powA_[1];										// cut off the first nucleotide in (k+1)-mer
+			int yk = y % powA_[k];										// cut off the last nucleotide in (k+1)-mer
+			for( int j = k; j < w_; j++ )
+				v_[k][y][j] = ( n[k][y][j] + alpha[k][j] *
+						v_[k-1][y2][j] ) / ( n[k-1][yk][j-1] + alpha[k][j] );
+		}
+	}
 }
 
 void Motif::print(){
 	for( int k = 0; k < Global::modelOrder + 1; k++ ){
 		std::cout << "when k = " << k << std::endl;
 		for( int y = 0; y < powA_[k+1]; y++ ){
-			for( int j = 0; j < w_; j++ ){
-				std::cout << std::scientific << v_[k][y][j] << '\t' << '\t';
-			}
+			for( int j = 0; j < w_; j++ )
+				std::cout << std::scientific  << v_[k][y][j] << '\t';
 			std::cout << std::endl;
 		}
 		std::cout << std::endl;
@@ -205,9 +215,8 @@ void Motif::print(){
 		std::cout << "when k = " << k << std::endl;
 		for( int j = 0; j < w_; j++ ){
 			float sum = 0.0f;
-			for( int y = 0; y < powA_[k+1]; y++ ){
+			for( int y = 0; y < powA_[k+1]; y++ )
 				sum += v_[k][y][j];
-			}
 			std::cout << "at position " << j << ", sum = "<< sum << std::endl;
 		}
 	}
@@ -219,12 +228,10 @@ void Motif::write(){
 	std::ofstream ofile( opath.c_str(), std::ios::app );	// append for MotifSet::write()
 	for( int j = 0; j < w_; j++ ){
 		for( int k = 0; k < Global::modelOrder + 1; k++ ){
-			for( int y = 0; y < powA_[k+1]; y++ ){
+			for( int y = 0; y < powA_[k+1]; y++ )
 				ofile << std::scientific << v_[k][y][j] << '\t';
-			}
 			ofile << std::endl;
 		}
 		ofile << std::endl;
 	}
 }
-
