@@ -67,7 +67,7 @@ public:
 
 	// EM options
 	static unsigned int	maxEMIterations;					// maximum number of iterations
-	static float		epsilon;							// likelihood convergence parameter
+	static float		epsilon;							// threshold for likelihood convergence parameter
 	static bool			noAlphaOptimization;				// disable alpha optimization
 	static bool			noQOptimization;					// disable q optimization
 

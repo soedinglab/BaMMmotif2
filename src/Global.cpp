@@ -45,9 +45,9 @@ int        			Global::bgModelOrder = 2;				// background model order, defaults t
 float				Global::bgModelAlpha = 10.0f;			// background model alpha
 
 // EM options
-unsigned int        Global::maxEMIterations;				// maximum number of iterations
-float               Global::epsilon = 0.001f;				// likelihood convergence parameter
-
+//unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();	// maximum number of iterations
+unsigned int        Global::maxEMIterations = 100;			// maximum number of iterations
+float               Global::epsilon = 0.001f;				// threshold for likelihood convergence parameter
 bool                Global::noAlphaOptimization = false;	// disable alpha optimization
 bool                Global::noQOptimization = false;		// disable q optimization
 
@@ -59,7 +59,7 @@ std::vector< std::vector<int> > Global::posFoldIndices; 	// sequence indices for
 std::vector< std::vector<int> > Global::negFoldIndices; 	// sequence indices for each cross-validation fold
 // further FDR options...
 
-bool                Global::verbose = false;            // verbose printouts
+bool                Global::verbose = false;            	// verbose printouts
 
 void Global::init( int nargs, char* args[] ){
 
@@ -96,7 +96,7 @@ void Global::init( int nargs, char* args[] ){
 				"max.length: " << posSequenceSet->getMaxL() << ", min.length: " <<
 				posSequenceSet->getMinL() << std::endl << "			base frequencies: " ;
 		for( int i = 0; i < Alphabet::getSize(); i++ )
-			std::cout << std::fixed << std::setprecision(4) << Alphabet::getAlphabet()[i]
+			std::cout << std::scientific << Alphabet::getAlphabet()[i]
 			          << " " << posSequenceSet->getBaseFrequencies()[i] << ", ";
 		std::cout << std::endl;
 		printf( " ___________________________\n"
@@ -107,21 +107,21 @@ void Global::init( int nargs, char* args[] ){
 				"max.length: " << negSequenceSet->getMaxL() << ", min.length: " <<
 				negSequenceSet->getMinL() << std::endl << "			base frequencies: " ;
 		for( int i = 0; i < Alphabet::getSize(); i++ )
-			std::cout << std::fixed << std::setprecision(4) << Alphabet::getAlphabet()[i]
+			std::cout << std::scientific << Alphabet::getAlphabet()[i]
 			          << " " << negSequenceSet->getBaseFrequencies()[i] << ", ";
 		std::cout << std::endl;
 	}
 
 	// only for testing:
-	fprintf( stderr, "\n*****************pos Seq*********************\n" );
-	for( unsigned int i = 0; i < posSequenceSet->getN(); i++ ){
-		std::cout << posSequenceSet->getSequences()[i].getHeader() << std::endl;
-		for( int j = 0; j < posSequenceSet->getSequences()[i].getL(); j++){
-			fprintf( stderr, "%d", posSequenceSet->getSequences()[i].getSequence()[j] );
-		}
-		std::cout << std::endl << "sequence length is: " << posSequenceSet->getSequences()[i].getL() << std::endl;
-	}
-	fprintf( stderr, "*********************************************\n" );
+//	fprintf( stderr, "\n*****************pos Seq*********************\n" );
+//	for( unsigned int i = 0; i < posSequenceSet->getN(); i++ ){
+//		std::cout << posSequenceSet->getSequences()[i].getHeader() << std::endl;
+//		for( int j = 0; j < posSequenceSet->getSequences()[i].getL(); j++){
+//			fprintf( stderr, "%d", posSequenceSet->getSequences()[i].getSequence()[j] );
+//		}
+//		std::cout << std::endl << "sequence length is: " << posSequenceSet->getSequences()[i].getL() << std::endl;
+//	}
+//	fprintf( stderr, "*********************************************\n" );
 
 	// generate folds (fill posFoldIndices and negFoldIndices)
 	generateFolds( posSequenceSet->getN(), negSequenceSet->getN(), cvFold );
