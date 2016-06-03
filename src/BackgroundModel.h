@@ -26,8 +26,10 @@ public:
 
 private:
 
+	void 	calculateV();  					// calculate v from k-mer counts n
+
 	float* 	v_;					    		// conditional probabilities for k-mers
-	void 	calculateV( int* n );  			// calculate v from k-mer counts n
+	int*	n_occ_;							// k-mer counts
 	int*	powA_;							// alphabetSize to the power k
 	int		Y_;								// total number of (k+1)-mers
 };
