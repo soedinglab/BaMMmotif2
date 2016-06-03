@@ -14,18 +14,31 @@ Motif::Motif( int length ){					// allocate memory for v_
 	for( int k = 0; k < Global::modelOrder + 2; k++ )
 		powA_[k] = Global::ipow( Alphabet::getSize(), k );
 
+	Y_ = 0;
+	for( int k = 0; k <= Global::modelOrder; k++ )
+		Y_ += powA_[k+1];
+
 	v_ = ( float*** )calloc( ( Global::modelOrder+1 ), sizeof( float** ) );
 	for( int k = 0; k <= Global::modelOrder; k++ ){
 		v_[k] = ( float** )calloc( powA_[k+1], sizeof( float* ) );
-		for( int y = 0; y < powA_[k+1]; y++ ){
+		for( int y = 0; y < powA_[k+1]; y++ )
 			v_[k][y] = ( float* )calloc( w_, sizeof( float ) );
-		}
 	}
+
+	s_ = ( float** )calloc( Y_, sizeof( float* ) );
+	for( int y = 0; y < Y_; y++ )
+		s_[y] = ( float* )calloc( w_, sizeof( float ) );
 }
 
 Motif::Motif( const Motif& other ){ 		// deep copy
 	w_ = other.w_;
+
 	powA_ = new int[Global::modelOrder+2];
+	for( int k = 0; k < Global::modelOrder + 2; k++ )
+		powA_[k] = other.powA_[k];
+
+	Y_ = other.Y_;
+
 	for( int k = 0; k < Global::modelOrder + 2; k++ )
 		powA_[k] = Global::ipow( Alphabet::getSize(), k );
 	if( other.v_ != NULL ){
@@ -40,6 +53,13 @@ Motif::Motif( const Motif& other ){ 		// deep copy
 		isInitialized_ = true;
 	} else{
 		v_ = NULL;
+	}
+
+	s_ = ( float** )calloc( Y_, sizeof( float* ) );
+	for( int y = 0; y < Y_; y++ ){
+		s_[y] = ( float* )calloc( w_, sizeof( float ) );
+		for( int j = 0; j < w_; j++ )
+			s_[y][j] = other.s_[y][j];
 	}
 }
 
@@ -97,7 +117,7 @@ void Motif::initFromBindingSites( char* filename ){
 					"on line %d exceeds w of model.\n", lineNum );
 			exit( -1 );
 		}
-		if( w > Global::posSequenceSet->getMinL() ){	// binding sites should be shorter than the shortest posSeq
+		if( (unsigned int)w > Global::posSequenceSet->getMinL() ){	// binding sites should be shorter than the shortest posSeq
 			fprintf( stderr, "Error: Length of binding site sequence "
 					"on line %d exceeds w of posSet sequence.\n", lineNum );
 			exit( -1 );
@@ -131,8 +151,8 @@ void Motif::initFromBindingSites( char* filename ){
 		}
 	}
 
-	// calculate v from k-mer counts n using calculateV(n)
-	calculateV( n, lineNum );
+	// calculate v and s from k-mer counts n
+	calculateV_S( n, lineNum );
 
 	// set isInitialized
 	isInitialized_ = true;
@@ -154,7 +174,7 @@ int Motif::getW(){
 	return w_;
 }
 
-void Motif::calculateV( int*** n, int N ){					// N is the number of motifs
+void Motif::calculateV_S( int*** n, int N ){					// N is the number of motifs
 
 	BackgroundModel bg;
 	bg.init( std::vector<int> () );
@@ -179,10 +199,29 @@ void Motif::calculateV( int*** n, int N ){					// N is the number of motifs
 //		for( int y = 0; y < powA_[k+1]; y++ )
 //			for( int j = 0; j < w_; j++ )
 //				v_[k][y][j] /= powA_[k] ;
+
+	// implementation of s[y][j]
+	printf( " _____________________________\n"
+			"|                             |\n"
+			"| Compute log odds scores...  |\n"
+			"|_____________________________|\n\n" );
+	for( int k = 0; k <= Global::modelOrder; k++ ){
+		for( int y = 0; y < powA_[k+1]; y++ ){
+			int y_bg = y - 1;
+			for( int i = 0; i < k + 1; i++ )
+				y_bg += powA_[i];
+			for( int j = k; j < w_; j++ )
+				s_[y][j] = log( v_[k][y][j] / bg.getV()[y_bg] );
+		}
+	}
 }
 
 float*** Motif::getV(){
 	return v_;
+}
+
+float** Motif::getS(){
+	return s_;
 }
 
 void Motif::updateV( float*** n, float** alpha ){
@@ -193,8 +232,7 @@ void Motif::updateV( float*** n, float** alpha ){
 			int y2 = y / powA_[1];										// cut off the first nucleotide in (k+1)-mer
 			int yk = y % powA_[k];										// cut off the last nucleotide in (k+1)-mer
 			for( int j = k; j < w_; j++ )
-				v_[k][y][j] = ( n[k][y][j] + alpha[k][j] *
-						v_[k-1][y2][j] ) / ( n[k-1][yk][j-1] + alpha[k][j] );
+				v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] ) / ( n[k-1][yk][j-1] + alpha[k][j] );
 		}
 	}
 }
@@ -211,15 +249,15 @@ void Motif::print(){
 	}
 
 	// only for testing:
-	for( int k = 0; k < Global::modelOrder + 1; k++ ){
-		std::cout << "when k = " << k << std::endl;
-		for( int j = 0; j < w_; j++ ){
-			float sum = 0.0f;
-			for( int y = 0; y < powA_[k+1]; y++ )
-				sum += v_[k][y][j];
-			std::cout << "at position " << j << ", sum = "<< sum << std::endl;
-		}
-	}
+//	for( int k = 0; k < Global::modelOrder + 1; k++ ){
+//		std::cout << "when k = " << k << std::endl;
+//		for( int j = 0; j < w_; j++ ){
+//			float sum = 0.0f;
+//			for( int y = 0; y < powA_[k+1]; y++ )
+//				sum += v_[k][y][j];
+//			std::cout << "at position " << j << ", sum = "<< sum << std::endl;
+//		}
+//	}
 }
 
 void Motif::write(){

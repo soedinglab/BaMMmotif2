@@ -59,10 +59,10 @@ MotifSet::MotifSet(){
 }
 
 MotifSet::~MotifSet(){
-	motifs_.clear();
+//	motifs_.clear();
 }
 
-std::list<Motif*> MotifSet::getMotifs(){
+std::vector<Motif*> MotifSet::getMotifs(){
     return motifs_;
 }
 
@@ -77,12 +77,12 @@ void MotifSet::print(){
 			"|____________________________|\n\n" );
 
 	int N = 0;
-	for( std::list<Motif*>::const_iterator iterator = motifs_.begin(); iterator != motifs_.end(); ++iterator ){
+	for( int i = 0; i < N_; i++ ){
 		printf( " ________________________________________\n"
 				"|                                        |\n"
 				"| INITIALIZED PROBABILITIES for Motif %d  |\n"
 				"|________________________________________|\n\n", N+1 );
-		(*iterator)->print();
+		motifs_[i]->print();
 		N++;
 	}
 }
@@ -91,7 +91,7 @@ void MotifSet::write(){
 	std::string opath = std::string( Global::outputDirectory )  + '/'
 			+ std::string( Global::posSequenceBasename ) + ".condsInit";
 	remove( opath.c_str() );					// avoid appending if the file already exists
-	for( std::list<Motif*>::const_iterator iterator = motifs_.begin(); iterator != motifs_.end(); ++iterator )
-		(*iterator)->write();
+	for( int i = 0; i < N_; i++ )
+		motifs_[i]->write();
 }
 
