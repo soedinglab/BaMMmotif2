@@ -59,7 +59,6 @@ public:
 	static int			modelOrder;							// model order
 	static std::vector<float> modelAlpha;					// initial alphas
 	static std::vector<int>	addColumns;						// add columns to the left and right of models used to initialize Markov models
-	static bool			noLengthOptimization;				// disable length optimization
 
 	// background model options
 	static int			bgModelOrder;						// background model order, defaults to 2

@@ -38,7 +38,6 @@ char*               Global::BaMMFilename = NULL;			// filename of Markov model (
 int        			Global::modelOrder = 2;					// model order
 std::vector<float> 	Global::modelAlpha;						// initial alphas
 std::vector<int>    Global::addColumns(2);					// add columns to the left and right of models used to initialize Markov models
-bool                Global::noLengthOptimization = false;	// disable length optimization
 
 // background model options
 int        			Global::bgModelOrder = 2;				// background model order, defaults to 2
@@ -247,8 +246,6 @@ int Global::readArguments( int nargs, char* args[] ){
 		addColumns.at(0) = 0;
 		addColumns.at(1) = 0;
 	}
-
-	opt >> GetOpt::OptionPresent( "noLengthOptimization", noLengthOptimization );
 
 	// background model options
 	opt >> GetOpt::Option( 'K', "bgModelOrder", bgModelOrder );
