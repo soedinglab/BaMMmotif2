@@ -70,18 +70,26 @@ void Sequence::setWeight( float weight ){
 
 int	Sequence::extractKmer( int i, int k ){
 	int y = 0;
-	if( sequence_[i] > 0 )
-		for( int n = 0; n <= k; n++ )
+	for( int n = 0; n <= k; n++ ){
+		if( sequence_[i] != 0 ){
 			y += ( sequence_[i-k+n] -1 ) * Global::ipow( Alphabet::getSize(), n );
-	else
-		y = -1;
+		} else {
+			y = -1;
+			break;
+		}
+	}
 	return y;
 }
 
 int	Sequence::extractKmerbg( int i, int k ){
 	int y = -1;
-	if( sequence_[i] != 0 )
-		for( int n = 0; n <= k; n++ )
+	for( int n = 0; n <= k; n++ ){
+		if( sequence_[i-k+n] != 0 ){
 			y += sequence_[i-k+n] * Global::ipow( Alphabet::getSize(), n );
+		} else {
+			y = -1;
+			break;
+		}
+	}
 	return y;
 }
