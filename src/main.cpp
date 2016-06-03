@@ -22,9 +22,15 @@ int main( int nargs, char* args[] ){
 	long timestamp = time( NULL );
 
 	fprintf( stderr, "\n" );
-	fprintf( stderr, "=================================\n" );
-	fprintf( stderr, "=    Welcome to use BaMMmotif   =\n" );
-	fprintf( stderr, "=================================\n" );
+	fprintf( stderr, "======================================\n" );
+	fprintf( stderr, "=      Welcome to use BaMMmotif      =\n" );
+	fprintf( stderr, "=                   Version 1.0      =\n" );
+	fprintf( stderr, "=              by Soeding Group      =\n" );
+	fprintf( stderr, "=  http://www.mpibpc.mpg.de/soeding  =\n" );
+	fprintf( stderr, "======================================\n" );
+
+	// set up the precision for all float or double values
+	std::cout << std::setprecision(4) << std::endl;
 
 	// initialization
 	Global::init( nargs, args );
@@ -48,15 +54,22 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "**********\n" );
 	fprintf( stderr, "*   EM   *\n" );
 	fprintf( stderr, "**********\n" );
-	for( std::list<Motif*>::iterator iter = motifs.getMotifs().begin(); iter != motifs.getMotifs().end(); iter++ ){
-		EM em( *iter, bgModel, std::vector<int> () );
+	for( int i = 0; i < motifs.getN(); i++ ){
+		std::cout << "N_ = " << motifs.getN() << std::endl;
+		EM em( motifs.getMotifs()[i], bgModel, std::vector<int> () );
 		em.learnMotif();
+		std::cout <<" Marker 1 " << std::endl;
 		em.write();
+		std::cout <<" Marker 2 " << std::endl;
+
 	}
+	exit( -1 );
+	std::cout <<" Marker 3 " << std::endl;
+
 
 	// write motifs
 	motifs.write();
-/*
+	/*
 	// evaluate motifs
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "***********\n" );
