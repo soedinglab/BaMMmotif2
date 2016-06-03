@@ -6,7 +6,7 @@
  */
 
 #include "FDR.h"
-
+/*
 FDR::FDR( const Motif& motif ){
 	motif_ = motif;
 	// allocate memory for posLogOddsScore
@@ -31,13 +31,13 @@ FDR::~FDR(){
 
 void FDR::evaluateMotif(){
 
-	for( unsigned int fold = 0; fold < Global::nFolds; fold++ ){
+	for( unsigned int fold = 0; fold < Global::cvFold; fold++ ){
 
 		Motif* motif = new Motif( motif_ );
 
 		// assign training and test folds
 		std::vector<int> trainingFolds;
-		for( unsigned int f = 0; f < Global::nFolds; f++ ){
+		for( unsigned int f = 0; f < Global::cvFold; f++ ){
 			if( f != fold )
 				trainingFolds.push_back( f );
 		}
@@ -85,4 +85,5 @@ void FDR::print(){
 void FDR::write(){
 
 }
+*/
 
