@@ -19,7 +19,6 @@ BackgroundModel::BackgroundModel(){
 
 	n_occ_ = ( int* )calloc( Y_, sizeof( int ) );
 
-	// allocate memory for v
 	v_ = ( float* )calloc( Y_, sizeof( float ) );
 }
 
@@ -33,7 +32,7 @@ void BackgroundModel::init( std::vector<int> folds = std::vector<int> () ){
 
 	// count n_occ[y]
 	if( folds.size() == 0 ){
-		// when full negSeqSet is applied
+		// when the full negSeqSet is applied
 		for( unsigned int n = 0; n < Global::negSequenceSet->getN(); n++ ){
 			Sequence seq = Global::negSequenceSet->getSequences()[n];
 			for( int k = 0; k < Global::bgModelOrder + 1; k++ ){
@@ -61,23 +60,24 @@ void BackgroundModel::init( std::vector<int> folds = std::vector<int> () ){
 		}
 	}
 
-	if( Global::verbose ){		// Only for testing
-		printf( " ___________________________\n"
-				"|                           |\n"
-				"| k-mer counts for bgModel  |\n"
-				"|___________________________|\n\n" );
-		for( int y = 0; y < Y_; y++ )
-			std::cout << n_occ_[y] << '\t';
-		std::cout << std::endl;
-	}
+	// Only for testing
+//	if( Global::verbose ){
+//		printf( " ___________________________\n"
+//				"|                           |\n"
+//				"| k-mer counts for bgModel  |\n"
+//				"|___________________________|\n\n" );
+//		for( int y = 0; y < Y_; y++ )
+//			std::cout << n_occ_[y] << '\t';
+//		std::cout << std::endl;
+//	}
 
     // calculate v from k-mer counts n_occ
 	calculateV();
 
-	if( Global::verbose ) print();
+//	if( Global::verbose ) print();
 }
 
-void BackgroundModel::calculateV( ){
+void BackgroundModel::calculateV(){
 
 	// sum of the counts n[y]
 	float sum = 0.0f;
@@ -90,13 +90,17 @@ void BackgroundModel::calculateV( ){
 
 	// for k > 0:
 	for( int y = powA_[1]; y < Y_; y++ ){
-		int y2 = y / powA_[1] - 1;						// cut off the first nucleotide, e.g. from (3'-)ACGT(-5') to CGT
+		int y2 = y / powA_[1] - 1;						// cut off the first nucleotide, e.g. from (5'-)ACGT(-3') to CGT
 		for( int k = 1; k < Global::bgModelOrder; k++ ){
-			int yk = y % powA_[k];						// cut off the last nucleotide, e.g. from (3'-)ACGT(-5') to ACG
+			int yk = y % powA_[k];						// cut off the last nucleotide, e.g. from (5'-)ACGT(-3') to ACG
 			v_[y] = ( n_occ_[y] + Global::bgModelAlpha * v_[y2] ) / ( n_occ_[yk] + Global::bgModelAlpha );
 //			v_[y] =  float( n_occ[y] ) / n_occ[yk];		// without interpolation of alpha
 		}
 	}
+
+	// only for testing:
+//	for(  int y = 0; y < Y_; y++ )
+//		std::cout << "v_bg[" <<y <<"] = "<< v_[y] << std::endl;
 }
 
 float* BackgroundModel::getV(){
