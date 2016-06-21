@@ -29,9 +29,6 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "=  http://www.mpibpc.mpg.de/soeding  =\n" );
 	fprintf( stderr, "======================================\n" );
 
-	// set up the precision for all float or double values
-	std::cout << std::setprecision(4) << std::endl;
-
 	// initialization
 	Global::init( nargs, args );
 
@@ -51,25 +48,24 @@ int main( int nargs, char* args[] ){
 
 	// learn motifs
 	fprintf( stderr, "\n" );
-	fprintf( stderr, "**********\n" );
-	fprintf( stderr, "*   EM   *\n" );
-	fprintf( stderr, "**********\n" );
+	fprintf( stderr, "*************************\n" );
+	fprintf( stderr, "*   Learn Motif by EM   *\n" );
+	fprintf( stderr, "*************************\n" );
 	for( int i = 0; i < motifs.getN(); i++ ){
-		std::cout << "N_ = " << motifs.getN() << std::endl;
 		EM em( motifs.getMotifs()[i], bgModel, std::vector<int> () );
 		em.learnMotif();
-		std::cout <<" Marker 1 " << std::endl;
 		em.write();
-		std::cout <<" Marker 2 " << std::endl;
+		fprintf( stdout, "\nRuntime: %ld seconds (%0.2f minutes)\n", time( NULL )-timestamp,
+				( float )( time( NULL )-timestamp )/60.0f );
 
+		exit(-1);
 	}
-	exit( -1 );
 	std::cout <<" Marker 3 " << std::endl;
-
 
 	// write motifs
 	motifs.write();
-	/*
+
+/*
 	// evaluate motifs
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "***********\n" );
