@@ -29,9 +29,9 @@ public:
 
 	void initFromBayesianMarkovModel( char* filename );	// initialize v from Bayesian Markov model file and set isInitialized
 
+	int			getN();									// get the number of motifs N
 	int         getW(); 								// get motif length w
 	float***    getV();									// get conditional probabilities v
-	float**		getS();									// get the log odds scores s
 	void        updateV( float*** n, float** alpha );
 
 	void 		print();					   			// print v to console
@@ -40,13 +40,11 @@ public:
 private:
 
 	bool		isInitialized_ = false;		    		// to assert in all public methods
-
+	int			N_;										// number of binding sites
 	int 		w_;					    				// motif length
 	float***    v_;				                		// conditional probabilities for k-mers y at motif position j
-	float**		s_;										// log odds scores of each (k+1)-mer at each position
 	int*		powA_;									// size of alphabet to the power k
-	int			Y_;										// number of all (k+1)-mers
-	void 		calculateV_S( int*** n, int N );		// calculate v and s from k-mer counts n and global alphas, N is number of motifs
+	void 		calculateV( int*** n );			// calculate v and s from k-mer counts n and global alphas, N is number of motifs
 
 };
 

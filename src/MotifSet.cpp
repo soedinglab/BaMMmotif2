@@ -55,7 +55,7 @@ MotifSet::MotifSet(){
 		// motifs.push_back( motif )
 	}
 
-	if( Global::verbose ) print();
+//	if( Global::verbose ) print();
 }
 
 MotifSet::~MotifSet(){
