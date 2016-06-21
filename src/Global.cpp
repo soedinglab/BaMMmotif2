@@ -44,8 +44,8 @@ int        			Global::bgModelOrder = 2;				// background model order, defaults t
 float				Global::bgModelAlpha = 10.0f;			// background model alpha
 
 // EM options
-//unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();	// maximum number of iterations
-unsigned int        Global::maxEMIterations = 100;			// maximum number of iterations
+unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();	// maximum number of iterations
+//unsigned int        Global::maxEMIterations = 10;			// maximum number of iterations
 float               Global::epsilon = 0.001f;				// threshold for likelihood convergence parameter
 bool                Global::noAlphaOptimization = false;	// disable alpha optimization
 bool                Global::noQOptimization = false;		// disable q optimization
@@ -61,6 +61,9 @@ std::vector< std::vector<int> > Global::negFoldIndices; 	// sequence indices for
 bool                Global::verbose = false;            	// verbose printouts
 
 void Global::init( int nargs, char* args[] ){
+
+	// set up the precision for all float or double values
+	std::cout << std::setprecision(4) << std::endl;
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "*************************\n" );
@@ -110,17 +113,6 @@ void Global::init( int nargs, char* args[] ){
 			          << " " << negSequenceSet->getBaseFrequencies()[i] << ", ";
 		std::cout << std::endl;
 	}
-
-	// only for testing:
-//	fprintf( stderr, "\n*****************pos Seq*********************\n" );
-//	for( unsigned int i = 0; i < posSequenceSet->getN(); i++ ){
-//		std::cout << posSequenceSet->getSequences()[i].getHeader() << std::endl;
-//		for( int j = 0; j < posSequenceSet->getSequences()[i].getL(); j++){
-//			fprintf( stderr, "%d", posSequenceSet->getSequences()[i].getSequence()[j] );
-//		}
-//		std::cout << std::endl << "sequence length is: " << posSequenceSet->getSequences()[i].getL() << std::endl;
-//	}
-//	fprintf( stderr, "*********************************************\n" );
 
 	// generate folds (fill posFoldIndices and negFoldIndices)
 	generateFolds( posSequenceSet->getN(), negSequenceSet->getN(), cvFold );

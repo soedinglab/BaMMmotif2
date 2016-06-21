@@ -97,10 +97,6 @@ void BackgroundModel::calculateV(){
 //			v_[y] =  float( n_occ[y] ) / n_occ[yk];		// without interpolation of alpha
 		}
 	}
-
-	// only for testing:
-//	for(  int y = 0; y < Y_; y++ )
-//		std::cout << "v_bg[" <<y <<"] = "<< v_[y] << std::endl;
 }
 
 float* BackgroundModel::getV(){

@@ -16,7 +16,7 @@
 #include <numeric>						// std::iota
 #include <iomanip>						// std::setprecision
 #include <fstream>
-
+#include <limits>						// std::numeric_limits<int>::max();
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
