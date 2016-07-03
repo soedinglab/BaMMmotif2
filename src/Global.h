@@ -22,7 +22,6 @@
 #include <string.h>
 #include <math.h>
 
-
 #include "SequenceSet.h"
 #include "Alphabet.h"
 #include "getopt_pp/getopt_pp.h"		// GetOpt function
@@ -79,7 +78,6 @@ public:
 	// further FDR options...
 
 	static bool			verbose;							// verbose printouts, defaults to false
-
 
 	static void         init( int nargs, char* args[] );
 	static void         destruct();

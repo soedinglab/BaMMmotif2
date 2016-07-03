@@ -44,7 +44,7 @@ private:
 	int 		w_;					    				// motif length
 	float***    v_;				                		// conditional probabilities for k-mers y at motif position j
 	int*		powA_;									// size of alphabet to the power k
-	void 		calculateV( int*** n );			// calculate v and s from k-mer counts n and global alphas, N is number of motifs
+	void 		calculateV( int*** n );					// calculate v and s from k-mer counts n and global alphas
 
 };
 

@@ -25,7 +25,7 @@ public:
 private:
 
 	Motif* 				motif_;			// motif to optimize within the EM
-	float*				v_bg_;			// conditional probabilities for background model
+	float**				v_bg_;			// conditional probabilities for background model
 
 	std::vector<int>	folds_;		    // folds to iterate over, for cross-validation
 

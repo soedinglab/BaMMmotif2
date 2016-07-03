@@ -44,8 +44,8 @@ int        			Global::bgModelOrder = 2;				// background model order, defaults t
 float				Global::bgModelAlpha = 10.0f;			// background model alpha
 
 // EM options
-unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();	// maximum number of iterations
-//unsigned int        Global::maxEMIterations = 10;			// maximum number of iterations
+//unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();	// maximum number of iterations
+unsigned int        Global::maxEMIterations = 2;			// maximum number of iterations
 float               Global::epsilon = 0.001f;				// threshold for likelihood convergence parameter
 bool                Global::noAlphaOptimization = false;	// disable alpha optimization
 bool                Global::noQOptimization = false;		// disable q optimization

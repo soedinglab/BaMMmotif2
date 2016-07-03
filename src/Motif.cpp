@@ -169,16 +169,16 @@ void Motif::calculateV( int*** n ){					// N is the number of motifs
 	BackgroundModel bg;
 	bg.init( std::vector<int> () );
 	// for k = 0, v_ = freqs:
-	for( int y = 0, k = 0; y < powA_[k+1]; y++ )
+	for( int y = 0; y < powA_[1]; y++ )
 		for( int j = 0; j < w_; j++ )
-			v_[k][y][j] = ( n[k][y][j] + Global::modelAlpha.at(k) * bg.getV()[y] ) / ( N_ + Global::modelAlpha.at(k) );
+			v_[0][y][j] = ( n[0][y][j] + Global::modelAlpha.at(0) * bg.getV()[0][y] ) / ( N_ + Global::modelAlpha.at(0) );
 
 	// for k > 0:
 	for( int k = 1; k < Global::modelOrder + 1; k++ ){
 		for( int y = 0; y < powA_[k+1]; y++ ){
 			int y2 = y / powA_[1];								// cut off the first nucleotide in (k+1)-mer y
 			int yk = y % powA_[k];								// cut off the last nucleotide in (k+1)-mer y
-			for( int j = 0; j < w_; j++ )
+			for( int j = k; j < w_; j++ )
 				v_[k][y][j] = ( n[k][y][j] + Global::modelAlpha.at(k) * v_[k-1][y2][j] ) / ( n[k-1][yk][j-1] + Global::modelAlpha.at(k) );
 		}
 	}
@@ -219,16 +219,21 @@ void Motif::updateV( float*** n, float** alpha ){
 	bg.init( std::vector<int> () );
 	// for k = 0, v_ = freqs:
 	for( int y = 0, k = 0; y < powA_[k+1]; y++ )
-		for( int j = 0; j < w_; j++ )
-			v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * bg.getV()[y] ) / ( N_ + alpha[k][j] );
+		for( int j = 0; j < w_; j++ ){
+			v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * bg.getV()[0][y] ) / ( N_ + alpha[k][j] );
+//			std::cout  << "n["<<k<<"]["<<y<<"]["<<j<<"] = " << n[k][y][j] << ", while v["<<k<<"]["<<y<<"]["<<j<<"] = " << v_[k][y][j] << std::endl;
+		}
 
 	// for k > 0:
 	for( int k = 1; k < Global::modelOrder + 1; k++ ){
 		for( int y = 0; y < powA_[k+1]; y++ ){
 			int y2 = y / powA_[1];										// cut off the first nucleotide in (k+1)-mer
 			int yk = y % powA_[k];										// cut off the last nucleotide in (k+1)-mer
-			for( int j = 0; j < w_; j++ )
+			for( int j = k; j < w_; j++ ){
 				v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] ) / ( n[k-1][yk][j-1] + alpha[k][j] );
+//				if( v_[k][y][j] < 0 )
+//					std::cout  << "n["<<k<<"]["<<y<<"]["<<j<<"] = " << n[k][y][j] << ", while v["<<k<<"]["<<y<<"]["<<j<<"] = " << v_[k][y][j] << std::endl;
+			}
 		}
 	}
 }
