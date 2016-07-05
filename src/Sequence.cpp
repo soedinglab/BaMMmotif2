@@ -81,7 +81,7 @@ int	Sequence::extractKmer( int i, int k ){
 		else if( sequence_[i-n] > 0 )
 			y += ( sequence_[i-n] -1 ) * Global::ipow( Alphabet::getSize(), n );
 		else {
-			y = -1;										// for the unknown alphabets, set y to -1
+			y = -1;										// for unknown alphabets, set y to -1
 			break;
 		}
 	}
