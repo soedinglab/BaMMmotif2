@@ -28,8 +28,7 @@ private:
 
 	void 	calculateV();  					// calculate v from k-mer counts n
 
-	int		K_;								// order of background model
-	int*	powA_;							// alphabetSize to the power k
+	int		K_ = Global::bgModelOrder;
 	int**	n_bg_;							// k-mer counts
 	float** v_bg_;					    	// conditional probabilities for k-mers
 };
