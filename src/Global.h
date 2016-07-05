@@ -84,6 +84,7 @@ public:
 
 	static char* 		String( const char *s );			// convert const char* to string, for GetOpt library
 	static int			ipow( unsigned int base, int exp );	// power function for integers
+	static int*			powA;								// sizes of alphabet to the power k
 
 private:
 

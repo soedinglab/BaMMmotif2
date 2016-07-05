@@ -60,40 +60,26 @@ std::vector< std::vector<int> > Global::negFoldIndices; 	// sequence indices for
 
 bool                Global::verbose = false;            	// verbose printouts
 
+int* 				Global::powA = NULL;
+
 void Global::init( int nargs, char* args[] ){
+	std::cout << std::setprecision(4) << std::endl;	// set up the precision for all float or double values
 
-	// set up the precision for all float or double values
-	std::cout << std::setprecision(4) << std::endl;
-
-	fprintf( stderr, "\n" );
-	fprintf( stderr, "*************************\n" );
-	fprintf( stderr, "*   Read Arguments...   *\n" );
-	fprintf( stderr, "*************************\n" );
 	readArguments( nargs, args );
 
-	fprintf( stderr, "\n" );
-	fprintf( stderr, "*************************\n" );
-	fprintf( stderr, "*   Setup Alphabet...   *\n" );
-	fprintf( stderr, "*************************\n" );
 	Alphabet::init( alphabetType );
 
 	// read in positive sequence set
 	posSequenceSet = new SequenceSet( posSequenceFilename );
 
 	// read in or generate negative sequence set
-	if( negSequenceFilename == NULL ){
-		// use positive for negative sequence set
+	if( negSequenceFilename == NULL )				// use positive for negative sequence set
 		negSequenceSet = posSequenceSet;
-	} else{
-		// read in negative sequence set
+	else											// read in negative sequence set
 		negSequenceSet = new SequenceSet( negSequenceFilename );
-	}
+
 
 	if( verbose ){
-		printf( " ___________________________\n"
-				"|                           |\n"
-				"|  Statistic for posSeqSet  |\n"
-				"|___________________________|\n\n" );
 		std::cout << "For positive set:	" << posSequenceSet->getN() << " sequences. "
 				"max.length: " << posSequenceSet->getMaxL() << ", min.length: " <<
 				posSequenceSet->getMinL() << std::endl << "			base frequencies: " ;
@@ -101,10 +87,7 @@ void Global::init( int nargs, char* args[] ){
 			std::cout << std::scientific << Alphabet::getAlphabet()[i]
 			          << " " << posSequenceSet->getBaseFrequencies()[i] << ", ";
 		std::cout << std::endl;
-		printf( " ___________________________\n"
-				"|                           |\n"
-				"|  Statistic for negSeqSet  |\n"
-				"|___________________________|\n\n" );
+
 		std::cout << "For negative set:	" << negSequenceSet->getN() << " sequences. "
 				"max.length: " << negSequenceSet->getMaxL() << ", min.length: " <<
 				negSequenceSet->getMinL() << std::endl << "			base frequencies: " ;
@@ -117,23 +100,14 @@ void Global::init( int nargs, char* args[] ){
 	// generate folds (fill posFoldIndices and negFoldIndices)
 	generateFolds( posSequenceSet->getN(), negSequenceSet->getN(), cvFold );
 
-	// only for testing:
-	printf( " __________________\n"
-			"|                  |\n"
-			"|  posFoldIndices  |\n"
-			"|__________________|\n\n" );
-
-	for( unsigned int f = 0; f < cvFold; f++ ){
-		for( unsigned int t = 0; t < posFoldIndices[f].size(); t++ ){
-			std::cout << posFoldIndices[f][t] << '\t';
-		}
-		std::cout << std::endl;
-	}
-
 	// optional: read in sequence intensities (header and intensity columns?)
 	if( intensityFilename != 0 ){
 		;// read in sequence intensity
 	}
+
+	powA = new int[modelOrder+2];
+	for( int k = 0; k < modelOrder+2; k++ )
+		powA[k] = ipow( Alphabet::getSize(), k );
 }
 
 int Global::readArguments( int nargs, char* args[] ){
@@ -161,7 +135,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	 *
 	 */
 
-	if( nargs < 3 ) {			// At least 2 parameters are required, but this is not precision, needed to be specified!!
+	if( nargs < 3 ) {			// At least 2 parameters are required, but this is not precise, needed to be specified!!
 		fprintf( stderr, "Error: Arguments are missing! \n" );
 		printHelp();
 		exit( -1 );
