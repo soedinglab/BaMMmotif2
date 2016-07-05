@@ -60,7 +60,6 @@ int main( int nargs, char* args[] ){
 
 		exit(-1);
 	}
-	std::cout <<" Marker 3 " << std::endl;
 
 	// write motifs
 	motifs.write();
