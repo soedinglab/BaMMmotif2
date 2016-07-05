@@ -10,34 +10,28 @@
 Motif::Motif( int length ){					// allocate memory for v_
 	w_ = length;
 
-	powA_ = new int[Global::modelOrder+2];
-	for( int k = 0; k < Global::modelOrder + 2; k++ )
-		powA_[k] = Global::ipow( Alphabet::getSize(), k );
-
-	v_ = ( float*** )calloc( ( Global::modelOrder+1 ), sizeof( float** ) );
-	for( int k = 0; k <= Global::modelOrder; k++ ){
-		v_[k] = ( float** )calloc( powA_[k+1], sizeof( float* ) );
-		for( int y = 0; y < powA_[k+1]; y++ )
+	v_ = ( float*** )calloc( ( K_+1 ), sizeof( float** ) );
+	for( int k = 0; k <= K_; k++ ){
+		v_[k] = ( float** )calloc( Global::powA[k+1], sizeof( float* ) );
+		for( int y = 0; y < Global::powA[k+1]; y++ )
 			v_[k][y] = ( float* )calloc( w_, sizeof( float ) );
 	}
 
-	N_= 0;
+	vbg_ = ( float* )calloc( Global::powA[1], sizeof( float ) );
+	BackgroundModel bg;
+	bg.init( std::vector<int> () );
+	for( int y = 0; y < Global::powA[1]; y++ )
+		vbg_[y] = bg.getV()[0][y];
 }
 
 Motif::Motif( const Motif& other ){ 		// deep copy
 	w_ = other.w_;
 
-	powA_ = new int[Global::modelOrder+2];
-	for( int k = 0; k < Global::modelOrder + 2; k++ )
-		powA_[k] = other.powA_[k];
-
-	for( int k = 0; k < Global::modelOrder + 2; k++ )
-		powA_[k] = Global::ipow( Alphabet::getSize(), k );
 	if( other.v_ != NULL ){
-		v_ = ( float*** )calloc( ( Global::modelOrder+1 ), sizeof( float** ) );
-		for( int k = 0; k <= Global::modelOrder; k++ ){
-			v_[k] = ( float** )calloc( powA_[k+1], sizeof( float* ) );
-			for( int y = 0; y < powA_[k+1]; y++ ){
+		v_ = ( float*** )calloc( ( K_+1 ), sizeof( float** ) );
+		for( int k = 0; k <= K_; k++ ){
+			v_[k] = ( float** )calloc( Global::powA[k+1], sizeof( float* ) );
+			for( int y = 0; y < Global::powA[k+1]; y++ ){
 				v_[k][y] = ( float* )calloc( w_, sizeof( float ) );
 				memcpy( v_[k][y], other.v_[k][y], w_ * sizeof( float ) );
 			}
@@ -46,12 +40,18 @@ Motif::Motif( const Motif& other ){ 		// deep copy
 	} else{
 		v_ = NULL;
 	}
-
-	N_ = other.N_;
+	vbg_ = other.vbg_;
 }
 
 Motif::~Motif(){
-	if( v_ ) free( v_ );
+	for( int k = 0; k <= K_; k++ ){
+		for( int y = 0; y < Global::powA[k+1]; y++ ){
+			free( v_[k][y] );
+		}
+		free( v_[k] );
+	}
+	free( v_ );
+	free( vbg_ );
 }
 
 // initialize v from IUPAC pattern (BaMM pattern)
@@ -65,15 +65,11 @@ void Motif::initFromBaMMPattern( char* pattern ){
 void Motif::initFromBindingSites( char* filename ){
 
 	// initialize n
-	int*** n;
-	n = new int**[Global::modelOrder + 1];
-	for( int k = 0; k < Global::modelOrder + 1; k++ ){
-		n[k] = new int*[powA_[k+1]];
-		for( int y = 0; y < powA_[k+1]; y++ ){
-			n[k][y] = new int[w_];
-			for( int j = 0; j < w_; j++ )
-				n[k][y][j] = 0;
-		}
+	int*** n = ( int*** )calloc( ( K_+1 ), sizeof( int** ) );
+	for( int k = 0; k < K_+1; k++ ){
+		n[k] = ( int** )calloc( Global::powA[k+1], sizeof( int* ) );
+		for( int y = 0; y < Global::powA[k+1]; y++ )
+			n[k][y] = ( int* )calloc( w_, sizeof( int ) );
 	}
 
 	std::ifstream file( filename );						// read file
@@ -86,19 +82,19 @@ void Motif::initFromBindingSites( char* filename ){
 
 		// add alphabets randomly at the beginning of each binding site
 		for( int i = 0; i < Global::addColumns.at(0); i++ )
-			bindingsite.insert( bindingsite.begin(), Alphabet::getBase( rand() % powA_[1] + 1 ) );
+			bindingsite.insert( bindingsite.begin(), Alphabet::getBase( rand() % Global::powA[1] + 1 ) );
 		// add alphabets randomly at the end of each binding site
 		for( int i = 0; i < Global::addColumns.at(1); i++ )
-			bindingsite.insert( bindingsite.end(), Alphabet::getBase( rand() % powA_[1] + 1 ) );
+			bindingsite.insert( bindingsite.end(), Alphabet::getBase( rand() % Global::powA[1] + 1 ) );
 
 		w = bindingsite.length();
 
 		if( w != w_ ){									// all the binding sites should have the same length
-			fprintf( stderr, "Error: Length of binding site sequence on line %d differs.\n"
+			fprintf( stderr, "Error: Length of binding site on line %d differs.\n"
 					"Binding sites should have the same length.\n", N_ );
 			exit( -1 );
 		}
-		if( w < Global::modelOrder + 1 ){				// binding sites should be longer than the order of model
+		if( w < K_+1 ){									// binding sites should be longer than the order of model
 			fprintf( stderr, "Error: Length of binding site sequence "
 					"is shorter than model order.\n" );
 			exit( -1 );
@@ -110,32 +106,31 @@ void Motif::initFromBindingSites( char* filename ){
 		}
 
 		// scan the binding sites and calculate k-mer counts n
-		for( int k = 0; k < Global::modelOrder + 1; k++ ){				// k runs over all orders
-			// j runs over all true motif positions
-			for( int j = k; j < w; j++ ){
-				int y = 0;
-				for( int i = 0; i <= k; i++ )							// calculate y based on (k+1)-mer bases
-					y += powA_[i] * ( Alphabet::getCode( bindingsite[j-k+i] ) - 1 );
+		int y;
+		for( int k = 0; k < K_+1; k++ ){				// k runs over all orders
+			for( int j = k; j < w; j++ ){				// j runs over all true motif positions
+				y = 0;
+				for( int n = k; n >= 0; n-- )			// calculate y based on (k+1)-mer bases
+					y += Global::powA[n] * ( Alphabet::getCode( bindingsite[j-n] ) - 1 );
 				n[k][y][j]++;
 			}
 		}
 	}
 
-//	if( Global::verbose ){
-//		printf( " ___________________________\n"
-//				"|                           |\n"
-//				"|  N_occ for Initial Model  |\n"
-//				"|___________________________|\n\n" );
-//		for( int k = 0; k < Global::modelOrder + 1; k++ ){
-//			std::cout << "when k = " << k << ", n[k][y][j]"<< std::endl;
-//			for( int y = 0; y < powA_[k+1]; y++ ){
-//				for( int j = 0; j < w_; j++ )
-//					std::cout << n[k][y][j] << '\t';
-//				std::cout << std::endl;
-//			}
-//			std::cout << std::endl;
-//		}
-//	}
+	if( Global::verbose ){
+		printf( " ___________________________\n"
+				"|                           |\n"
+				"|  N_occ for Initial Model  |\n"
+				"|___________________________|\n\n" );
+		for( int k = 0; k < K_+1; k++ ){
+			std::cout << "when k = " << k << std::endl;
+			for( int y = 0; y < Global::powA[k+1]; y++ ){
+				for( int j = 0; j < w_; j++ )
+					std::cout << n[k][y][j] << '\t';
+				std::cout << std::endl;
+			}
+		}
+	}
 
 	// calculate v and s from k-mer counts n
 	calculateV( n );
@@ -164,110 +159,88 @@ int Motif::getW(){
 	return w_;
 }
 
-void Motif::calculateV( int*** n ){					// N is the number of motifs
-
-	BackgroundModel bg;
-	bg.init( std::vector<int> () );
+void Motif::calculateV( int*** n ){
 	// for k = 0, v_ = freqs:
-	for( int y = 0; y < powA_[1]; y++ )
+	for( int y = 0; y < Global::powA[1]; y++ )
 		for( int j = 0; j < w_; j++ )
-			v_[0][y][j] = ( n[0][y][j] + Global::modelAlpha.at(0) * bg.getV()[0][y] ) / ( N_ + Global::modelAlpha.at(0) );
+			v_[0][y][j] = ( n[0][y][j] + Global::modelAlpha.at(0) * vbg_[y] )
+						/ ( N_ + Global::modelAlpha.at(0) );
 
 	// for k > 0:
-	for( int k = 1; k < Global::modelOrder + 1; k++ ){
-		for( int y = 0; y < powA_[k+1]; y++ ){
-			int y2 = y / powA_[1];								// cut off the first nucleotide in (k+1)-mer y
-			int yk = y % powA_[k];								// cut off the last nucleotide in (k+1)-mer y
+	for( int k = 1; k < K_+1; k++ ){
+		for( int y = 0; y < Global::powA[k+1]; y++ ){
+			int y2 = y % Global::powA[k];						// cut off the first nucleotide in (k+1)-mer y
+			int yk = y / Global::powA[1];						// cut off the last nucleotide in (k+1)-mer y
+			for( int j = 0; j < k; j++ )						// when j < k, i.e. p(A|CG) = p(A|C)
+				v_[k][y][j] = v_[k-1][y2][j];
 			for( int j = k; j < w_; j++ )
-				v_[k][y][j] = ( n[k][y][j] + Global::modelAlpha.at(k) * v_[k-1][y2][j] ) / ( n[k-1][yk][j-1] + Global::modelAlpha.at(k) );
+				v_[k][y][j] = ( n[k][y][j] + Global::modelAlpha.at(k) * v_[k-1][y2][j] )
+							/ ( n[k-1][yk][j-1] + Global::modelAlpha.at(k) );
 		}
 	}
 
-	// for normalization:
-//	for( int k = 0; k < Global::modelOrder + 1; k++ )
-//		for( int y = 0; y < powA_[k+1]; y++ )
-//			for( int j = 0; j < w_; j++ )
-//				v_[k][y][j] /= powA_[k] ;
-
-//	if( Global::verbose ){
-//		printf( " _______________________\n"
-//				"|                       |\n"
-//				"|  v for Initial Model  |\n"
-//				"|_______________________|\n\n" );
-//		for( int k = 0; k < Global::modelOrder + 1; k++ ){
-//			std::cout << "when k = " << k << std::endl;
-//			for( int y = 0; y < powA_[k+1]; y++ ){
-//				for( int j = 0; j < w_; j++ )
-//					std::cout << v_[k][y][j] << '\t';
-//				std::cout << std::endl;
-//			}
-//			std::cout << std::endl;
-//		}
-//	}
+	if( Global::verbose ){
+		printf( " _______________________\n"
+				"|                       |\n"
+				"|  v for Initial Model  |\n"
+				"|_______________________|\n\n" );
+		for( int j = 0; j < w_; j++ ){
+			for( int k = 0; k < K_+1; k++ ){
+				for( int y = 0; y < Global::powA[k+1]; y++ )
+					std::cout << std::scientific << v_[k][y][j] << '\t';
+				std::cout << std::endl;
+			}
+			std::cout << std::endl;
+		}
+	}
 }
 
 float*** Motif::getV(){
 	return v_;
 }
 
+// update v from fractional k-mer counts n and current alphas
 void Motif::updateV( float*** n, float** alpha ){
-
 	assert( isInitialized_ );
-
-	// update v from fractional k-mer counts n and current alphas
-	BackgroundModel bg;
-	bg.init( std::vector<int> () );
 	// for k = 0, v_ = freqs:
-	for( int y = 0, k = 0; y < powA_[k+1]; y++ )
+	for( int y = 0, k = 0; y < Global::powA[k+1]; y++ )
 		for( int j = 0; j < w_; j++ ){
-			v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * bg.getV()[0][y] ) / ( N_ + alpha[k][j] );
-//			std::cout  << "n["<<k<<"]["<<y<<"]["<<j<<"] = " << n[k][y][j] << ", while v["<<k<<"]["<<y<<"]["<<j<<"] = " << v_[k][y][j] << std::endl;
+			v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * vbg_[y] )
+						/ ( N_ + alpha[k][j] );
 		}
 
 	// for k > 0:
-	for( int k = 1; k < Global::modelOrder + 1; k++ ){
-		for( int y = 0; y < powA_[k+1]; y++ ){
-			int y2 = y / powA_[1];										// cut off the first nucleotide in (k+1)-mer
-			int yk = y % powA_[k];										// cut off the last nucleotide in (k+1)-mer
-			for( int j = k; j < w_; j++ ){
-				v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] ) / ( n[k-1][yk][j-1] + alpha[k][j] );
-//				if( v_[k][y][j] < 0 )
-//					std::cout  << "n["<<k<<"]["<<y<<"]["<<j<<"] = " << n[k][y][j] << ", while v["<<k<<"]["<<y<<"]["<<j<<"] = " << v_[k][y][j] << std::endl;
-			}
+	for( int k = 1; k < K_+1; k++ ){
+		for( int y = 0; y < Global::powA[k+1]; y++ ){
+			int y2 = y % Global::powA[k];						// cut off the first nucleotide in (k+1)-mer
+			int yk = y / Global::powA[1];						// cut off the last nucleotide in (k+1)-mer
+			for( int j = 0; j < k; j++ )				// when j < k, i.e. p(A|CG) = p(A|C)
+				v_[k][y][j] = v_[k-1][y2][j];
+			for( int j = k; j < w_; j++ )
+				v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
+							/ ( n[k-1][yk][j-1] + alpha[k][j] );
 		}
 	}
 }
 
 void Motif::print(){
-	for( int k = 0; k < Global::modelOrder + 1; k++ ){
-		std::cout << "when k = " << k << std::endl;
-		for( int y = 0; y < powA_[k+1]; y++ ){
-			for( int j = 0; j < w_; j++ )
-				std::cout << v_[k][y][j] << '\t';
+	for( int j = 0; j < w_; j++ ){
+		for( int k = 0; k < K_+1; k++ ){
+			for( int y = 0; y < Global::powA[k+1]; y++ )
+				std::cout << std::scientific << v_[k][y][j] << '\t';
 			std::cout << std::endl;
 		}
 		std::cout << std::endl;
 	}
-
-	// only for testing:
-//	for( int k = 0; k < Global::modelOrder + 1; k++ ){
-//		std::cout << "when k = " << k << std::endl;
-//		for( int j = 0; j < w_; j++ ){
-//			float sum = 0.0f;
-//			for( int y = 0; y < powA_[k+1]; y++ )
-//				sum += v_[k][y][j];
-//			std::cout << "at position " << j << ", sum = "<< sum << std::endl;
-//		}
-//	}
 }
 
 void Motif::write(){
 	std::string opath = std::string( Global::outputDirectory )  + '/'
-			+ std::string( Global::posSequenceBasename ) + ".condsInit";
+			+ std::string( Global::posSequenceBasename ) + ".conds";
 	std::ofstream ofile( opath.c_str(), std::ios::app );	// append for MotifSet::write()
 	for( int j = 0; j < w_; j++ ){
-		for( int k = 0; k < Global::modelOrder + 1; k++ ){
-			for( int y = 0; y < powA_[k+1]; y++ )
+		for( int k = 0; k < K_+1; k++ ){
+			for( int y = 0; y < Global::powA[k+1]; y++ )
 				ofile << std::scientific << v_[k][y][j] << '\t';
 			ofile << std::endl;
 		}

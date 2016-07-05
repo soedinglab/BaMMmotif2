@@ -39,14 +39,14 @@ public:
 
 private:
 
-	bool		isInitialized_ = false;		    		// to assert in all public methods
-	int			N_;										// number of binding sites
+	bool		isInitialized_ = false;		    		// assert in all public methods
+	int			N_ = 0;									// number of binding sites
 	int 		w_;					    				// motif length
 	float***    v_;				                		// conditional probabilities for k-mers y at motif position j
-	int*		powA_;									// size of alphabet to the power k
-	void 		calculateV( int*** n );					// calculate v and s from k-mer counts n and global alphas
+	float*		vbg_;									// conditional probabilities for monomers from background model
+	int			K_ = Global::modelOrder;
+	void 		calculateV( int*** n );					// calculate v from k-mer counts n and global alphas
 
 };
-
 
 #endif /* MOTIF_H_ */
