@@ -21,7 +21,7 @@ Motif::Motif( int length ){					// allocate memory for v_
 	BackgroundModel bg;
 	bg.init( std::vector<int> () );
 	for( int y = 0; y < Global::powA[1]; y++ )
-		vbg_[y] = bg.getV()[0][y];
+		vbg_[y] = bg.getVbg()[0][y];
 }
 
 Motif::Motif( const Motif& other ){ 		// deep copy
@@ -135,6 +135,7 @@ void Motif::initFromBindingSites( char* filename ){
 	// calculate v and s from k-mer counts n
 	calculateV( n );
 
+	write();
 	// set isInitialized
 	isInitialized_ = true;
 }
@@ -214,7 +215,7 @@ void Motif::updateV( float*** n, float** alpha ){
 		for( int y = 0; y < Global::powA[k+1]; y++ ){
 			int y2 = y % Global::powA[k];						// cut off the first nucleotide in (k+1)-mer
 			int yk = y / Global::powA[1];						// cut off the last nucleotide in (k+1)-mer
-			for( int j = 0; j < k; j++ )				// when j < k, i.e. p(A|CG) = p(A|C)
+			for( int j = 0; j < k; j++ )						// when j < k, i.e. p(A|CG) = p(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
 			for( int j = k; j < w_; j++ )
 				v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
@@ -236,8 +237,8 @@ void Motif::print(){
 
 void Motif::write(){
 	std::string opath = std::string( Global::outputDirectory )  + '/'
-			+ std::string( Global::posSequenceBasename ) + ".conds";
-	std::ofstream ofile( opath.c_str(), std::ios::app );	// append for MotifSet::write()
+			+ std::string( Global::initialModelBasename ) + ".conds";
+	std::ofstream ofile( opath.c_str() );
 	for( int j = 0; j < w_; j++ ){
 		for( int k = 0; k < K_+1; k++ ){
 			for( int y = 0; y < Global::powA[k+1]; y++ )
