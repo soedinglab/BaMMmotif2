@@ -72,12 +72,14 @@ void BackgroundModel::init( std::vector<int> folds = std::vector<int> () ){
 //	}
 
     // calculate v from k-mer counts n_occ
-	calculateV();
+	calculateVbg();
 
 	if( Global::verbose ) print();
+
+	write();
 }
 
-void BackgroundModel::calculateV(){
+void BackgroundModel::calculateVbg(){
 
 	// sum over counts for all mono-nucleotides
 	float sum = 0.0f;
@@ -101,7 +103,7 @@ void BackgroundModel::calculateV(){
 	}
 }
 
-float** BackgroundModel::getV(){
+float** BackgroundModel::getVbg(){
     return v_bg_;
 }
 
@@ -118,7 +120,8 @@ void BackgroundModel::print(){
 }
 
 void BackgroundModel::write(){
-	std::string opath = std::string( Global::outputDirectory )  + '/' + std::string( Global::posSequenceBasename ) + ".condsBg";
+	std::string opath = std::string( Global::outputDirectory )  + '/'
+			+ std::string( Global::posSequenceBasename ) + ".condsBg";
 	std::ofstream ofile( opath.c_str() );
 	for( int k = 0; k < K_+1; k++ ){
 		for( int y = 0; y < Global::powA[k+1]; y++ )

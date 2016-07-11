@@ -19,18 +19,19 @@ public:
 	~BackgroundModel();
 
 	void 	init( std::vector<int> folds );
-	float** getV();	                		// get conditional probabilities for k-mers
+	float** getVbg();	                	// get conditional probabilities for k-mers
 
 	void 	print();						// print background model to console
 	void 	write();			   			// write background model to file basename.bmm in output directory
 
 private:
 
-	void 	calculateV();  					// calculate v from k-mer counts n
+	void 	calculateVbg();  				// calculate v from k-mer counts n
 
 	int		K_ = Global::bgModelOrder;
 	int**	n_bg_;							// k-mer counts
 	float** v_bg_;					    	// conditional probabilities for k-mers
+
 };
 
 
