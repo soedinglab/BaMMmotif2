@@ -51,14 +51,12 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*************************\n" );
 	fprintf( stderr, "*   Learn Motif by EM   *\n" );
 	fprintf( stderr, "*************************\n" );
-	for( int i = 0; i < motifs.getN(); i++ ){
-		EM em( motifs.getMotifs()[i], bgModel, std::vector<int> () );
+//	for( std::vector<Motif*>::const_iterator iter = motifs.getMotifs().begin(); iter != motifs.getMotifs().end(); iter++ ){
+	for( int N = 0; N < motifs.getN(); N++ ){
+//		EM em( *iter, bgModel, std::vector<int> () );
+		EM em( motifs.getMotifs()[N], bgModel, std::vector<int> () );
 		em.learnMotif();
 		em.write();
-		fprintf( stdout, "\nRuntime: %ld seconds (%0.2f minutes)\n", time( NULL )-timestamp,
-				( float )( time( NULL )-timestamp )/60.0f );
-
-		exit(-1);
 	}
 
 	// write motifs
