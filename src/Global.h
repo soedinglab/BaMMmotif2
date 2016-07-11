@@ -54,6 +54,8 @@ public:
 	static char*		PWMFilename;						// filename of PWM file
 	static char*		BaMMFilename;						// filename of Markov model (.bmm) file
 
+	static char*		initialModelBasename;				// basename of initial model
+
 	// model options
 	static int			modelOrder;							// model order
 	static std::vector<float> modelAlpha;					// initial alphas

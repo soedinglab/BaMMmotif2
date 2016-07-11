@@ -33,6 +33,7 @@ char*               Global::BaMMpatternFilename = NULL;		// filename of BaMMpatt
 char*               Global::bindingSitesFilename = NULL;	// filename of binding sites file
 char*               Global::PWMFilename = NULL;				// filename of PWM file
 char*               Global::BaMMFilename = NULL;			// filename of Markov model (.bmm) file
+char*				Global::initialModelBasename = NULL;	// basename of initial model
 
 // model options
 int        			Global::modelOrder = 2;					// model order
@@ -44,8 +45,8 @@ int        			Global::bgModelOrder = 2;				// background model order, defaults t
 float				Global::bgModelAlpha = 10.0f;			// background model alpha
 
 // EM options
-//unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();	// maximum number of iterations
-unsigned int        Global::maxEMIterations = 2;			// maximum number of iterations
+unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();	// maximum number of iterations
+//unsigned int        Global::maxEMIterations = 2;			// maximum number of iterations
 float               Global::epsilon = 0.001f;				// threshold for likelihood convergence parameter
 bool                Global::noAlphaOptimization = false;	// disable alpha optimization
 bool                Global::noQOptimization = false;		// disable q optimization
@@ -63,7 +64,7 @@ bool                Global::verbose = false;            	// verbose printouts
 int* 				Global::powA = NULL;
 
 void Global::init( int nargs, char* args[] ){
-	std::cout << std::setprecision(4) << std::endl;	// set up the precision for all float or double values
+	std::cout << std::setprecision(4) << std::endl;			// set up the precision for all float or double values
 
 	readArguments( nargs, args );
 
@@ -73,9 +74,9 @@ void Global::init( int nargs, char* args[] ){
 	posSequenceSet = new SequenceSet( posSequenceFilename );
 
 	// read in or generate negative sequence set
-	if( negSequenceFilename == NULL )				// use positive for negative sequence set
+	if( negSequenceFilename == NULL )						// use positive for negative sequence set
 		negSequenceSet = posSequenceSet;
-	else											// read in negative sequence set
+	else													// read in negative sequence set
 		negSequenceSet = new SequenceSet( negSequenceFilename );
 
 
@@ -178,12 +179,16 @@ int Global::readArguments( int nargs, char* args[] ){
 	// get initial motif files
 	if( opt >> GetOpt::OptionPresent( "BaMMpatternFile" ) ){
 		opt >> GetOpt::Option( "BaMMpatternFile", BaMMpatternFilename );
+		initialModelBasename = baseName( BaMMpatternFilename );
 	} else if ( opt >> GetOpt::OptionPresent( "bindingSitesFile" ) ){
 		opt >> GetOpt::Option( "bindingSitesFile", bindingSitesFilename );
+		initialModelBasename = baseName( bindingSitesFilename );
 	} else if ( opt >> GetOpt::OptionPresent( "PWMFile" ) ){
 		opt >> GetOpt::Option( "PWMFile", PWMFilename );
+		initialModelBasename = baseName( PWMFilename );
 	} else if( opt >> GetOpt::OptionPresent( "BMMFile" ) ){
 		opt >> GetOpt::Option( "BMMFile", BaMMFilename );
+		initialModelBasename = baseName( BaMMFilename );
 	} else {
 		fprintf( stderr, "Error: No initial model is provided.\n" );
 		exit( -1 );
