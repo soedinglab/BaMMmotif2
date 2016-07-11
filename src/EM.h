@@ -36,7 +36,11 @@ private:
 	float 				q_ = 0.9f; 			// hyper-parameter q specifies the fraction of sequences containing motif
 
 	float 				likelihood_ = 0;	// value of Q function for current parameters
-	unsigned int 		EMIterations_ = 0;  // counter for EM iterations => can be set as a local variable
+	unsigned int 		EMIterations_ = 0;  // counter for EM iterations
+
+	int					K_ = Global::modelOrder;
+	int					k_bg_ = Global::bgModelOrder;
+	int 				W_;					// width of motif
 
 	void EStep();							// E-step
 	void MStep();							// M-step
@@ -44,16 +48,6 @@ private:
 	void optimizeAlphas();			    	// optimize alpha hyper-parameters
 	void optimizeQ();						// optimize hyper-parameter q
 
-//	float sumV( float*** v );				// sum up the conditional probabilities
 };
-
-//inline float EM::sumV( float*** v ){
-//	float sumV = 0.0f;
-//	for( int k = 0; k <= Global::modelOrder; k++ )
-//		for( int y = 0; y < powA_[k+1]; y++ )
-//			for( int j = 0; j < motif_->getW(); j++ )
-//				sumV += v[k][y][j];
-//	return sumV;
-//}
 
 #endif /* EM_H_ */
