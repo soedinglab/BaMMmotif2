@@ -5,10 +5,7 @@
  *      Author: wanwan
  */
 
-#include <string>
-
 #include <sys/stat.h>   			// get file status
-#include <stdio.h>
 
 #include "Global.h"
 
@@ -45,8 +42,8 @@ int        			Global::bgModelOrder = 2;				// background model order, defaults t
 float				Global::bgModelAlpha = 10.0f;			// background model alpha
 
 // EM options
-unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();	// maximum number of iterations
-//unsigned int        Global::maxEMIterations = 2;			// maximum number of iterations
+//unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();	// maximum number of iterations
+unsigned int        Global::maxEMIterations = 2;			// maximum number of iterations
 float               Global::epsilon = 0.001f;				// threshold for likelihood convergence parameter
 bool                Global::noAlphaOptimization = false;	// disable alpha optimization
 bool                Global::noQOptimization = false;		// disable q optimization
@@ -64,7 +61,6 @@ bool                Global::verbose = false;            	// verbose printouts
 int* 				Global::powA = NULL;
 
 void Global::init( int nargs, char* args[] ){
-	std::cout << std::setprecision(4) << std::endl;			// set up the precision for all float or double values
 
 	readArguments( nargs, args );
 
@@ -75,10 +71,9 @@ void Global::init( int nargs, char* args[] ){
 
 	// read in or generate negative sequence set
 	if( negSequenceFilename == NULL )						// use positive for negative sequence set
-		negSequenceSet = posSequenceSet;
+		negSequenceSet = new SequenceSet( posSequenceFilename );
 	else													// read in negative sequence set
 		negSequenceSet = new SequenceSet( negSequenceFilename );
-
 
 	if( verbose ){
 		std::cout << "For positive set:	" << posSequenceSet->getN() << " sequences. "
@@ -314,7 +309,7 @@ int Global::ipow( unsigned int base, int exp ){
 
 void Global::printHelp(){
 	printf("\n=================================================================\n");
-	printf("\n Usage: BaMMmotif OUTDIR SEQFILE [options] \n\n");
+	printf("\n Usage: ./BaMMmotif OUTDIR SEQFILE [options] \n\n");
 	printf("\t OUTDIR:  output directory for all results. \n");
 	printf("\t SEQFILE: file with sequences from positive set in FASTA format. \n");
 	printf("\n Options: \n");
@@ -325,30 +320,13 @@ void Global::printHelp(){
 }
 
 void Global::destruct(){
-/*
-	std::cout << "Destructor for Global class." << std::endl;
-	std::cout << outputDirectory << std::endl;
-	if( outputDirectory != NULL ){
-		free( outputDirectory );
-	}
-	std::cout << "1" << std::endl;
-	if( posSequenceFilename ) delete[] posSequenceFilename ;
-	std::cout << "2" << std::endl;
-	if( negSequenceFilename ) free( negSequenceFilename );
-	std::cout << "3" << std::endl;
-//	if( posSequenceBasename ) delete posSequenceBasename;
-//	if( negSequenceBasename ) free( negSequenceBasename );
-	if( alphabetType ) free( alphabetType );
-	std::cout << "4" << std::endl;
-//	if( posSequenceSet ) free( posSequenceSet );
-//	if( negSequenceSet ) free( negSequenceSet );
-//	if( intensityFilename ) free( intensityFilename );
-//	if( BaMMpatternFilename ) free( BaMMpatternFilename );
-	if( bindingSitesFilename ) free( bindingSitesFilename );
-	std::cout << "5" << std::endl;
-//	if( PWMFilename ) free( PWMFilename );
-//	if( BMMFilename ) free( BMMFilename );
-
-//	Alphabet::destruct();
-*/
+	Alphabet::destruct();
+	if( powA ) delete[] powA;
+	if( alphabetType ) delete[] alphabetType;
+	if( posSequenceBasename ) free( posSequenceBasename );
+	if( negSequenceBasename ) free( negSequenceBasename );
+	if( initialModelBasename ) free( initialModelBasename );
+	if( posSequenceSet ) delete posSequenceSet;
+	if( negSequenceSet ) delete negSequenceSet;
+	std::cout << "Destruct() for Global class works fine. \n";
 }

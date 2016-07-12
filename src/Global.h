@@ -8,15 +8,16 @@
 #ifndef GLOBAL_H_
 #define GLOBAL_H_
 
+#include <iostream>											// std::cout, std::endl
 #include <vector>
-#include <string>
-#include <cstring> 						// std::strcpy
 #include <list>
-#include <iostream>
-#include <numeric>						// std::iota
-#include <iomanip>						// std::setprecision
+#include <string>
+#include <cstring> 											// std::strcpy
+#include <numeric>											// std::iota
+#include <iomanip>											// std::setprecision
 #include <fstream>
-#include <limits>						// std::numeric_limits<int>::max();
+#include <limits>											// std::numeric_limits<int>::max();
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -24,7 +25,7 @@
 
 #include "SequenceSet.h"
 #include "Alphabet.h"
-#include "getopt_pp/getopt_pp.h"		// GetOpt function
+#include "getopt_pp/getopt_pp.h"							// GetOpt function
 
 class Global{
 
