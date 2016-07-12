@@ -10,8 +10,8 @@
 Motif::Motif( int length ){					// allocate memory for v_
 	w_ = length;
 
-	v_ = ( float*** )calloc( ( K_+1 ), sizeof( float** ) );
-	for( int k = 0; k <= K_; k++ ){
+	v_ = ( float*** )calloc( K_+1, sizeof( float** ) );
+	for( int k = 0; k < K_+1; k++ ){
 		v_[k] = ( float** )calloc( Global::powA[k+1], sizeof( float* ) );
 		for( int y = 0; y < Global::powA[k+1]; y++ )
 			v_[k][y] = ( float* )calloc( w_, sizeof( float ) );
@@ -19,7 +19,6 @@ Motif::Motif( int length ){					// allocate memory for v_
 
 	vbg_ = ( float* )calloc( Global::powA[1], sizeof( float ) );
 	BackgroundModel bg;
-	bg.init( std::vector<int> () );
 	for( int y = 0; y < Global::powA[1]; y++ )
 		vbg_[y] = bg.getVbg()[0][y];
 }
@@ -28,8 +27,8 @@ Motif::Motif( const Motif& other ){ 		// deep copy
 	w_ = other.w_;
 
 	if( other.v_ != NULL ){
-		v_ = ( float*** )calloc( ( K_+1 ), sizeof( float** ) );
-		for( int k = 0; k <= K_; k++ ){
+		v_ = ( float*** )calloc( K_+1, sizeof( float** ) );
+		for( int k = 0; k < K_+1; k++ ){
 			v_[k] = ( float** )calloc( Global::powA[k+1], sizeof( float* ) );
 			for( int y = 0; y < Global::powA[k+1]; y++ ){
 				v_[k][y] = ( float* )calloc( w_, sizeof( float ) );
@@ -40,18 +39,23 @@ Motif::Motif( const Motif& other ){ 		// deep copy
 	} else{
 		v_ = NULL;
 	}
-	vbg_ = other.vbg_;
+
+	vbg_ = ( float* )calloc( Global::powA[1], sizeof( float ) );
+	memcpy( vbg_, other.vbg_, Global::powA[1] * sizeof( float ) );
 }
 
 Motif::~Motif(){
-	for( int k = 0; k <= K_; k++ ){
-		for( int y = 0; y < Global::powA[k+1]; y++ ){
-			free( v_[k][y] );
+	if( v_ != NULL ){
+		for( int k = 0; k < K_+1; k++ ){
+			for( int y = 0; y < Global::powA[k+1]; y++ )
+				free( v_[k][y] );
+			free( v_[k] );
 		}
-		free( v_[k] );
+		free( v_ );
 	}
-	free( v_ );
+
 	free( vbg_ );
+	std::cout << "Destructor for Motif class works fine. \n";
 }
 
 // initialize v from IUPAC pattern (BaMM pattern)
@@ -65,7 +69,7 @@ void Motif::initFromBaMMPattern( char* pattern ){
 void Motif::initFromBindingSites( char* filename ){
 
 	// initialize n
-	int*** n = ( int*** )calloc( ( K_+1 ), sizeof( int** ) );
+	int*** n = ( int*** )calloc( K_+1, sizeof( int** ) );
 	for( int k = 0; k < K_+1; k++ ){
 		n[k] = ( int** )calloc( Global::powA[k+1], sizeof( int* ) );
 		for( int y = 0; y < Global::powA[k+1]; y++ )

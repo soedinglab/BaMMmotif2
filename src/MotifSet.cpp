@@ -38,7 +38,7 @@ MotifSet::MotifSet(){
 		Motif* motif = new Motif( length );
 		motif->initFromBindingSites( Global::bindingSitesFilename );
 		motifs_.push_back( motif );
-		N_ = 1;
+		N_++;
 
 	} else if( Global::PWMFilename != NULL ){
 
@@ -60,6 +60,7 @@ MotifSet::MotifSet(){
 
 MotifSet::~MotifSet(){
 //	motifs_.clear();
+	std::cout << "Destructor for MotifSet class works fine. \n";
 }
 
 std::vector<Motif*> MotifSet::getMotifs(){
@@ -89,9 +90,17 @@ void MotifSet::print(){
 void MotifSet::write(){
 	// before writing, remove the previous file
 	std::string opath = std::string( Global::outputDirectory )  + '/'
-			+ std::string( Global::posSequenceBasename ) + ".condsInit";
-	remove( opath.c_str() );					// avoid appending if the file already exists
-	for( int i = 0; i < N_; i++ )
-		motifs_[i]->write();
+			+ std::string( Global::posSequenceBasename ) + ".condsMotifs";
+	std::ofstream ofile( opath.c_str() );
+	for( int i = 0; i < N_; i++ ){
+		ofile << "Motif " << i+1 <<":" << std::endl;
+		for( int j = 0; j < motifs_[i]->getW(); j++ ){
+			for( int k = 0; k < Global::modelOrder+1; k++ ){
+				for( int y = 0; y < Global::powA[k+1]; y++ )
+					ofile << std::scientific << motifs_[i]->getV()[k][y][j] << '\t';
+				ofile << std::endl;
+			}
+			ofile << std::endl;
+		}
+	}
 }
-
