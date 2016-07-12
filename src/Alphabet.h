@@ -8,7 +8,13 @@
 #ifndef ALPHABET_H_
 #define ALPHABET_H_
 
-#include <stdint.h>		// uint8_t
+#include <iostream>											// std::cout, std::endl
+#include <cstring>      									// strlen, strcpy
+
+#include <stdint.h>											// uint8_t
+#include <stdlib.h>											// malloc, calloc, exit, free
+#include <stdio.h>											// stderr
+#include <ctype.h>											// tolower
 
 class Alphabet {
 
@@ -24,7 +30,7 @@ public:
 	static char 	    getBase( uint8_t code );			// get conversion from encoding to base
 	static uint8_t 	    getComplementCode( uint8_t code );	// get conversion from encoding to complement encoding
 
-	static void 		setSize( int size);
+	static void 		setSize( int size );
 
 private:
 
