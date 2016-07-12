@@ -15,7 +15,7 @@ class EM {
 
 public:
 
-	EM( Motif* motif, BackgroundModel bg, std::vector<int> folds );
+	EM( Motif* motif, BackgroundModel bg, std::vector<int> folds = std::vector<int> () );
 	~EM();
 
 	int                 learnMotif();

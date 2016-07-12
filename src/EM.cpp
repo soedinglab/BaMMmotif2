@@ -7,14 +7,14 @@
 
 #include "EM.h"
 
-EM::EM( Motif* motif, BackgroundModel bg, std::vector<int> folds = std::vector<int> () ){
-	motif_ = new Motif( *motif );				// deep copy
+EM::EM( Motif* motif, BackgroundModel bg, std::vector<int> folds ){
+	motif_ = new Motif( *motif );								// deep copy
 	W_ = motif_->getW();
 	if( folds.size() != 0 )
-		folds_ = folds;							// for cross-validation
+		folds_ = folds;											// for cross-validation
 
 	v_bg_ = ( float** )calloc( k_bg_+1, sizeof( float* ) );
-	for( int k = 0; k < k_bg_+1; k++ ){			// deep copy
+	for( int k = 0; k < k_bg_+1; k++ ){							// deep copy
 		v_bg_[k] = ( float* )calloc( Global::powA[k+1], sizeof( float ) );
 		for( int y = 0; y < Global::powA[k+1]; y++ )
 			v_bg_[k][y] = bg.getVbg()[k][y];
@@ -41,13 +41,13 @@ EM::EM( Motif* motif, BackgroundModel bg, std::vector<int> folds = std::vector<i
 	alpha_ = ( float** )malloc( ( K_+1 ) * sizeof( float* ) );
 	for( int k = 0; k <= K_; k++ ){
 		alpha_[k] = ( float* )malloc( W_ * sizeof( float ) );
-		for( int j = 0; j < W_; j++ )			// initialize alpha_ with global alpha
+		for( int j = 0; j < W_; j++ )							// initialize alpha_ with global alpha
 			alpha_[k][j] = Global::modelAlpha[k];
 	}
 }
 
 EM::~EM(){
-	delete[] motif_;
+	delete motif_;
 
 	for( int k = 0; k <= k_bg_; k++ )
 		free( v_bg_[k] );
@@ -71,6 +71,7 @@ EM::~EM(){
 	for( int k = 0; k <= K_; k++ )
 		free( alpha_[k] );
 	free( alpha_ );
+	std::cout << "Destructor for EM class works fine. \n";
 }
 
 int EM::learnMotif(){
@@ -150,7 +151,7 @@ void EM::EStep(){
 	float prior_i;														// positional preference prior state for p(z_n = i), i > 0
 	float prior_0 = 1 - q_;												// positional preference prior state for p(z_n = 0), no motif present
 	float normFactor;
-	// compute log odd scores s[y][j]
+	// compute log odd scores s[y][j], log likelihoods
 	for( int y = 0; y < Global::powA[K_+1]; y++ ){
 		for( int j = 0; j < W_; j++ )
 			if( K_ <= k_bg_ ){
@@ -280,7 +281,7 @@ void EM::MStep(){
 	for( int k = K_; k > 0; k-- ){										// k runs over all orders
 		for( int y = 0; y < Global::powA[k+1]; y++ ){
 			int y2 = y % Global::powA[k];								// cut off the first nucleotide in (k+1)-mer
-			int yk = y / Global::powA[1];								// cut off the last nucleotide in (k+1)-mer
+//			int yk = y / Global::powA[1];								// cut off the last nucleotide in (k+1)-mer
 			for( int j = 0; j < W_; j++ )
 				n_[k-1][y2][j] += n_[k][y][j];
 //			n_[k-1][yk][-1] += n_[k][y][0];
@@ -323,7 +324,7 @@ void EM::print(){
 
 void EM::write(){
 	std::string opath = std::string( Global::outputDirectory )  + '/'
-			+ std::string( Global::posSequenceBasename ) + ".condsEM_1";
+			+ std::string( Global::posSequenceBasename ) + ".condsEM_2";
 	std::ofstream ofile( opath.c_str() );
 	for( int j = 0; j < W_; j++ ){
 		for( int k = 0; k < K_+1; k++ ){
