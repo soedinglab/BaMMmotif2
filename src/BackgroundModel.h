@@ -15,10 +15,9 @@ class BackgroundModel {
 
 public:
 
-	BackgroundModel();
+	BackgroundModel( std::vector<int> folds = std::vector<int> () );
 	~BackgroundModel();
 
-	void 	init( std::vector<int> folds );
 	float** getVbg();	                	// get conditional probabilities for k-mers
 
 	void 	print();						// print background model to console
@@ -33,6 +32,5 @@ private:
 	float** v_bg_;					    	// conditional probabilities for k-mers
 
 };
-
 
 #endif /* BACKGROUNDMODEL_H_ */

@@ -5,9 +5,6 @@
  *      Author: wanwan
  */
 
-#include <list>			// list, list::begin, list::end
-#include <vector>
-
 #include <time.h>		// time()
 #include <stdio.h>
 
@@ -37,7 +34,6 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*   Background Model   *\n" );
 	fprintf( stderr, "************************\n" );
 	BackgroundModel bgModel;
-	bgModel.init( std::vector<int> () );
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "*********************\n" );
@@ -54,11 +50,10 @@ int main( int nargs, char* args[] ){
 //	for( std::vector<Motif*>::const_iterator iter = motifs.getMotifs().begin(); iter != motifs.getMotifs().end(); iter++ ){
 	for( int N = 0; N < motifs.getN(); N++ ){
 //		EM em( *iter, bgModel, std::vector<int> () );
-		EM em( motifs.getMotifs()[N], bgModel, std::vector<int> () );
+		EM em( motifs.getMotifs()[N], bgModel );
 		em.learnMotif();
 		em.write();
 	}
-
 	// write motifs
 	motifs.write();
 
@@ -74,20 +69,27 @@ int main( int nargs, char* args[] ){
 		fdr.write();
 	}
 */
-//	Global::destruct();
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "******************\n" );
 	fprintf( stderr, "*   Statistics   *\n" );
 	fprintf( stderr, "******************\n" );
-	std::cout << "Chosen positive sequence set is " << Global::posSequenceFilename << std::endl;
-	if(Global::negSequenceFilename )
-		std::cout << "Chosen negative sequence set is " << Global::negSequenceFilename << std::endl;
-	std::cout << "Chosen alphabet type is " << Alphabet::getAlphabet() << std::endl;
-	std::cout << "Folds for FDR estimation: " << Global::cvFold << std::endl;
-
+	std::cout << "Given alphabet type is " << Alphabet::getAlphabet();
+	std::cout << "\nGiven positive sequence set is " << Global::posSequenceBasename << "\nWith base frequencies:";
+	for( int i = 0; i < Alphabet::getSize(); i++ )
+		std::cout << ' ' << Global::posSequenceSet->getBaseFrequencies()[i] << "(" << Alphabet::getAlphabet()[i] << ")";
+	if( Global::negSequenceFilename ){
+		std::cout << "\nGiven negative sequence set is " << Global::negSequenceBasename << "\nWith base frequencies:";
+		for( int i = 0; i < Alphabet::getSize(); i++ )
+			std::cout << ' ' << Global::negSequenceSet->getBaseFrequencies()[i] << "(" << Alphabet::getAlphabet()[i] << ")";
+	}
+	std::cout << "\nGiven initial model is " << Global::initialModelBasename;
+	std::cout << "\nGiven folds for FDR estimation: " << Global::cvFold;
 	fprintf( stdout, "\nRuntime: %ld seconds (%0.2f minutes)\n", time( NULL )-timestamp,
 			( float )( time( NULL )-timestamp )/60.0f );
+	fprintf( stderr, "==================== Done! ==================\n" );
+
+	Global::destruct();
 
 	return 0;
 }
