@@ -20,12 +20,18 @@ SequenceSet::SequenceSet( char* sequenceFilepath, char* intensityFilepath ){
 
 	sequenceFilepath_ = sequenceFilepath;
 	intensityFilepath_ = intensityFilepath;
+	baseFrequencies_ = new float[Alphabet::getSize()];
 
 	readFASTA();
 
 	// if intensity file is given, read in intensity file
 	if ( intensityFilepath != NULL )
 		readIntensities();
+}
+
+SequenceSet::~SequenceSet(){
+//	if( baseFrequencies_ ) delete baseFrequencies_;		// This echoes error!
+	std::cout << "Destructor for SequenceSet class works fine. \n";
 }
 
 char* SequenceSet::getSequenceFilepath(){
@@ -202,9 +208,9 @@ int SequenceSet::readFASTA(){
 
 	int maxL = 0, minL = 1000;									// initialize the min. and max. length
 	unsigned int* baseCounts = new unsigned int[Alphabet::getSize()];
-	for( int i = 0; i < Alphabet::getSize(); i++ ){
-		baseCounts[i]= 0;
-	}
+	for( int i = 0; i < Alphabet::getSize(); i++ )
+		baseCounts[i] = 0;
+
 	unsigned int N = 0;
 
 	if( seqfile ){
@@ -281,7 +287,6 @@ int SequenceSet::readFASTA(){
 		fprintf( stderr, "Error: Cannot open positive sequence file: %s\n", sequenceFilepath_ );
 		exit( -1 );
 	}
-
 	seqfile.close();											// close sequence file
 
 	if( minL == 0 ){											// exclude format with empty sequence under '>'
@@ -294,18 +299,12 @@ int SequenceSet::readFASTA(){
 	N_ = N;
 
 	unsigned int baseSumCount = 0;
-	for( int i = 0; i < Alphabet::getSize(); i++ ){	// Calculate the sum of all mono-nucleotides
+	for( int i = 0; i < Alphabet::getSize(); i++ )				// Calculate the sum of all mono-nucleotides
 		baseSumCount += baseCounts[i];
-	}
 
-	baseFrequencies_ = new float[Alphabet::getSize()];
-
-	fprintf( stderr, "[Statistic] The base counts are: \n" );
-	for( int i = 0; i < Alphabet::getSize(); i++ ){	// Calculate the frequencies of all mono-nucleotides
+	for( int i = 0; i < Alphabet::getSize(); i++ )				// Calculate the frequencies of all mono-nucleotides
 		baseFrequencies_[i] = ( float )baseCounts[i] / ( float )baseSumCount;
-		fprintf( stderr, "%d ( %c )\t", baseCounts[i], Alphabet::getAlphabet()[i] );
-	}
-	fprintf( stderr, "\n\n" );
+
 	delete []baseCounts;
 
 	return 0;
@@ -313,11 +312,4 @@ int SequenceSet::readFASTA(){
 
 int SequenceSet::readIntensities(){
 	return -1;
-}
-
-SequenceSet::~SequenceSet(){
-	std::cout << "This is a destructor for SequenceSet class. " << std::endl;
-	if( sequenceFilepath_ ) delete sequenceFilepath_;
-	if( intensityFilepath_ ) delete intensityFilepath_;
-	if( baseFrequencies_ ) delete []baseFrequencies_;
 }

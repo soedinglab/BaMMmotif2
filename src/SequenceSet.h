@@ -19,7 +19,6 @@ class SequenceSet {
 public:
 
 	SequenceSet( char* sequenceFilepath, char* intensityFilepath = NULL );
-
 	~SequenceSet();
 
 	char* 					getSequenceFilepath();	            // get input sequence filename

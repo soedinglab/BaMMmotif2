@@ -14,7 +14,7 @@
 
 Sequence::Sequence( uint8_t* sequence, int L, std::string header ){
 
-	if( ! Global::revcomp ){
+	if( !Global::revcomp ){
 		L_ = L;
 		sequence_ = ( uint8_t* )malloc( L_ );
 		std::memcpy( sequence_, sequence, L_ );
@@ -27,8 +27,8 @@ Sequence::Sequence( uint8_t* sequence, int L, std::string header ){
 }
 
 Sequence::~Sequence(){
-//	std::cout << "This is a destructor for Sequence class. " << std::endl;
 //	if( sequence_ ) free( sequence_ );
+//	std::cout << "Destructor for Sequence class works fine. \n";			// it will be print thousands of times
 }
 
 uint8_t* Sequence::createRevComp( uint8_t* sequence, int L ){
