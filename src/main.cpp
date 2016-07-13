@@ -33,7 +33,7 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "************************\n" );
 	fprintf( stderr, "*   Background Model   *\n" );
 	fprintf( stderr, "************************\n" );
-	BackgroundModel bgModel;
+	BackgroundModel* bgModel = new BackgroundModel();
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "*********************\n" );
@@ -47,13 +47,12 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*************************\n" );
 	fprintf( stderr, "*   Learn Motif by EM   *\n" );
 	fprintf( stderr, "*************************\n" );
-//	for( std::vector<Motif*>::const_iterator iter = motifs.getMotifs().begin(); iter != motifs.getMotifs().end(); iter++ ){
 	for( int N = 0; N < motifs.getN(); N++ ){
-//		EM em( *iter, bgModel, std::vector<int> () );
 		EM em( motifs.getMotifs()[N], bgModel );
 		em.learnMotif();
 		em.write();
 	}
+
 	// write motifs
 	motifs.write();
 
@@ -89,6 +88,7 @@ int main( int nargs, char* args[] ){
 			( float )( time( NULL )-timestamp )/60.0f );
 	fprintf( stderr, "==================== Done! ==================\n" );
 
+	if( bgModel ) delete bgModel;
 	Global::destruct();
 
 	return 0;

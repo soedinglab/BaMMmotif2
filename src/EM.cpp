@@ -7,8 +7,9 @@
 
 #include "EM.h"
 
-EM::EM( Motif* motif, BackgroundModel bg, std::vector<int> folds ){
+EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 	motif_ = new Motif( *motif );								// deep copy
+
 	W_ = motif_->getW();
 	if( folds.size() != 0 )
 		folds_ = folds;											// for cross-validation
@@ -17,7 +18,7 @@ EM::EM( Motif* motif, BackgroundModel bg, std::vector<int> folds ){
 	for( int k = 0; k < k_bg_+1; k++ ){							// deep copy
 		v_bg_[k] = ( float* )calloc( Global::powA[k+1], sizeof( float ) );
 		for( int y = 0; y < Global::powA[k+1]; y++ )
-			v_bg_[k][y] = bg.getVbg()[k][y];
+			v_bg_[k][y] = bg->getVbg()[k][y];
 	}
 
 	s_ = ( float** )calloc( Global::powA[K_+1], sizeof( float* ) );
@@ -47,7 +48,7 @@ EM::EM( Motif* motif, BackgroundModel bg, std::vector<int> folds ){
 }
 
 EM::~EM(){
-	delete motif_;
+	if( motif_ ) delete motif_;
 
 	for( int k = 0; k <= k_bg_; k++ )
 		free( v_bg_[k] );
@@ -122,7 +123,7 @@ int EM::learnMotif(){
 				v_post[y][j] = motif_->getV()[K_][y][j];
 
 		// * check likelihood for convergence
-		printf( "\n*********** Check convergence *************\n" );
+		printf( "\n*********** Check convergence ***********\n" );
 
 		difference = 0.0f;										// reset difference to 0
 		for( int y = 0; y < Global::powA[K_+1]; y++ )
@@ -142,6 +143,13 @@ int EM::learnMotif(){
 
 //	if( Global::verbose ) print();
 
+	for( int y = 0; y < Global::powA[K_+1]; y++ ){
+		free( v_prior[y] );
+		free( v_post[y] );
+	}
+	free( v_prior );
+	free( v_post );
+
     return 0;
 }
 
@@ -153,13 +161,14 @@ void EM::EStep(){
 	float normFactor;
 	// compute log odd scores s[y][j], log likelihoods
 	for( int y = 0; y < Global::powA[K_+1]; y++ ){
-		for( int j = 0; j < W_; j++ )
+		for( int j = 0; j < W_; j++ ){
 			if( K_ <= k_bg_ ){
 				s_[y][j] = log( motif_->getV()[K_][y][j] / v_bg_[K_][y] );
 			} else {
 				int y3 = y % Global::powA[3];							// 3 rightmost nucleotides in (k+1)-mer y
 				s_[y][j] = log( motif_->getV()[K_][y][j] / v_bg_[k_bg_][y3] );
 			}
+		}
 	}
 
 	// calculate responsibilities r_[n][i] at position i in sequence n
