@@ -30,7 +30,7 @@ SequenceSet::SequenceSet( char* sequenceFilepath, char* intensityFilepath ){
 }
 
 SequenceSet::~SequenceSet(){
-//	if( baseFrequencies_ ) delete baseFrequencies_;		// This echoes error!
+	if( baseFrequencies_ ) delete []baseFrequencies_;
 	std::cout << "Destructor for SequenceSet class works fine. \n";
 }
 
@@ -242,7 +242,6 @@ int SequenceSet::readFASTA(){
 					sequence.clear();
 					header.clear();
 					delete []encodeSeq;
-
 				}
 				if( !line.empty()  ){
 					if( line.length() == 1 )					// for empty entry
@@ -259,7 +258,6 @@ int SequenceSet::readFASTA(){
 				}
 			}
 		}
-
 		if( !header.empty() ){									// for the last entry if no new line follows by
 			N++;
 			int L = ( int )sequence.length();
@@ -275,6 +273,7 @@ int SequenceSet::readFASTA(){
 			}
 			Sequence seq( encodeSeq, L, header );
 			sequences_.push_back( seq );
+
 			if ( L > maxL )										// check the length of each sequence if it is min or max
 				maxL = L;
 			if ( L < minL )
