@@ -42,8 +42,8 @@ int        			Global::bgModelOrder = 2;				// background model order, defaults t
 float				Global::bgModelAlpha = 10.0f;			// background model alpha
 
 // EM options
-//unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();	// maximum number of iterations
-unsigned int        Global::maxEMIterations = 2;			// maximum number of iterations
+unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();	// maximum number of iterations
+//unsigned int        Global::maxEMIterations = 5;			// maximum number of iterations
 float               Global::epsilon = 0.001f;				// threshold for likelihood convergence parameter
 bool                Global::noAlphaOptimization = false;	// disable alpha optimization
 bool                Global::noQOptimization = false;		// disable q optimization
@@ -71,7 +71,8 @@ void Global::init( int nargs, char* args[] ){
 
 	// read in or generate negative sequence set
 	if( negSequenceFilename == NULL )						// use positive for negative sequence set
-		negSequenceSet = new SequenceSet( posSequenceFilename );
+//		negSequenceSet = new SequenceSet( posSequenceFilename );
+		negSequenceSet = new SequenceSet( *posSequenceSet );
 	else													// read in negative sequence set
 		negSequenceSet = new SequenceSet( negSequenceFilename );
 
@@ -206,8 +207,6 @@ int Global::readArguments( int nargs, char* args[] ){
 		}
 		if( addColumns.size() == 1 )
 			addColumns.resize( 2, addColumns.back() );
-
-		// add columns to the initial motifs
 	} else {
 		addColumns.at(0) = 0;
 		addColumns.at(1) = 0;
@@ -327,6 +326,6 @@ void Global::destruct(){
 	if( negSequenceBasename ) free( negSequenceBasename );
 	if( initialModelBasename ) free( initialModelBasename );
 	if( posSequenceSet ) delete posSequenceSet;
-	if( negSequenceSet ) delete negSequenceSet;
+	if( negSequenceFilename ) delete negSequenceSet;
 	std::cout << "Destruct() for Global class works fine. \n";
 }
