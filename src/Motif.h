@@ -18,7 +18,7 @@ class Motif {
 public:
 
 	Motif( int length );
-	Motif( const Motif& other );
+	Motif( const Motif& other );						// copy constructor
 	~Motif();
 
 	void initFromBaMMPattern( char* pattern );			// initialize v from IUPAC pattern  (BMM pattern)
@@ -41,12 +41,12 @@ private:
 
 	bool		isInitialized_ = false;		    		// assert in all public methods
 	int			N_ = 0;									// number of binding sites
-	int 		w_;					    				// motif length
-	float***    v_;				                		// conditional probabilities for k-mers y at motif position j
+	int 		W_;					    				// motif length
+	float***    v_;				                		// conditional probabilities for (k+1)-mers y at motif position j
+	int***		n_;										// counts of (k+1)-mer for all y at motif position j
 	float*		vbg_;									// conditional probabilities for monomers from background model
 	int			K_ = Global::modelOrder;
-	void 		calculateV( int*** n );					// calculate v from k-mer counts n and global alphas
-
+	void 		calculateV();							// calculate v from k-mer counts n and global alphas
 };
 
 #endif /* MOTIF_H_ */
