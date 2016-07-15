@@ -47,7 +47,6 @@ private:
 
 	void optimizeAlphas();			    	// optimize alpha hyper-parameters
 	void optimizeQ();						// optimize hyper-parameter q
-
 };
 
 #endif /* EM_H_ */
