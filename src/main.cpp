@@ -53,12 +53,6 @@ int main( int nargs, char* args[] ){
 		em.learnMotif();
 		em.write();
 	}
-//	std::vector<Motif*>::const_iterator iter;
-//	for( iter = motifs->getMotifs().begin(); iter != motifs->getMotifs().end(); iter++ ){
-//		EM* em = new EM( *iter, bgModel );
-//		em->learnMotif();
-//		em->write();
-//	}
 
 	// write motifs
 	motifs->write();
@@ -69,7 +63,8 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "***********\n" );
 	fprintf( stderr, "*   FDR   *\n" );
 	fprintf( stderr, "***********\n" );
-	for( std::vector<Motif*>::const_iterator iter = motifs.getMotifs().begin(); iter != motifs.getMotifs().end(); iter++ ){
+	std::vector<Motif*>::const_iterator iter;
+	for( iter = motifs.getMotifs().begin(); iter != motifs.getMotifs().end(); iter++ ){
 		FDR fdr( *iter );
 		fdr.evaluateMotif();
 		fdr.write();
@@ -96,6 +91,7 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "==================== Done! ==================\n" );
 
 	if( bgModel ) delete bgModel;
+	if( motifs ) delete motifs;
 	Global::destruct();
 
 	return 0;

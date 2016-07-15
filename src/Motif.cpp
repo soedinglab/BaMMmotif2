@@ -39,20 +39,20 @@ Motif::Motif( const Motif& other ){ 		// deep copy
 		for( int y = 0; y < Global::powA[k+1]; y++ ){
 			v_[k][y] = ( float* )malloc( W_ * sizeof( float ) );
 			n_[k][y] = ( int* )malloc( W_ * sizeof( int ) );
-//			for( int j = 0; j < W_; j++ ){
-//				v_[k][y][j] = other.v_[k][y][j];
-//				n_[k][y][j] = other.n_[k][y][j];
-//			}
-			memcpy( v_[k][y], other.v_[k][y], W_ * sizeof( float ) );
-			memcpy( n_[k][y], other.n_[k][y], W_ * sizeof( int ) );
+			for( int j = 0; j < W_; j++ ){
+				v_[k][y][j] = other.v_[k][y][j];
+				n_[k][y][j] = other.n_[k][y][j];
+			}
+//			memcpy( v_[k][y], other.v_[k][y], W_ * sizeof( float ) );
+//			memcpy( n_[k][y], other.n_[k][y], W_ * sizeof( int ) );
 		}
 	}
 	isInitialized_ = true;
 
 	vbg_ = ( float* )calloc( Global::powA[1], sizeof( float ) );
-	memcpy( vbg_, other.vbg_, Global::powA[1] * sizeof( float ) );
-//	for( int y = 0; y < Global::powA[1]; y++ )
-//		vbg_[y] = other.vbg_[y];
+//	memcpy( vbg_, other.vbg_, Global::powA[1] * sizeof( float ) );
+	for( int y = 0; y < Global::powA[1]; y++ )
+		vbg_[y] = other.vbg_[y];
 }
 
 Motif::~Motif(){

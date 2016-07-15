@@ -9,17 +9,18 @@
 
 EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 	motif_ = motif;												// deep copy
+	bg_ = bg;
 
 	W_ = motif_->getW();
 	if( folds.size() != 0 )
 		folds_ = folds;											// for cross-validation
 
-	v_bg_ = ( float** )calloc( k_bg_+1, sizeof( float* ) );
-	for( int k = 0; k < k_bg_+1; k++ ){							// deep copy
-		v_bg_[k] = ( float* )calloc( Global::powA[k+1], sizeof( float ) );
-		for( int y = 0; y < Global::powA[k+1]; y++ )
-			v_bg_[k][y] = bg->getVbg()[k][y];
-	}
+//	v_bg_ = ( float** )calloc( k_bg_+1, sizeof( float* ) );
+//	for( int k = 0; k < k_bg_+1; k++ ){							// deep copy
+//		v_bg_[k] = ( float* )calloc( Global::powA[k+1], sizeof( float ) );
+//		for( int y = 0; y < Global::powA[k+1]; y++ )
+//			v_bg_[k][y] = bg->getVbg()[k][y];
+//	}
 
 	s_ = ( float** )calloc( Global::powA[K_+1], sizeof( float* ) );
 	for( int y = 0; y < Global::powA[K_+1]; y++ )
@@ -51,11 +52,10 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 }
 
 EM::~EM(){
-	if( motif_ ) delete motif_;
 
-	for( int k = 0; k <= k_bg_; k++ )
-		free( v_bg_[k] );
-	free( v_bg_ );
+//	for( int k = 0; k <= k_bg_; k++ )
+//		free( v_bg_[k] );
+//	free( v_bg_ );
 
 	for( int y = 0; y < Global::powA[K_+1]; y++ )
 		free( s_[y] );
@@ -167,10 +167,12 @@ void EM::EStep(){
 	for( int y = 0; y < Global::powA[K_+1]; y++ ){
 		for( int j = 0; j < W_; j++ ){
 			if( K_ <= k_bg_ ){
-				s_[y][j] = log( motif_->getV()[K_][y][j] / v_bg_[K_][y] );
+//				s_[y][j] = log( motif_->getV()[K_][y][j] / v_bg_[K_][y] );
+				s_[y][j] = log( motif_->getV()[K_][y][j] / bg_->getVbg()[K_][y] );
 			} else {
 				int y3 = y % Global::powA[3];							// 3 rightmost nucleotides in (k+1)-mer y
-				s_[y][j] = log( motif_->getV()[K_][y][j] / v_bg_[k_bg_][y3] );
+//				s_[y][j] = log( motif_->getV()[K_][y][j] / v_bg_[k_bg_][y3] );
+				s_[y][j] = log( motif_->getV()[K_][y][j] / bg_->getVbg()[k_bg_][y3] );
 			}
 		}
 	}
