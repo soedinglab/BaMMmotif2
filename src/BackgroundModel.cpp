@@ -67,13 +67,13 @@ BackgroundModel::~BackgroundModel(){
 void BackgroundModel::calculateVbg(){
 
 	// sum over counts for all mono-nucleotides
-	float sum = 0.0f;
+	int sum = 0;
 	for( int y = 0; y < Global::powA[1]; y++ )
-		sum += float( n_bg_[0][y] );
+		sum += n_bg_[0][y];
 
 	// for k = 0: v = frequency
 	for( int y = 0; y < Global::powA[1]; y++ )
-		v_bg_[0][y] = n_bg_[0][y] / sum;
+		v_bg_[0][y] = float( n_bg_[0][y] ) / sum ;
 
 	// for k > 0:
 	int y2;										// cut off the first nucleotide in (k+1)-mer y, e.g. from ACGT to CGT
@@ -105,12 +105,12 @@ void BackgroundModel::print(){
 }
 
 void BackgroundModel::write(){
-	std::string opath = std::string( Global::outputDirectory )  + '/'
+	std::string opath_vbg = std::string( Global::outputDirectory )  + '/'
 			+ std::string( Global::posSequenceBasename ) + ".condsBg";
-	std::ofstream ofile( opath.c_str() );
+	std::ofstream ofile_vbg( opath_vbg.c_str() );
 	for( int k = 0; k < K_+1; k++ ){
 		for( int y = 0; y < Global::powA[k+1]; y++ )
-			ofile << std::fixed << std::setprecision(6) << v_bg_[k][y] << ' ';
-		ofile << std::endl;
+			ofile_vbg << std::fixed << std::setprecision(6) << v_bg_[k][y] << ' ';
+		ofile_vbg << std::endl;
 	}
 }
