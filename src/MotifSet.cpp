@@ -35,10 +35,11 @@ MotifSet::MotifSet(){
 
 		length += Global::addColumns.at(0) + Global::addColumns.at(1);
 
+//		Motif* motif = new Motif( length );
 		Motif* motif = new Motif( length );
 		motif->initFromBindingSites( Global::bindingSitesFilename );
 		motifs_.push_back( motif );
-		N_++;
+		N_ = 1;
 
 	} else if( Global::PWMFilename != NULL ){
 
@@ -59,7 +60,6 @@ MotifSet::MotifSet(){
 }
 
 MotifSet::~MotifSet(){
-//	motifs_.clear();
 	std::cout << "Destructor for MotifSet class works fine. \n";
 }
 
@@ -77,18 +77,15 @@ void MotifSet::print(){
 			"| PROBABILITIES for MotifSet |\n"
 			"|____________________________|\n\n" );
 
-	int N = 0;
 	for( int i = 0; i < N_; i++ ){
 		printf( " ________________________________________\n"
 				"|                                        |\n"
 				"| INITIALIZED PROBABILITIES for Motif %d  |\n"
-				"|________________________________________|\n\n", N+1 );
+				"|________________________________________|\n\n", i+1 );
 		motifs_[i]->print();
-		N++;
 	}
 }
 void MotifSet::write(){
-	// before writing, remove the previous file
 	std::string opath = std::string( Global::outputDirectory )  + '/'
 			+ std::string( Global::posSequenceBasename ) + ".condsMotifs";
 	std::ofstream ofile( opath.c_str() );

@@ -40,21 +40,28 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*   Initial Motif   *\n" );
 	fprintf( stderr, "*********************\n" );
 
-	MotifSet motifs;
+	MotifSet* motifs = new MotifSet();
 
 	// learn motifs
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "*************************\n" );
 	fprintf( stderr, "*   Learn Motif by EM   *\n" );
 	fprintf( stderr, "*************************\n" );
-	for( int N = 0; N < motifs.getN(); N++ ){
-		EM em( motifs.getMotifs()[N], bgModel );
+
+	for( int N = 0; N < motifs->getN(); N++ ){
+		EM em( motifs->getMotifs()[0], bgModel );
 		em.learnMotif();
 		em.write();
 	}
+//	std::vector<Motif*>::const_iterator iter;
+//	for( iter = motifs->getMotifs().begin(); iter != motifs->getMotifs().end(); iter++ ){
+//		EM* em = new EM( *iter, bgModel );
+//		em->learnMotif();
+//		em->write();
+//	}
 
 	// write motifs
-	motifs.write();
+	motifs->write();
 
 /*
 	// evaluate motifs
@@ -62,7 +69,7 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "***********\n" );
 	fprintf( stderr, "*   FDR   *\n" );
 	fprintf( stderr, "***********\n" );
-	for( std::list<Motif*>::const_iterator iter = motifs.getMotifs().begin(); iter != motifs.getMotifs().end(); iter++ ){
+	for( std::vector<Motif*>::const_iterator iter = motifs.getMotifs().begin(); iter != motifs.getMotifs().end(); iter++ ){
 		FDR fdr( *iter );
 		fdr.evaluateMotif();
 		fdr.write();
