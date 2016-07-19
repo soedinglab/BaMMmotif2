@@ -6,7 +6,6 @@
  */
 
 #include "BackgroundModel.h"
-#include "SequenceSet.h"
 
 BackgroundModel::BackgroundModel( std::vector<int> folds ){
 
@@ -105,12 +104,25 @@ void BackgroundModel::print(){
 }
 
 void BackgroundModel::write(){
-	std::string opath_vbg = std::string( Global::outputDirectory )  + '/'
-			+ std::string( Global::posSequenceBasename ) + ".condsBg";
+
+	/*
+	 * save Background parameters in two flat files:
+	 * (1) posSequenceBasename.condsBg: conditional probabilities for interpolated background model
+	 * (2) posSequenceBasename.countsBg: counts of (k+1)-mers for background model
+	 */
+
+	std::string opath = std::string( Global::outputDirectory )  + '/'
+				+ std::string( Global::posSequenceBasename );
+	std::string opath_vbg = opath + ".condsBg";
+	std::string opath_nbg = opath + ".countsBg";
 	std::ofstream ofile_vbg( opath_vbg.c_str() );
+	std::ofstream ofile_nbg( opath_nbg.c_str() );
 	for( int k = 0; k < K_+1; k++ ){
-		for( int y = 0; y < Global::powA[k+1]; y++ )
+		for( int y = 0; y < Global::powA[k+1]; y++ ){
 			ofile_vbg << std::fixed << std::setprecision(6) << v_bg_[k][y] << ' ';
+			ofile_nbg << n_bg_[k][y] << '\t';
+		}
 		ofile_vbg << std::endl;
+		ofile_nbg << std::endl;
 	}
 }
