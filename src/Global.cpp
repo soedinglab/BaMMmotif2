@@ -43,7 +43,6 @@ float				Global::bgModelAlpha = 10.0f;			// background model alpha
 
 // EM options
 unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();	// maximum number of iterations
-//unsigned int        Global::maxEMIterations = 5;			// maximum number of iterations
 float               Global::epsilon = 0.001f;				// threshold for likelihood convergence parameter
 bool                Global::noAlphaOptimization = false;	// disable alpha optimization
 bool                Global::noQOptimization = false;		// disable q optimization
@@ -183,7 +182,7 @@ int Global::readArguments( int nargs, char* args[] ){
 		opt >> GetOpt::Option( "PWMFile", PWMFilename );
 		initialModelBasename = baseName( PWMFilename );
 	} else if( opt >> GetOpt::OptionPresent( "BMMFile" ) ){
-		opt >> GetOpt::Option( "BMMFile", BaMMFilename );
+		opt >> GetOpt::Option( "BaMMFile", BaMMFilename );
 		initialModelBasename = baseName( BaMMFilename );
 	} else {
 		fprintf( stderr, "Error: No initial model is provided.\n" );
@@ -312,9 +311,16 @@ void Global::printHelp(){
 	printf("\t OUTDIR:  output directory for all results. \n");
 	printf("\t SEQFILE: file with sequences from positive set in FASTA format. \n");
 	printf("\n Options: \n");
-	// To be fulfilled ...
-	printf(" \n");
-	printf(" \n");
+	printf("\n [Initial model] Choose one of these four types of file: \n");
+	printf("\n --BaMMpatternFile: \n");
+	printf("\n --bindingSitesFile:\n");
+	printf("\n --PWMFile \n");
+	printf("\n --BaMMFile \n");
+	printf("\n -- \n");
+	printf("\n -- \n");
+	printf("\n -- \n");
+	printf("\n -- \n");
+	printf("\n -- \n");
 	printf("\n=================================================================\n");
 }
 

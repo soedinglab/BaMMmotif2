@@ -76,20 +76,23 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*   Statistics   *\n" );
 	fprintf( stderr, "******************\n" );
 	std::cout << "Given alphabet type is " << Alphabet::getAlphabet();
-	std::cout << "\nGiven positive sequence set is " << Global::posSequenceBasename << "\nWith base frequencies:";
+	std::cout << "\nGiven positive sequence set is " << Global::posSequenceBasename << "\n	With base frequencies:";
 	for( int i = 0; i < Alphabet::getSize(); i++ )
 		std::cout << ' ' << Global::posSequenceSet->getBaseFrequencies()[i] << "(" << Alphabet::getAlphabet()[i] << ")";
 	if( Global::negSequenceFilename ){
-		std::cout << "\nGiven negative sequence set is " << Global::negSequenceBasename << "\nWith base frequencies:";
+		std::cout << "\nGiven negative sequence set is " << Global::negSequenceBasename << "\n	With base frequencies:";
 		for( int i = 0; i < Alphabet::getSize(); i++ )
 			std::cout << ' ' << Global::negSequenceSet->getBaseFrequencies()[i] << "(" << Alphabet::getAlphabet()[i] << ")";
 	}
 	std::cout << "\nGiven initial model is " << Global::initialModelBasename;
 	std::cout << "\nGiven folds for FDR estimation: " << Global::cvFold;
-	fprintf( stdout, "\nRuntime: %ld seconds (%0.2f minutes)\n", time( NULL )-timestamp,
-			( float )( time( NULL )-timestamp )/60.0f );
-	fprintf( stderr, "==================== Done! ==================\n" );
 
+	fprintf( stdout, "\n==================== Done! ==================\n" );
+	fprintf( stdout, "\n-------------- Runtime: %ld seconds (%0.2f minutes) --------------\n", time( NULL )-timestamp,
+			( float )( time( NULL )-timestamp )/60.0f );
+
+
+	// free memory
 	if( bgModel ) delete bgModel;
 	if( motifs ) delete motifs;
 	Global::destruct();

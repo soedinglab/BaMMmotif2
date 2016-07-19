@@ -26,7 +26,6 @@ private:
 
 	Motif* 				motif_;				// motif to optimize within the EM
 	BackgroundModel*	bg_;				// background model
-//	float**				v_bg_;				// conditional probabilities for background model
 
 	std::vector<int>	folds_;		    	// folds to iterate over, for cross-validation
 
@@ -41,7 +40,7 @@ private:
 
 	int					K_ = Global::modelOrder;
 	int					k_bg_ = Global::bgModelOrder;
-	int 				W_;					// width of motif
+	int 				W_;					// motif length
 
 	void EStep();							// E-step
 	void MStep();							// M-step
