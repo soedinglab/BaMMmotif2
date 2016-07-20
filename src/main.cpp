@@ -86,8 +86,6 @@ int main( int nargs, char* args[] ){
 	}
 	std::cout << "\nGiven initial model is " << Global::initialModelBasename;
 	std::cout << "\nGiven folds for FDR estimation: " << Global::cvFold;
-
-	fprintf( stdout, "\n==================== Done! ==================\n" );
 	fprintf( stdout, "\n-------------- Runtime: %ld seconds (%0.2f minutes) --------------\n", time( NULL )-timestamp,
 			( float )( time( NULL )-timestamp )/60.0f );
 
