@@ -155,20 +155,22 @@ int Motif::getW(){
 }
 
 void Motif::calculateV(){
+
+	int y, j, k, y2, yk;
 	// for k = 0, v_ = freqs:
-	for( int y = 0; y < Global::powA[1]; y++ )
-		for( int j = 0; j < W_; j++ )
+	for( y = 0; y < Global::powA[1]; y++ )
+		for( j = 0; j < W_; j++ )
 			v_[0][y][j] = ( n_[0][y][j] + Global::modelAlpha.at(0) * vbg_[y] )
 						/ ( N_ + Global::modelAlpha.at(0) );
 
 	// for k > 0:
-	for( int k = 1; k < K_+1; k++ ){
-		for( int y = 0; y < Global::powA[k+1]; y++ ){
-			int y2 = y % Global::powA[k];						// cut off the first nucleotide in (k+1)-mer y
-			int yk = y / Global::powA[1];						// cut off the last nucleotide in (k+1)-mer y
-			for( int j = 0; j < k; j++ )						// when j < k, i.e. p(A|CG) = p(A|C)
+	for( k = 1; k < K_+1; k++ ){
+		for( y = 0; y < Global::powA[k+1]; y++ ){
+			y2 = y % Global::powA[k];						// cut off the first nucleotide in (k+1)-mer y
+			yk = y / Global::powA[1];						// cut off the last nucleotide in (k+1)-mer y
+			for( j = 0; j < k; j++ )						// when j < k, i.e. p(A|CG) = p(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
-			for( int j = k; j < W_; j++ )
+			for( j = k; j < W_; j++ )
 				v_[k][y][j] = ( n_[k][y][j] + Global::modelAlpha.at(k) * v_[k-1][y2][j] )
 							/ ( n_[k-1][yk][j-1] + Global::modelAlpha.at(k) );
 		}
@@ -181,21 +183,34 @@ float*** Motif::getV(){
 
 // update v from fractional k-mer counts n and current alphas
 void Motif::updateV( float*** n, float** alpha ){
+
 	assert( isInitialized_ );
+
+	int y, j, k, y2, yk;
+
+	// sum up the n over (k+1)-mers at different position of motif
+	float* sumN = ( float* )calloc( W_, sizeof( float ) );
+	for( j = 0; j < W_; j++ )
+		for( y = 0; y < Global::powA[1]; y++ )
+			sumN[j] += n[0][y][j];
+
 	// for k = 0, v_ = freqs:
-	for( int y = 0, k = 0; y < Global::powA[k+1]; y++ )
-		for( int j = 0; j < W_; j++ )
-			v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * vbg_[y] )
-						/ ( N_ + alpha[k][j] );
+	for( y = 0; y < Global::powA[1]; y++ ){
+		for( j = 0; j < W_; j++ )
+			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * vbg_[y] )
+						/ ( sumN[j] + alpha[0][j] );
+	}
+
+	free( sumN );
 
 	// for k > 0:
-	for( int k = 1; k < K_+1; k++ ){
-		for( int y = 0; y < Global::powA[k+1]; y++ ){
-			int y2 = y % Global::powA[k];						// cut off the first nucleotide in (k+1)-mer
-			int yk = y / Global::powA[1];						// cut off the last nucleotide in (k+1)-mer
-			for( int j = 0; j < k; j++ )						// when j < k, i.e. p(A|CG) = p(A|C)
+	for( k = 1; k < K_+1; k++ ){
+		for( y = 0; y < Global::powA[k+1]; y++ ){
+			y2 = y % Global::powA[k];						// cut off the first nucleotide in (k+1)-mer
+			yk = y / Global::powA[1];						// cut off the last nucleotide in (k+1)-mer
+			for( j = 0; j < k; j++ )						// when j < k, i.e. p(A|CG) = p(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
-			for( int j = k; j < W_; j++ )
+			for( j = k; j < W_; j++ )
 				v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
 							/ ( n[k-1][yk][j-1] + alpha[k][j] );
 		}
@@ -218,15 +233,17 @@ void Motif::print(){
 }
 
 void Motif::write(){
+
 	/*
 	 * save initial model in two flat files:
-	 * (1) initialModelBasename.condsInit: 	conditional probabilities
-	 * (2) initialModelBasename.countsInit:	counts of (k+1)-mers
+	 * (1) initialModelBasename.conds: 	conditional probabilities from initial model
+	 * (2) initialModelBasename.counts:	counts of (k+1)-mers from initial model
 	 */
+
 	std::string opath = std::string( Global::outputDirectory )  + '/'
 			+ std::string( Global::initialModelBasename );
-	std::string opath_v = opath + ".condsInit";
-	std::string opath_n = opath + ".countsInit";
+	std::string opath_v = opath + ".conds";
+	std::string opath_n = opath + ".counts";
 	std::ofstream ofile_v( opath_v.c_str() );
 	std::ofstream ofile_n( opath_n.c_str() );
 	for( int j = 0; j < W_; j++ ){
