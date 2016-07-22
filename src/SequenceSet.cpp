@@ -46,7 +46,7 @@ std::vector<Sequence> SequenceSet::getSequences(){
 	return sequences_;
 }
 
-unsigned int SequenceSet::getN(){
+int SequenceSet::getN(){
 	return N_;
 }
 
@@ -211,7 +211,7 @@ int SequenceSet::readFASTA(){
 	for( int i = 0; i < Alphabet::getSize(); i++ )
 		baseCounts[i] = 0;
 
-	unsigned int N = 0;
+	int N = 0;
 
 	if( seqfile ){
 		while( getline( seqfile, line ).good() ){

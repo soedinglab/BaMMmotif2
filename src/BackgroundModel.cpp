@@ -19,7 +19,7 @@ BackgroundModel::BackgroundModel( std::vector<int> folds ){
 
 	// count kmers
 	if( folds.size() == 0 ){					// when the full negSeqSet is applied
-		for( unsigned int n = 0; n < Global::negSequenceSet->getN(); n++ ){
+		for( int n = 0; n < Global::negSequenceSet->getN(); n++ ){
 			Sequence seq = Global::negSequenceSet->getSequences()[n];
 			for( int k = 0; k < K_ + 1; k++ ){
 				for( int i = 0; i < seq.getL(); i++ ){

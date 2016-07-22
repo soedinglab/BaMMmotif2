@@ -24,7 +24,7 @@ public:
 	char* 					getSequenceFilepath();	            // get input sequence filename
 	char* 					getIntensityFilepath();             // get input intensity filename
 	std::vector<Sequence> 	getSequences();			            // get sequences
-	unsigned int 			getN();					            // get number of sequences
+	int 					getN();					            // get number of sequences
 	unsigned int 			getMinL();				            // get min. length of sequences
 	unsigned int			getMaxL();				            // get max. length of sequences
 	float* 					getBaseFrequencies();	            // get mono-nucleotide frequencies
@@ -34,7 +34,7 @@ private:
 	char*					sequenceFilepath_;		            // input sequence filename
 	char*					intensityFilepath_;		            // input intensity filename
 	std::vector<Sequence>	sequences_;							// sequences
-	unsigned int 			N_;						            // number of sequences
+	int 					N_;						            // number of sequences
 	unsigned int 			minL_;					            // min. length of sequences
 	unsigned int 			maxL_;					            // max. length of sequences
 	float* 					baseFrequencies_;		            // mono-nucleotide frequencies
