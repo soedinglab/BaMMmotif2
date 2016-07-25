@@ -24,7 +24,7 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
     // allocate memory for r_[n][i] and initialize it
 	r_ = ( float** )calloc( Global::posSequenceSet->getN(), sizeof( float* ) );
     for( n = 0; n < Global::posSequenceSet->getN(); n++ )
-    	r_[n] = ( float* )calloc( Global::posSequenceSet->getSequences()[n].getL(), sizeof( float ) );	// for fast code
+    	r_[n] = ( float* )calloc( Global::posSequenceSet->getSequences()[n].getL()+1, sizeof( float ) );	// for fast code
 
     // allocate memory for n_[k][y][j] and initialize it
 	n_ = ( float*** )calloc( K_+1, sizeof( float** ) );
@@ -44,7 +44,6 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 }
 
 EM::~EM(){
-
 	for( int y = 0; y < Global::powA[K_+1]; y++ )
 		free( s_[y] );
 	free( s_ );
@@ -74,11 +73,9 @@ int EM::learnMotif(){
 			"|______|\n\n" );
 
 	bool iterate = true;												// flag for iterating before convergence
-	float difference;													// model parameter difference for each EM iteration
-	float** v_prior;													// hold the parameters before EM
-	float likelihood_prior, likelihood_diff;
-
 	int y, j;
+	float v_diff, likelihood_prior, likelihood_diff;
+	float** v_prior;													// hold the parameters before EM
 
 	// allocate memory for prior and posterior parameters v[y][j] with the highest order
 	v_prior = ( float** )calloc( Global::powA[K_+1], sizeof( float* ) );
@@ -110,21 +107,22 @@ int EM::learnMotif(){
 
 		// * check likelihood for convergence
 
-		difference = 0.0f;												// reset difference
+		v_diff = 0.0f;													// reset difference of posterior probabilities
 		for( y = 0; y < Global::powA[K_+1]; y++ )
 			for( j = 0; j < W_; j++ )
-				difference += fabs( motif_->getV()[K_][y][j] - v_prior[y][j] );
+				v_diff += fabs( motif_->getV()[K_][y][j] - v_prior[y][j] );
 
 		likelihood_diff = likelihood_ - likelihood_prior;
+
 		if( Global::verbose ){
 			std::cout << "At " << EMIterations_ << "th iteration:\n";
-			std::cout << "	- difference = " << difference << "\n";
+			std::cout << "	- difference = " << v_diff << "\n";
 			std::cout << "	- likelihood = " << likelihood_;
 			if( likelihood_diff < 0 ) std::cout << " decreasing...";
 			std::cout << std::endl;
 		}
 
-		if( difference < Global::epsilon )	iterate = false;
+		if( v_diff < Global::epsilon )	iterate = false;
 	}
 
 /*
@@ -138,7 +136,9 @@ int EM::learnMotif(){
 */
 
 //	if( Global::verbose ) print();
+	print();
 
+	// free memory
 	for( y = 0; y < Global::powA[K_+1]; y++ )
 		free( v_prior[y] );
 	free( v_prior );
@@ -206,20 +206,19 @@ void EM::EStep(){
 		Sequence seq = Global::posSequenceSet->getSequences()[n];
 		L = seq.getL();
 		normFactor = 0.0f;
+		prior_i = q_ / ( L - W_ + 1 );
 
 		// when p(z_n > 0)
-		prior_i = q_ / (L - W_ + 1);
 		for( i = 0; i < L; i++ ){										// i runs over all nucleotides in sequence
 			y = seq.extractKmer( i, ( i < K_ ) ? i : K_ );				// extract (k+1)-mer y from positions (i-k,...,i)
-			if( y != -1 )												// skip 'N' and other unknown alphabets
-				for( j = 0; j < ( ( W_ < i ) ? W_ : i ); j++ )			// j runs over all motif positions
-						r_[n][L-i+j] += s_[y][j];
-			else
-				break;
+			for( j = 0; j < ( ( W_ < i ) ? W_ : i ); j++ )				// j runs over all motif positions
+				if( y != -1 )											// skip 'N' and other unknown alphabets
+					r_[n][L-i+j] += s_[y][j];
+				else
+					break;
 		}
 
 		for( i = 1; i <= L; i++ ){
-			likelihood_ +=  exp( r_[n][i] );
 			r_[n][i] = exp( r_[n][i] ) * prior_i;
 			normFactor += r_[n][i];
 		}
@@ -234,7 +233,6 @@ void EM::EStep(){
 			r_[n][i] /= normFactor;
 	}
 }
-
 
 void EM::MStep(){
 
@@ -268,12 +266,11 @@ void EM::MStep(){
 		L = seq.getL();
 		for( i = 0; i < L; i++ ){
 			y = seq.extractKmer( i, ( i < K_ ) ? i : K_ );
-			for( j = 0; j < ( ( W_ < i ) ? W_ : i ); j++ ){
+			for( j = 0; j < ( ( W_ < i ) ? W_ : i ); j++ )
 				if( y != -1 )											// skip 'N' and other unknown alphabets
 					n_[K_][y][j] += r_[n][L-i+j];
 				else
 					break;
-			}
 		}
 	}
 
@@ -301,38 +298,41 @@ void EM::optimizeQ(){
 }
 
 void EM::print(){
-	for( int j = 0; j < W_; j++ ){
-		for( int k = 0; k < K_+1; k++ ){
-			for( int y = 0; y < Global::powA[k+1]; y++ )
-				std::cout << std::scientific << motif_->getV()[k][y][j] << '\t';
-			std::cout << std::endl;
-		}
-		std::cout << std::endl;
-	}
+//	for( int j = 0; j < W_; j++ ){
+//		for( int k = 0; k < K_+1; k++ ){
+//			for( int y = 0; y < Global::powA[k+1]; y++ )
+//				std::cout << std::scientific << motif_->getV()[k][y][j] << '\t';
+//			std::cout << std::endl;
+//		}
+//		std::cout << std::endl;
+//	}
+	std::cout << "EM iterations: " << EMIterations_ << std::endl;
 }
 
 void EM::write(){
 
 	/*
 	 * save EM parameters in five flat files:
-	 * (1) posSequenceBasename.EMconds: 	conditional probabilities
+	 * (1) posSequenceBasename.conds: 	conditional probabilities
 	 * (2) posSequenceBasename.EMcounts:	refined counts of (k+1)-mers
 	 * (3) posSequenceBasename.EMposterior: responsibilities, posterior distributions
 	 * (4) posSequenceBasename.EMalpha:		hyper-parameter alphas
 	 * (5) posSequenceBasename.EMlogOdds:	log odds scores
 	 */
 
+	int k, y, j, n, i, L;
+
 	std::string opath = std::string( Global::outputDirectory ) + '/'
 			+ std::string( Global::posSequenceBasename );
 
 	// output conditional probabilities v[k][y][j] and (k+1)-mer counts n[k][y][j]
-	std::string opath_v = opath + ".EMconds";
+	std::string opath_v = opath + ".conds";
 	std::string opath_n = opath + ".EMcounts";
 	std::ofstream ofile_v( opath_v.c_str() );
 	std::ofstream ofile_n( opath_n.c_str() );
-	for( int j = 0; j < W_; j++ ){
-		for( int k = 0; k < K_+1; k++ ){
-			for( int y = 0; y < Global::powA[k+1]; y++ ){
+	for( j = 0; j < W_; j++ ){
+		for( k = 0; k < K_+1; k++ ){
+			for( y = 0; y < Global::powA[k+1]; y++ ){
 				ofile_v << std::scientific << motif_->getV()[k][y][j] << '\t';
 				ofile_n << std::scientific << n_[k][y][j] << '\t';
 			}
@@ -346,10 +346,10 @@ void EM::write(){
 	// output responsibilities r[n][i]
 	std::string opath_r = opath + ".EMposterior";
 	std::ofstream ofile_r( opath_r.c_str() );
-	for( int n = 0; n < Global::posSequenceSet->getN(); n++ ){
+	for( n = 0; n < Global::posSequenceSet->getN(); n++ ){
 		Sequence seq = Global::posSequenceSet->getSequences()[n];
-		int L = seq.getL();
-		for( int i = 0; i <= L/*-W_*/+1; i++ )
+		L = seq.getL();
+		for( i = 0; i <= L; i++ )
 			ofile_r << std::scientific << r_[n][i] << '\t';
 		ofile_r << std::endl;
 	}
@@ -357,9 +357,9 @@ void EM::write(){
 	// output parameter alphas alpha[k][j]
 	std::string opath_alpha = opath + ".EMalpha";
 	std::ofstream ofile_alpha( opath_alpha.c_str() );
-	for( int k = 0; k < K_+1; k++ ){
+	for( k = 0; k < K_+1; k++ ){
 		ofile_alpha << "k = " << k << std::endl;
-		for( int j = 0; j < W_; j++ )
+		for( j = 0; j < W_; j++ )
 			ofile_alpha << std::scientific << alpha_[k][j] << '\t';
 		ofile_alpha << std::endl;
 	}
@@ -367,8 +367,8 @@ void EM::write(){
 	// output log odds scores s[y][j]
 	std::string opath_s = opath + ".EMlogOdds";
 	std::ofstream ofile_s( opath_s.c_str() );
-	for( int y = 0; y < Global::powA[K_+1]; y++ ){
-		for( int j = 0; j < W_; j++ )
+	for( y = 0; y < Global::powA[K_+1]; y++ ){
+		for( j = 0; j < W_; j++ )
 			ofile_s << std::fixed << std::setprecision(6) << s_[y][j] << '\t';
 		ofile_s << std::endl;
 	}
