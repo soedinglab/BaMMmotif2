@@ -49,8 +49,10 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*************************\n" );
 
 	for( int N = 0; N < motifs->getN(); N++ ){
+		long timestampEM = time( NULL );
 		EM em( motifs->getMotifs()[0], bgModel );
 		em.learnMotif();
+		fprintf( stdout, "\n--- Runtime for EM: %ld seconds.\n", time( NULL )-timestampEM );
 		em.write();
 	}
 
@@ -86,9 +88,9 @@ int main( int nargs, char* args[] ){
 	}
 	std::cout << "\nGiven initial model is " << Global::initialModelBasename;
 	std::cout << "\nGiven folds for FDR estimation: " << Global::cvFold;
+
 	fprintf( stdout, "\n-------------- Runtime: %ld seconds (%0.2f minutes) --------------\n", time( NULL )-timestamp,
 			( float )( time( NULL )-timestamp )/60.0f );
-
 
 	// free memory
 	if( bgModel ) delete bgModel;
