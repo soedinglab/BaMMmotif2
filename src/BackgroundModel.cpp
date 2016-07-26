@@ -48,15 +48,11 @@ BackgroundModel::BackgroundModel( std::vector<int> folds ){
 		}
 	}
 
-    // calculate v from k-mer counts n_occ
-	calculateVbg();
-
-	if( Global::verbose ) print();
-
-	write();
+	calculateVbg();								// calculate v from k-mer counts n_occ
 }
 
 BackgroundModel::~BackgroundModel(){
+
 	for( int k = 0; k < K_+1; k++ ){
 		free( v_bg_[k] );
 		free( n_bg_[k] );
@@ -64,6 +60,7 @@ BackgroundModel::~BackgroundModel(){
 	free( v_bg_ );
 	free( n_bg_ );
 	std::cout << "Destructor for Background class works fine. \n";
+
 }
 
 void BackgroundModel::calculateVbg(){
