@@ -8,51 +8,55 @@
 #include "Motif.h"
 
 Motif::Motif( int length ){
+
+	int k, y;
+
 	W_ = length;
 
 	v_ = ( float*** )calloc( K_+1, sizeof( float** ) );
 	n_ = ( int*** )calloc( K_+1, sizeof( int** ) );
-	for( int k = 0; k < K_+1; k++ ){
+	for( k = 0; k < K_+1; k++ ){
 		v_[k] = ( float** )calloc( Global::powA[k+1], sizeof( float* ) );
 		n_[k] = ( int** )calloc( Global::powA[k+1], sizeof( int* ) );
-		for( int y = 0; y < Global::powA[k+1]; y++ ){
+		for( y = 0; y < Global::powA[k+1]; y++ ){
 			v_[k][y] = ( float* )calloc( W_, sizeof( float ) );
 			n_[k][y] = ( int* )calloc( W_, sizeof( int ) );
 		}
 	}
 
-	vbg_ = ( float* )calloc( Global::powA[1], sizeof( float ) );
+	v_bg_ = ( float* )calloc( Global::powA[1], sizeof( float ) );
 
 	BackgroundModel bg;
-	for( int y = 0; y < Global::powA[1]; y++ )
-		vbg_[y] = bg.getVbg()[0][y];
+	for( y = 0; y < Global::powA[1]; y++ )
+		v_bg_[y] = bg.getVbg()[0][y];
 }
 
 Motif::Motif( const Motif& other ){ 		// deep copy
+
+	int k, y, j;
+
 	W_ = other.W_;
 
 	v_ = ( float*** )malloc( ( K_+1 )* sizeof( float** ) );
 	n_ = ( int*** )malloc( ( K_+1 ) * sizeof( int** ) );
-	for( int k = 0; k < K_+1; k++ ){
+	for( k = 0; k < K_+1; k++ ){
 		v_[k] = ( float** )malloc( Global::powA[k+1] * sizeof( float* ) );
 		n_[k] = ( int** )malloc( Global::powA[k+1] * sizeof( int* ) );
-		for( int y = 0; y < Global::powA[k+1]; y++ ){
+		for( y = 0; y < Global::powA[k+1]; y++ ){
 			v_[k][y] = ( float* )malloc( W_ * sizeof( float ) );
 			n_[k][y] = ( int* )malloc( W_ * sizeof( int ) );
-			for( int j = 0; j < W_; j++ ){
+			for( j = 0; j < W_; j++ ){
 				v_[k][y][j] = other.v_[k][y][j];
 				n_[k][y][j] = other.n_[k][y][j];
 			}
-//			memcpy( v_[k][y], other.v_[k][y], W_ * sizeof( float ) );
-//			memcpy( n_[k][y], other.n_[k][y], W_ * sizeof( int ) );
 		}
 	}
+
 	isInitialized_ = true;
 
-	vbg_ = ( float* )calloc( Global::powA[1], sizeof( float ) );
-//	memcpy( vbg_, other.vbg_, Global::powA[1] * sizeof( float ) );
-	for( int y = 0; y < Global::powA[1]; y++ )
-		vbg_[y] = other.vbg_[y];
+	v_bg_ = ( float* )calloc( Global::powA[1], sizeof( float ) );
+	for( y = 0; y < Global::powA[1]; y++ )
+		v_bg_[y] = other.v_bg_[y];
 }
 
 Motif::~Motif(){
@@ -67,7 +71,7 @@ Motif::~Motif(){
 	free( v_ );
 	free( n_ );
 
-	free( vbg_ );
+	free( v_bg_ );
 	std::cout << "Destructor for Motif class works fine. \n";
 }
 
@@ -83,43 +87,44 @@ void Motif::initFromBindingSites( char* filename ){
 
 	std::ifstream file( filename );						// read file
 	std::string bindingsite;							// read each binding site sequence from each line
-	int w;												// length of binding site from each line
+	int bindingSiteWidth;								// length of binding site from each line
+	int minL = Global::posSequenceSet->getMinL();
+	int i, y, k, j, n;
 
 	while( getline( file, bindingsite ).good() ){
 
 		N_++;											// count the number of binding sites
 
 		// add alphabets randomly at the beginning of each binding site
-		for( int i = 0; i < Global::addColumns.at(0); i++ )
+		for( i = 0; i < Global::addColumns.at(0); i++ )
 			bindingsite.insert( bindingsite.begin(), Alphabet::getBase( rand() % Global::powA[1] + 1 ) );
 		// add alphabets randomly at the end of each binding site
-		for( int i = 0; i < Global::addColumns.at(1); i++ )
+		for( i = 0; i < Global::addColumns.at(1); i++ )
 			bindingsite.insert( bindingsite.end(), Alphabet::getBase( rand() % Global::powA[1] + 1 ) );
 
-		w = bindingsite.length();
+		bindingSiteWidth = bindingsite.length();
 
-		if( w != W_ ){									// all the binding sites should have the same length
+		if( bindingSiteWidth != W_ ){					// all the binding sites should have the same length
 			fprintf( stderr, "Error: Length of binding site on line %d differs.\n"
 					"Binding sites should have the same length.\n", N_ );
 			exit( -1 );
 		}
-		if( w < K_+1 ){									// binding sites should be longer than the order of model
+		if( bindingSiteWidth < K_+1 ){					// binding sites should be longer than the order of model
 			fprintf( stderr, "Error: Length of binding site sequence "
 					"is shorter than model order.\n" );
 			exit( -1 );
 		}
-		if( (unsigned int)w > Global::posSequenceSet->getMinL() ){		// binding sites should be shorter than the shortest posSeq
+		if( bindingSiteWidth > minL ){					// binding sites should be shorter than the shortest posSeq
 			fprintf( stderr, "Error: Length of binding site sequence "
 					"exceeds the length of posSet sequence.\n" );
 			exit( -1 );
 		}
 
 		// scan the binding sites and calculate k-mer counts n
-		int y;
-		for( int k = 0; k < K_+1; k++ ){				// k runs over all orders
-			for( int j = k; j < w; j++ ){				// j runs over all true motif positions
+		for( k = 0; k < K_+1; k++ ){					// k runs over all orders
+			for( j = k; j < bindingSiteWidth; j++ ){	// j runs over all true motif positions
 				y = 0;
-				for( int n = k; n >= 0; n-- )			// calculate y based on (k+1)-mer bases
+				for( n = k; n >= 0; n-- )				// calculate y based on (k+1)-mer bases
 					y += Global::powA[n] * ( Alphabet::getCode( bindingsite[j-n] ) - 1 );
 				n_[k][y][j]++;
 			}
@@ -130,6 +135,7 @@ void Motif::initFromBindingSites( char* filename ){
 	calculateV();
 
 	write();
+
 	// set isInitialized
 	isInitialized_ = true;
 }
@@ -160,7 +166,7 @@ void Motif::calculateV(){
 	// for k = 0, v_ = freqs:
 	for( y = 0; y < Global::powA[1]; y++ )
 		for( j = 0; j < W_; j++ )
-			v_[0][y][j] = ( n_[0][y][j] + Global::modelAlpha.at(0) * vbg_[y] )
+			v_[0][y][j] = ( n_[0][y][j] + Global::modelAlpha.at(0) * v_bg_[y] )
 						/ ( N_ + Global::modelAlpha.at(0) );
 
 	// for k > 0:
@@ -197,7 +203,7 @@ void Motif::updateV( float*** n, float** alpha ){
 	// for k = 0, v_ = freqs:
 	for( y = 0; y < Global::powA[1]; y++ ){
 		for( j = 0; j < W_; j++ )
-			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * vbg_[y] )
+			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * v_bg_[y] )
 						/ ( sumN[j] + alpha[0][j] );
 	}
 
