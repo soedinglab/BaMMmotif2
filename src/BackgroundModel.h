@@ -18,18 +18,20 @@ public:
 	BackgroundModel( std::vector<int> folds = std::vector<int> () );
 	~BackgroundModel();
 
-	float** getVbg();	                	// get conditional probabilities for k-mers
+	float** getVbg();	                				// get conditional probabilities for k-mers
 
-	void 	print();						// print background model to console
-	void 	write();			   			// write background model to file basename.bmm in output directory
+	void 	print();									// print background model to console
+	void 	write();			   						// write background model to file basename.bmm in output directory
 
 private:
 
-	void 	calculateVbg();  				// calculate v from k-mer counts n
+	void 	calculateVbg();  							// calculate v from k-mer counts n
 
+	int**	n_bg_;										// k-mer counts
+	float** v_bg_;					    				// conditional probabilities for k-mers
 	int		K_ = Global::bgModelOrder;
-	int**	n_bg_;							// k-mer counts
-	float** v_bg_;					    	// conditional probabilities for k-mers
+	int 	negSetN_ = Global::negSequenceSet->getN();	// count of negative sequences
+	std::vector<Sequence> negSeqs_ = Global::negSequenceSet->getSequences();
 
 };
 
