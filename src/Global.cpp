@@ -70,9 +70,7 @@ void Global::init( int nargs, char* args[] ){
 
 	// read in or generate negative sequence set
 	if( negSequenceFilename == NULL )						// use positive for negative sequence set
-//		negSequenceSet = new SequenceSet( posSequenceFilename );
 		negSequenceSet = new SequenceSet( *posSequenceSet );
-//		negSequenceSet = posSequenceSet;
 	else													// read in negative sequence set
 		negSequenceSet = new SequenceSet( negSequenceFilename );
 
@@ -274,9 +272,9 @@ void Global::generateFolds( unsigned int posN, unsigned int negN, unsigned int f
 	posFoldIndices.resize( fold );
 	negFoldIndices.resize( fold );
 	// generate posFoldIndices
-	unsigned int i = 0;
+	unsigned int i = 0, j;
 	while( i < posN ){
-		for( unsigned int j = 0; j < fold; j++ ){
+		for( j = 0; j < fold; j++ ){
 			posFoldIndices[j].push_back( i );
 			i++;
 		}
@@ -288,7 +286,7 @@ void Global::generateFolds( unsigned int posN, unsigned int negN, unsigned int f
 		// generate negFoldIndices
 		i = 0;
 		while( i < negN ){
-			for( unsigned int j = 0; j < fold; j++ ){
+			for( j = 0; j < fold; j++ ){
 				negFoldIndices[j].push_back( i );
 				i++;
 			}
@@ -317,8 +315,8 @@ void Global::printHelp(){
 	printf("\n [Initial model] Choose one of these four types of file: \n");
 	printf("\n --BaMMpatternFile: \n");
 	printf("\n --bindingSitesFile:\n");
-	printf("\n --PWMFile \n");
-	printf("\n --BaMMFile \n");
+	printf("\n --PWMFile: \n");
+	printf("\n --BaMMFile: \n");
 	printf("\n -- \n");
 	printf("\n -- \n");
 	printf("\n -- \n");
@@ -334,7 +332,5 @@ void Global::destruct(){
 	if( posSequenceBasename ) free( posSequenceBasename );
 	if( negSequenceBasename ) free( negSequenceBasename );
 	if( initialModelBasename ) free( initialModelBasename );
-	if( posSequenceSet ) delete posSequenceSet;
-	if( negSequenceFilename ) delete negSequenceSet;
 	std::cout << "Destruct() for Global class works fine. \n";
 }
