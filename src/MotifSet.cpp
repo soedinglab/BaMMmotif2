@@ -19,6 +19,7 @@ MotifSet::MotifSet(){
 		// motifs.push_back( motif )
 
 	} else if( Global::bindingSitesFilename != NULL ){
+
 		std::ifstream file;
 		file.open( Global::bindingSitesFilename, std::ifstream::in );
 		std::string seq;
@@ -35,7 +36,6 @@ MotifSet::MotifSet(){
 
 		length += Global::addColumns.at(0) + Global::addColumns.at(1);
 
-//		Motif* motif = new Motif( length );
 		Motif* motif = new Motif( length );
 		motif->initFromBindingSites( Global::bindingSitesFilename );
 		motifs_.push_back( motif );
@@ -86,15 +86,26 @@ void MotifSet::print(){
 	}
 }
 void MotifSet::write(){
+
+	/**
+	 * save all the motifs learned by BaMM in one flat flie:
+	 * posSequenceBasename.conds
+	 */
+
 	std::string opath = std::string( Global::outputDirectory )  + '/'
-			+ std::string( Global::posSequenceBasename ) + ".condsMotifs";
+			+ std::string( Global::posSequenceBasename ) + ".conds";
 	std::ofstream ofile( opath.c_str() );
-	for( int i = 0; i < N_; i++ ){
+
+	int i, j, k, y;
+	int W =  motifs_[i]->getW();
+	float*** v_motif =  motifs_[i]->getV();
+
+	for( i = 0; i < N_; i++ ){
 		ofile << "Motif " << i+1 <<":" << std::endl;
-		for( int j = 0; j < motifs_[i]->getW(); j++ ){
-			for( int k = 0; k < Global::modelOrder+1; k++ ){
-				for( int y = 0; y < Global::powA[k+1]; y++ )
-					ofile << std::scientific << motifs_[i]->getV()[k][y][j] << '\t';
+		for( j = 0; j < W; j++ ){
+			for( k = 0; k < Global::modelOrder+1; k++ ){
+				for( y = 0; y < Global::powA[k+1]; y++ )
+					ofile << std::scientific << v_motif[k][y][j] << '\t';
 				ofile << std::endl;
 			}
 			ofile << std::endl;
