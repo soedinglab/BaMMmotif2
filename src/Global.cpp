@@ -74,28 +74,6 @@ void Global::init( int nargs, char* args[] ){
 	else													// read in negative sequence set
 		negSequenceSet = new SequenceSet( negSequenceFilename );
 
-	if( verbose ){
-		// print out profile for positive sequence set
-		std::cout << "For positive set:	" << posSequenceSet->getN() << " sequences. "
-				"max.length: " << posSequenceSet->getMaxL() << ", min.length: " <<
-				posSequenceSet->getMinL() << std::endl << "			base frequencies: " ;
-		for( int i = 0; i < Alphabet::getSize(); i++ )
-			std::cout << std::scientific << Alphabet::getAlphabet()[i]
-			          << " " << posSequenceSet->getBaseFrequencies()[i] << ", ";
-		std::cout << std::endl;
-
-		// print out profile for positive sequence set
-		if( negSequenceFilename ){
-			std::cout << "For negative set:	" << negSequenceSet->getN() << " sequences. "
-					"max.length: " << negSequenceSet->getMaxL() << ", min.length: " <<
-					negSequenceSet->getMinL() << std::endl << "			base frequencies: " ;
-			for( int i = 0; i < Alphabet::getSize(); i++ )
-				std::cout << std::scientific << Alphabet::getAlphabet()[i]
-						  << " " << negSequenceSet->getBaseFrequencies()[i] << ", ";
-			std::cout << std::endl;
-		}
-	}
-
 	// generate folds (fill posFoldIndices and negFoldIndices)
 	generateFolds( posSequenceSet->getN(), negSequenceSet->getN(), cvFold );
 
