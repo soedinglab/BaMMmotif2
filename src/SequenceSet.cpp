@@ -21,13 +21,11 @@ SequenceSet::SequenceSet( char* sequenceFilepath, char* intensityFilepath ){
 	sequenceFilepath_ = sequenceFilepath;
 	intensityFilepath_ = intensityFilepath;
 	baseFrequencies_ = new float[Alphabet::getSize()];
-//	sequences_ = ( Sequence* )calloc( 5000, sizeof( Sequence ) );
 
 	readFASTA();
 
 	// if intensity file is given, read in intensity file
-	if ( intensityFilepath != NULL )
-		readIntensities();
+	if ( intensityFilepath != NULL ) readIntensities();
 }
 
 SequenceSet::~SequenceSet(){
@@ -209,7 +207,7 @@ int SequenceSet::readFASTA(){
 
 	int maxL = 0, minL = 1000;									// initialize the min. and max. length
 	int N = 0;													// count sequences
-	int i;
+	int i, L;
 	unsigned int* baseCounts = new unsigned int[Alphabet::getSize()];
 	for( i = 0; i < Alphabet::getSize(); i++ )
 		baseCounts[i] = 0;
@@ -218,7 +216,7 @@ int SequenceSet::readFASTA(){
 		while( getline( seqfile, line ).good() ){
 			if( line.empty() || line[0] == '>' ){
 				if( !header.empty() ){
-					int L = ( int )sequence.length();
+					L = ( int )sequence.length();
 					uint8_t* encodeSeq = new uint8_t[L];
 
 					for( i = 0; i < L; i++ ){
@@ -231,15 +229,14 @@ int SequenceSet::readFASTA(){
 						baseCounts[encodeSeq[i]-1]++;			// count the occurrence of mono-nucleotides
 					}
 
-					Sequence seq( encodeSeq, L, header );
-					sequences_.push_back( seq );
+					sequences_.push_back( Sequence( encodeSeq, L, header ) );
 
 					if ( L > maxL )								// check the length of each sequence if it is min or max
 						maxL = L;
 					if ( L < minL )
 						minL = L;
 
-					N++;
+					N++;										// count the number of sequences
 
 					sequence.clear();
 					header.clear();
@@ -261,7 +258,7 @@ int SequenceSet::readFASTA(){
 			}
 		}
 		if( !header.empty() ){									// for the last entry if no new line follows by
-			int L = ( int )sequence.length();
+			L = ( int )sequence.length();
 			uint8_t* encodeSeq = new uint8_t[L];
 			for( int i = 0; i < L; i++ ){
 				encodeSeq[i] = Alphabet::getCode( sequence[i] );
@@ -272,15 +269,15 @@ int SequenceSet::readFASTA(){
 				}
 				baseCounts[encodeSeq[i]-1]++;					// count the occurrence of mono-nucleotides
 			}
-			Sequence seq( encodeSeq, L, header );
-			sequences_.push_back( seq );
+
+			sequences_.push_back( Sequence( encodeSeq, L, header ) );
 
 			if ( L > maxL )										// check the length of each sequence if it is min or max
 				maxL = L;
 			if ( L < minL )
 				minL = L;
 
-			N++;
+			N++;												// count the number of sequences
 
 			sequence.clear();
 			header.clear();
