@@ -13,6 +13,9 @@
 
 class EM {
 
+friend class Sequence;
+friend class SequenceSet;
+
 public:
 
 	EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds = std::vector<int> () );
@@ -38,6 +41,8 @@ private:
 	float 				likelihood_ = 0;	// value of Q function for current parameters
 	unsigned int 		EMIterations_ = 0;  // counter for EM iterations
 
+	int					seqN_ = Global::posSequenceSet->getN();
+	std::vector<Sequence> posSeqs_ = Global::posSequenceSet->getSequences();
 	int					K_ = Global::modelOrder;
 	int					k_bg_ = Global::bgModelOrder;
 	int 				W_;					// motif length
@@ -47,6 +52,7 @@ private:
 
 	void optimizeAlphas();			    	// optimize alpha hyper-parameters
 	void optimizeQ();						// optimize hyper-parameter q
+
 };
 
 #endif /* EM_H_ */

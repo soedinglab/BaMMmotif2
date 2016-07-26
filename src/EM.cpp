@@ -41,28 +41,33 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 		for( j = 0; j < W_; j++ )										// initialize alpha_ with global alpha
 			alpha_[k][j] = Global::modelAlpha[k];
 	}
+
 }
 
 EM::~EM(){
-	for( int y = 0; y < Global::powA[K_+1]; y++ )
+
+	int k, y, n;
+	for( y = 0; y < Global::powA[K_+1]; y++ )
 		free( s_[y] );
 	free( s_ );
 
-	for( int n = 0; n < Global::posSequenceSet->getN(); n++ )
+	for( n = 0; n < Global::posSequenceSet->getN(); n++ )
 		free( r_[n] );
 	free( r_ );
 
-	for( int k = 0; k < K_+1; k++ ){
-		for( int y = 0; y < Global::powA[k+1]; y++ )
+	for( k = 0; k < K_+1; k++ ){
+		for( y = 0; y < Global::powA[k+1]; y++ )
 			free( n_[k][y] );
 		free( n_[k] );
 	}
 	free( n_ );
 
-	for( int k = 0; k < K_+1; k++ )
+	for( k = 0; k < K_+1; k++ )
 		free( alpha_[k] );
 	free( alpha_ );
+
 	std::cout << "Destructor for EM class works fine. \n";
+
 }
 
 int EM::learnMotif(){
@@ -135,8 +140,7 @@ int EM::learnMotif(){
 		}
 */
 
-//	if( Global::verbose ) print();
-	print();
+	if( Global::verbose ) print();
 
 	// free memory
 	for( y = 0; y < Global::powA[K_+1]; y++ )
@@ -157,7 +161,7 @@ void EM::EStep(){
 	// compute log odd scores s[y][j], log likelihoods with the highest order K
 	for( y = 0; y < Global::powA[K_+1]; y++ ){
 		for( j = 0; j < W_; j++ ){
-			if( K_ <= k_bg_ ){
+			if( K_ <= 2 ){
 				s_[y][j] = log( motif_->getV()[K_][y][j]
 				              / bg_->getVbg()[K_][y] );
 			} else {
@@ -202,15 +206,14 @@ void EM::EStep(){
 //	}
 
 	// fast code:
-	for( n = 0; n < Global::posSequenceSet->getN(); n++ ){				// n runs over all sequences
-		Sequence seq = Global::posSequenceSet->getSequences()[n];
-		L = seq.getL();
+	for( n = 0; n < seqN_; n++ ){				// n runs over all sequences
+		L = posSeqs_[n].getL();
 		normFactor = 0.0f;
 		prior_i = q_ / ( L - W_ + 1 );
 
 		// when p(z_n > 0)
 		for( i = 0; i < L; i++ ){										// i runs over all nucleotides in sequence
-			y = seq.extractKmer( i, ( i < K_ ) ? i : K_ );				// extract (k+1)-mer y from positions (i-k,...,i)
+			y = posSeqs_[n].extractKmer( i, ( i < K_ ) ? i : K_ );				// extract (k+1)-mer y from positions (i-k,...,i)
 			for( j = 0; j < ( ( W_ < i ) ? W_ : i ); j++ )				// j runs over all motif positions
 				if( y != -1 )											// skip 'N' and other unknown alphabets
 					r_[n][L-i+j] += s_[y][j];
@@ -261,11 +264,10 @@ void EM::MStep(){
 //	}
 
 	// fast code:
-	for( n = 0; n < Global::posSequenceSet->getN(); n++ ){				// n runs over all sequences
-		Sequence seq = Global::posSequenceSet->getSequences()[n];
-		L = seq.getL();
+	for( n = 0; n < seqN_; n++ ){				// n runs over all sequences
+		L = posSeqs_[n].getL();
 		for( i = 0; i < L; i++ ){
-			y = seq.extractKmer( i, ( i < K_ ) ? i : K_ );
+			y = posSeqs_[n].extractKmer( i, ( i < K_ ) ? i : K_ );
 			for( j = 0; j < ( ( W_ < i ) ? W_ : i ); j++ )
 				if( y != -1 )											// skip 'N' and other unknown alphabets
 					n_[K_][y][j] += r_[n][L-i+j];
@@ -298,15 +300,14 @@ void EM::optimizeQ(){
 }
 
 void EM::print(){
-//	for( int j = 0; j < W_; j++ ){
-//		for( int k = 0; k < K_+1; k++ ){
-//			for( int y = 0; y < Global::powA[k+1]; y++ )
-//				std::cout << std::scientific << motif_->getV()[k][y][j] << '\t';
-//			std::cout << std::endl;
-//		}
-//		std::cout << std::endl;
-//	}
-	std::cout << "EM iterations: " << EMIterations_ << std::endl;
+	for( int j = 0; j < W_; j++ ){
+		for( int k = 0; k < K_+1; k++ ){
+			for( int y = 0; y < Global::powA[k+1]; y++ )
+				std::cout << std::scientific << motif_->getV()[k][y][j] << '\t';
+			std::cout << std::endl;
+		}
+		std::cout << std::endl;
+	}
 }
 
 void EM::write(){
@@ -346,8 +347,8 @@ void EM::write(){
 	// output responsibilities r[n][i]
 	std::string opath_r = opath + ".EMposterior";
 	std::ofstream ofile_r( opath_r.c_str() );
-	for( n = 0; n < Global::posSequenceSet->getN(); n++ ){
-		Sequence seq = Global::posSequenceSet->getSequences()[n];
+	for( n = 0; n < seqN_; n++ ){
+		Sequence seq = posSeqs_[n];
 		L = seq.getL();
 		for( i = 0; i <= L; i++ )
 			ofile_r << std::scientific << r_[n][i] << '\t';
