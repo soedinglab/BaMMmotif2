@@ -89,23 +89,24 @@ void MotifSet::write(){
 
 	/**
 	 * save all the motifs learned by BaMM in one flat flie:
-	 * posSequenceBasename.conds
+	 * posSequenceBasename.motifs: list conditional probabilities for each motif after EM training
 	 */
 
 	std::string opath = std::string( Global::outputDirectory )  + '/'
-			+ std::string( Global::posSequenceBasename ) + ".conds";
+			+ std::string( Global::posSequenceBasename ) + ".motifs";
 	std::ofstream ofile( opath.c_str() );
 
-	int i, j, k, y;
-	int W =  motifs_[i]->getW();
-	float*** v_motif =  motifs_[i]->getV();
+	int i, j, k, y, W;
+	float*** v_motif;
 
 	for( i = 0; i < N_; i++ ){
 		ofile << "Motif " << i+1 <<":" << std::endl;
+		W =  motifs_[i]->getW();
+		v_motif =  motifs_[i]->getV();
 		for( j = 0; j < W; j++ ){
 			for( k = 0; k < Global::modelOrder+1; k++ ){
 				for( y = 0; y < Global::powA[k+1]; y++ )
-					ofile << std::scientific << v_motif[k][y][j] << '\t';
+					ofile << std::scientific << std::setprecision(8) << v_motif[k][y][j] << '\t';
 				ofile << std::endl;
 			}
 			ofile << std::endl;

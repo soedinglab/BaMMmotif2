@@ -60,6 +60,7 @@ Motif::Motif( const Motif& other ){ 		// deep copy
 }
 
 Motif::~Motif(){
+
 	for( int k = 0; k < K_+1; k++ ){
 		for( int y = 0; y < Global::powA[k+1]; y++ ){
 			free( v_[k][y] );
@@ -73,6 +74,7 @@ Motif::~Motif(){
 
 	free( v_bg_ );
 	std::cout << "Destructor for Motif class works fine. \n";
+
 }
 
 // initialize v from IUPAC pattern (BaMM pattern)

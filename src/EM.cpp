@@ -316,12 +316,13 @@ void EM::print(){
 
 void EM::write(){
 
-	/*
-	 * save EM parameters in four flat files:
-	 * (1) posSequenceBasename.EMcounts:	refined counts of (k+1)-mers
-	 * (2) posSequenceBasename.EMposterior: responsibilities, posterior distributions
-	 * (3) posSequenceBasename.EMalpha:		hyper-parameter alphas
-	 * (4) posSequenceBasename.EMlogOdds:	log odds scores
+	/**
+	 * save EM parameters in five flat files:
+	 * (1) posSequenceBasename.conds: 	conditional probabilities
+	 * (2) posSequenceBasename.EMcounts:	refined counts of (k+1)-mers
+	 * (3) posSequenceBasename.EMposterior: responsibilities, posterior distributions
+	 * (4) posSequenceBasename.EMalpha:		hyper-parameter alphas
+	 * (5) posSequenceBasename.EMlogOdds:	log odds scores
 	 */
 
 	int k, y, j, n, i, L;
@@ -329,15 +330,21 @@ void EM::write(){
 	std::string opath = std::string( Global::outputDirectory ) + '/'
 			+ std::string( Global::posSequenceBasename );
 
-	// output (k+1)-mer counts n[k][y][j]
+	// output conditional probabilities v[k][y][j] and (k+1)-mer counts n[k][y][j]
+	std::string opath_v = opath + ".conds";
 	std::string opath_n = opath + ".EMcounts";
+	std::ofstream ofile_v( opath_v.c_str() );
 	std::ofstream ofile_n( opath_n.c_str() );
 	for( j = 0; j < W_; j++ ){
 		for( k = 0; k < K_+1; k++ ){
-			for( y = 0; y < Global::powA[k+1]; y++ )
+			for( y = 0; y < Global::powA[k+1]; y++ ){
+				ofile_v << std::scientific << v_motif_[k][y][j] << '\t';
 				ofile_n << std::scientific << n_[k][y][j] << '\t';
+			}
+			ofile_v << std::endl;
 			ofile_n << std::endl;
 		}
+		ofile_v << std::endl;
 		ofile_n << std::endl;
 	}
 
