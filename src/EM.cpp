@@ -8,9 +8,13 @@
 #include "EM.h"
 
 EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
-	motif_ = motif;														// deep copy
-	bg_ = bg;
+
+	motif_ = motif;
+	v_motif_ = motif_->getV();
 	W_ = motif_->getW();
+
+	bg_ = bg;
+	v_bg_ = bg_->getVbg();
 
 	if( folds.size() != 0 )												// for cross-validation
 		folds_ = folds;
@@ -22,9 +26,9 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 		s_[y] = ( float* )calloc( W_, sizeof( float ) );
 
     // allocate memory for r_[n][i] and initialize it
-	r_ = ( float** )calloc( Global::posSequenceSet->getN(), sizeof( float* ) );
-    for( n = 0; n < Global::posSequenceSet->getN(); n++ )
-    	r_[n] = ( float* )calloc( Global::posSequenceSet->getSequences()[n].getL()+1, sizeof( float ) );	// for fast code
+	r_ = ( float** )calloc( posSetN_, sizeof( float* ) );
+    for( n = 0; n < posSetN_; n++ )
+    	r_[n] = ( float* )calloc( posSeqs_[n].getL()+1, sizeof( float ) );
 
     // allocate memory for n_[k][y][j] and initialize it
 	n_ = ( float*** )calloc( K_+1, sizeof( float** ) );
@@ -51,7 +55,7 @@ EM::~EM(){
 		free( s_[y] );
 	free( s_ );
 
-	for( n = 0; n < Global::posSequenceSet->getN(); n++ )
+	for( n = 0; n < posSetN_; n++ )
 		free( r_[n] );
 	free( r_ );
 
@@ -95,7 +99,7 @@ int EM::learnMotif(){
 		// before EM, get the prior parameter variables
 		for( y = 0; y < Global::powA[K_+1]; y++ )
 			for( j = 0; j < W_; j++ )
-				v_prior[y][j] = motif_->getV()[K_][y][j];
+				v_prior[y][j] = v_motif_[K_][y][j];
 		likelihood_prior = likelihood_;
 
 		// E-step: calculate posterior
@@ -115,7 +119,7 @@ int EM::learnMotif(){
 		v_diff = 0.0f;													// reset difference of posterior probabilities
 		for( y = 0; y < Global::powA[K_+1]; y++ )
 			for( j = 0; j < W_; j++ )
-				v_diff += fabs( motif_->getV()[K_][y][j] - v_prior[y][j] );
+				v_diff += fabs( v_motif_[K_][y][j] - v_prior[y][j] );
 
 		likelihood_diff = likelihood_ - likelihood_prior;
 
@@ -140,7 +144,7 @@ int EM::learnMotif(){
 		}
 */
 
-	if( Global::verbose ) print();
+//	if( Global::verbose ) print();
 
 	// free memory
 	for( y = 0; y < Global::powA[K_+1]; y++ )
@@ -162,12 +166,12 @@ void EM::EStep(){
 	for( y = 0; y < Global::powA[K_+1]; y++ ){
 		for( j = 0; j < W_; j++ ){
 			if( K_ <= 2 ){
-				s_[y][j] = log( motif_->getV()[K_][y][j]
-				              / bg_->getVbg()[K_][y] );
+				s_[y][j] = log( v_motif_[K_][y][j]
+				              / v_bg_[K_][y] );
 			} else {
 				y3 = y % Global::powA[3];								// 3 rightmost nucleotides in (k+1)-mer y
-				s_[y][j] = log( motif_->getV()[K_][y][j]
-				              / bg_->getVbg()[k_bg_][y3] );
+				s_[y][j] = log( v_motif_[K_][y][j]
+				              / v_bg_[k_bg_][y3] );
 			}
 		}
 	}
@@ -206,14 +210,14 @@ void EM::EStep(){
 //	}
 
 	// fast code:
-	for( n = 0; n < seqN_; n++ ){				// n runs over all sequences
+	for( n = 0; n < posSetN_; n++ ){									// n runs over all sequences
 		L = posSeqs_[n].getL();
 		normFactor = 0.0f;
 		prior_i = q_ / ( L - W_ + 1 );
 
 		// when p(z_n > 0)
 		for( i = 0; i < L; i++ ){										// i runs over all nucleotides in sequence
-			y = posSeqs_[n].extractKmer( i, ( i < K_ ) ? i : K_ );				// extract (k+1)-mer y from positions (i-k,...,i)
+			y = posSeqs_[n].extractKmer( i, ( i < K_ ) ? i : K_ );		// extract (k+1)-mer y from positions (i-k,...,i)
 			for( j = 0; j < ( ( W_ < i ) ? W_ : i ); j++ )				// j runs over all motif positions
 				if( y != -1 )											// skip 'N' and other unknown alphabets
 					r_[n][L-i+j] += s_[y][j];
@@ -264,7 +268,7 @@ void EM::MStep(){
 //	}
 
 	// fast code:
-	for( n = 0; n < seqN_; n++ ){				// n runs over all sequences
+	for( n = 0; n < posSetN_; n++ ){										// n runs over all sequences
 		L = posSeqs_[n].getL();
 		for( i = 0; i < L; i++ ){
 			y = posSeqs_[n].extractKmer( i, ( i < K_ ) ? i : K_ );
@@ -303,7 +307,7 @@ void EM::print(){
 	for( int j = 0; j < W_; j++ ){
 		for( int k = 0; k < K_+1; k++ ){
 			for( int y = 0; y < Global::powA[k+1]; y++ )
-				std::cout << std::scientific << motif_->getV()[k][y][j] << '\t';
+				std::cout << std::scientific << v_motif_[k][y][j] << '\t';
 			std::cout << std::endl;
 		}
 		std::cout << std::endl;
@@ -313,12 +317,11 @@ void EM::print(){
 void EM::write(){
 
 	/*
-	 * save EM parameters in five flat files:
-	 * (1) posSequenceBasename.conds: 	conditional probabilities
-	 * (2) posSequenceBasename.EMcounts:	refined counts of (k+1)-mers
-	 * (3) posSequenceBasename.EMposterior: responsibilities, posterior distributions
-	 * (4) posSequenceBasename.EMalpha:		hyper-parameter alphas
-	 * (5) posSequenceBasename.EMlogOdds:	log odds scores
+	 * save EM parameters in four flat files:
+	 * (1) posSequenceBasename.EMcounts:	refined counts of (k+1)-mers
+	 * (2) posSequenceBasename.EMposterior: responsibilities, posterior distributions
+	 * (3) posSequenceBasename.EMalpha:		hyper-parameter alphas
+	 * (4) posSequenceBasename.EMlogOdds:	log odds scores
 	 */
 
 	int k, y, j, n, i, L;
@@ -326,30 +329,23 @@ void EM::write(){
 	std::string opath = std::string( Global::outputDirectory ) + '/'
 			+ std::string( Global::posSequenceBasename );
 
-	// output conditional probabilities v[k][y][j] and (k+1)-mer counts n[k][y][j]
-	std::string opath_v = opath + ".conds";
+	// output (k+1)-mer counts n[k][y][j]
 	std::string opath_n = opath + ".EMcounts";
-	std::ofstream ofile_v( opath_v.c_str() );
 	std::ofstream ofile_n( opath_n.c_str() );
 	for( j = 0; j < W_; j++ ){
 		for( k = 0; k < K_+1; k++ ){
-			for( y = 0; y < Global::powA[k+1]; y++ ){
-				ofile_v << std::scientific << motif_->getV()[k][y][j] << '\t';
+			for( y = 0; y < Global::powA[k+1]; y++ )
 				ofile_n << std::scientific << n_[k][y][j] << '\t';
-			}
-			ofile_v << std::endl;
 			ofile_n << std::endl;
 		}
-		ofile_v << std::endl;
 		ofile_n << std::endl;
 	}
 
 	// output responsibilities r[n][i]
 	std::string opath_r = opath + ".EMposterior";
 	std::ofstream ofile_r( opath_r.c_str() );
-	for( n = 0; n < seqN_; n++ ){
-		Sequence seq = posSeqs_[n];
-		L = seq.getL();
+	for( n = 0; n < posSetN_; n++ ){
+		L = posSeqs_[n].getL();
 		for( i = 0; i <= L; i++ )
 			ofile_r << std::scientific << r_[n][i] << '\t';
 		ofile_r << std::endl;
