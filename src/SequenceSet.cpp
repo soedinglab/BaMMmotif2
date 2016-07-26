@@ -21,6 +21,7 @@ SequenceSet::SequenceSet( char* sequenceFilepath, char* intensityFilepath ){
 	sequenceFilepath_ = sequenceFilepath;
 	intensityFilepath_ = intensityFilepath;
 	baseFrequencies_ = new float[Alphabet::getSize()];
+//	sequences_ = ( Sequence* )calloc( 5000, sizeof( Sequence ) );
 
 	readFASTA();
 
@@ -207,21 +208,20 @@ int SequenceSet::readFASTA(){
 	std::string sequence;
 
 	int maxL = 0, minL = 1000;									// initialize the min. and max. length
+	int N = 0;													// count sequences
+	int i;
 	unsigned int* baseCounts = new unsigned int[Alphabet::getSize()];
-	for( int i = 0; i < Alphabet::getSize(); i++ )
+	for( i = 0; i < Alphabet::getSize(); i++ )
 		baseCounts[i] = 0;
-
-	int N = 0;
 
 	if( seqfile ){
 		while( getline( seqfile, line ).good() ){
 			if( line.empty() || line[0] == '>' ){
 				if( !header.empty() ){
-					N++;
 					int L = ( int )sequence.length();
 					uint8_t* encodeSeq = new uint8_t[L];
 
-					for( int i = 0; i < L; i++ ){
+					for( i = 0; i < L; i++ ){
 						encodeSeq[i] = Alphabet::getCode( sequence[i] );
 						if( encodeSeq[i] == 0 ){
 							fprintf( stderr, "Warning: The FASTA file contains other alphabet(s) "
@@ -238,6 +238,8 @@ int SequenceSet::readFASTA(){
 						maxL = L;
 					if ( L < minL )
 						minL = L;
+
+					N++;
 
 					sequence.clear();
 					header.clear();
@@ -259,7 +261,6 @@ int SequenceSet::readFASTA(){
 			}
 		}
 		if( !header.empty() ){									// for the last entry if no new line follows by
-			N++;
 			int L = ( int )sequence.length();
 			uint8_t* encodeSeq = new uint8_t[L];
 			for( int i = 0; i < L; i++ ){
@@ -278,6 +279,9 @@ int SequenceSet::readFASTA(){
 				maxL = L;
 			if ( L < minL )
 				minL = L;
+
+			N++;
+
 			sequence.clear();
 			header.clear();
 			delete []encodeSeq;
@@ -298,10 +302,10 @@ int SequenceSet::readFASTA(){
 	N_ = N;
 
 	unsigned int baseSumCount = 0;
-	for( int i = 0; i < Alphabet::getSize(); i++ )				// Calculate the sum of all mono-nucleotides
+	for( i = 0; i < Alphabet::getSize(); i++ )				// Calculate the sum of all mono-nucleotides
 		baseSumCount += baseCounts[i];
 
-	for( int i = 0; i < Alphabet::getSize(); i++ )				// Calculate the frequencies of all mono-nucleotides
+	for( i = 0; i < Alphabet::getSize(); i++ )				// Calculate the frequencies of all mono-nucleotides
 		baseFrequencies_[i] = ( float )baseCounts[i] / ( float )baseSumCount;
 
 	delete []baseCounts;

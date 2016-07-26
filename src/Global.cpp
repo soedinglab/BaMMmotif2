@@ -72,10 +72,12 @@ void Global::init( int nargs, char* args[] ){
 	if( negSequenceFilename == NULL )						// use positive for negative sequence set
 //		negSequenceSet = new SequenceSet( posSequenceFilename );
 		negSequenceSet = new SequenceSet( *posSequenceSet );
+//		negSequenceSet = posSequenceSet;
 	else													// read in negative sequence set
 		negSequenceSet = new SequenceSet( negSequenceFilename );
 
 	if( verbose ){
+		// print out profile for positive sequence set
 		std::cout << "For positive set:	" << posSequenceSet->getN() << " sequences. "
 				"max.length: " << posSequenceSet->getMaxL() << ", min.length: " <<
 				posSequenceSet->getMinL() << std::endl << "			base frequencies: " ;
@@ -84,13 +86,16 @@ void Global::init( int nargs, char* args[] ){
 			          << " " << posSequenceSet->getBaseFrequencies()[i] << ", ";
 		std::cout << std::endl;
 
-		std::cout << "For negative set:	" << negSequenceSet->getN() << " sequences. "
-				"max.length: " << negSequenceSet->getMaxL() << ", min.length: " <<
-				negSequenceSet->getMinL() << std::endl << "			base frequencies: " ;
-		for( int i = 0; i < Alphabet::getSize(); i++ )
-			std::cout << std::scientific << Alphabet::getAlphabet()[i]
-			          << " " << negSequenceSet->getBaseFrequencies()[i] << ", ";
-		std::cout << std::endl;
+		// print out profile for positive sequence set
+		if( negSequenceFilename ){
+			std::cout << "For negative set:	" << negSequenceSet->getN() << " sequences. "
+					"max.length: " << negSequenceSet->getMaxL() << ", min.length: " <<
+					negSequenceSet->getMinL() << std::endl << "			base frequencies: " ;
+			for( int i = 0; i < Alphabet::getSize(); i++ )
+				std::cout << std::scientific << Alphabet::getAlphabet()[i]
+						  << " " << negSequenceSet->getBaseFrequencies()[i] << ", ";
+			std::cout << std::endl;
+		}
 	}
 
 	// generate folds (fill posFoldIndices and negFoldIndices)
@@ -109,6 +114,9 @@ void Global::init( int nargs, char* args[] ){
 int Global::readArguments( int nargs, char* args[] ){
 
 	/*
+	 * read command line to get options
+	 * process flags from user
+	 *
 	 * Process input arguments:
 	 * 1. Essential parameters:
 	 * 		* output directory: the first argument
@@ -144,11 +152,6 @@ int Global::readArguments( int nargs, char* args[] ){
 	// read in the positive sequence file
 	posSequenceFilename = args[2];
 	posSequenceBasename = baseName( posSequenceFilename );
-
-	/**
-	 * read command line to get options
-	 * process flags from user
-	 */
 
 	GetOpt::GetOpt_pp opt( nargs, args );
 

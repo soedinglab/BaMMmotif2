@@ -16,6 +16,9 @@
 
 class SequenceSet {
 
+friend class Sequence;
+friend class EM;
+
 public:
 
 	SequenceSet( char* sequenceFilepath, char* intensityFilepath = NULL );
@@ -24,6 +27,7 @@ public:
 	char* 					getSequenceFilepath();	            // get input sequence filename
 	char* 					getIntensityFilepath();             // get input intensity filename
 	std::vector<Sequence> 	getSequences();			            // get sequences
+//	Sequence*			 	getSequences();			            // get sequences
 	int 					getN();					            // get number of sequences
 	unsigned int 			getMinL();				            // get min. length of sequences
 	unsigned int			getMaxL();				            // get max. length of sequences
@@ -34,6 +38,7 @@ private:
 	char*					sequenceFilepath_;		            // input sequence filename
 	char*					intensityFilepath_;		            // input intensity filename
 	std::vector<Sequence>	sequences_;							// sequences
+//	Sequence*				sequences_;							// sequences
 	int 					N_;						            // number of sequences
 	unsigned int 			minL_;					            // min. length of sequences
 	unsigned int 			maxL_;					            // max. length of sequences

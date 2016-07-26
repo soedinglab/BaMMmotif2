@@ -49,10 +49,8 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*************************\n" );
 
 	for( int N = 0; N < motifs->getN(); N++ ){
-		long timestampEM = time( NULL );
 		EM em( motifs->getMotifs()[0], bgModel );
 		em.learnMotif();
-		fprintf( stdout, "\n--- Runtime for EM: %ld seconds.\n", time( NULL )-timestampEM );
 		em.write();
 	}
 
