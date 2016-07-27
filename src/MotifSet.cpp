@@ -106,7 +106,7 @@ void MotifSet::write(){
 		for( j = 0; j < W; j++ ){
 			for( k = 0; k < Global::modelOrder+1; k++ ){
 				for( y = 0; y < Global::powA[k+1]; y++ )
-					ofile << std::scientific << std::setprecision(8) << v_motif[k][y][j] << '\t';
+					ofile << std::scientific << std::setprecision(8) << v_motif[k][y][j] << ' ';
 				ofile << std::endl;
 			}
 			ofile << std::endl;

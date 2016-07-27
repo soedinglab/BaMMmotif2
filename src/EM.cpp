@@ -30,12 +30,16 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
     for( n = 0; n < posSetN_; n++ )
     	r_[n] = ( float* )calloc( posSeqs_[n].getL()+1, sizeof( float ) );
 
-    // allocate memory for n_[k][y][j] and initialize it
+    // allocate memory for n_[k][y][j] and p_[k][y][j] and initialize them
 	n_ = ( float*** )calloc( K_+1, sizeof( float** ) );
+	p_ = ( float*** )calloc( K_+1, sizeof( float** ) );
 	for( k = 0; k < K_+1; k++ ){
 		n_[k] = ( float** )calloc( Global::powA[k+1], sizeof( float* ) );
-		for( y = 0; y < Global::powA[k+1]; y++ )
+		p_[k] = ( float** )calloc( Global::powA[k+1], sizeof( float* ) );
+		for( y = 0; y < Global::powA[k+1]; y++ ){
 			n_[k][y] = ( float* )calloc( W_, sizeof( float ) );
+			p_[k][y] = ( float* )calloc( W_, sizeof( float ) );
+		}
 	}
 
 	// allocate memory for alpha_[k][j] and initialize it
@@ -45,7 +49,6 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 		for( j = 0; j < W_; j++ )										// initialize alpha_ with global alpha
 			alpha_[k][j] = Global::modelAlpha[k];
 	}
-
 }
 
 EM::~EM(){
@@ -60,11 +63,15 @@ EM::~EM(){
 	free( r_ );
 
 	for( k = 0; k < K_+1; k++ ){
-		for( y = 0; y < Global::powA[k+1]; y++ )
+		for( y = 0; y < Global::powA[k+1]; y++ ){
 			free( n_[k][y] );
+			free( p_[k][y] );
+		}
 		free( n_[k] );
+		free( p_[k] );
 	}
 	free( n_ );
+	free( p_ );
 
 	for( k = 0; k < K_+1; k++ )
 		free( alpha_[k] );
@@ -82,7 +89,7 @@ int EM::learnMotif(){
 			"|______|\n\n" );
 
 	bool iterate = true;												// flag for iterating before convergence
-	int y, j;
+	int k, y, j, y2, yk;
 	float v_diff, likelihood_prior, likelihood_diff;
 	float** v_prior;													// hold the parameters before EM
 
@@ -146,6 +153,23 @@ int EM::learnMotif(){
 
 //	if( Global::verbose ) print();
 
+	// for calculating probabilities using PWM
+	// when k = 0
+	for( j = 0; j < W_; j++ )
+		for( y = 0; y < Global::powA[1]; y++ )
+			p_[0][y][j] = v_motif_[0][y][j];
+
+	// when k > 0
+	for( k = 1; k < K_+1; k++){
+		for( y = 0; y < Global::powA[k+1]; y++ ){
+			y2 = y % Global::powA[k];						// cut off the first nucleotide in (k+1)-mer
+			yk = y / Global::powA[1];						// cut off the last nucleotide in (k+1)-mer
+			for( j = 0; j < k; j++ )
+				p_[k][y][j] = p_[k-1][y2][j];				// i.e. p(ACG) = p(CG)
+			for( j = k; j < W_; j++ )
+				p_[k][y][j] =  v_motif_[k][y][j] * p_[k-1][yk][j-1];
+		}
+	}
 	// free memory
 	for( y = 0; y < Global::powA[K_+1]; y++ )
 		free( v_prior[y] );
@@ -318,11 +342,12 @@ void EM::write(){
 
 	/**
 	 * save EM parameters in five flat files:
-	 * (1) posSequenceBasename.conds: 	conditional probabilities
-	 * (2) posSequenceBasename.EMcounts:	refined counts of (k+1)-mers
-	 * (3) posSequenceBasename.EMposterior: responsibilities, posterior distributions
-	 * (4) posSequenceBasename.EMalpha:		hyper-parameter alphas
-	 * (5) posSequenceBasename.EMlogOdds:	log odds scores
+	 * (1) posSequenceBasename.conds: 		conditional probabilities
+	 * (2) posSequenceBasename.probs: 		probabilities
+	 * (3) posSequenceBasename.EMcounts:	refined counts of (k+1)-mers
+	 * (4) posSequenceBasename.EMposterior: responsibilities, posterior distributions
+	 * (5) posSequenceBasename.EMalpha:		hyper-parameter alphas
+	 * (6) posSequenceBasename.EMlogOdds:	log odds scores
 	 */
 
 	int k, y, j, n, i, L;
@@ -332,19 +357,24 @@ void EM::write(){
 
 	// output conditional probabilities v[k][y][j] and (k+1)-mer counts n[k][y][j]
 	std::string opath_v = opath + ".conds";
+	std::string opath_p = opath + ".probs";
 	std::string opath_n = opath + ".EMcounts";
 	std::ofstream ofile_v( opath_v.c_str() );
+	std::ofstream ofile_p( opath_p.c_str() );
 	std::ofstream ofile_n( opath_n.c_str() );
 	for( j = 0; j < W_; j++ ){
 		for( k = 0; k < K_+1; k++ ){
 			for( y = 0; y < Global::powA[k+1]; y++ ){
-				ofile_v << std::scientific << v_motif_[k][y][j] << '\t';
-				ofile_n << std::scientific << n_[k][y][j] << '\t';
+				ofile_v << std::scientific << std::setprecision(8) << v_motif_[k][y][j] << ' ';
+				ofile_p << std::scientific << std::setprecision(8) << p_[k][y][j] << ' ';
+				ofile_n << std::scientific << n_[k][y][j] << ' ';
 			}
 			ofile_v << std::endl;
+			ofile_p << std::endl;
 			ofile_n << std::endl;
 		}
 		ofile_v << std::endl;
+		ofile_p << std::endl;
 		ofile_n << std::endl;
 	}
 
@@ -354,7 +384,7 @@ void EM::write(){
 	for( n = 0; n < posSetN_; n++ ){
 		L = posSeqs_[n].getL();
 		for( i = 0; i <= L; i++ )
-			ofile_r << std::scientific << r_[n][i] << '\t';
+			ofile_r << std::scientific << r_[n][i] << ' ';
 		ofile_r << std::endl;
 	}
 
@@ -364,7 +394,7 @@ void EM::write(){
 	for( k = 0; k < K_+1; k++ ){
 		ofile_alpha << "k = " << k << std::endl;
 		for( j = 0; j < W_; j++ )
-			ofile_alpha << std::scientific << alpha_[k][j] << '\t';
+			ofile_alpha << std::scientific << alpha_[k][j] << ' ';
 		ofile_alpha << std::endl;
 	}
 
@@ -373,7 +403,7 @@ void EM::write(){
 	std::ofstream ofile_s( opath_s.c_str() );
 	for( y = 0; y < Global::powA[K_+1]; y++ ){
 		for( j = 0; j < W_; j++ )
-			ofile_s << std::fixed << std::setprecision(6) << s_[y][j] << '\t';
+			ofile_s << std::fixed << std::setprecision(6) << s_[y][j] << ' ';
 		ofile_s << std::endl;
 	}
 }
