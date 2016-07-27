@@ -39,10 +39,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/administrator/workspace/bammmotif_development
+CMAKE_SOURCE_DIR = /home/wanwan/projectspace/bammmotif_development
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/administrator/workspace/bammmotif_development/build
+CMAKE_BINARY_DIR = /home/wanwan/projectspace/bammmotif_development/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -69,9 +69,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/administrator/workspace/bammmotif_development/build/CMakeFiles /home/administrator/workspace/bammmotif_development/build/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/wanwan/projectspace/bammmotif_development/build/CMakeFiles /home/wanwan/projectspace/bammmotif_development/build/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/administrator/workspace/bammmotif_development/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/wanwan/projectspace/bammmotif_development/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -327,29 +327,29 @@ src/SequenceSet.cpp.s:
 	$(MAKE) -f CMakeFiles/BaMMmotif.dir/build.make CMakeFiles/BaMMmotif.dir/src/SequenceSet.cpp.s
 .PHONY : src/SequenceSet.cpp.s
 
-src/lib/getopt_pp.o: src/lib/getopt_pp.cpp.o
-.PHONY : src/lib/getopt_pp.o
+src/getopt_pp/getopt_pp.o: src/getopt_pp/getopt_pp.cpp.o
+.PHONY : src/getopt_pp/getopt_pp.o
 
 # target to build an object file
-src/lib/getopt_pp.cpp.o:
-	$(MAKE) -f CMakeFiles/BaMMmotif.dir/build.make CMakeFiles/BaMMmotif.dir/src/lib/getopt_pp.cpp.o
-.PHONY : src/lib/getopt_pp.cpp.o
+src/getopt_pp/getopt_pp.cpp.o:
+	$(MAKE) -f CMakeFiles/BaMMmotif.dir/build.make CMakeFiles/BaMMmotif.dir/src/getopt_pp/getopt_pp.cpp.o
+.PHONY : src/getopt_pp/getopt_pp.cpp.o
 
-src/lib/getopt_pp.i: src/lib/getopt_pp.cpp.i
-.PHONY : src/lib/getopt_pp.i
+src/getopt_pp/getopt_pp.i: src/getopt_pp/getopt_pp.cpp.i
+.PHONY : src/getopt_pp/getopt_pp.i
 
 # target to preprocess a source file
-src/lib/getopt_pp.cpp.i:
-	$(MAKE) -f CMakeFiles/BaMMmotif.dir/build.make CMakeFiles/BaMMmotif.dir/src/lib/getopt_pp.cpp.i
-.PHONY : src/lib/getopt_pp.cpp.i
+src/getopt_pp/getopt_pp.cpp.i:
+	$(MAKE) -f CMakeFiles/BaMMmotif.dir/build.make CMakeFiles/BaMMmotif.dir/src/getopt_pp/getopt_pp.cpp.i
+.PHONY : src/getopt_pp/getopt_pp.cpp.i
 
-src/lib/getopt_pp.s: src/lib/getopt_pp.cpp.s
-.PHONY : src/lib/getopt_pp.s
+src/getopt_pp/getopt_pp.s: src/getopt_pp/getopt_pp.cpp.s
+.PHONY : src/getopt_pp/getopt_pp.s
 
 # target to generate assembly for a file
-src/lib/getopt_pp.cpp.s:
-	$(MAKE) -f CMakeFiles/BaMMmotif.dir/build.make CMakeFiles/BaMMmotif.dir/src/lib/getopt_pp.cpp.s
-.PHONY : src/lib/getopt_pp.cpp.s
+src/getopt_pp/getopt_pp.cpp.s:
+	$(MAKE) -f CMakeFiles/BaMMmotif.dir/build.make CMakeFiles/BaMMmotif.dir/src/getopt_pp/getopt_pp.cpp.s
+.PHONY : src/getopt_pp/getopt_pp.cpp.s
 
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
@@ -411,9 +411,9 @@ help:
 	@echo "... src/SequenceSet.o"
 	@echo "... src/SequenceSet.i"
 	@echo "... src/SequenceSet.s"
-	@echo "... src/lib/getopt_pp.o"
-	@echo "... src/lib/getopt_pp.i"
-	@echo "... src/lib/getopt_pp.s"
+	@echo "... src/getopt_pp/getopt_pp.o"
+	@echo "... src/getopt_pp/getopt_pp.i"
+	@echo "... src/getopt_pp/getopt_pp.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"

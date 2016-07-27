@@ -1,7 +1,1 @@
-#!/bin/bash
-
-###
-### This is a test bash script for BaMMmotif_development
-###
-
-./BaMMmotif /home/administrator/benchmark/test/benchmark /home/administrator/benchmark/test/test.fasta
+./BaMMmotif /home/wanwan/benchmark/JunD/order2_revcomp/BaMM_new /home/wanwan/benchmark/JunD/JunD.fasta --bindingSitesFile /home/wanwan/benchmark/JunD/motif_1.blocks --revcomp --verbose
