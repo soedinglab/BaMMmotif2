@@ -132,8 +132,9 @@ int EM::learnMotif(){
 
 		if( Global::verbose ){
 			std::cout << "At " << EMIterations_ << "th iteration:\n";
-			std::cout << "	- difference = " << v_diff << "\n";
+			std::cout << "	- parameter difference = " << v_diff << "\n";
 			std::cout << "	- likelihood = " << likelihood_;
+			std::cout << "	- likelihood difference = " << likelihood_diff;
 			if( likelihood_diff < 0 ) std::cout << " decreasing...";
 			std::cout << std::endl;
 		}
@@ -170,6 +171,7 @@ int EM::learnMotif(){
 				p_[k][y][j] =  v_motif_[k][y][j] * p_[k-1][yk][j-1];
 		}
 	}
+
 	// free memory
 	for( y = 0; y < Global::powA[K_+1]; y++ )
 		free( v_prior[y] );
@@ -254,11 +256,12 @@ void EM::EStep(){
 			normFactor += r_[n][i];
 		}
 
+		likelihood_ += normFactor / prior_i;
+
 		// when p(z_n = 0)
 		r_[n][0] = prior_0;
 		normFactor += r_[n][0];
-
-		likelihood_ += normFactor;
+		likelihood_ += 1;												// likelihood for z_n = 0 is 1
 
 		for( i = 0; i <= L; i++ )										// normalization
 			r_[n][i] /= normFactor;
