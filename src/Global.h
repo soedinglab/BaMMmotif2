@@ -89,6 +89,7 @@ public:
 	static int			ipow( unsigned int base, int exp );	// power function for integers
 	static int*			powA;								// sizes of alphabet to the power k
 
+	static bool			setSlow;							// develop with the slow EM version
 private:
 
 	static int	        readArguments( int nargs, char* args[] );

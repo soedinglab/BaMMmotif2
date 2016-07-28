@@ -76,24 +76,32 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*   Statistics   *\n" );
 	fprintf( stderr, "******************\n" );
 	std::cout << "Given alphabet type is " << Alphabet::getAlphabet();
-	std::cout << "\nGiven positive sequence set is " << Global::posSequenceBasename << "\n	" << Global::posSequenceSet->getN() << " sequences. "
-			"max.length: " << Global::posSequenceSet->getMaxL() << ", min.length: " <<
+	std::cout << "\nGiven positive sequence set is " << Global::posSequenceBasename
+			<< "\n	"<< Global::posSequenceSet->getN() << " sequences. max.length: " <<
+			Global::posSequenceSet->getMaxL() << ", min.length: " <<
 			Global::posSequenceSet->getMinL() << "\n	base frequencies:";
 	for( int i = 0; i < Alphabet::getSize(); i++ )
-		std::cout << ' ' << Global::posSequenceSet->getBaseFrequencies()[i] << "(" << Alphabet::getAlphabet()[i] << ")";
+		std::cout << ' ' << Global::posSequenceSet->getBaseFrequencies()[i]
+		          << "(" << Alphabet::getAlphabet()[i] << ")";
 	if( Global::negSequenceFilename ){
-		std::cout << "\nGiven negative sequence set is " << Global::negSequenceBasename << "\n	" << Global::negSequenceSet->getN() << " sequences. "
-				"max.length: " << Global::negSequenceSet->getMaxL() << ", min.length: " <<
+		std::cout << "\nGiven negative sequence set is " << Global::negSequenceBasename
+				<< "\n	"<< Global::negSequenceSet->getN() << " sequences. max.length: "
+				<< Global::negSequenceSet->getMaxL() << ", min.length: " <<
 				Global::negSequenceSet->getMinL() << "\n	base frequencies:";
 		for( int i = 0; i < Alphabet::getSize(); i++ )
-			std::cout << ' ' << Global::negSequenceSet->getBaseFrequencies()[i] << "(" << Alphabet::getAlphabet()[i] << ")";
+			std::cout << ' ' << Global::negSequenceSet->getBaseFrequencies()[i]
+			          << "(" << Alphabet::getAlphabet()[i] << ")";
 	} else
 		std::cout << "\nNone negative sequence set is given";
 	std::cout << "\nGiven initial model is " << Global::initialModelBasename;
 	std::cout << "\nGiven folds for FDR estimation: " << Global::cvFold;
+	if( Global::setSlow )
+		std::cout << "\n***** This is a slow EM version. *****";
+	else
+		std::cout << "\n***** This is a fast EM version. *****";
 
-	fprintf( stdout, "\n-------------- Runtime: %ld seconds (%0.2f minutes) --------------\n", time( NULL )-timestamp,
-			( float )( time( NULL )-timestamp )/60.0f );
+	fprintf( stdout, "\n-------------- Runtime: %ld seconds (%0.2f minutes) --------------\n",
+			time( NULL )-timestamp, ( float )( time( NULL )-timestamp )/60.0f );
 
 	// free memory
 	if( bgModel ) delete bgModel;

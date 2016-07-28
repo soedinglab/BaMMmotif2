@@ -27,9 +27,12 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 
     // allocate memory for r_[n][i] and initialize it
 	r_ = ( float** )calloc( posSetN_, sizeof( float* ) );
-    for( n = 0; n < posSetN_; n++ )
-    	r_[n] = ( float* )calloc( posSeqs_[n].getL()+1, sizeof( float ) );
-
+    for( n = 0; n < posSetN_; n++ ){
+    	if( Global::setSlow )
+    		r_[n] = ( float* )calloc( posSeqs_[n].getL()-W_+2, sizeof( float ) );
+    	else
+    		r_[n] = ( float* )calloc( posSeqs_[n].getL()+1, sizeof( float ) );
+    }
     // allocate memory for n_[k][y][j] and p_[k][y][j] and initialize them
 	n_ = ( float*** )calloc( K_+1, sizeof( float** ) );
 	p_ = ( float*** )calloc( K_+1, sizeof( float** ) );
@@ -90,7 +93,7 @@ int EM::learnMotif(){
 
 	bool iterate = true;												// flag for iterating before convergence
 	int k, y, j, y2, yk;
-	float v_diff, likelihood_prior, likelihood_diff;
+	float v_diff, llikelihood_prior, llikelihood_diff;
 	float** v_prior;													// hold the parameters before EM
 
 	// allocate memory for prior and posterior parameters v[y][j] with the highest order
@@ -107,7 +110,7 @@ int EM::learnMotif(){
 		for( y = 0; y < Global::powA[K_+1]; y++ )
 			for( j = 0; j < W_; j++ )
 				v_prior[y][j] = v_motif_[K_][y][j];
-		likelihood_prior = likelihood_;
+		llikelihood_prior = llikelihood_ ;
 
 		// E-step: calculate posterior
 		EStep();
@@ -122,20 +125,18 @@ int EM::learnMotif(){
 		if( !Global::noQOptimization )		optimizeQ();
 
 		// * check likelihood for convergence
-
 		v_diff = 0.0f;													// reset difference of posterior probabilities
 		for( y = 0; y < Global::powA[K_+1]; y++ )
 			for( j = 0; j < W_; j++ )
-				v_diff += fabs( v_motif_[K_][y][j] - v_prior[y][j] );
-
-		likelihood_diff = likelihood_ - likelihood_prior;
+				v_diff += fabsf( v_motif_[K_][y][j] - v_prior[y][j] );
+		llikelihood_diff = llikelihood_ - llikelihood_prior;
 
 		if( Global::verbose ){
 			std::cout << "At " << EMIterations_ << "th iteration:\n";
 			std::cout << "	- parameter difference = " << v_diff << "\n";
-			std::cout << "	- likelihood = " << likelihood_;
-			std::cout << "	- likelihood difference = " << likelihood_diff;
-			if( likelihood_diff < 0 ) std::cout << " decreasing...";
+			std::cout << "	- log likelihood = " << llikelihood_ << "\n";
+			std::cout << "	- log likelihood difference = " << llikelihood_diff;
+			if( llikelihood_diff < 0 ) std::cout << " decreasing...";
 			std::cout << std::endl;
 		}
 
@@ -154,19 +155,19 @@ int EM::learnMotif(){
 
 //	if( Global::verbose ) print();
 
-	// for calculating probabilities using PWM
-	// when k = 0
+	// for calculating probabilities, i.e. p(ACG) = p(G|AC) * p(AC)
+	// when k = 0:
 	for( j = 0; j < W_; j++ )
 		for( y = 0; y < Global::powA[1]; y++ )
 			p_[0][y][j] = v_motif_[0][y][j];
 
-	// when k > 0
+	// when k > 0:
 	for( k = 1; k < K_+1; k++){
 		for( y = 0; y < Global::powA[k+1]; y++ ){
-			y2 = y % Global::powA[k];						// cut off the first nucleotide in (k+1)-mer
-			yk = y / Global::powA[1];						// cut off the last nucleotide in (k+1)-mer
+			y2 = y % Global::powA[k];									// cut off the first nucleotide in (k+1)-mer
+			yk = y / Global::powA[1];									// cut off the last nucleotide in (k+1)-mer
 			for( j = 0; j < k; j++ )
-				p_[k][y][j] = p_[k-1][y2][j];				// i.e. p(ACG) = p(CG)
+				p_[k][y][j] = p_[k-1][y2][j];							// i.e. p(ACG) = p(CG)
 			for( j = k; j < W_; j++ )
 				p_[k][y][j] =  v_motif_[k][y][j] * p_[k-1][yk][j-1];
 		}
@@ -182,95 +183,92 @@ int EM::learnMotif(){
 
 void EM::EStep(){
 
-	int L, y, j, y3, n, i;
+	int L, LW1, y, j, y3, n, i;
 	float prior_i;														// positional preference prior state for p(z_n = i), motif present
 	float prior_0 = 1 - q_;												// positional preference prior state for p(z_n = 0), no motif present
 	float normFactor;													// normalize responsibilities r[n][i]
-	likelihood_ = 0.0f;													// reset likelihood
+	llikelihood_ = 0.0f;												// reset log likelihood
 
 	// compute log odd scores s[y][j], log likelihoods with the highest order K
 	for( y = 0; y < Global::powA[K_+1]; y++ ){
 		for( j = 0; j < W_; j++ ){
 			if( K_ <= 2 ){
-				s_[y][j] = log( v_motif_[K_][y][j]
+				s_[y][j] = logf( v_motif_[K_][y][j]
 				              / v_bg_[K_][y] );
 			} else {
 				y3 = y % Global::powA[3];								// 3 rightmost nucleotides in (k+1)-mer y
-				s_[y][j] = log( v_motif_[K_][y][j]
+				s_[y][j] = logf( v_motif_[K_][y][j]
 				              / v_bg_[k_bg_][y3] );
 			}
 		}
 	}
 
 	// calculate responsibilities r_[n][i] at position i in sequence n
+	if( Global::setSlow ){
+		// slow code:
+		for( n = 0; n < posSetN_; n++ ){									// n runs over all sequences
+			L = posSeqs_[n].getL();
+			LW1 = L - W_ + 1;
+			normFactor = 0.0f;												// reset normalization factor
 
-//	// slow code:
-//	for( n = 0; n < Global::posSequenceSet->getN(); n++ ){				// n runs over all sequences
-//
-//		Sequence seq = Global::posSequenceSet->getSequences()[n];
-//		LW1 = seq.getL() - W_ + 1;
-//		normFactor = 0.0f;												// reset normalization factor
-//
-//		// when p(z_n = 0)
-//		r_[n][0] = prior_0;
-//		normFactor += r_[n][0];
-//
-//		// when p(z_n > 0)
-//		prior_i = q_ / LW1;												// p(z_n = i), i > 0
-//		for( i = 1; i <= LW1; i++ ){
-//			for( j = 0; j < W_; j++ ){
-//				y = seq.extractKmer( i+j-1, ( j < K_ ) ? j : K_ );
-//				if( y != -1 )											// skip 'N' and other unknown alphabets
-//					r_[n][i] += s_[y][j];
-//				else
-//					break;
-//			}
-//			likelihood_ += exp( r_[n][i] );
-//			r_[n][i] = exp( r_[n][i] ) * prior_i;
-//			normFactor += r_[n][i];
-//		}
-//
-//		// responsibility normalization
-//		for( i = 0; i <= LW1; i++ )
-//			r_[n][i] /= normFactor;
-//	}
+			// when p(z_n > 0)
+			prior_i = q_ / ( float )LW1;									// p(z_n = i), i > 0
+			for( i = 1; i <= LW1; i++ ){
+				for( j = 0; j < W_; j++ ){
+					y = posSeqs_[n].extractKmer( i+j-1, ( j < K_ ) ? j : K_ );
+					if( y != -1 )											// skip 'N' and other unknown alphabets
+						r_[n][i] += s_[y][j];
+					else
+						break;
+				}
+				llikelihood_ += expf( r_[n][i] );
+				r_[n][i] = expf( r_[n][i] ) * prior_i;
+				normFactor += r_[n][i];
+			}
 
-	// fast code:
-	for( n = 0; n < posSetN_; n++ ){									// n runs over all sequences
-		L = posSeqs_[n].getL();
-		normFactor = 0.0f;
-		prior_i = q_ / ( L - W_ + 1 );
+			// when p(z_n = 0)
+			r_[n][0] = prior_0;
+			normFactor += r_[n][0];
 
-		// when p(z_n > 0)
-		for( i = 0; i < L; i++ ){										// i runs over all nucleotides in sequence
-			y = posSeqs_[n].extractKmer( i, ( i < K_ ) ? i : K_ );		// extract (k+1)-mer y from positions (i-k,...,i)
-			for( j = 0; j < ( ( W_ < i ) ? W_ : i ); j++ )				// j runs over all motif positions
-				if( y != -1 )											// skip 'N' and other unknown alphabets
-					r_[n][L-i+j] += s_[y][j];
-				else
-					break;
+			for( i = 0; i <= LW1; i++ )										// responsibility normalization
+				r_[n][i] /= normFactor;
 		}
+	} else {
+		// fast code:
+		for( n = 0; n < posSetN_; n++ ){									// n runs over all sequences
+			L = posSeqs_[n].getL();
+			LW1 = L - W_ + 1;
+			normFactor = 0.0f;												// reset normalization factor
 
-		for( i = 1; i <= L; i++ ){
-			r_[n][i] = exp( r_[n][i] ) * prior_i;
-			normFactor += r_[n][i];
+			// when p(z_n > 0)
+			prior_i = q_ / ( float )LW1;									// p(z_n = i), i > 0
+			for( i = 0; i < L; i++ ){										// i runs over all nucleotides in sequence
+				y = posSeqs_[n].extractKmer( i, ( i < K_ ) ? i : K_ );		// extract (k+1)-mer y from positions (i-k,...,i)
+				for( j = 0; j < ( ( W_ < i ) ? W_ : i ); j++ )				// j runs over all motif positions
+					if( y != -1 )											// skip 'N' and other unknown alphabets
+						r_[n][L-i+j] += s_[y][j];
+					else
+						break;
+			}
+			for( i = 1; i <= L; i++ ){
+				llikelihood_ += expf( r_[n][i] );
+				r_[n][i] = expf( r_[n][i] ) * prior_i;
+				normFactor += r_[n][i];
+			}
+
+			// when p(z_n = 0)
+			r_[n][0] = prior_0;
+			normFactor += r_[n][0];
+
+			for( i = 0; i <= L; i++ )										// responsibility normalization
+				r_[n][i] /= normFactor;
 		}
-
-		likelihood_ += normFactor / prior_i;
-
-		// when p(z_n = 0)
-		r_[n][0] = prior_0;
-		normFactor += r_[n][0];
-		likelihood_ += 1;												// likelihood for z_n = 0 is 1
-
-		for( i = 0; i <= L; i++ )										// normalization
-			r_[n][i] /= normFactor;
 	}
 }
 
 void EM::MStep(){
 
-	int L, k, y, y2, j, n, i;
+	int L, LW1, k, y, y2, j, n, i;
 
 	// reset the fractional counts n
 	for( k = 0; k < K_+1; k++ )
@@ -279,31 +277,33 @@ void EM::MStep(){
 				n_[k][y][j] = 0.0f;
 
 	// compute fractional occurrence counts for the highest order K
-	// slow code:
-//	for( n = 0; n < Global::posSequenceSet->getN(); n++ ){				// n runs over all sequences
-//		Sequence seq = Global::posSequenceSet->getSequences()[n];
-//		LW1 = seq.getL() - W_ + 1;
-//		for( i = 1; i <= LW1; i++ ){									// i runs over all nucleotides in sequence
-//			for( j = 0; j < W_; j++ ){									// j runs over all motif positions
-//				y = seq.extractKmer( i+j-1, ( j < K_ ) ? j : K_ );		// extract (k+1)-mer y
-//				if( y != -1 )											// skip 'N' and other unknown alphabets
-//					n_[K_][y][j] += r_[n][i];
-//				else
-//					break;
-//			}
-//		}
-//	}
-
-	// fast code:
-	for( n = 0; n < posSetN_; n++ ){										// n runs over all sequences
-		L = posSeqs_[n].getL();
-		for( i = 0; i < L; i++ ){
-			y = posSeqs_[n].extractKmer( i, ( i < K_ ) ? i : K_ );
-			for( j = 0; j < ( ( W_ < i ) ? W_ : i ); j++ )
-				if( y != -1 )											// skip 'N' and other unknown alphabets
-					n_[K_][y][j] += r_[n][L-i+j];
-				else
-					break;
+	if( Global::setSlow ){
+		// slow code:
+		for( n = 0; n < posSetN_; n++ ){								// n runs over all sequences
+			L = posSeqs_[n].getL();
+			LW1 = L - W_ + 1;
+			for( i = 1; i <= LW1; i++ ){								// i runs over all nucleotides in sequence
+				for( j = 0; j < W_; j++ ){								// j runs over all motif positions
+					y = posSeqs_[n].extractKmer( i+j-1, ( j < K_ ) ? j : K_ );	// extract (k+1)-mer y
+					if( y != -1 )										// skip 'N' and other unknown alphabets
+						n_[K_][y][j] += r_[n][i];
+					else
+						break;
+				}
+			}
+		}
+	} else {
+		// fast code:
+		for( n = 0; n < posSetN_; n++ ){								// n runs over all sequences
+			L = posSeqs_[n].getL();
+			for( i = 0; i < L; i++ ){
+				y = posSeqs_[n].extractKmer( i, ( i < K_ ) ? i : K_ );
+				for( j = 0; j < ( ( W_ < i ) ? W_ : i ); j++ )
+					if( y != -1 )										// skip 'N' and other unknown alphabets
+						n_[K_][y][j] += r_[n][L-i+j];
+					else
+						break;
+			}
 		}
 	}
 

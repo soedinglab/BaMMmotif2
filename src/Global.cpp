@@ -56,6 +56,7 @@ std::vector< std::vector<int> > Global::negFoldIndices; 	// sequence indices for
 // further FDR options...
 
 bool                Global::verbose = false;            	// verbose printouts
+bool				Global::setSlow = false;				// develop with the slow EM version
 
 int* 				Global::powA = NULL;
 
@@ -195,7 +196,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::Option( 'A', "bgModelAlpha", bgModelAlpha );
 
 	// em options
-	opt >> GetOpt::Option( "maxEMIterations",  maxEMIterations );
+	opt >> GetOpt::Option( "maxEMIterations", maxEMIterations );
 	opt >> GetOpt::Option( "epsilon", epsilon );
 	opt >> GetOpt::OptionPresent( "noAlphaOptimization", noAlphaOptimization );
 	opt >> GetOpt::OptionPresent( "noQOptimization", noQOptimization );
@@ -208,6 +209,12 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	opt >> GetOpt::OptionPresent( "verbose", verbose );
 
+	opt >> GetOpt::OptionPresent( "setSlow", setSlow );			// to be deleted when release
+
+	if( opt.options_remain() ){
+		std::cerr << "Warning: Unknown options remaining..." << std::endl;
+		return false;
+	}
 	return 0;
 }
 

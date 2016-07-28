@@ -39,7 +39,7 @@ private:
 	float** 				alpha_;	        	// pseudo-count hyper-parameter for order k and motif position j
 	float 					q_ = 0.9f; 			// hyper-parameter q specifies the fraction of sequences containing motif
 
-	float 					likelihood_ = 0;	// value of Q function for current parameters
+	float 					llikelihood_ = 0.0f;// log likelihood for each EM iteration
 	unsigned int 			EMIterations_ = 0;  // counter for EM iterations
 
 	int						posSetN_ = Global::posSequenceSet->getN();
