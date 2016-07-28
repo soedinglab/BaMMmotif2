@@ -85,11 +85,9 @@ int	Sequence::extractKmer( int i, int k ){
 	 *  extracted y:	0	1	2	3|	0	1	2	3	4	5	6	7	8	9	10	11	12	13	14	15|	0	1	2	3	...
 	 */
 
-	int y = 0;
-	for( int n = k; n >= 0; n-- ){
-		if( (i-n) < 0 )									// when i < k, pick a random base for the offsets
-			y += ( rand() % Alphabet::getSize() ) * Global::powA[n];
-		else if( sequence_[i-n] > 0 )
+	int n, y = 0;
+	for( n = k; n >= 0; n-- ){
+		if( sequence_[i-n] > 0 )
 			y += ( sequence_[i-n] -1 ) * Global::powA[n];
 		else {
 			y = -1;										// for unknown alphabets, set y to -1
