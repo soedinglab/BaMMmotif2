@@ -9,7 +9,7 @@
 #include <stdio.h>
 
 #include "Global.h"
-#include "BackgroundModel.h"
+#include "../shared/BackgroundModel.h"
 #include "MotifSet.h"
 #include "EM.h"
 #include "FDR.h"

@@ -8,7 +8,12 @@
 #ifndef BACKGROUNDMODEL_H_
 #define BACKGROUNDMODEL_H_
 
-#include "Global.h"
+#ifndef VIRUS_X_
+#include "../bamm/Global.h"
+#else
+#include "../virusX/Global.h"
+#endif
+
 #include "SequenceSet.h"
 
 class BackgroundModel {

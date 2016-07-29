@@ -8,7 +8,7 @@
 #ifndef EM_H_
 #define EM_H_
 
-#include "BackgroundModel.h"
+#include "../shared/BackgroundModel.h"
 #include "MotifSet.h"
 
 class EM {

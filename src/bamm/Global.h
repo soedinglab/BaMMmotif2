@@ -23,9 +23,9 @@
 #include <string.h>
 #include <math.h>
 
-#include "SequenceSet.h"
-#include "Alphabet.h"
-#include "getopt_pp/getopt_pp.h"							// GetOpt function
+#include "../shared/SequenceSet.h"
+#include "../shared/Alphabet.h"
+#include "../getopt_pp/getopt_pp.h"							// GetOpt function
 
 class Global{
 

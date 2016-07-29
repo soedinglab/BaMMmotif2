@@ -9,7 +9,13 @@
 #include <array>
 
 #include "Sequence.h"
-#include "Global.h"
+
+#ifndef VIRUS_X_
+#include "../bamm/Global.h"
+#else
+#include "../virusX/Global.h"
+#endif
+
 #include "Alphabet.h"
 
 Sequence::Sequence( uint8_t* sequence, int L, std::string header ){

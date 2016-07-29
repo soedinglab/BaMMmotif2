@@ -9,7 +9,7 @@
 #ifndef FDR_H_
 #define FDR_H_
 
-#include "BackgroundModel.h"
+#include "../shared/BackgroundModel.h"
 #include "Motif.h"
 #include "EM.h"
 

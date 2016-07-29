@@ -11,7 +11,7 @@
 #include <assert.h>
 
 #include "Global.h"
-#include "BackgroundModel.h"
+#include "../shared/BackgroundModel.h"
 
 class Motif {
 
