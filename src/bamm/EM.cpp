@@ -110,7 +110,7 @@ int EM::learnMotif(){
 		for( y = 0; y < Global::powA[K_+1]; y++ )
 			for( j = 0; j < W_; j++ )
 				v_prior[y][j] = v_motif_[K_][y][j];
-		llikelihood_prior = llikelihood_ ;
+		llikelihood_prior = llikelihood_;
 
 		// E-step: calculate posterior
 		EStep();
@@ -193,12 +193,10 @@ void EM::EStep(){
 	for( y = 0; y < Global::powA[K_+1]; y++ ){
 		for( j = 0; j < W_; j++ ){
 			if( K_ <= 2 ){
-				s_[y][j] = logf( v_motif_[K_][y][j]
-				              / v_bg_[K_][y] );
+				s_[y][j] = logf( v_motif_[K_][y][j] ) - logf( v_bg_[K_][y] );
 			} else {
 				y3 = y % Global::powA[3];								// 3 rightmost nucleotides in (k+1)-mer y
-				s_[y][j] = logf( v_motif_[K_][y][j]
-				              / v_bg_[k_bg_][y3] );
+				s_[y][j] = logf( v_motif_[K_][y][j] ) - logf( v_bg_[k_bg_][y3] );
 			}
 		}
 	}
@@ -206,17 +204,18 @@ void EM::EStep(){
 	// calculate responsibilities r_[n][i] at position i in sequence n
 	if( Global::setSlow ){
 		// slow code:
-		for( n = 0; n < posSetN_; n++ ){									// n runs over all sequences
+		for( n = 0; n < posSetN_; n++ ){								// n runs over all sequences
 			L = posSeqs_[n].getL();
 			LW1 = L - W_ + 1;
-			normFactor = 0.0f;												// reset normalization factor
+			normFactor = 0.0f;											// reset normalization factor
 
 			// when p(z_n > 0)
-			prior_i = q_ / ( float )LW1;									// p(z_n = i), i > 0
+			prior_i = q_ / ( float )LW1;								// p(z_n = i), i > 0
 			for( i = 1; i <= LW1; i++ ){
+				r_[n][i] = 0.0f;										// reset r_[n][i]
 				for( j = 0; j < W_; j++ ){
 					y = posSeqs_[n].extractKmer( i+j-1, ( j < K_ ) ? j : K_ );
-					if( y != -1 )											// skip 'N' and other unknown alphabets
+					if( y != -1 )										// skip 'N' and other unknown alphabets
 						r_[n][i] += s_[y][j];
 					else
 						break;
@@ -230,22 +229,26 @@ void EM::EStep(){
 			r_[n][0] = prior_0;
 			normFactor += r_[n][0];
 
-			for( i = 0; i <= LW1; i++ )										// responsibility normalization
+			for( i = 0; i <= LW1; i++ )									// responsibility normalization
 				r_[n][i] /= normFactor;
 		}
 	} else {
 		// fast code:
-		for( n = 0; n < posSetN_; n++ ){									// n runs over all sequences
+		for( n = 0; n < posSetN_; n++ ){								// n runs over all sequences
 			L = posSeqs_[n].getL();
 			LW1 = L - W_ + 1;
-			normFactor = 0.0f;												// reset normalization factor
+			normFactor = 0.0f;											// reset normalization factor
+
+			// reset r_[n][i]
+			for( i = 0; i <= L; i++ )
+				r_[n][i] = 0.0f;
 
 			// when p(z_n > 0)
-			prior_i = q_ / ( float )LW1;									// p(z_n = i), i > 0
-			for( i = 0; i < L; i++ ){										// i runs over all nucleotides in sequence
-				y = posSeqs_[n].extractKmer( i, ( i < K_ ) ? i : K_ );		// extract (k+1)-mer y from positions (i-k,...,i)
-				for( j = 0; j < ( ( W_ < i ) ? W_ : i ); j++ )				// j runs over all motif positions
-					if( y != -1 )											// skip 'N' and other unknown alphabets
+			prior_i = q_ / ( float )LW1;								// p(z_n = i), i > 0
+			for( i = 0; i < L; i++ ){									// i runs over all nucleotides in sequence
+				y = posSeqs_[n].extractKmer( i, ( i < K_ ) ? i : K_ );	// extract (k+1)-mer y from positions (i-k,...,i)
+				for( j = 0; j < ( ( W_ < i ) ? W_ : i ); j++ )			// j runs over all motif positions
+					if( y != -1 )										// skip 'N' and other unknown alphabets
 						r_[n][L-i+j] += s_[y][j];
 					else
 						break;
@@ -260,7 +263,7 @@ void EM::EStep(){
 			r_[n][0] = prior_0;
 			normFactor += r_[n][0];
 
-			for( i = 0; i <= L; i++ )										// responsibility normalization
+			for( i = 0; i <= L; i++ )									// responsibility normalization
 				r_[n][i] /= normFactor;
 		}
 	}
@@ -269,6 +272,7 @@ void EM::EStep(){
 void EM::MStep(){
 
 	int L, LW1, k, y, y2, j, n, i;
+//	Qfunc_ = 0.0f; 														// reset Qfunc_
 
 	// reset the fractional counts n
 	for( k = 0; k < K_+1; k++ )
@@ -316,6 +320,8 @@ void EM::MStep(){
 		}
 	}
 
+	// compute the Q function
+
 	// update model parameters v[k][y][j]
 	motif_->updateV( n_, alpha_ );
 }
@@ -329,6 +335,27 @@ void EM::optimizeQ(){
 	// optimize Q function
 	// motif.updateV()
 }
+
+//float EM::calculateQ( float*** v_new, float*** v_old ){
+//
+//	int n, L, LW1, i, j, y;
+//	float sumS = 0.0f;
+//	float prior_i, prior_0 = 1 - q_;
+//
+//	for( n = 0; n < posSetN_; n++ ){
+//		L = posSeqs_[n].getL();
+//		LW1 = L - W_ + 1;
+//		prior_i = q_ / ( float )LW1;
+//		for( i = 0; i <= LW1; i++ ){
+//			for( j = 0; j < W_; j++ ){
+//				y = posSeqs_[n].extractKmer( i, ( i < K_ ) ? i : K_ );
+//
+//			}
+//			Qfunc_ += r_[n][i];
+//		}
+//		Qfunc_ += ( r_[n][0] * logf( prior_0 ) + ( 1 - r_[n][0] ) * logf( prior_i ) );
+//	}
+//}
 
 void EM::print(){
 	for( int j = 0; j < W_; j++ ){

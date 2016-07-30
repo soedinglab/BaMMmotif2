@@ -55,6 +55,7 @@ private:
 
 	void optimizeAlphas();			    		// optimize alpha hyper-parameters
 	void optimizeQ();							// optimize hyper-parameter q
+//	float calculateQfunc( float*** v_new, float*** v_old );
 
 };
 
