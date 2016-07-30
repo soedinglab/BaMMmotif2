@@ -23,11 +23,11 @@ Sequence::Sequence( uint8_t* sequence, int L, std::string header ){
 	if( !Global::revcomp ){
 		L_ = L;
 //		sequence_ = sequence;
-		sequence_ = ( uint8_t* )malloc( L_ );
+		sequence_ = ( uint8_t* )calloc( L_, sizeof( uint8_t) );
 		std::memcpy( sequence_, sequence, L_ );
 	} else {
 		L_ = 2 * L + 1;
-		sequence_ = ( uint8_t* )malloc( L_ );
+		sequence_ = ( uint8_t* )calloc( L_, sizeof( uint8_t) );
 		createRevComp( sequence, L );
 	}
 	header_.assign( header );
