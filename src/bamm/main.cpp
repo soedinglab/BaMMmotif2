@@ -39,8 +39,7 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*********************\n" );
 	fprintf( stderr, "*   Initial Motif   *\n" );
 	fprintf( stderr, "*********************\n" );
-
-	MotifSet* motifs = new MotifSet();
+	MotifSet motifs;
 
 	// learn motifs
 	fprintf( stderr, "\n" );
@@ -48,14 +47,14 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*   Learn Motif by EM   *\n" );
 	fprintf( stderr, "*************************\n" );
 
-	for( int N = 0; N < motifs->getN(); N++ ){
-		EM em( motifs->getMotifs()[0], bgModel );
+	for( int N = 0; N < motifs.getN(); N++ ){
+		EM em( motifs.getMotifs()[0], bgModel );
 		em.learnMotif();
 		em.write();
 	}
 
 	// write motifs
-	motifs->write();
+	motifs.write();
 
 /*
 	// evaluate motifs
@@ -75,6 +74,7 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "******************\n" );
 	fprintf( stderr, "*   Statistics   *\n" );
 	fprintf( stderr, "******************\n" );
+
 	std::cout << "Given alphabet type is " << Alphabet::getAlphabet();
 	std::cout << "\nGiven positive sequence set is " << Global::posSequenceBasename
 			<< "\n	"<< Global::posSequenceSet->getN() << " sequences. max.length: " <<
@@ -105,7 +105,6 @@ int main( int nargs, char* args[] ){
 
 	// free memory
 	if( bgModel ) delete bgModel;
-	if( motifs ) delete motifs;
 	Global::destruct();
 
 	return 0;

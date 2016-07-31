@@ -8,6 +8,8 @@
 #include <cstring>			// memcpy
 #include <array>
 
+#include <assert.h>     /* assert */
+
 #include "Sequence.h"
 
 #ifndef VIRUS_X_

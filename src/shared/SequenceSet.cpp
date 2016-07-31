@@ -29,7 +29,7 @@ SequenceSet::SequenceSet( char* sequenceFilepath, char* intensityFilepath ){
 }
 
 SequenceSet::~SequenceSet(){
-	if( baseFrequencies_ ) delete []baseFrequencies_;
+	if( baseFrequencies_ ) delete[] baseFrequencies_;
 	std::cout << "Destructor for SequenceSet class works fine. \n";
 }
 

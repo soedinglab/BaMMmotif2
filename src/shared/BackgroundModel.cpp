@@ -26,7 +26,7 @@ BackgroundModel::BackgroundModel( std::vector<int> folds ){
 			L = negSeqs_[n].getL();
 			for( k = 0; k < K_ + 1; k++ ){
 				for( i = 0; i < L; i++ ){
-					y = negSeqs_[n].extractKmer( i, k );
+					y = negSeqs_[n].extractKmer( i, ( i < k ) ? i: k );
 					if( y >= 0 )				// skip the non-set alphabets, such as N
 						n_bg_[k][y]++;
 				}
@@ -39,7 +39,7 @@ BackgroundModel::BackgroundModel( std::vector<int> folds ){
 				L = negSeqs_[idx].getL();
 				for( k = 0; k < K_ + 1; k++ ){
 					for( i = 0; i < L; i++ ){
-						y = negSeqs_[idx].extractKmer( i, k );
+						y = negSeqs_[idx].extractKmer( i, ( i < k ) ? i: k );
 						if( y >= 0 )			// skip the non-set alphabets, such as N
 							n_bg_[k][y]++;
 					}
