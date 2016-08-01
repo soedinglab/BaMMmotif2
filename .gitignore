@@ -1,7 +1,7 @@
 /build/
 
 .gitignore
-CMakeLists.txt
+# CMakeLists.txt
 
 #####=== C ===#####
 # Object files
