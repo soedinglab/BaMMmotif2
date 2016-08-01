@@ -113,7 +113,7 @@ void BackgroundModel::write(){
 	 */
 
 	std::string opath = std::string( Global::outputDirectory )  + '/'
-				+ std::string( Global::posSequenceBasename );
+				+ std::string( Global::negSequenceBasename );
 	std::string opath_vbg = opath + ".condsBg";
 	std::string opath_nbg = opath + ".countsBg";
 	std::ofstream ofile_vbg( opath_vbg.c_str() );
