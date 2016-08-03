@@ -39,7 +39,7 @@ BackgroundModel::BackgroundModel( std::vector<int> folds ){
 				L = negSeqs_[idx].getL();
 				for( k = 0; k < K_ + 1; k++ ){
 					for( i = 0; i < L; i++ ){
-						y = negSeqs_[idx].extractKmer( i, ( i < k ) ? i: k );
+						y = negSeqs_[idx].extractKmer(  i, ( i < k ) ? i: k );
 						if( y >= 0 )			// skip the non-set alphabets, such as N
 							n_bg_[k][y]++;
 					}
@@ -108,12 +108,12 @@ void BackgroundModel::write(){
 
 	/*
 	 * save Background parameters in two flat files:
-	 * (1) posSequenceBasename.condsBg: conditional probabilities for interpolated background model
-	 * (2) posSequenceBasename.countsBg: counts of (k+1)-mers for background model
+	 * (1) negSequenceBasename.condsBg: conditional probabilities for interpolated background model
+	 * (2) negSequenceBasename.countsBg: counts of (k+1)-mers for background model
 	 */
 
 	std::string opath = std::string( Global::outputDirectory )  + '/'
-				+ std::string( Global::posSequenceBasename );
+				+ std::string( Global::negSequenceBasename );
 	std::string opath_vbg = opath + ".condsBg";
 	std::string opath_nbg = opath + ".countsBg";
 	std::ofstream ofile_vbg( opath_vbg.c_str() );

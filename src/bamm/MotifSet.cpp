@@ -18,16 +18,16 @@ MotifSet::MotifSet(){
 		// * motif.initFromIUPACPattern( p )
 		// motifs.push_back( motif )
 
-	} else if( Global::bindingSitesFilename != NULL ){
+	} else if( Global::bindingSiteFilename != NULL ){
 
 		std::ifstream file;
-		file.open( Global::bindingSitesFilename, std::ifstream::in );
+		file.open( Global::bindingSiteFilename, std::ifstream::in );
 		std::string seq;
 		int length;
 
 		if( !file.good() ){
 			std::cout << "Error: Cannot open bindingSitesFile sequence file: "
-					<< Global::bindingSitesFilename << std::endl;
+					<< Global::bindingSiteFilename << std::endl;
 			exit( -1 );
 		} else {
 			getline( file, seq );					// get length of the first sequence
@@ -37,7 +37,7 @@ MotifSet::MotifSet(){
 		length += Global::addColumns.at(0) + Global::addColumns.at(1);
 
 		Motif* motif = new Motif( length );
-		motif->initFromBindingSites( Global::bindingSitesFilename );
+		motif->initFromBindingSites( Global::bindingSiteFilename );
 		motifs_.push_back( motif );
 		N_ = 1;
 
