@@ -51,7 +51,7 @@ public:
 
 	// files to initialize model(s)
 	static char*		BaMMpatternFilename;				// filename of BaMMpattern file
-	static char*		bindingSitesFilename;				// filename of binding sites file
+	static char*		bindingSiteFilename;				// filename of binding sites file
 	static char*		PWMFilename;						// filename of PWM file
 	static char*		BaMMFilename;						// filename of Markov model (.bmm) file
 
@@ -81,6 +81,8 @@ public:
 	// further FDR options...
 
 	static bool			verbose;							// verbose printouts, defaults to false
+	static bool			saveInitBaMMs;						// Write initialized BaMM(s) to disk.
+	static bool			saveBaMMs;							// Write optimized BaMM(s) to disk.
 
 	static void         init( int nargs, char* args[] );
 	static void         destruct();

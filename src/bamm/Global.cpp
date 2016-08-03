@@ -27,7 +27,7 @@ char*               Global::intensityFilename = NULL;		// filename of intensity 
 
 // files to initialize model(s)
 char*               Global::BaMMpatternFilename = NULL;		// filename of BaMMpattern file
-char*               Global::bindingSitesFilename = NULL;	// filename of binding sites file
+char*               Global::bindingSiteFilename = NULL;	// filename of binding sites file
 char*               Global::PWMFilename = NULL;				// filename of PWM file
 char*               Global::BaMMFilename = NULL;			// filename of Markov model (.bmm) file
 char*				Global::initialModelBasename = NULL;	// basename of initial model
@@ -56,6 +56,8 @@ std::vector< std::vector<int> > Global::negFoldIndices; 	// sequence indices for
 // further FDR options...
 
 bool                Global::verbose = false;            	// verbose printouts
+bool                Global::saveInitBaMMs = false;
+bool				Global::saveBaMMs = true;
 bool				Global::setSlow = false;				// develop with the slow EM version
 
 int* 				Global::powA = NULL;
@@ -146,7 +148,7 @@ int Global::readArguments( int nargs, char* args[] ){
 		strcpy( alphabetType, "STANDARD");
 	}
 
-	opt >> GetOpt::OptionPresent( "revcomp", revcomp );
+	opt >> GetOpt::OptionPresent( "reverseComp", revcomp );
 
 	// for HT-SLEX data
 	opt >> GetOpt::Option( "intensityFile", intensityFilename );
@@ -155,9 +157,9 @@ int Global::readArguments( int nargs, char* args[] ){
 	if( opt >> GetOpt::OptionPresent( "BaMMpatternFile" ) ){
 		opt >> GetOpt::Option( "BaMMpatternFile", BaMMpatternFilename );
 		initialModelBasename = baseName( BaMMpatternFilename );
-	} else if ( opt >> GetOpt::OptionPresent( "bindingSitesFile" ) ){
-		opt >> GetOpt::Option( "bindingSitesFile", bindingSitesFilename );
-		initialModelBasename = baseName( bindingSitesFilename );
+	} else if ( opt >> GetOpt::OptionPresent( "bindingSiteFile" ) ){
+		opt >> GetOpt::Option( "bindingSiteFile", bindingSiteFilename );
+		initialModelBasename = baseName( bindingSiteFilename );
 	} else if ( opt >> GetOpt::OptionPresent( "PWMFile" ) ){
 		opt >> GetOpt::Option( "PWMFile", PWMFilename );
 		initialModelBasename = baseName( PWMFilename );
@@ -171,17 +173,17 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	// model options
 	opt >> GetOpt::Option( 'k', "modelOrder", modelOrder );
-	if( opt >> GetOpt::OptionPresent( "modelAlpha" ) || opt >> GetOpt::OptionPresent( 'a' ) )
-		opt >> GetOpt::Option( 'a', "modelAlpha", modelAlpha );
+	if( opt >> GetOpt::OptionPresent( "alpha" ) || opt >> GetOpt::OptionPresent( 'a' ) )
+		opt >> GetOpt::Option( 'a', "alpha", modelAlpha );
 	else 		// defaults modelAlpha.at(k) to 10.0
 		for( int k = 0; k < modelOrder+1; k++ )
 			modelAlpha.push_back( 10.0f );
 
-	if( opt >> GetOpt::OptionPresent( "addColumns" ) ){
+	if( opt >> GetOpt::OptionPresent( "extend" ) ){
 		addColumns.clear();
-		opt >> GetOpt::Option( "addColumns", addColumns );
+		opt >> GetOpt::Option( "extend", addColumns );
 		if( addColumns.size() < 1 || addColumns.size() > 2 ){
-			fprintf( stderr, "--addColumns format error.\n" );
+			fprintf( stderr, "--extend format error.\n" );
 			exit( -1 );
 		}
 		if( addColumns.size() == 1 )
@@ -193,11 +195,11 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	// background model options
 	opt >> GetOpt::Option( 'K', "bgModelOrder", bgModelOrder );
-	opt >> GetOpt::Option( 'A', "bgModelAlpha", bgModelAlpha );
+	opt >> GetOpt::Option( 'A', "Alpha", bgModelAlpha );
 
 	// em options
 	opt >> GetOpt::Option( "maxEMIterations", maxEMIterations );
-	opt >> GetOpt::Option( "epsilon", epsilon );
+	opt >> GetOpt::Option( 'e', "epsilon", epsilon );
 	opt >> GetOpt::OptionPresent( "noAlphaOptimization", noAlphaOptimization );
 	opt >> GetOpt::OptionPresent( "noQOptimization", noQOptimization );
 
@@ -208,6 +210,8 @@ int Global::readArguments( int nargs, char* args[] ){
 	}
 
 	opt >> GetOpt::OptionPresent( "verbose", verbose );
+	opt >> GetOpt::OptionPresent( "saveInitBaMMs", saveInitBaMMs);
+	opt >> GetOpt::OptionPresent( "saveBaMMs", saveBaMMs);
 
 	opt >> GetOpt::OptionPresent( "setSlow", setSlow );			// to be deleted when release
 
@@ -316,6 +320,8 @@ void Global::destruct(){
 	if( alphabetType ) delete[] alphabetType;
 	if( posSequenceBasename ) free( posSequenceBasename );
 	if( negSequenceBasename ) free( negSequenceBasename );
+	if( posSequenceSet ) delete posSequenceSet;
+	if( negSequenceFilename ) delete negSequenceSet;
 	if( initialModelBasename ) free( initialModelBasename );
 	std::cout << "Destruct() for Global class works fine. \n";
 }
