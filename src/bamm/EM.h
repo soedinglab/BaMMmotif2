@@ -41,6 +41,7 @@ private:
 
 	float 					llikelihood_ = 0.0f;// log likelihood for each EM iteration
 	unsigned int 			EMIterations_ = 0;  // counter for EM iterations
+	float					Qfunc_ = 0.0f;		// Q function per each EM iteration
 
 	int						posSetN_ = Global::posSequenceSet->getN();
 	std::vector<Sequence>	posSeqs_ = Global::posSequenceSet->getSequences();
@@ -55,7 +56,7 @@ private:
 
 	void optimizeAlphas();			    		// optimize alpha hyper-parameters
 	void optimizeQ();							// optimize hyper-parameter q
-//	float calculateQfunc( float*** v_new, float*** v_old );
+	float calculateQfunc();
 
 };
 

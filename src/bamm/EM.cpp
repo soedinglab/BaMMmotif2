@@ -50,7 +50,10 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 	for( k = 0; k < K_+1; k++ ){
 		alpha_[k] = ( float* )malloc( W_ * sizeof( float ) );
 		for( j = 0; j < W_; j++ )										// initialize alpha_ with global alpha
-			alpha_[k][j] = Global::modelAlpha[k];
+			if( k == 0 )
+				alpha_[k][j] = 1;
+			else
+				alpha_[k][j] = 20 * Global::ipow( 3, k-1 );
 	}
 }
 
@@ -93,8 +96,9 @@ int EM::learnMotif(){
 
 	bool iterate = true;												// flag for iterating before convergence
 	int k, y, j, y2, yk;
-	float v_diff, llikelihood_prior, llikelihood_diff;
+	float v_diff, llikelihood_prior, llikelihood_diff, Qfunc_prior, Qfunc_diff;
 	float** v_prior;													// hold the parameters before EM
+
 
 	// allocate memory for prior and posterior parameters v[y][j] with the highest order
 	v_prior = ( float** )calloc( Global::powA[K_+1], sizeof( float* ) );
@@ -111,6 +115,7 @@ int EM::learnMotif(){
 			for( j = 0; j < W_; j++ )
 				v_prior[y][j] = v_motif_[K_][y][j];
 		llikelihood_prior = llikelihood_;
+		Qfunc_prior = Qfunc_;
 
 		// E-step: calculate posterior
 		EStep();
@@ -130,6 +135,7 @@ int EM::learnMotif(){
 			for( j = 0; j < W_; j++ )
 				v_diff += fabsf( v_motif_[K_][y][j] - v_prior[y][j] );
 		llikelihood_diff = llikelihood_ - llikelihood_prior;
+		Qfunc_diff = Qfunc_ - Qfunc_prior;
 
 		if( Global::verbose ){
 			std::cout << "At " << EMIterations_ << "th iteration:\n";
@@ -137,6 +143,10 @@ int EM::learnMotif(){
 			std::cout << "	- log likelihood = " << llikelihood_ << "\n";
 			std::cout << "	- log likelihood difference = " << llikelihood_diff;
 			if( llikelihood_diff < 0 ) std::cout << " decreasing...";
+			std::cout << std::endl;
+			std::cout << "	- Q function = " << Qfunc_ << "\n";
+			std::cout << "	- Q function difference = " << Qfunc_diff;
+			if( Qfunc_diff < 0 ) std::cout << " decreasing...";
 			std::cout << std::endl;
 		}
 
@@ -209,10 +219,13 @@ void EM::EStep(){
 			LW1 = L - W_ + 1;
 			normFactor = 0.0f;											// reset normalization factor
 
+			// reset r_[n][i]
+			for( i = 1; i <= LW1; i++ )
+				r_[n][i] = 0.0f;
+
 			// when p(z_n > 0)
 			prior_i = q_ / ( float )LW1;								// p(z_n = i), i > 0
 			for( i = 1; i <= LW1; i++ ){
-				r_[n][i] = 0.0f;										// reset r_[n][i]
 				for( j = 0; j < W_; j++ ){
 					y = posSeqs_[n].extractKmer( i+j-1, ( j < K_ ) ? j : K_ );
 					if( y != -1 )										// skip 'N' and other unknown alphabets
@@ -220,7 +233,6 @@ void EM::EStep(){
 					else
 						break;
 				}
-				llikelihood_ += expf( r_[n][i] );
 				r_[n][i] = expf( r_[n][i] ) * prior_i;
 				normFactor += r_[n][i];
 			}
@@ -229,8 +241,9 @@ void EM::EStep(){
 			r_[n][0] = prior_0;
 			normFactor += r_[n][0];
 
-			for( i = 0; i <= LW1; i++ )									// responsibility normalization
+			for( i = 0; i <= LW1; i++ )								// responsibility normalization
 				r_[n][i] /= normFactor;
+			llikelihood_ += logf( normFactor );
 		}
 	} else {
 		// fast code:
@@ -250,11 +263,11 @@ void EM::EStep(){
 				for( j = 0; j < ( ( W_ < i ) ? W_ : i ); j++ )			// j runs over all motif positions
 					if( y != -1 )										// skip 'N' and other unknown alphabets
 						r_[n][L-i+j] += s_[y][j];
+
 					else
 						break;
 			}
 			for( i = 1; i <= L; i++ ){
-				llikelihood_ += expf( r_[n][i] );
 				r_[n][i] = expf( r_[n][i] ) * prior_i;
 				normFactor += r_[n][i];
 			}
@@ -265,14 +278,16 @@ void EM::EStep(){
 
 			for( i = 0; i <= L; i++ )									// responsibility normalization
 				r_[n][i] /= normFactor;
+
+			llikelihood_ += logf( normFactor );
 		}
 	}
+
 }
 
 void EM::MStep(){
 
 	int L, LW1, k, y, y2, j, n, i;
-//	Qfunc_ = 0.0f; 														// reset Qfunc_
 
 	// reset the fractional counts n
 	for( k = 0; k < K_+1; k++ )
@@ -321,6 +336,7 @@ void EM::MStep(){
 	}
 
 	// compute the Q function
+//	Qfunc_ = calculateQfunc();
 
 	// update model parameters v[k][y][j]
 	motif_->updateV( n_, alpha_ );
@@ -336,26 +352,26 @@ void EM::optimizeQ(){
 	// motif.updateV()
 }
 
-//float EM::calculateQ( float*** v_new, float*** v_old ){
-//
-//	int n, L, LW1, i, j, y;
-//	float sumS = 0.0f;
-//	float prior_i, prior_0 = 1 - q_;
-//
-//	for( n = 0; n < posSetN_; n++ ){
-//		L = posSeqs_[n].getL();
-//		LW1 = L - W_ + 1;
-//		prior_i = q_ / ( float )LW1;
-//		for( i = 0; i <= LW1; i++ ){
-//			for( j = 0; j < W_; j++ ){
-//				y = posSeqs_[n].extractKmer( i, ( i < K_ ) ? i : K_ );
-//
-//			}
-//			Qfunc_ += r_[n][i];
-//		}
-//		Qfunc_ += ( r_[n][0] * logf( prior_0 ) + ( 1 - r_[n][0] ) * logf( prior_i ) );
-//	}
-//}
+float EM::calculateQfunc(){
+	int n, L, LW1, i, j, y;
+	float sumS = 0.0f, Qfunc = 0.0f;
+	float prior_i, prior_0 = 1 - q_;
+
+	for( n = 0; n < posSetN_; n++ ){
+		L = posSeqs_[n].getL();
+		LW1 = L - W_ + 1;
+		prior_i = q_ / ( float )LW1;
+		for( i = 0; i <= LW1; i++ ){
+			for( j = 0; j < W_; j++ ){
+				y =  posSeqs_[n].extractKmer( i, ( i < K_ ) ? i: K_ );
+				sumS += s_[y][j];
+			}
+			Qfunc += r_[n][i] * sumS;
+		}
+		Qfunc += ( r_[n][0] * logf( prior_0 ) + ( 1 - r_[n][0] ) * logf( prior_i ) );
+	}
+	return Qfunc;
+}
 
 void EM::print(){
 	for( int j = 0; j < W_; j++ ){
