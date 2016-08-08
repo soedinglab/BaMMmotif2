@@ -1,50 +1,38 @@
-/*
- * Alphabet.h
- *
- *  Created on: Apr 1, 2016
- *      Author: wanwan
- */
-
 #ifndef ALPHABET_H_
 #define ALPHABET_H_
 
-#include <iostream>											// std::cout, std::endl
-#include <cstring>      									// strlen, strcpy
+#include <cstring>	// e.g. std::strcmp
+#include <iostream>	// e.g. std::cerr
 
-#include <stdint.h>											// uint8_t
-#include <stdlib.h>											// malloc, calloc, exit, free
-#include <stdio.h>											// stderr
-#include <ctype.h>											// tolower
+#include <ctype.h>	// e.g. tolower
+#include <stdint.h>	// e.g. uint8_t
+#include <stdlib.h>	// e.g. free
 
 class Alphabet {
 
 public:
 
-	static void 		init( char* alphabetType );
-	static void 		destruct();					        // free space
+	static void		init( char* alphabetType );
+	static void		destruct();
 
-	static int 			getSize();							// get alphabet size
-	static char const* 	getAlphabet();						// get alphabet bases
-	static char const* 	getComplementAlphabet();			// get complementary alphabet bases
-	static uint8_t 	    getCode( char base );				// get conversion from base to encoding
-	static char 	    getBase( uint8_t code );			// get conversion from encoding to base
-	static uint8_t 	    getComplementCode( uint8_t code );	// get conversion from encoding to complement encoding
+	static int		getSize();
+	static char* 	getAlphabet();
+	static char* 	getComplementAlphabet();
+	static uint8_t	getCode( char base );				// get encoding for base
+	static char		getBase( uint8_t code );			// get base from encoding
+	static uint8_t	getComplementCode( uint8_t code );	// get complement encoding from encoding
 
 	static void 		setSize( int size );
 
 private:
 
-	static int 			size_;							    // alphabet size, count the number of letters
-	static char const* 	alphabet_;							// alphabet bases ([N,A,C,G,T], [N,A,C,G,T,mC], ...)
-	static char const* 	complementAlphabet_;				// complementary alphabet bases ([N,T,G,C,A,G], [N,T,G,C,A,G], ...)
-	static uint8_t* 	baseToCode_;						// conversion from base to encoding
-	static char* 		codeToBase_;						// conversion from encoding to base
-	static uint8_t* 	codeToComplementCode_;				// conversion from encoding to complement encoding
+	static int 		size_;					// alphabet size
+	static char* 	alphabet_;				// alphabet bases ([A,C,G,T], [A,C,G,T,mC], ...)
+	static char* 	complementAlphabet_;	// complementary alphabet bases ([T,G,C,A], [T,G,C,A,G], ...)
+	static uint8_t* baseToCode_;			// convert base to encoding
+	static char* 	codeToBase_;			// convert encoding to base
+	static uint8_t* codeToComplementCode_;	// convert encoding to complement encoding
 };
-
-inline int Alphabet::getSize(){
-	return size_;
-}
 
 inline uint8_t Alphabet::getCode( char base ){
 	return baseToCode_[( int )base];
