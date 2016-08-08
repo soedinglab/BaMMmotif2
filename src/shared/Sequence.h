@@ -8,7 +8,7 @@
 
 #include "Alphabet.h"
 
-class Sequence {
+class Sequence{
 
 friend class SequenceSet;
 friend class EM;
@@ -29,6 +29,8 @@ public:
 	void 	        setWeight( float weight );
 
 	int				extractKmer( int i, int k ); // extract (k+1)mer from positions (i-k,...,i) of the sequence
+
+	void			print();
 
 private:
 

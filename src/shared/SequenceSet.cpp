@@ -41,7 +41,7 @@ std::string SequenceSet::getIntensityFilepath(){
 	return intensityFilepath_;
 }
 
-std::vector<Sequence> SequenceSet::getSequences(){
+std::vector<Sequence*> SequenceSet::getSequences(){
 	return sequences_;
 }
 
@@ -59,6 +59,13 @@ unsigned int SequenceSet::getMaxL(){
 
 float* SequenceSet::getBaseFrequencies(){
 	return baseFrequencies_;
+}
+
+void SequenceSet::print(){
+
+	for( int i = 0; i < N_; i++ ){
+		sequences_[i]->print();
+	}
 }
 
 int SequenceSet::readFASTA(){
@@ -112,7 +119,7 @@ int SequenceSet::readFASTA(){
 								}
 								baseCounts[encoding[i]-1]++; // count base
 							}
-							sequences_.push_back( Sequence( encoding, L, header, Y_, revcomp_ ) );
+							sequences_.push_back( new Sequence( encoding, L, header, Y_, revcomp_ ) );
 
 							sequence.clear();
 							header.clear();
@@ -176,7 +183,7 @@ int SequenceSet::readFASTA(){
 					}
 					baseCounts[encoding[i]-1]++; // count base
 				}
-				sequences_.push_back( Sequence( encoding, L, header, Y_, revcomp_ ) );
+				sequences_.push_back( new Sequence( encoding, L, header, Y_, revcomp_ ) );
 
 				sequence.clear();
 				header.clear();

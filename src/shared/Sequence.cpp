@@ -70,6 +70,14 @@ int	Sequence::extractKmer( int i, int k ){
 	return y;
 }
 
+void Sequence::print(){
+
+	for( int i = 1; i < L_; i++ ){
+		std::cout << Alphabet::getBase( sequence_[i] );
+	}
+	std::cout << std::endl;
+}
+
 uint8_t* Sequence::appendRevComp( uint8_t* sequence, int L ){
 
 	for( int i = 0; i < L; i++ ){

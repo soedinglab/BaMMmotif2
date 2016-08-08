@@ -39,15 +39,6 @@ void Global::destruct(){
 
 int Global::readArguments( int nargs, char* args[] ){
 
-	if( nargs < 2 ){
-		std::cerr << "Error: Path to directory with genomes in FASTA format missing" << std::endl;
-		printHelp();
-		exit( -1 );
-	} else{
-		std::cout << "args[0]: " << args[0] << std::endl;
-		inputDirectory = args[1]; // args[0] contains path to binary
-	}
-
 	GetOpt::GetOpt_pp opt( nargs, args );
 
 	if( opt >> GetOpt::OptionPresent( 'h', "help" ) ){
@@ -55,31 +46,10 @@ int Global::readArguments( int nargs, char* args[] ){
 		exit( -1 );
 	}
 
-	if( opt >> GetOpt::OptionPresent( 'o', "outputDirectory" ) ){
-		opt >> GetOpt::Option( 'o', "outputDirectory", outputDirectory );
-	} else {
-		outputDirectory = strdup( inputDirectory );
-	}
-
 	if( opt >> GetOpt::OptionPresent( 'e', "extension" ) ){
 		opt >> GetOpt::Option( 'e', "extension", extension );
 	} else {
 		extension = strdup( "fasta" );
-	}
-
-	DIR* dir;
-	struct dirent* ent;
-	if( ( dir = opendir( inputDirectory ) ) != NULL ){
-		while( ( ent = readdir( dir ) ) != NULL ){
-			char* ext = strrchr( ent->d_name, '.' );
-			if( strcmp( ext+1, extension ) == 0 ){
-				printf( "%s\n", ent->d_name );
-			}
-		}
-		closedir( dir );
-	} else {
-		perror( "" );
-		return EXIT_FAILURE;
 	}
 
 	opt >> GetOpt::Option( 'k', modelOrder );
@@ -125,8 +95,24 @@ int Global::readArguments( int nargs, char* args[] ){
 		}
 	}
 
+	if( opt >> GetOpt::OptionPresent( 'o', "outputDirectory" ) ){
+		opt >> GetOpt::Option( 'o', "outputDirectory", outputDirectory );
+	}
+
 	opt >> GetOpt::OptionPresent( 'v', "verbose", verbose );
 
+	std::vector<std::string> argv;
+	opt >> GetOpt::GlobalOption( argv );
+	if( !( argv.size() == 1 ) ){
+		std::cerr << "Error: Path to directory with genomes in FASTA format missing" << std::endl;
+		printHelp();
+		exit( -1 );
+	}
+	inputDirectory = strdup( argv[0].c_str() );
+
+	if( outputDirectory == NULL ){
+		outputDirectory = strdup( inputDirectory );
+	}
 
 	if( opt.options_remain() ){
 		std::cerr << "Warning: Unknown arguments ignored" << std::endl;

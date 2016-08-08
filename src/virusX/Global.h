@@ -1,7 +1,9 @@
 #ifndef GLOBAL_H_
 #define GLOBAL_H_
 
-#include <dirent.h>	// e.g. opendir
+#include <string>
+
+#include <string.h>	// e.g. strdup
 
 #include "../getopt_pp/getopt_pp.h"
 

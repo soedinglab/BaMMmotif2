@@ -1,10 +1,11 @@
+#include "GenomeBaMMs.h"
 #include "Global.h"
 
 int main( int nargs, char* args[] ){
 
 	Global::init( nargs, args );
 
-//	BackgroundModel* bgModel = new BackgroundModel();
+	GenomeBaMMs bamms;
 
 	Global::destruct();
 

@@ -12,7 +12,7 @@
 #include "Sequence.h"
 #include "utils.h"
 
-class SequenceSet {
+class SequenceSet{
 
 friend class Sequence;
 friend class EM;
@@ -24,18 +24,20 @@ public:
 
 	std::string				getSequenceFilepath();
 	std::string				getIntensityFilepath();
-	std::vector<Sequence> 	getSequences();
+	std::vector<Sequence*> 	getSequences();
 	int 					getN();
 	unsigned int 			getMinL();
 	unsigned int			getMaxL();
 	float* 					getBaseFrequencies();
+
+	void					print();
 
 private:
 
 	std::string				sequenceFilepath_;	// path to FASTA file
 	std::string				intensityFilepath_;	// path to intensity file
 
-	std::vector<Sequence>	sequences_;			// sequences
+	std::vector<Sequence*>	sequences_;			// sequences
 	int 					N_;					// number of sequences
 	unsigned int 			minL_;				// length of the shortest sequence
 	unsigned int 			maxL_;				// length of the longest sequence

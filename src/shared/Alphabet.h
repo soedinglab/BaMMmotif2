@@ -8,7 +8,7 @@
 #include <stdint.h>	// e.g. uint8_t
 #include <stdlib.h>	// e.g. free
 
-class Alphabet {
+class Alphabet{
 
 public:
 
