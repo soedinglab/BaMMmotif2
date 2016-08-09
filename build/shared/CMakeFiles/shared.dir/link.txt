@@ -1,0 +1,2 @@
+/usr/bin/ar cr libshared.a  CMakeFiles/shared.dir/SequenceSet.cpp.o CMakeFiles/shared.dir/Sequence.cpp.o CMakeFiles/shared.dir/BackgroundModel.cpp.o CMakeFiles/shared.dir/Alphabet.cpp.o
+/usr/bin/ranlib libshared.a

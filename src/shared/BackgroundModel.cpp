@@ -1,89 +1,96 @@
-/*
- * BackgroundModel.cpp
- *
- *  Created on: Apr 18, 2016
- *      Author: administrator
- */
-
 #include "BackgroundModel.h"
 
-BackgroundModel::BackgroundModel( std::vector<int> folds ){
+BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
+		                          int order,
+		                          std::vector<float> alpha,
+		                          std::vector<std::vector<int>> foldIndices,
+		                          std::vector<int> folds ){
 
-	int n, k, i, y, L;
-	unsigned int f, r, idx;
 
-	// allocate memory
-	n_bg_ = ( int** )calloc( K_+1, sizeof( int* ) );
-	v_bg_ = ( float** )calloc( K_+1, sizeof( float* ) );
-	for( k = 0; k < K_+1; k++ ){
-		n_bg_[k] = ( int* )calloc( Global::powA[k+1], sizeof( int ) );
-		v_bg_[k] = ( float* )calloc( Global::powA[k+1], sizeof( float ) );
+	// calculate the maximum possible order
+	int l = static_cast<int>( floorf(
+				logf( static_cast<float>( std::numeric_limits<int>::max() ) ) /
+				logf( static_cast<float>( Alphabet::getSize() ) ) ) );
+	if( ( order+1 ) > l ){
+		std::cerr << "Error: The maximum possible order is " << l << std::endl;
+		exit( -1 );
 	}
 
-	// count kmers
-	if( folds.size() == 0 ){					// when the full negSeqSet is applied
-		for( n = 0; n < negSetN_; n++ ){
-			L = negSeqs_[n].getL();
-			for( k = 0; k < K_ + 1; k++ ){
-				for( i = 0; i < L; i++ ){
-					y = negSeqs_[n].extractKmer( i, ( i < k ) ? i: k );
-					if( y >= 0 )				// skip the non-set alphabets, such as N
-						n_bg_[k][y]++;
-				}
+	K_ = order;
+	for( int k = 0; k < K_+2; k++ ){
+		Y_.push_back( ipow( Alphabet::getSize(), k ) );
+	}
+
+	A_ = alpha;
+
+	if( folds.empty() ){
+		if( foldIndices.empty() ){
+			std::vector<int> folds( 1, 0 );
+
+			std::vector<std::vector<int>> foldIndices( 1 );
+			for( int n = 0; n < sequenceSet.getN(); n++ ){
+				foldIndices[0].push_back( n );
 			}
+		} else{
+			std::vector<int> folds( foldIndices.size() );
+			std::iota( std::begin( folds ), std::end( folds ), 0 );
 		}
-	} else {									// for training sets in cross-validation
-		for( f = 0; f < folds.size(); f++ ){
-			for( r = 0; r < Global::negFoldIndices[f].size(); r++ ){
-				idx = Global::negFoldIndices[f][r];
-				L = negSeqs_[idx].getL();
-				for( k = 0; k < K_ + 1; k++ ){
-					for( i = 0; i < L; i++ ){
-						y = negSeqs_[idx].extractKmer(  i, ( i < k ) ? i: k );
-						if( y >= 0 )			// skip the non-set alphabets, such as N
-							n_bg_[k][y]++;
+
+	} else{
+		folds.resize( 1, 0 );
+	}
+
+	n_bg_ = ( int** )malloc( ( K_+1 ) * sizeof( int* ) );
+	for( int k = 0; k <= K_; k++ ){
+		n_bg_[k] = ( int* )calloc( Y_[k+1], sizeof( int ) );
+	}
+	// calculate counts
+	// loop over folds
+	for( unsigned int f = 0; f < folds.size(); f++ ){
+		// loop over fold indices
+		for( unsigned int f_idx = 0; f_idx < foldIndices[folds[f]].size(); f_idx++ ){
+			// get sequence index
+			int s_idx = foldIndices[folds[f]][f_idx];
+			// get sequence length
+			int L = sequenceSet.getSequences()[s_idx]->getL();
+			// loop over order
+			for( int k = 0; k < K_ + 1; k++ ){
+				// loop over sequence positions
+				for( int i = 0; i < L; i++ ){
+					// extract (k+1)mer
+					int y = sequenceSet.getSequences()[s_idx]->extractKmer( i, std::min( i, k ) );
+					// skip non-defined alphabet letters
+					if( y >= 0 ){
+						// count (k+1)mer
+						n_bg_[k][y]++;
+
 					}
 				}
 			}
 		}
 	}
 
-	calculateVbg();								// calculate v from k-mer counts n_occ
+	v_bg_ = ( float** )malloc( ( K_+1 ) * sizeof( float* ) );
+	for( int k = 0; k <= K_; k++ ){
+		v_bg_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
+	}
+	// calculate conditional probabilities from counts
+	calculateVbg();
 }
 
 BackgroundModel::~BackgroundModel(){
 
-	for( int k = 0; k < K_+1; k++ ){
-		free( v_bg_[k] );
-		free( n_bg_[k] );
-	}
-	free( v_bg_ );
-	free( n_bg_ );
-	std::cout << "Destructor for Background class works fine. \n";
-
-}
-
-void BackgroundModel::calculateVbg(){
-
-	// sum over counts for all mono-nucleotides
-	int sum = 0, y, k;
-	for( y = 0; y < Global::powA[1]; y++ )
-		sum += n_bg_[0][y];
-
-	// for k = 0: v = frequency
-	for( y = 0; y < Global::powA[1]; y++ )
-		v_bg_[0][y] = float( n_bg_[0][y] ) / sum ;
-
-	// for k > 0:
-	int y2;										// cut off the first nucleotide in (k+1)-mer y, e.g. from ACGT to CGT
-	int yk;										// cut off the last nucleotide in (k+1)-mer y , e.g. from ACGT to ACG
-	for( k = 1; k < K_+1; k++ ){
-		for( y = 0; y < Global::powA[k+1]; y++ ){
-			y2 = y % Global::powA[k];
-			yk = y / Global::powA[1];
-			v_bg_[k][y] = ( n_bg_[k][y] + Global::bgModelAlpha * v_bg_[k-1][y2] )
-						/ ( n_bg_[k-1][yk] + Global::bgModelAlpha );
+	if( n_bg_ != NULL ){
+		for( int k = 0; k <= K_; k++ ){
+			free( n_bg_[k] );
 		}
+		free( n_bg_ );
+	}
+	if( v_bg_ != NULL ){
+		for( int k = 0; k <= K_; k++ ){
+			free( v_bg_[k] );
+		}
+		free( v_bg_ );
 	}
 }
 
@@ -92,39 +99,85 @@ float** BackgroundModel::getVbg(){
 }
 
 void BackgroundModel::print(){
+
+	printf( " ______\n"
+			"|*    *|\n"
+			"| BaMM |\n"
+			"|*____*|\n"
+			"\n" );
+
+	std::cout << "K = " << K_ << std::endl;
+	std::cout << "A =";
+	for( int k = 0; k <= K_; k++ ){
+		std::cout << " " << A_[k];
+	}
+	std::cout << std::endl;
+
+	printf( " ________\n"
+			"|        |\n"
+			"| Counts |\n"
+			"|________|\n"
+			"\n" );
+
+	for( int k = 0; k <= K_; k++ ){
+		std::cout << n_bg_[k][0];
+		for( int y = 1; y < Y_[k+1]; y++ ){
+			std::cout << " " << n_bg_[k][y];
+		}
+		std::cout << std::endl;
+	}
+
 	printf( " ___________________________\n"
 			"|                           |\n"
-			"| probabilities for bgModel |\n"
-			"|___________________________|\n\n" );
-	int k, y;
-	for( k = 0; k < K_+1; k++ ){
-		for( y = 0; y < Global::powA[k+1]; y++ )
-			std::cout << std::fixed << std::setprecision(6) << v_bg_[k][y] << '\t';
+			"| Conditional probabilities |\n"
+			"|___________________________|\n"
+			"\n" );
+
+	for( int k = 0; k <= K_; k++ ){
+		std::cout << std::fixed << std::setprecision( 3 ) << v_bg_[k][0];
+		for( int y = 1; y < Y_[k+1]; y++ ){
+			std::cout << " " << std::fixed << std::setprecision( 3 ) << v_bg_[k][y];
+		}
 		std::cout << std::endl;
 	}
 }
 
-void BackgroundModel::write(){
 
-	/*
-	 * save Background parameters in two flat files:
-	 * (1) negSequenceBasename.condsBg: conditional probabilities for interpolated background model
-	 * (2) negSequenceBasename.countsBg: counts of (k+1)-mers for background model
-	 */
+void BackgroundModel::write( char* dir, char* basename ){
 
-	std::string opath = std::string( Global::outputDirectory )  + '/'
-				+ std::string( Global::negSequenceBasename );
-	std::string opath_vbg = opath + ".condsBg";
-	std::string opath_nbg = opath + ".countsBg";
-	std::ofstream ofile_vbg( opath_vbg.c_str() );
-	std::ofstream ofile_nbg( opath_nbg.c_str() );
-	int k, y;
-	for( k = 0; k < K_+1; k++ ){
-		for( y = 0; y < Global::powA[k+1]; y++ ){
-			ofile_vbg << std::fixed << std::setprecision(6) << v_bg_[k][y] << ' ';
-			ofile_nbg << n_bg_[k][y] << '\t';
+	std::ofstream file( std::string( dir ) + '/' + std::string( basename ) + ".bamm" );
+	for( int k = 0; k <= K_; k++ ){
+		file << std::fixed << std::setprecision( 6 ) << v_bg_[k][0];
+		for( int y = 1; y < Y_[k+1]; y++ ){
+			file << std::fixed << std::setprecision( 6 ) << " " << v_bg_[k][y];
 		}
-		ofile_vbg << std::endl;
-		ofile_nbg << std::endl;
+		file << std::endl;
+	}
+}
+
+void BackgroundModel::calculateVbg(){
+
+	int baseCounts = 0;
+	for( int y = 0; y < Y_[1]; y++ ){
+		baseCounts += n_bg_[0][y];
+	}
+
+	// calculate probabilities for order k = 0
+	for( int y = 0; y < Y_[1]; y++ ){
+		v_bg_[0][y] = ( static_cast<float>( n_bg_[0][y] ) + A_[0] * 0.25f ) / // cope with absent bases using pseudocounts
+				      ( static_cast<float>( baseCounts ) + A_[0] );
+	}
+
+	// calculate probabilities for order k > 0
+	for( int k = 1; k < K_+1; k++ ){
+		for( int y = 0; y < Y_[k+1]; y++ ){
+			// omit first base (e.g. CGT) from y (e.g. ACGT)
+			int y2 = y % Y_[k];
+			// omit last base (e.g. ACG) from y (e.g. ACGT)
+			int yk = y / Y_[1];
+			v_bg_[k][y] = ( static_cast<float>( n_bg_[k][y] ) + A_[k] * v_bg_[k-1][y2] ) /
+					      ( static_cast<float>( n_bg_[k-1][yk] ) + A_[k] );
+
+		}
 	}
 }

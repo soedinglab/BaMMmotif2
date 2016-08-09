@@ -74,10 +74,8 @@ public:
 
 	// FDR options
 	static bool			FDR;								// triggers False-Discovery-Rate (FDR) estimation
-	static unsigned int	mFold;								// number of negative sequences as multiple of positive sequences
-	static unsigned int	cvFold;								// number of cross-validation folds
-	static std::vector< std::vector<int> >	posFoldIndices;	// sequence indices for each cross-validation fold
-	static std::vector< std::vector<int> >	negFoldIndices;	// sequence indices for each cross-validation fold
+	static int			mFold;								// number of negative sequences as multiple of positive sequences
+	static int			cvFold;								// number of cross-validation folds
 	// further FDR options...
 
 	static bool			verbose;							// verbose printouts, defaults to false
@@ -92,12 +90,12 @@ public:
 	static int*			powA;								// sizes of alphabet to the power k
 
 	static bool			setSlow;							// develop with the slow EM version
+
 private:
 
 	static int	        readArguments( int nargs, char* args[] );
 	static void	        createDirectory( char* dir );
 	static char*		baseName( char* path );
-	static void	        generateFolds( unsigned int posN, unsigned int negN, unsigned int fold );
 	static void	        printHelp();
 };
 

@@ -1,0 +1,32 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/wanwan/projectspace/bammmotif_development/src/getopt_pp/getopt_pp.cpp
+fstream
+-
+crt_externs.h
+-
+Stdio.h
+-
+unistd.h
+-
+getopt_pp.h
+/home/wanwan/projectspace/bammmotif_development/src/getopt_pp/getopt_pp.h
+
+/home/wanwan/projectspace/bammmotif_development/src/getopt_pp/getopt_pp.h
+string
+-
+vector
+-
+map
+-
+sstream
+-
+list
+-
+

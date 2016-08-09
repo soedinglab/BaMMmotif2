@@ -51,8 +51,6 @@ bool                Global::noQOptimization = false;		// disable q optimization
 bool                Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
 unsigned int        Global::mFold = 20;						// number of negative sequences as multiple of positive sequences
 unsigned int        Global::cvFold = 5;						// size of cross-validation folds
-std::vector< std::vector<int> > Global::posFoldIndices; 	// sequence indices for each cross-validation fold
-std::vector< std::vector<int> > Global::negFoldIndices; 	// sequence indices for each cross-validation fold
 // further FDR options...
 
 bool                Global::verbose = false;            	// verbose printouts
@@ -76,9 +74,6 @@ void Global::init( int nargs, char* args[] ){
 		negSequenceSet = new SequenceSet( *posSequenceSet );
 	else													// read in negative sequence set
 		negSequenceSet = new SequenceSet( negSequenceFilename );
-
-	// generate folds (fill posFoldIndices and negFoldIndices)
-	generateFolds( posSequenceSet->getN(), negSequenceSet->getN(), cvFold );
 
 	// optional: read in sequence intensities (header and intensity columns?)
 	if( intensityFilename != 0 ){
@@ -257,31 +252,6 @@ char* Global::baseName( char* filepath ){
 	return base;
 }
 
-void Global::generateFolds( unsigned int posN, unsigned int negN, unsigned int fold ){
-	posFoldIndices.resize( fold );
-	negFoldIndices.resize( fold );
-	// generate posFoldIndices
-	unsigned int i = 0, j;
-	while( i < posN ){
-		for( j = 0; j < fold; j++ ){
-			posFoldIndices[j].push_back( i );
-			i++;
-		}
-	}
-	// generate negFoldIndices
-	if( negSequenceFilename == NULL ){
-		negFoldIndices = posFoldIndices;
-	} else {
-		// generate negFoldIndices
-		i = 0;
-		while( i < negN ){
-			for( j = 0; j < fold; j++ ){
-				negFoldIndices[j].push_back( i );
-				i++;
-			}
-		}
-	}
-}
 
 // power function for integers
 int Global::ipow( unsigned int base, int exp ){

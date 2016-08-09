@@ -46,9 +46,8 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*************************\n" );
 	fprintf( stderr, "*   Learn Motif by EM   *\n" );
 	fprintf( stderr, "*************************\n" );
-
 	for( int N = 0; N < motifs.getN(); N++ ){
-		EM em( motifs.getMotifs()[0], bgModel );
+		EM em( motifs.getMotifs()[N], bgModel );
 		em.learnMotif();
 		em.write();
 	}
@@ -56,25 +55,23 @@ int main( int nargs, char* args[] ){
 	// write motifs
 	motifs.write();
 
-/*
 	// evaluate motifs
-	fprintf( stderr, "\n" );
-	fprintf( stderr, "***********\n" );
-	fprintf( stderr, "*   FDR   *\n" );
-	fprintf( stderr, "***********\n" );
-	std::vector<Motif*>::const_iterator iter;
-	for( iter = motifs.getMotifs().begin(); iter != motifs.getMotifs().end(); iter++ ){
-		FDR fdr( *iter );
-		fdr.evaluateMotif();
-		fdr.write();
+	if( Global::FDR ){
+		fprintf( stderr, "\n" );
+		fprintf( stderr, "***********\n" );
+		fprintf( stderr, "*   FDR   *\n" );
+		fprintf( stderr, "***********\n" );
+		for( int N = 0; N < motifs.getN(); N++ ){
+			FDR fdr( motifs.getMotifs()[N] );
+			fdr.evaluateMotif();
+			fdr.write();
+		}
 	}
-*/
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "******************\n" );
 	fprintf( stderr, "*   Statistics   *\n" );
 	fprintf( stderr, "******************\n" );
-
 	std::cout << "Given alphabet type is " << Alphabet::getAlphabet();
 	std::cout << "\nGiven positive sequence set is " << Global::posSequenceBasename
 			<< "\n	"<< Global::posSequenceSet->getN() << " sequences. max.length: " <<
@@ -94,7 +91,7 @@ int main( int nargs, char* args[] ){
 	} else
 		std::cout << "\nNone negative sequence set is given";
 	std::cout << "\nGiven initial model is " << Global::initialModelBasename;
-	std::cout << "\nGiven folds for FDR estimation: " << Global::cvFold;
+	if( Global::FDR )	std::cout << "\nGiven folds for FDR estimation: " << Global::cvFold;
 	if( Global::setSlow )
 		std::cout << "\n***** This is a slow EM version. *****";
 	else
