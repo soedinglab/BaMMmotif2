@@ -13,13 +13,12 @@ GenomeBaMMs::GenomeBaMMs(){
 			char* extension = strrchr( ent->d_name, '.' );
 			if( strcmp( extension+1, Global::extension ) == 0 ){
 
-				std::string p = std::string( Global::inputDirectory ) + '/' + std::string( ent->d_name );
-				std::cout << p << std::endl;
-				SequenceSet* sequenceSet = new SequenceSet( p );
+				std::cout << ent->d_name << std::endl;
+				SequenceSet* sequenceSet = new SequenceSet( std::string( Global::inputDirectory ) + '/' + std::string( ent->d_name ) );
 				sequenceSet->print();
-//				BackgroundModel* bamm = new BackgroundModel( *sequenceSet, Global::modelOrder, Global::modelAlpha );
+				BackgroundModel* bamm = new BackgroundModel( *sequenceSet, Global::modelOrder, Global::modelAlpha );
 //				bamms_.push_back( bamm );
-//				bamm->print();
+				bamm->print();
 			}
 		}
 		closedir( dir );

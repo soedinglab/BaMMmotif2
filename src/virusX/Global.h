@@ -24,6 +24,9 @@ public:
 	static float				modelBeta;			// alpha_k = beta x gamma^(k-1) for k > 0
 	static float				modelGamma;			// - " -
 
+	static std::string			name;				// program name
+	static std::string			version;			// program version number
+
 	static bool					verbose;			// verbose printouts, defaults to false
 
 	static void		init( int nargs, char* args[] );

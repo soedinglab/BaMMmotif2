@@ -25,18 +25,26 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 
 	if( folds.empty() ){
 		if( foldIndices.empty() ){
-			std::vector<int> folds( 1, 0 );
 
-			std::vector<std::vector<int>> foldIndices( 1 );
+			folds.push_back( 0 );
+
+			foldIndices.push_back( std::vector<int>() );
 			for( int n = 0; n < sequenceSet.getN(); n++ ){
 				foldIndices[0].push_back( n );
 			}
 		} else{
-			std::vector<int> folds( foldIndices.size() );
+			folds.resize( foldIndices.size() );
 			std::iota( std::begin( folds ), std::end( folds ), 0 );
 		}
-	} else{
-		folds.resize( 1, 0 );
+	} else if( foldIndices.empty() ){
+
+		folds.clear();
+		folds.push_back( 0 );
+
+		foldIndices.push_back( std::vector<int>() );
+		for( int n = 0; n < sequenceSet.getN(); n++ ){
+			foldIndices[0].push_back( n );
+		}
 	}
 
 	n_bg_ = ( int** )malloc( ( K_+1 ) * sizeof( int* ) );
@@ -53,11 +61,12 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 			// get sequence length
 			int L = sequenceSet.getSequences()[s_idx]->getL();
 			// loop over order
-			for( int k = 0; k < K_ + 1; k++ ){
+			for( int k = 0; k < ( K_+1 ); k++ ){
 				// loop over sequence positions
 				for( int i = 0; i < L; i++ ){
 					// extract (k+1)mer
 					int y = sequenceSet.getSequences()[s_idx]->extractKmer( i, std::min( i, k ) );
+					std::cout << "y: " << y << std::endl;
 					// skip non-defined alphabet letters
 					if( y >= 0 ){
 						// count (k+1)mer

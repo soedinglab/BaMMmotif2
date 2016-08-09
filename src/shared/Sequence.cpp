@@ -72,7 +72,8 @@ int	Sequence::extractKmer( int i, int k ){
 
 void Sequence::print(){
 
-	for( int i = 1; i < L_; i++ ){
+	std::cout << ">" << header_ << std::endl;
+	for( int i = 0; i < L_; i++ ){
 		std::cout << Alphabet::getBase( sequence_[i] );
 	}
 	std::cout << std::endl;

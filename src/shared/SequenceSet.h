@@ -30,7 +30,7 @@ public:
 	unsigned int			getMaxL();
 	float* 					getBaseFrequencies();
 
-	void					print();
+	void					print();			// print sequences
 
 private:
 

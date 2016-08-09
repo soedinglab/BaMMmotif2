@@ -12,6 +12,8 @@ float				Global::modelGamma = 2.0f;					// - " -
 
 bool                Global::verbose = false;					// verbose printouts
 
+std::string			Global::name="VirusX";						// program name
+std::string			Global::version="0.1.1";					// program version number
 
 void Global::init( int nargs, char* args[] ){
 
@@ -43,6 +45,11 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	if( opt >> GetOpt::OptionPresent( 'h', "help" ) ){
 		printHelp();
+		exit( -1 );
+	}
+
+	if( opt >> GetOpt::OptionPresent( "version" ) ){
+		std::cout << name << " version " << version << std::endl;
 		exit( -1 );
 	}
 
@@ -142,13 +149,13 @@ void Global::printHelp(){
 	printf( "  Options for Bayesian homogeneous Markov models\n" );
 	printf( "      -k, --order <INTEGER>\n"
 			"          Order. The default is 2.\n\n" );
-	printf( "      -a, --alpha <FLOAT> [<FLOAT>...] (*)\n"
+	printf( "      -a, --alpha <FLOAT> [<FLOAT>...]\n"
 			"          Order-specific prior strength. The default is 1.0 (for k = 0) and\n"
 			"          20 x 3^(k-1) (for k > 0). The options -b and -g are ignored.\n\n" );
-	printf( "      -b, --beta <FLOAT> (*)\n"
+	printf( "      -b, --beta <FLOAT>\n"
 			"          Calculate order-specific alphas according to beta x gamma^(k-1) (for\n"
 			"          k > 0). The default is 20.0.\n\n" );
-	printf( "      -g, --gamma <FLOAT> (*)\n"
+	printf( "      -g, --gamma <FLOAT>\n"
 			"          Calculate order-specific alphas according to beta x gamma^(k-1) (for\n"
 			"          k > 0). The default is 3.0.\n\n" );
 	printf( "  Output options\n" );
@@ -159,6 +166,8 @@ void Global::printHelp(){
 			"          Verbose terminal printouts.\n\n" );
 	printf( "      -h, --help\n"
 			"          Printout this help.\n\n" );
+	printf( "      --version\n"
+			"          Show program name/version banner.\n\n" );
 	if( developerHelp ){
 		printf( "      (*) Developer options\n\n" );
 	}

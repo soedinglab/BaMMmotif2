@@ -28,9 +28,9 @@ public:
 	void 	        setIntensity( float intensity );
 	void 	        setWeight( float weight );
 
-	int				extractKmer( int i, int k ); // extract (k+1)mer from positions (i-k,...,i) of the sequence
+	int				extractKmer( int i, int k );	// extract (k+1)mer from positions (i-k,...,i) of the sequence
 
-	void			print();
+	void			print();						// print sequences
 
 private:
 
