@@ -6,6 +6,7 @@ int main( int nargs, char* args[] ){
 	Global::init( nargs, args );
 
 	GenomeBaMMs bamms;
+	bamms.print();
 
 	Global::destruct();
 

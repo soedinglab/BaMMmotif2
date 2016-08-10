@@ -104,18 +104,27 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	if( opt >> GetOpt::OptionPresent( 'o', "outputDirectory" ) ){
 		opt >> GetOpt::Option( 'o', "outputDirectory", outputDirectory );
+		struct stat sb;
+		if( stat( outputDirectory, &sb ) != 0 || !( S_ISDIR( sb.st_mode ) ) ){
+			std::cerr << "Error: Output directory is not a directory" << std::endl;
+		}
 	}
+
 
 	opt >> GetOpt::OptionPresent( 'v', "verbose", verbose );
 
 	std::vector<std::string> argv;
 	opt >> GetOpt::GlobalOption( argv );
 	if( !( argv.size() == 1 ) ){
-		std::cerr << "Error: Path to directory with genomes in FASTA format missing" << std::endl;
+		std::cerr << "Error: Input directory with genomes in FASTA format missing" << std::endl;
 		printHelp();
 		exit( -1 );
 	}
 	inputDirectory = strdup( argv[0].c_str() );
+	struct stat sb;
+	if( stat( inputDirectory, &sb ) != 0 || !( S_ISDIR( sb.st_mode ) ) ){
+		std::cerr << "Error: Input directory is not a directory" << std::endl;
+	}
 
 	if( outputDirectory == NULL ){
 		outputDirectory = strdup( inputDirectory );

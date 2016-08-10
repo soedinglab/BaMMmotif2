@@ -140,9 +140,9 @@ void BackgroundModel::print(){
 			"\n" );
 
 	for( int k = 0; k <= K_; k++ ){
-		std::cout << std::fixed << std::setprecision( 6 ) << v_bg_[k][0];
+		std::cout << std::fixed << std::setprecision( 3 ) << v_bg_[k][0];
 		for( int y = 1; y < Y_[k+1]; y++ ){
-			std::cout << " " << std::fixed << std::setprecision( 6 ) << v_bg_[k][y];
+			std::cout << " " << std::fixed << std::setprecision( 3 ) << v_bg_[k][y];
 		}
 		std::cout << std::endl;
 	}
@@ -184,7 +184,7 @@ void BackgroundModel::calculateVbg(){
 					      ( static_cast<float>( n_bg_[k-1][yk] ) + A_[k] );
 		}
 		// normalize probabilities
-		float factor = 0.0f; // normalization factor
+		float factor = 0.0f;
 		for( int y = 0; y < Y_[k+1]; y++ ){
 			factor += v_bg_[k][y];
 			if( ( y+1 ) % Y_[1] == 0 ){

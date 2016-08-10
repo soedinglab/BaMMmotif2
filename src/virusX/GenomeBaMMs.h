@@ -3,8 +3,9 @@
 
 #include <list>
 
-#include <dirent.h>	// e.g. opendir
-#include <string.h>	// e.g. strcmp
+#include <dirent.h>		// e.g. opendir
+#include <string.h>		// e.g. strcmp
+#include <sys/stat.h>
 
 #include "../shared/BackgroundModel.h"
 #include "../shared/SequenceSet.h"
@@ -18,6 +19,8 @@ public:
 
 	GenomeBaMMs();
 	~GenomeBaMMs();
+
+	void print();
 
 private:
 
