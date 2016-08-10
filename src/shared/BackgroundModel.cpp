@@ -63,10 +63,9 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 			// loop over order
 			for( int k = 0; k < ( K_+1 ); k++ ){
 				// loop over sequence positions
-				for( int i = 0; i < L; i++ ){
+				for( int i = k; i < L; i++ ){
 					// extract (k+1)mer
 					int y = sequenceSet.getSequences()[s_idx]->extractKmer( i, std::min( i, k ) );
-					std::cout << "y: " << y << std::endl;
 					// skip non-defined alphabet letters
 					if( y >= 0 ){
 						// count (k+1)mer
@@ -141,9 +140,9 @@ void BackgroundModel::print(){
 			"\n" );
 
 	for( int k = 0; k <= K_; k++ ){
-		std::cout << std::fixed << std::setprecision( 3 ) << v_bg_[k][0];
+		std::cout << std::fixed << std::setprecision( 6 ) << v_bg_[k][0];
 		for( int y = 1; y < Y_[k+1]; y++ ){
-			std::cout << " " << std::fixed << std::setprecision( 3 ) << v_bg_[k][y];
+			std::cout << " " << std::fixed << std::setprecision( 6 ) << v_bg_[k][y];
 		}
 		std::cout << std::endl;
 	}
@@ -175,7 +174,7 @@ void BackgroundModel::calculateVbg(){
 	}
 
 	// calculate probabilities for order k > 0
-	for( int k = 1; k < K_+1; k++ ){
+	for( int k = 1; k <= K_; k++ ){
 		for( int y = 0; y < Y_[k+1]; y++ ){
 			// omit first base (e.g. CGT) from y (e.g. ACGT)
 			int y2 = y % Y_[k];
@@ -183,6 +182,17 @@ void BackgroundModel::calculateVbg(){
 			int yk = y / Y_[1];
 			v_bg_[k][y] = ( static_cast<float>( n_bg_[k][y] ) + A_[k] * v_bg_[k-1][y2] ) /
 					      ( static_cast<float>( n_bg_[k-1][yk] ) + A_[k] );
+		}
+		// normalize probabilities
+		float factor = 0.0f; // normalization factor
+		for( int y = 0; y < Y_[k+1]; y++ ){
+			factor += v_bg_[k][y];
+			if( ( y+1 ) % Y_[1] == 0 ){
+				for( int i = 0; i < Y_[1]; i++ ){
+					v_bg_[k][y-i] /= factor;
+				}
+				factor = 0.0f;
+			}
 		}
 	}
 }
