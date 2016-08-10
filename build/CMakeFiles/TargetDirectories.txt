@@ -1,4 +1,0 @@
-/home/wanwan/projectspace/bammmotif_development/build/BaMMmotif/CMakeFiles/BaMMmotif.dir
-/home/wanwan/projectspace/bammmotif_development/build/VirusX/CMakeFiles/VirusX.dir
-/home/wanwan/projectspace/bammmotif_development/build/getopt_pp/CMakeFiles/getopt_pp.dir
-/home/wanwan/projectspace/bammmotif_development/build/shared/CMakeFiles/shared.dir
