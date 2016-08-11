@@ -7,6 +7,8 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 		                          std::vector<int> folds ){
 
 
+	name_.assign( baseName( sequenceSet.getSequenceFilepath().c_str() ) );
+
 	// calculate the maximum possible order
 	int l = static_cast<int>( floorf(
 				logf( static_cast<float>( std::numeric_limits<int>::max() ) ) /
@@ -84,6 +86,78 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 	calculateVbg();
 }
 
+BackgroundModel::BackgroundModel( std::string filePath ){
+
+	name_.assign( baseName( filePath.c_str() ) );
+
+	n_bg_ = NULL;
+	v_bg_ = NULL;
+
+	struct stat sb;
+
+	if( stat( filePath.c_str(), &sb ) == 0 && S_ISREG( sb.st_mode ) ){
+
+		FILE* file;
+		if( ( file = fopen( filePath.c_str(), "r" ) ) != NULL ){
+
+			int K;
+			if( fscanf( file, "# K = %d\n", &K ) == 1 ){
+				K_ = K;
+			} else{
+				std::cerr << "Error: Wrong BaMM format: " << filePath << std::endl;
+				exit( -1 );
+			}
+			A_.resize( K_+1 );
+
+			float A;
+			if( fscanf( file, "# A = %e", &A ) == 1 ){
+				A_[0] = A;
+			} else{
+				std::cerr << "Error: Wrong BaMM format: " << filePath << std::endl;
+				exit( -1 );
+			}
+			for( int k = 1; k <= K_; k++ ){
+				if( fscanf( file, "%e", &A ) == 1 ){
+					A_[k] = A;
+				} else{
+					std::cerr << "Error: Wrong BaMM format: " << filePath << std::endl;
+					exit( -1 );
+				}
+			}
+
+			for( int k = 0; k < K_+2; k++ ){
+				Y_.push_back( ipow( Alphabet::getSize(), k ) );
+			}
+
+			v_bg_ = ( float** )malloc( ( K_+1 ) * sizeof( float* ) );
+			for( int k = 0; k <= K_; k++ ){
+				v_bg_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
+			}
+
+			float value;
+			for( int k = 0; k <= K_; k++ ){
+				for( int y = 0; y < Y_[k+1]; y++ ){
+
+					if( fscanf( file, "%e", &value ) != EOF ){
+						v_bg_[k][y] = value;
+
+					} else{
+
+						std::cerr << "Error: Wrong BaMM format: " << filePath << std::endl;
+						exit( -1 );
+					}
+				}
+			}
+			fclose( file );
+
+		} else{
+
+			std::cerr << "Error: Cannot open BaMM file: " << filePath << std::endl;
+			exit( -1 );
+		}
+	}
+}
+
 BackgroundModel::~BackgroundModel(){
 
 	if( n_bg_ != NULL ){
@@ -100,18 +174,23 @@ BackgroundModel::~BackgroundModel(){
 	}
 }
 
+std::string BackgroundModel::getName(){
+    return name_;
+}
+
 float** BackgroundModel::getVbg(){
     return v_bg_;
 }
 
 void BackgroundModel::print(){
 
-	printf( " ______\n"
-			"|*    *|\n"
-			"| BaMM |\n"
-			"|*____*|\n"
-			"\n" );
+	std::cout << " ___________________" << std::endl;
+	std::cout << "|*                 *|" << std::endl;
+	std::cout << "| Homogeneous BaMM! |" << std::endl;
+	std::cout << "|*_________________*|" << std::endl;
+	std::cout << std::endl;
 
+	std::cout << "name = " << name_ << std::endl << std::endl;
 	std::cout << "K = " << K_ << std::endl;
 	std::cout << "A =";
 	for( int k = 0; k <= K_; k++ ){
@@ -119,25 +198,28 @@ void BackgroundModel::print(){
 	}
 	std::cout << std::endl;
 
-	printf( " ________\n"
-			"|        |\n"
-			"| Counts |\n"
-			"|________|\n"
-			"\n" );
+	if( n_bg_ != NULL ){
 
-	for( int k = 0; k <= K_; k++ ){
-		std::cout << n_bg_[k][0];
-		for( int y = 1; y < Y_[k+1]; y++ ){
-			std::cout << " " << n_bg_[k][y];
-		}
+		std::cout << " ________" << std::endl;
+		std::cout << "|        |" << std::endl;
+		std::cout << "| Counts |" << std::endl;
+		std::cout << "|________|" << std::endl;
 		std::cout << std::endl;
+
+		for( int k = 0; k <= K_; k++ ){
+			std::cout << n_bg_[k][0];
+			for( int y = 1; y < Y_[k+1]; y++ ){
+				std::cout << " " << n_bg_[k][y];
+			}
+			std::cout << std::endl;
+		}
 	}
 
-	printf( " ___________________________\n"
-			"|                           |\n"
-			"| Conditional probabilities |\n"
-			"|___________________________|\n"
-			"\n" );
+	std::cout << " ___________________________" << std::endl;
+	std::cout << "|                           |" << std::endl;
+	std::cout << "| Conditional probabilities |" << std::endl;
+	std::cout << "|___________________________|" << std::endl;
+	std::cout << std::endl;
 
 	for( int k = 0; k <= K_; k++ ){
 		std::cout << std::fixed << std::setprecision( 3 ) << v_bg_[k][0];
@@ -148,9 +230,17 @@ void BackgroundModel::print(){
 	}
 }
 
-void BackgroundModel::write( char* dir, char* basename ){
+void BackgroundModel::write( char* dir ){
 
-	std::ofstream file( std::string( dir ) + '/' + std::string( basename ) + ".bamm" );
+	std::ofstream file( std::string( dir ) + '/' + name_ + ".hb" );
+
+	file << "# K = " << K_ << std::endl;
+	file << "# A =";
+	for( int k = 0; k <= K_; k++ ){
+		file << " " << A_[k];
+	}
+	file << std::endl;
+
 	for( int k = 0; k <= K_; k++ ){
 		file << std::fixed << std::setprecision( 6 ) << v_bg_[k][0];
 		for( int y = 1; y < Y_[k+1]; y++ ){

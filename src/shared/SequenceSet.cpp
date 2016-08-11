@@ -199,7 +199,7 @@ int SequenceSet::readFASTA(){
 
 		file.close();
 
-	} else {
+	} else{
 
 		std::cerr << "Error: Cannot open FASTA file: " << sequenceFilepath_ << std::endl;
 		exit( -1 );

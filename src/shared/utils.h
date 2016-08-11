@@ -5,21 +5,21 @@
 
 #include <sys/stat.h>	// e.g. stat
 
-static char*							baseName( char* filePath );
+static char*							baseName( const char* filePath );
 static void								createDirectory( char* dir );
 static std::vector<std::vector<int>>	generateFolds( unsigned int N, unsigned int folds );
 static int								ipow( unsigned int base, int exp );	// calculate the power for integer base
 
-inline char* baseName( char* fileName ){
+inline char* baseName( const char* filePath ){
 
 	int i = 0, start = 0, end = 0;
 
-	while( fileName[++i] != '\0' ){
-		if( fileName[i] == '.' ){
+	while( filePath[++i] != '\0' ){
+		if( filePath[i] == '.' ){
 			end = i - 1;
 		}
 	}
-	while( --i != 0 && fileName[i] != '/' ){
+	while( --i != 0 && filePath[i] != '/' ){
 		;
 	}
 	if( i != 0 ){
@@ -28,7 +28,7 @@ inline char* baseName( char* fileName ){
 
 	char* baseName = ( char* )malloc( ( end-start+2 ) * sizeof( char ) );
 	for( i = start; i <= end; i++ ){
-		baseName[i-start] = fileName[i];
+		baseName[i-start] = filePath[i];
 	}
 	baseName[i-start] = '\0';
 
