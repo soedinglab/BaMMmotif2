@@ -1,9 +1,7 @@
 /build/
 /Debug/
 
-.gitignore
-
-# CMakeLists.txt
+*~
 
 #####=== C ===#####
 
