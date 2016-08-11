@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.11)
+cmake_minimum_required (VERSION 2.8.11 FATAL_ERROR)
 
 project (BaMMmotif-dev)
 
@@ -15,6 +15,6 @@ set (CMAKE_CXX_FLAGS "-D__cplusplus=201103L -D__GXX_EXPERIMENTAL_CXX0X__ -DLOG_M
 add_subdirectory (src/getopt_pp getopt_pp)
 add_subdirectory (src/shared shared)
 
-add_subdirectory (src/bamm BaMMmotif)
+# add_subdirectory (src/bamm BaMMmotif)
 add_subdirectory (src/virusX VirusX)
 

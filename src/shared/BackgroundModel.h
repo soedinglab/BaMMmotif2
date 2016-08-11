@@ -1,43 +1,47 @@
-/*
- * BackgroundModel.h
- *
- *  Created on: Apr 1, 2016
- *      Author: wanwan
- */
-
 #ifndef BACKGROUNDMODEL_H_
 #define BACKGROUNDMODEL_H_
 
-#ifndef VIRUS_X_
-#include "../bamm/Global.h"
-#else
-#include "../virusX/Global.h"
-#endif
+#include <fstream>	// e.g. std::ofstream
+#include <iomanip>	// e.g. std::setprecision
+#include <iostream>	// e.g. std::cerr
+#include <limits>	// e.g. std::numeric_limits
+#include <numeric>	// e.g. std::iota
+#include <string>
+#include <vector>
 
+#include <math.h>	// e.g. logf
+
+#include "Alphabet.h"
 #include "SequenceSet.h"
+#include "utils.h"
 
-class BackgroundModel {
+class BackgroundModel{
 
 public:
-
-	BackgroundModel( std::vector<int> folds = std::vector<int> () );
+	BackgroundModel( SequenceSet& sequenceSet,
+			         int order,
+			         std::vector<float> alpha,
+			         std::vector<std::vector<int>> foldIndices = std::vector<std::vector<int>>(),
+			         std::vector<int> folds = std::vector<int>() );
 	~BackgroundModel();
 
-	float** getVbg();	                				// get conditional probabilities for k-mers
+	float** getVbg();
 
-	void 	print();									// print background model to console
-	void 	write();			   						// write background model to file basename.bmm in output directory
+	void 	print();
+	void 	write( char* dir, char* basename );	// write background model to file basename.bamm in output directory
 
 private:
 
-	void 	calculateVbg();  							// calculate v from k-mer counts n
+	void 	calculateVbg();  	// calculate conditional probabilities from counts
 
-	int**	n_bg_;										// k-mer counts
-	float** v_bg_;					    				// conditional probabilities for k-mers
-	int		K_ = Global::bgModelOrder;
-	int 	negSetN_ = Global::negSequenceSet->getN();	// count of negative sequences
-	std::vector<Sequence> negSeqs_ = Global::negSequenceSet->getSequences();
+	int**				n_bg_;	// oligomer counts
+	float** 			v_bg_;	// oligomer conditional probabilities
+	int					K_;		// order
+	std::vector<float>	A_;		// order-specific alphas
 
+	std::vector<int>	Y_;		// contains 1 at position 0
+								// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
+								// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
 };
 
 #endif /* BACKGROUNDMODEL_H_ */
