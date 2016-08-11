@@ -1,10 +1,3 @@
-/*
- * Motif.cpp
- *
- *  Created on: Apr 19, 2016
- *      Author: administrator
- */
-
 #include "Motif.h"
 
 Motif::Motif( int length ){
@@ -13,22 +6,27 @@ Motif::Motif( int length ){
 
 	W_ = length;
 
+	for( k = 0; k < K_+2; k++ ){
+		Y_.push_back( ipow( Alphabet::getSize(), k ) );
+	}
+
 	v_ = ( float*** )calloc( K_+1, sizeof( float** ) );
 	n_ = ( int*** )calloc( K_+1, sizeof( int** ) );
 	for( k = 0; k < K_+1; k++ ){
-		v_[k] = ( float** )calloc( Global::powA[k+1], sizeof( float* ) );
-		n_[k] = ( int** )calloc( Global::powA[k+1], sizeof( int* ) );
-		for( y = 0; y < Global::powA[k+1]; y++ ){
+		v_[k] = ( float** )calloc( Y_[k+1], sizeof( float* ) );
+		n_[k] = ( int** )calloc( Y_[k+1], sizeof( int* ) );
+		for( y = 0; y < Y_[k+1]; y++ ){
 			v_[k][y] = ( float* )calloc( W_, sizeof( float ) );
 			n_[k][y] = ( int* )calloc( W_, sizeof( int ) );
 		}
 	}
 
-	v_bg_ = ( float* )calloc( Global::powA[1], sizeof( float ) );
+	v_bg_ = ( float* )calloc( Y_[1], sizeof( float ) );
 
 	BackgroundModel bg;
-	for( y = 0; y < Global::powA[1]; y++ )
+	for( y = 0; y < Y_[1]; y++ )
 		v_bg_[y] = bg.getVbg()[0][y];
+
 }
 
 Motif::Motif( const Motif& other ){ 		// deep copy
@@ -40,9 +38,9 @@ Motif::Motif( const Motif& other ){ 		// deep copy
 	v_ = ( float*** )malloc( ( K_+1 )* sizeof( float** ) );
 	n_ = ( int*** )malloc( ( K_+1 ) * sizeof( int** ) );
 	for( k = 0; k < K_+1; k++ ){
-		v_[k] = ( float** )malloc( Global::powA[k+1] * sizeof( float* ) );
-		n_[k] = ( int** )malloc( Global::powA[k+1] * sizeof( int* ) );
-		for( y = 0; y < Global::powA[k+1]; y++ ){
+		v_[k] = ( float** )malloc( Y_[k+1] * sizeof( float* ) );
+		n_[k] = ( int** )malloc( Y_[k+1] * sizeof( int* ) );
+		for( y = 0; y < Y_[k+1]; y++ ){
 			v_[k][y] = ( float* )malloc( W_ * sizeof( float ) );
 			n_[k][y] = ( int* )malloc( W_ * sizeof( int ) );
 			for( j = 0; j < W_; j++ ){
@@ -54,15 +52,16 @@ Motif::Motif( const Motif& other ){ 		// deep copy
 
 	isInitialized_ = true;
 
-	v_bg_ = ( float* )calloc( Global::powA[1], sizeof( float ) );
-	for( y = 0; y < Global::powA[1]; y++ )
+	v_bg_ = ( float* )calloc( Y_[1], sizeof( float ) );
+	for( y = 0; y < Y_[1]; y++ )
 		v_bg_[y] = other.v_bg_[y];
+
 }
 
 Motif::~Motif(){
 
 	for( int k = 0; k < K_+1; k++ ){
-		for( int y = 0; y < Global::powA[k+1]; y++ ){
+		for( int y = 0; y < Y_[k+1]; y++ ){
 			free( v_[k][y] );
 			free( n_[k][y] );
 		}
@@ -73,7 +72,6 @@ Motif::~Motif(){
 	free( n_ );
 
 	free( v_bg_ );
-	std::cout << "Destructor for Motif class works fine. \n";
 
 }
 
@@ -99,10 +97,10 @@ void Motif::initFromBindingSites( char* filename ){
 
 		// add alphabets randomly at the beginning of each binding site
 		for( i = 0; i < Global::addColumns.at(0); i++ )
-			bindingsite.insert( bindingsite.begin(), Alphabet::getBase( rand() % Global::powA[1] + 1 ) );
+			bindingsite.insert( bindingsite.begin(), Alphabet::getBase( rand() % Y_[1] + 1 ) );
 		// add alphabets randomly at the end of each binding site
 		for( i = 0; i < Global::addColumns.at(1); i++ )
-			bindingsite.insert( bindingsite.end(), Alphabet::getBase( rand() % Global::powA[1] + 1 ) );
+			bindingsite.insert( bindingsite.end(), Alphabet::getBase( rand() % Y_[1] + 1 ) );
 
 		bindingSiteWidth = bindingsite.length();
 
@@ -127,7 +125,7 @@ void Motif::initFromBindingSites( char* filename ){
 			for( j = k; j < bindingSiteWidth; j++ ){	// j runs over all true motif positions
 				y = 0;
 				for( n = k; n >= 0; n-- )				// calculate y based on (k+1)-mer bases
-					y += Global::powA[n] * ( Alphabet::getCode( bindingsite[j-n] ) - 1 );
+					y += Y_[n] * ( Alphabet::getCode( bindingsite[j-n] ) - 1 );
 				n_[k][y][j]++;
 			}
 		}
@@ -166,16 +164,16 @@ void Motif::calculateV(){
 
 	int y, j, k, y2, yk;
 	// for k = 0, v_ = freqs:
-	for( y = 0; y < Global::powA[1]; y++ )
+	for( y = 0; y < Y_[1]; y++ )
 		for( j = 0; j < W_; j++ )
 			v_[0][y][j] = ( n_[0][y][j] + Global::modelAlpha.at(0) * v_bg_[y] )
 						/ ( N_ + Global::modelAlpha.at(0) );
 
 	// for k > 0:
 	for( k = 1; k < K_+1; k++ ){
-		for( y = 0; y < Global::powA[k+1]; y++ ){
-			y2 = y % Global::powA[k];						// cut off the first nucleotide in (k+1)-mer y
-			yk = y / Global::powA[1];						// cut off the last nucleotide in (k+1)-mer y
+		for( y = 0; y < Y_[k+1]; y++ ){
+			y2 = y % Y_[k];						// cut off the first nucleotide in (k+1)-mer y
+			yk = y / Y_[1];						// cut off the last nucleotide in (k+1)-mer y
 			for( j = 0; j < k; j++ )						// when j < k, i.e. p(A|CG) = p(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
 			for( j = k; j < W_; j++ )
@@ -199,11 +197,11 @@ void Motif::updateV( float*** n, float** alpha ){
 	// sum up the n over (k+1)-mers at different position of motif
 	float* sumN = ( float* )calloc( W_, sizeof( float ) );
 	for( j = 0; j < W_; j++ )
-		for( y = 0; y < Global::powA[1]; y++ )
+		for( y = 0; y < Y_[1]; y++ )
 			sumN[j] += n[0][y][j];
 
 	// for k = 0, v_ = freqs:
-	for( y = 0; y < Global::powA[1]; y++ ){
+	for( y = 0; y < Y_[1]; y++ ){
 		for( j = 0; j < W_; j++ )
 			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * v_bg_[y] )
 						/ ( sumN[j] + alpha[0][j] );
@@ -213,9 +211,9 @@ void Motif::updateV( float*** n, float** alpha ){
 
 	// for k > 0:
 	for( k = 1; k < K_+1; k++ ){
-		for( y = 0; y < Global::powA[k+1]; y++ ){
-			y2 = y % Global::powA[k];						// cut off the first nucleotide in (k+1)-mer
-			yk = y / Global::powA[1];						// cut off the last nucleotide in (k+1)-mer
+		for( y = 0; y < Y_[k+1]; y++ ){
+			y2 = y % Y_[k];						// cut off the first nucleotide in (k+1)-mer
+			yk = y / Y_[1];						// cut off the last nucleotide in (k+1)-mer
 			for( j = 0; j < k; j++ )						// when j < k, i.e. p(A|CG) = p(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
 			for( j = k; j < W_; j++ )
@@ -232,7 +230,7 @@ void Motif::print(){
 			"|_______________________|\n\n" );
 	for( int j = 0; j < W_; j++ ){
 		for( int k = 0; k < K_+1; k++ ){
-			for( int y = 0; y < Global::powA[k+1]; y++ )
+			for( int y = 0; y < Y_[k+1]; y++ )
 				std::cout << std::scientific << v_[k][y][j] << '\t';
 			std::cout << std::endl;
 		}
@@ -256,7 +254,7 @@ void Motif::write(){
 	std::ofstream ofile_n( opath_n.c_str() );
 	for( int j = 0; j < W_; j++ ){
 		for( int k = 0; k < K_+1; k++ ){
-			for( int y = 0; y < Global::powA[k+1]; y++ ){
+			for( int y = 0; y < Y_[k+1]; y++ ){
 				ofile_v << std::scientific << v_[k][y][j] << '\t';
 				ofile_n << std::scientific << n_[k][y][j] << '\t';
 			}

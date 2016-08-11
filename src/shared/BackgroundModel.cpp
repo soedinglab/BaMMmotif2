@@ -70,6 +70,7 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 					if( y >= 0 ){
 						// count (k+1)mer
 						n_bg_[k][y]++;
+
 					}
 				}
 			}
@@ -148,6 +149,7 @@ void BackgroundModel::print(){
 	}
 }
 
+
 void BackgroundModel::write( char* dir, char* basename ){
 
 	std::ofstream file( std::string( dir ) + '/' + std::string( basename ) + ".bamm" );
@@ -182,6 +184,7 @@ void BackgroundModel::calculateVbg(){
 			int yk = y / Y_[1];
 			v_bg_[k][y] = ( static_cast<float>( n_bg_[k][y] ) + A_[k] * v_bg_[k-1][y2] ) /
 					      ( static_cast<float>( n_bg_[k-1][yk] ) + A_[k] );
+
 		}
 		// normalize probabilities
 		float factor = 0.0f;

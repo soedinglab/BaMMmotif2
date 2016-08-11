@@ -1,15 +1,12 @@
-/*
- * MotifSet.cpp
- *
- *  Created on: Apr 18, 2016
- *      Author: administrator
- */
-
 #include <fstream>		// std::fstream
 
 #include "MotifSet.h"
 
 MotifSet::MotifSet(){
+
+	for( int k = 0; k < Global::modelOrder+2; k++ ){
+		Y_.push_back( ipow( Alphabet::getSize(), k ) );
+	}
 
 	if( Global::BaMMpatternFilename != NULL ){
 
@@ -18,16 +15,16 @@ MotifSet::MotifSet(){
 		// * motif.initFromIUPACPattern( p )
 		// motifs.push_back( motif )
 
-	} else if( Global::bindingSitesFilename != NULL ){
+	} else if( Global::bindingSiteFilename != NULL ){
 
 		std::ifstream file;
-		file.open( Global::bindingSitesFilename, std::ifstream::in );
+		file.open( Global::bindingSiteFilename, std::ifstream::in );
 		std::string seq;
 		int length;
 
 		if( !file.good() ){
 			std::cout << "Error: Cannot open bindingSitesFile sequence file: "
-					<< Global::bindingSitesFilename << std::endl;
+					<< Global::bindingSiteFilename << std::endl;
 			exit( -1 );
 		} else {
 			getline( file, seq );					// get length of the first sequence
@@ -37,7 +34,7 @@ MotifSet::MotifSet(){
 		length += Global::addColumns.at(0) + Global::addColumns.at(1);
 
 		Motif* motif = new Motif( length );
-		motif->initFromBindingSites( Global::bindingSitesFilename );
+		motif->initFromBindingSites( Global::bindingSiteFilename );
 		motifs_.push_back( motif );
 		N_ = 1;
 
@@ -105,7 +102,7 @@ void MotifSet::write(){
 		v_motif =  motifs_[i]->getV();
 		for( j = 0; j < W; j++ ){
 			for( k = 0; k < Global::modelOrder+1; k++ ){
-				for( y = 0; y < Global::powA[k+1]; y++ )
+				for( y = 0; y < Y_[k+1]; y++ )
 					ofile << std::scientific << std::setprecision(8) << v_motif[k][y][j] << ' ';
 				ofile << std::endl;
 			}

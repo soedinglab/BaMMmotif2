@@ -1,10 +1,3 @@
-/*
- * Global.h
- *
- *  Created on: Apr 1, 2016
- *      Author: wanwan
- */
-
 #ifndef GLOBAL_H_
 #define GLOBAL_H_
 
@@ -34,27 +27,27 @@ public:
 	static char*		outputDirectory; 					// output directory
 
 	static char*		posSequenceFilename;				// filename of positive sequence FASTA file
-	static char*		negSequenceFilename;				// filename of negative sequence FASTA file
-
 	static char*		posSequenceBasename;				// basename of positive sequence FASTA file
-	static char*		negSequenceBasename;				// basename of negative sequence FASTA file
+	static SequenceSet*	posSequenceSet;						// positive Sequence Set
+	static std::vector< std::vector<int> >	posFoldIndices;	// sequence indices for positive sequence set
 
+	static char*		negSequenceFilename;				// filename of negative sequence FASTA file
+	static char*		negSequenceBasename;				// basename of negative sequence FASTA file
+	static SequenceSet*	negSequenceSet;						// negative Sequence Set
+	static std::vector< std::vector<int> >	negFoldIndices;	// sequence indices for given negative sequence set
+	static bool			negGiven;							// a flag for the given negative sequence set by user
+
+	// weighting options
+	static char*		intensityFilename;					// filename of intensity file (i.e. for HT-SELEX data)
 
 	static char* 		alphabetType;						// provide alphabet type
 	static bool			revcomp;							// also search on reverse complement of sequences, defaults to false
 
-	static SequenceSet*	posSequenceSet;						// positive Sequence Set
-	static SequenceSet*	negSequenceSet;						// negative Sequence Set
-
-	static char*		intensityFilename;					// filename of intensity file (i.e. for HT-SELEX data)
-	// further weighting options...
-
-	// files to initialize model(s)
+	// initial model(s) options
 	static char*		BaMMpatternFilename;				// filename of BaMMpattern file
-	static char*		bindingSitesFilename;				// filename of binding sites file
+	static char*		bindingSiteFilename;				// filename of binding sites file
 	static char*		PWMFilename;						// filename of PWM file
-	static char*		BaMMFilename;						// filename of Markov model (.bmm) file
-
+	static char*		BaMMFilename;						// filename of Markov model (.bamm) file
 	static char*		initialModelBasename;				// basename of initial model
 
 	// model options
@@ -71,31 +64,26 @@ public:
 	static float		epsilon;							// threshold for likelihood convergence parameter
 	static bool			noAlphaOptimization;				// disable alpha optimization
 	static bool			noQOptimization;					// disable q optimization
+	static bool			setSlow;							// develop with the slow EM version
 
 	// FDR options
 	static bool			FDR;								// triggers False-Discovery-Rate (FDR) estimation
-	static unsigned int	mFold;								// number of negative sequences as multiple of positive sequences
-	static unsigned int	cvFold;								// number of cross-validation folds
-	static std::vector< std::vector<int> >	posFoldIndices;	// sequence indices for each cross-validation fold
-	static std::vector< std::vector<int> >	negFoldIndices;	// sequence indices for each cross-validation fold
+	static int			mFold;								// number of negative sequences as multiple of positive sequences
+	static int			cvFold;								// number of cross-validation(cv) folds
 	// further FDR options...
 
 	static bool			verbose;							// verbose printouts, defaults to false
+	static bool			saveInitBaMMs;						// Write initialized BaMM(s) to disk.
+	static bool			saveBaMMs;							// Write optimized BaMM(s) to disk.
 
 	static void         init( int nargs, char* args[] );
 	static void         destruct();
 
 	static char* 		String( const char *s );			// convert const char* to string, for GetOpt library
-	static int			ipow( unsigned int base, int exp );	// power function for integers
-	static int*			powA;								// sizes of alphabet to the power k
 
-	static bool			setSlow;							// develop with the slow EM version
 private:
 
 	static int	        readArguments( int nargs, char* args[] );
-	static void	        createDirectory( char* dir );
-	static char*		baseName( char* path );
-	static void	        generateFolds( unsigned int posN, unsigned int negN, unsigned int fold );
 	static void	        printHelp();
 };
 
