@@ -7,7 +7,7 @@
 
 static char*							baseName( char* filePath );
 static void								createDirectory( char* dir );
-static std::vector<std::vector<int>>	generateFolds( unsigned int N, unsigned int folds );
+static std::vector<std::vector<int>>	generateFoldIndices( unsigned int N, unsigned int folds );
 static int								ipow( unsigned int base, int exp );	// calculate the power for integer base
 
 inline char* baseName( char* fileName ){
@@ -50,13 +50,15 @@ inline void createDirectory( char* dir ){
 	}
 }
 
-inline std::vector<std::vector<int>> generateFolds( unsigned int N, unsigned int folds ){
+inline std::vector<std::vector<int>> generateFoldIndices( unsigned int N, unsigned int folds ){
 
 	std::vector<std::vector<int>> indices( folds );
 
 	for( unsigned int i = 0; i < N; i++ ){
 		for( unsigned int j = 0; j < folds; j++ ){
-			indices[j].push_back( i );
+			if( i < N ){
+				indices[j].push_back( i );
+			}
 		}
 	}
 

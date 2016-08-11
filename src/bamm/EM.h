@@ -1,10 +1,3 @@
-/*
- * EM.h
- *
- *  Created on: Apr 1, 2016
- *      Author: wanwan
- */
-
 #ifndef EM_H_
 #define EM_H_
 
@@ -13,12 +6,9 @@
 
 class EM {
 
-friend class Sequence;
-friend class SequenceSet;
-
 public:
 
-	EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds = std::vector<int> () );
+	EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds = std::vector<int>() );
 	~EM();
 
 	int                 learnMotif();
@@ -45,12 +35,15 @@ private:
 	float					Qfunc_ = 0.0f;		// Q function per each EM iteration
 
 	int						posSetN_ = Global::posSequenceSet->getN();
-	std::vector<Sequence>	posSeqs_ = Global::posSequenceSet->getSequences();
+	std::vector<Sequence*>	posSeqs_ = Global::posSequenceSet->getSequences();
 	int						K_ = Global::modelOrder;
 	int						k_bg_ = Global::bgModelOrder;
 	int 					W_;					// motif length
 	float***				v_motif_;			// conditional probabilities for motif
 	float**					v_bg_;				// conditional probabilities for background model
+	std::vector<int>		Y_;					// contains 1 at position 0
+												// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
+												// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
 
 	void EStep();								// E-step
 	void MStep();								// M-step

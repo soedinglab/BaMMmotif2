@@ -1,15 +1,12 @@
-/*
- * MotifSet.cpp
- *
- *  Created on: Apr 18, 2016
- *      Author: administrator
- */
-
 #include <fstream>		// std::fstream
 
 #include "MotifSet.h"
 
 MotifSet::MotifSet(){
+
+	for( int k = 0; k < Global::modelOrder+2; k++ ){
+		Y_.push_back( ipow( Alphabet::getSize(), k ) );
+	}
 
 	if( Global::BaMMpatternFilename != NULL ){
 
@@ -105,7 +102,7 @@ void MotifSet::write(){
 		v_motif =  motifs_[i]->getV();
 		for( j = 0; j < W; j++ ){
 			for( k = 0; k < Global::modelOrder+1; k++ ){
-				for( y = 0; y < Global::powA[k+1]; y++ )
+				for( y = 0; y < Y_[k+1]; y++ )
 					ofile << std::scientific << std::setprecision(8) << v_motif[k][y][j] << ' ';
 				ofile << std::endl;
 			}

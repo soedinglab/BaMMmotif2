@@ -1,15 +1,9 @@
-/*
- * main.cpp
- *
- *  Created on: Apr 1, 2016
- *      Author: wanwan
- */
-
 #include <time.h>		// time()
 #include <stdio.h>
 
 #include "Global.h"
 #include "../shared/BackgroundModel.h"
+#include "../shared/utils.h"
 #include "MotifSet.h"
 #include "EM.h"
 #include "FDR.h"
@@ -33,7 +27,7 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "************************\n" );
 	fprintf( stderr, "*   Background Model   *\n" );
 	fprintf( stderr, "************************\n" );
-	BackgroundModel* bgModel = new BackgroundModel();
+	BackgroundModel* bgModel = new BackgroundModel( Global::negSequenceSet, Global::bgModelOrder, Global::bgModelAlpha );
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "*********************\n" );
@@ -56,7 +50,7 @@ int main( int nargs, char* args[] ){
 	motifs.write();
 
 	// evaluate motifs
-	if( Global::FDR ){
+//	if( Global::FDR ){
 		fprintf( stderr, "\n" );
 		fprintf( stderr, "***********\n" );
 		fprintf( stderr, "*   FDR   *\n" );
@@ -66,7 +60,7 @@ int main( int nargs, char* args[] ){
 			fdr.evaluateMotif();
 			fdr.write();
 		}
-	}
+//	}
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "******************\n" );
