@@ -8,6 +8,7 @@
 #include <numeric>	// e.g. std::iota
 #include <string>
 #include <vector>
+#include <sys/stat.h>
 
 #include <math.h>	// e.g. logf
 
@@ -18,22 +19,28 @@
 class BackgroundModel{
 
 public:
+
 	BackgroundModel( SequenceSet& sequenceSet,
 			         int order,
 			         std::vector<float> alpha,
 			         std::vector<std::vector<int>> foldIndices = std::vector<std::vector<int>>(),
 			         std::vector<int> folds = std::vector<int>() );
+
+	BackgroundModel( std::string filePath );
+
 	~BackgroundModel();
 
-	float** getVbg();
+	std::string getName();
+	float**		getVbg();
 
 	void 	print();
-	void 	write( char* dir, char* basename );	// write background model to file basename.bamm in output directory
+	void 	write( char* dir );
 
 private:
 
 	void 	calculateVbg();  	// calculate conditional probabilities from counts
 
+	std::string			name_;	// basename of sequence set file
 	int**				n_bg_;	// oligomer counts
 	float** 			v_bg_;	// oligomer conditional probabilities
 	int					K_;		// order
