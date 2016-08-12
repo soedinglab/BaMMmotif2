@@ -29,7 +29,7 @@ BackgroundModelSet::BackgroundModelSet( char* inputDirectory, char* extension, i
 		closedir( dir );
 
 	} else{
-		perror( Global::inputDirectory );
+		perror( inputDirectory );
 	}
 }
 
@@ -60,7 +60,7 @@ BackgroundModelSet::BackgroundModelSet( char* inputDirectory, char* extension ){
 		closedir( dir );
 
 	} else{
-		perror( Global::inputDirectory );
+		perror( inputDirectory );
 	}
 }
 

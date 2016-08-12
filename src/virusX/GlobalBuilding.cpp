@@ -1,4 +1,4 @@
-#include "Global.h"
+#include "GlobalBuilding.h"
 
 char*               Global::inputDirectory = NULL;				// input directory
 char*               Global::outputDirectory = NULL;				// output directory
@@ -12,7 +12,7 @@ float				Global::modelGamma = 2.0f;					// - " -
 
 bool                Global::verbose = false;					// verbose printouts
 
-std::string			Global::name="VirusX";						// program name
+std::string			Global::name="build";						// program name
 std::string			Global::version="0.1.1";					// program version number
 
 void Global::init( int nargs, char* args[] ){
@@ -143,12 +143,12 @@ void Global::printHelp(){
 
 	printf( "\n" );
 	printf( "SYNOPSIS\n" );
-	printf( "      VirusX DIRPATH [OPTIONS]\n\n" );
+	printf( "      build DIRPATH [OPTIONS]\n\n" );
 	printf( "DESCRIPTION\n" );
-	printf( "      Learn Bayesian homogeneous Markov models from bacterial genomes.\n\n" );
+	printf( "      Learn homogeneous Bayesian Markov models (BaMMs) from bacterial genomes.\n\n" );
 	printf( "      DIRPATH\n"
 			"          Input directory with bacterial genomes in FASTA format (one file per\n"
-			"          genome). The default filename extension searched for is .fasta. Use\n"
+			"          genome). The default filename extension searched for is <fasta>. Use\n"
 			"          option -e (--extension) to change the default setting.\n\n" );
 	printf("OPTIONS\n");
 	printf( "  Options for input files\n" );

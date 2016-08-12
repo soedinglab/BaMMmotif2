@@ -8,11 +8,9 @@
 #include <string.h>		// e.g. strcmp
 #include <sys/stat.h>
 
-#include "../shared/BackgroundModel.h"
-#include "../shared/SequenceSet.h"
-#include "../shared/utils.h"
-
-#include "Global.h"
+#include "BackgroundModel.h"
+#include "SequenceSet.h"
+#include "utils.h"
 
 class BackgroundModelSet{
 
