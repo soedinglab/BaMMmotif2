@@ -1,6 +1,6 @@
 #include "EM.h"
 
-EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> foldIndices ){
+EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 
 	motif_ = motif;
 	v_motif_ = motif_->getV();
@@ -9,30 +9,42 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> foldIndices ){
 	bg_ = bg;
 	v_bg_ = bg_->getVbg();
 
-	for( int k = 0; k < K_+2; k++ ){
-		Y_.push_back( ipow( Alphabet::getSize(), k ) );
-	}
-
-	if( !foldIndices.empty() ){					// for the cross-validation
-		foldIndices_ = foldIndices;
-	} else {									// for the complete sequence set
-		foldIndices_.resize( posSetN_ );
-		for( int n = 0; n < posSetN_; n++ ){
-			foldIndices_[n] = n;
-		}
-	}
+	K_ = Global::modelOrder;
+	k_bg_ = Global::bgModelOrder;
 
 	int y, k, j;
 	unsigned int n;
+	unsigned int f_idx, s_idx;
+
+	for( k = 0; k < K_+2; k++ ){
+		Y_.push_back( ipow( Alphabet::getSize(), k ) );
+	}
+
+	if( folds.empty() ){												// for the complete sequence set
+		folds_.resize( Global::cvFold );
+		std::iota( std::begin( folds_ ), std::end( folds_ ), 0 );
+	} else {															// for the cross-validation
+		folds_ = folds;
+	}
+
+	posSetN_ = 0;
+	for( f_idx = 0; f_idx < folds_.size(); f_idx++ ){
+		for( s_idx = 0; s_idx < Global::posFoldIndices[folds_[f_idx]].size(); s_idx++ ){
+			posSeqs_.push_back( Global::posSequenceSet->getSequences()[s_idx] );
+		}
+		posSetN_ += Global::posFoldIndices[folds_[f_idx]].size();
+	}
+
 	// allocate memory for s_[y][j] and initialize it
 	s_ = ( float** )calloc( Y_[K_+1], sizeof( float* ) );
 	for( y = 0; y < Y_[K_+1]; y++ )
 		s_[y] = ( float* )calloc( W_, sizeof( float ) );
 
     // allocate memory for r_[n][i] and initialize it
-	r_ = ( float** )calloc( foldIndices_.size(), sizeof( float* ) );
-    for( n = 0; n < foldIndices_.size(); n++ )
-    	r_[n] = ( float* )calloc( posSeqs_[foldIndices_[n]]->getL()+1, sizeof( float ) );
+	r_ = ( float** )calloc( posSetN_, sizeof( float* ) );
+    for( n = 0; n < posSetN_; n++ ){
+    	r_[n] = ( float* )calloc( posSeqs_[n]->getL()+1, sizeof( float ) );
+    }
 
     // allocate memory for n_[k][y][j] and p_[k][y][j] and initialize them
 	n_ = ( float*** )calloc( K_+1, sizeof( float** ) );
@@ -51,18 +63,14 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> foldIndices ){
 	for( k = 0; k < K_+1; k++ ){
 		alpha_[k] = ( float* )malloc( W_ * sizeof( float ) );
 		for( j = 0; j < W_; j++ ){
-//			alpha_[k][j] = 10.0f;
-			if( k == 0 )
-				alpha_[k][j] = 1;
-			else
-				alpha_[k][j] = 20 * ipow( 3, k-1 );
+			alpha_[k][j] = Global::modelAlpha[k];
 		}
 	}
 
-	// allocate memory for freqs_[y][j] when K = 2
-	freqs_ = ( float** )calloc( 3, sizeof( float* ) );
-	for( y = 0; y < Y_[3]; y++ )
-		freqs_[y] = ( float* )calloc( W_, sizeof( float ) );
+//	// allocate memory for freqs_[y][j] when K = 2
+//	freqs_ = ( float** )calloc( 3, sizeof( float* ) );
+//	for( y = 0; y < Y_[3]; y++ )
+//		freqs_[y] = ( float* )calloc( W_, sizeof( float ) );
 }
 
 EM::~EM(){
@@ -73,7 +81,7 @@ EM::~EM(){
 		free( s_[y] );
 	free( s_ );
 
-	for( n = 0; n < foldIndices_.size(); n++ )
+	for( n = 0; n < folds_.size(); n++ )
 		free( r_[n] );
 	free( r_ );
 
@@ -91,8 +99,6 @@ EM::~EM(){
 	for( k = 0; k < K_+1; k++ )
 		free( alpha_[k] );
 	free( alpha_ );
-
-	std::cout << "Destructor for EM class works fine. \n";
 
 }
 
@@ -171,8 +177,8 @@ int EM::learnMotif(){
 	// when k > 0:
 	for( k = 1; k < K_+1; k++){
 		for( y = 0; y < Y_[k+1]; y++ ){
-			y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
-			yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer
+			y2 = y % Y_[k];												// cut off the first nucleotide in (k+1)-mer
+			yk = y / Y_[1];												// cut off the last nucleotide in (k+1)-mer
 			for( j = 0; j < k; j++ )
 				probs_[k][y][j] = probs_[k-1][y2][j];					// i.e. p(ACG) = p(CG)
 			for( j = k; j < W_; j++ )
@@ -205,7 +211,7 @@ void EM::EStep(){
 			if( K_ <= 2 ){
 				s_[y][j] = logf( v_motif_[K_][y][j] ) - logf( v_bg_[K_][y] );
 			} else {
-				y3 = y % Y_[3];								// 3 rightmost nucleotides in (k+1)-mer y
+				y3 = y % Y_[3];											// 3 rightmost nucleotides in (k+1)-mer y
 				s_[y][j] = logf( v_motif_[K_][y][j] ) - logf( v_bg_[k_bg_][y3] );
 			}
 		}
@@ -214,8 +220,8 @@ void EM::EStep(){
 	// calculate responsibilities r_[n][i] at position i in sequence n
 	if( Global::setSlow ){
 		// slow code:
-		for( n = 0; n < foldIndices_.size(); n++ ){								// n runs over all sequences
-			L = posSeqs_[foldIndices_[n]]->getL();
+		for( n = 0; n < posSetN_; n++ ){								// n runs over all sequences
+			L = posSeqs_[n]->getL();
 			LW1 = L - W_ + 1;
 			normFactor = 0.0f;											// reset normalization factor
 
@@ -227,7 +233,7 @@ void EM::EStep(){
 			prior_i = q_ / ( float )LW1;								// p(z_n = i), i > 0
 			for( i = 0; i < LW1; i++ ){
 				for( j = 0; j < W_; j++ ){
-					y = posSeqs_[foldIndices_[n]]->extractKmer( i+j, std::min( j, K_ ) );
+					y = posSeqs_[n]->extractKmer( i+j, std::min( j, K_ ) );
 					if( y != -1 )										// skip 'N' and other unknown alphabets
 						r_[n][i] += s_[y][j];
 					else
@@ -248,8 +254,8 @@ void EM::EStep(){
 		}
 	} else {
 		// fast code:
-		for( n = 0; n < foldIndices_.size(); n++ ){								// n runs over all sequences
-			L = posSeqs_[foldIndices_[n]]->getL();
+		for( n = 0; n < posSetN_; n++ ){								// n runs over all sequences
+			L = posSeqs_[n]->getL();
 			LW1 = L - W_ + 1;
 			normFactor = 0.0f;											// reset normalization factor
 
@@ -258,10 +264,10 @@ void EM::EStep(){
 				r_[n][i] = 0.0f;
 
 			// when p(z_n > 0)
-			prior_i = q_ / ( float )LW1;								// p(z_n = i), i > 0
+			prior_i = q_ / static_cast<float>( LW1 );					// p(z_n = i), i > 0
 			for( i = 0; i < L; i++ ){									// i runs over all nucleotides in sequence
-				y = posSeqs_[foldIndices_[n]]->extractKmer( i, std::min( i, K_ ) );	// extract (k+1)-mer y from positions (i-k,...,i)
-				for( j = 0; j < std::min( W_, i+1 ); j++ )	// j runs over all motif positions
+				y = posSeqs_[n]->extractKmer( i, std::min( i, K_ ) );	// extract (k+1)-mer y from positions (i-k,...,i)
+				for( j = 0; j < std::min( W_, i+1 ); j++ )				// j runs over all motif positions
 					if( y != -1 ){										// skip 'N' and other unknown alphabets
 						r_[n][L-i+j] += s_[y][j];
 					}
@@ -283,14 +289,12 @@ void EM::EStep(){
 			llikelihood_ += logf( normFactor );
 		}
 	}
-
 }
 
 void EM::MStep(){
 
 	int L, LW1, k, y, y2, j, i;
 	unsigned int n;
-
 	// reset the fractional counts n
 	for( k = 0; k < K_+1; k++ )
 		for( y = 0; y < Y_[k+1]; y++ )
@@ -300,12 +304,12 @@ void EM::MStep(){
 	// compute fractional occurrence counts for the highest order K
 	if( Global::setSlow ){
 		// slow code:
-		for( n = 0; n < foldIndices_.size(); n++ ){								// n runs over all sequences
-			L = posSeqs_[foldIndices_[n]]->getL();
+		for( n = 0; n < posSetN_; n++ ){								// n runs over all sequences
+			L = posSeqs_[n]->getL();
 			LW1 = L - W_ + 1;
 			for( i = 0; i < LW1; i++ ){									// i runs over all nucleotides in sequence
 				for( j = 0; j < W_; j++ ){								// j runs over all motif positions
-					y = posSeqs_[foldIndices_[n]]->extractKmer( i+j, std::min( j, K_ ) );	// extract (k+1)-mer y
+					y = posSeqs_[n]->extractKmer( i+j, std::min( j, K_ ) );	// extract (k+1)-mer y
 					if( y != -1 )										// skip 'N' and other unknown alphabets
 						n_[K_][y][j] += r_[n][i];
 					else
@@ -315,10 +319,10 @@ void EM::MStep(){
 		}
 	} else {
 		// fast code:
-		for( n = 0; n < foldIndices_.size(); n++ ){								// n runs over all sequences
-			L = posSeqs_[foldIndices_[n]]->getL();
+		for( n = 0; n < posSetN_; n++ ){								// n runs over all sequences
+			L = posSeqs_[n]->getL();
 			for( i = 0; i < L; i++ ){
-				y = posSeqs_[foldIndices_[n]]->extractKmer( i, std::min( i, K_ ) );
+				y = posSeqs_[n]->extractKmer( i, std::min( i, K_ ) );
 				for( j = 0; j < std::min( W_, i+1 ); j++ )
 					if( y != -1 && ( L-i+j ) >= W_ )					// skip 'N' and other unknown alphabets
 						n_[K_][y][j] += r_[n][L-i+j];
@@ -338,7 +342,7 @@ void EM::MStep(){
 	}
 
 	// compute the Q function
-//	Qfunc_ = calculateQfunc();
+	Qfunc_ = calculateQfunc();
 
 	// update model parameters v[k][y][j]
 	motif_->updateV( n_, alpha_ );
@@ -355,18 +359,19 @@ void EM::optimizeQ(){
 }
 
 float EM::calculateQfunc(){
+
 	int L, LW1, i, j, y;
 	unsigned int n;
 	float sumS = 0.0f, Qfunc = 0.0f;
 	float prior_i, prior_0 = 1 - q_;
 
-	for( n = 0; n < foldIndices_.size(); n++ ){
-		L = posSeqs_[foldIndices_[n]]->getL();
+	for( n = 0; n < posSetN_; n++ ){
+		L = posSeqs_[n]->getL();
 		LW1 = L - W_ + 1;
-		prior_i = q_ / ( float )LW1;
+		prior_i = q_ / static_cast<float>( LW1 );
 		for( i = 0; i <= LW1; i++ ){
 			for( j = 0; j < W_; j++ ){
-				y =  posSeqs_[foldIndices_[n]]->extractKmer( i, ( i < K_ ) ? i: K_ );
+				y =  posSeqs_[n]->extractKmer( i, std::min( i, K_ ) );
 				sumS += s_[y][j];
 			}
 			Qfunc += r_[n][i] * sumS;
@@ -374,9 +379,11 @@ float EM::calculateQfunc(){
 		Qfunc += ( r_[n][0] * logf( prior_0 ) + ( 1 - r_[n][0] ) * logf( prior_i ) );
 	}
 	return Qfunc;
+
 }
 
 void EM::print(){
+
 	for( int j = 0; j < W_; j++ ){
 		for( int k = 0; k < K_+1; k++ ){
 			for( int y = 0; y < Y_[k+1]; y++ )
@@ -385,6 +392,7 @@ void EM::print(){
 		}
 		std::cout << std::endl;
 	}
+
 }
 
 void EM::write(){
@@ -430,8 +438,8 @@ void EM::write(){
 	// output responsibilities r[n][i]
 	std::string opath_r = opath + ".EMposterior";
 	std::ofstream ofile_r( opath_r.c_str() );
-	for( n = 0; n < foldIndices_.size(); n++ ){
-		L = posSeqs_[foldIndices_[n]]->getL();
+	for( n = 0; n < posSetN_; n++ ){
+		L = posSeqs_[n]->getL();
 		for( i = 0; i <= L; i++ )
 			ofile_r << std::scientific << r_[n][i] << ' ';
 		ofile_r << std::endl;
