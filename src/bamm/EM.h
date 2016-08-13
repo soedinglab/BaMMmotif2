@@ -20,13 +20,13 @@ private:
 	Motif* 					motif_;				// motif to optimize within the EM
 	BackgroundModel*		bg_;				// background model
 
-	std::vector<int>		foldIndices_;		// folds to iterate over, for cross-validation
+	std::vector<int>		folds_;				// folds to iterate over, for cross-validation
 
 	float**					s_;					// log odds scores of each (k+1)-mer at each position
 	float** 				r_;		        	// responsibilities at position i in sequence n
 	float*** 				n_;	            	// fractional counts n for (k+1)-mers y at motif position j
 	float***				probs_;				// probabilities of PWM
-	float**					freqs_;				// frequencies of 3-mers (for FDR sample generation)
+//	float**					freqs_;				// frequencies of 3-mers (for FDR sample generation)
 	float** 				alpha_;	        	// pseudo-count hyper-parameter for order k and motif position j
 	float 					q_ = 0.9f; 			// hyper-parameter q specifies the fraction of sequences containing motif
 
@@ -34,10 +34,10 @@ private:
 	unsigned int 			EMIterations_ = 0;  // counter for EM iterations
 	float					Qfunc_ = 0.0f;		// Q function per each EM iteration
 
-	int						posSetN_ = Global::posSequenceSet->getN();
-	std::vector<Sequence*>	posSeqs_ = Global::posSequenceSet->getSequences();
-	int						K_ = Global::modelOrder;
-	int						k_bg_ = Global::bgModelOrder;
+	unsigned int			posSetN_;
+	std::vector<Sequence*>	posSeqs_;
+	int						K_;
+	int						k_bg_;
 	int 					W_;					// motif length
 	float***				v_motif_;			// conditional probabilities for motif
 	float**					v_bg_;				// conditional probabilities for background model
@@ -50,7 +50,7 @@ private:
 
 	void optimizeAlphas();			    		// optimize alpha hyper-parameters
 	void optimizeQ();							// optimize hyper-parameter q
-	float calculateQfunc();
+	float calculateQfunc();						// calculate incomplete Q-function
 
 };
 

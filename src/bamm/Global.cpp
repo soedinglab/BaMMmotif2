@@ -7,12 +7,12 @@ char*               Global::outputDirectory = NULL;			// output directory
 char*               Global::posSequenceFilename = NULL;		// filename of positive sequence FASTA file
 char*				Global::posSequenceBasename = NULL;		// basename of positive sequence FASTA file
 SequenceSet*        Global::posSequenceSet = NULL;			// positive Sequence Set
-std::vector< std::vector<int> >	Global::posFoldIndices;		// sequence indices for positive sequence set
+std::vector<std::vector<int>>	Global::posFoldIndices;		// sequence indices for positive sequence set
 
 char*               Global::negSequenceFilename = NULL;		// filename of negative sequence FASTA file
 char*				Global::negSequenceBasename = NULL;		// basename of negative sequence FASTA file
 SequenceSet*        Global::negSequenceSet = NULL;			// negative Sequence Set
-std::vector< std::vector<int> >	Global::negFoldIndices;		// sequence indices for given negative sequence set
+std::vector<std::vector<int>>	Global::negFoldIndices;		// sequence indices for given negative sequence set
 bool				Global::negGiven = false;				// a flag for the given negative sequence set by user
 
 // weighting options
@@ -30,12 +30,14 @@ char*				Global::initialModelBasename = NULL;	// basename of initial model
 
 // model options
 int        			Global::modelOrder = 2;					// model order
-std::vector<float> 	Global::modelAlpha;						// initial alphas
+std::vector<float> 	Global::modelAlpha( modelOrder+1, 10.0f );	// initial alphas
+float				Global::modelBeta = 20.0f;				// alpha_k = beta x gamma^(k-1) for k > 0
+float				Global::modelGamma = 3.0f;
 std::vector<int>    Global::addColumns(2);					// add columns to the left and right of initial model
 
 // background model options
 int        			Global::bgModelOrder = 2;				// background model order, defaults to 2
-float				Global::bgModelAlpha = 10.0f;			// background model alpha
+std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 10.0f );	// background model alpha
 
 // EM options
 unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();	// maximum number of iterations
@@ -46,8 +48,8 @@ bool				Global::setSlow = false;				// develop with the slow EM version
 
 // FDR options
 bool                Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
-unsigned int        Global::mFold = 20;						// number of negative sequences as multiple of positive sequences
-unsigned int        Global::cvFold = 5;						// size of cross-validation folds
+int        			Global::mFold = 20;						// number of negative sequences as multiple of positive sequences
+int        			Global::cvFold = 5;						// size of cross-validation folds
 // further FDR options...
 
 // printout options
@@ -65,16 +67,16 @@ void Global::init( int nargs, char* args[] ){
 	posSequenceSet = new SequenceSet( posSequenceFilename );
 
 	// read in or generate negative sequence set
-	if( !negGiven ){						// use positive for negative sequence set
-		negSequenceSet = new SequenceSet( *posSequenceSet );
+	if( !negGiven ){										// use positive for negative sequence set
+		negSequenceSet = new SequenceSet( posSequenceFilename );
 	} else {												// read in negative sequence set
 		negSequenceSet = new SequenceSet( negSequenceFilename );
 	}
 
 	// generate fold indices for postive (and negative) sequence set(s)
-	generateFoldIndices( posSequenceSet->getN(), cvFold );
+	Global::posFoldIndices = generateFoldIndices( posSequenceSet->getN(), cvFold );
 	if( negGiven ){
-		generateFoldIndices( negSequenceSet->getN(), cvFold );
+		Global::negFoldIndices = generateFoldIndices( negSequenceSet->getN(), cvFold );
 	}
 
 	// optional: read in sequence intensities (header and intensity columns?)
@@ -90,7 +92,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	 * process flags from user
 	 */
 
-	if( nargs < 3 ) {			// At least 2 parameters are required, but this is not precise, needed to be specified!!
+	if( nargs < 3 ) {									// At least 2 parameters are required, but this is not precise, needed to be specified!!
 		fprintf( stderr, "Error: Arguments are missing! \n" );
 		printHelp();
 		exit( -1 );
@@ -150,12 +152,32 @@ int Global::readArguments( int nargs, char* args[] ){
 	}
 
 	// model options
-	opt >> GetOpt::Option( 'k', "modelOrder", modelOrder );
-	if( opt >> GetOpt::OptionPresent( "alpha" ) || opt >> GetOpt::OptionPresent( 'a' ) )
+	opt >> GetOpt::Option( 'k', "order", modelOrder );
+
+	if( opt >> GetOpt::OptionPresent( 'a', "alpha" ) ){
+		modelAlpha.clear();
 		opt >> GetOpt::Option( 'a', "alpha", modelAlpha );
-	else 		// defaults modelAlpha.at(k) to 10.0
-		for( int k = 0; k < modelOrder+1; k++ )
-			modelAlpha.push_back( 10.0f );
+		if( static_cast<int>( modelAlpha.size() ) != modelOrder+1 ){
+			if( static_cast<int>( modelAlpha.size() ) > modelOrder+1 ){
+				modelAlpha.resize( modelOrder+1 );
+			} else{
+				modelAlpha.resize( modelOrder+1, modelAlpha.back() );
+			}
+		}
+	} else {
+		if( static_cast<int>( modelAlpha.size() ) != modelOrder+1 ){
+			if( static_cast<int>( modelAlpha.size() ) > modelOrder+1 ){
+				modelAlpha.resize( modelOrder+1 );
+			} else{
+				modelAlpha.resize( modelOrder+1, modelAlpha.back() );
+			}
+		}
+		if( modelOrder > 0 ){
+			for( int k = 1; k < modelOrder + 1; k++ ){
+				modelAlpha[k] = modelBeta * powf( modelGamma, static_cast<float>( k ) - 1.0f );
+			}
+		}
+	}
 
 	if( opt >> GetOpt::OptionPresent( "extend" ) ){
 		addColumns.clear();
@@ -172,9 +194,26 @@ int Global::readArguments( int nargs, char* args[] ){
 	}
 
 	// background model options
-	opt >> GetOpt::Option( 'K', "bgModelOrder", bgModelOrder );
-	opt >> GetOpt::Option( 'A', "Alpha", bgModelAlpha );
-
+	opt >> GetOpt::Option( 'K', "Order", bgModelOrder );
+	if( opt >> GetOpt::OptionPresent( 'A', "Alpha" ) ){
+		bgModelAlpha.clear();
+		opt >> GetOpt::Option( 'A', "Alpha", bgModelAlpha );
+		if( static_cast<int>( bgModelAlpha.size() ) != bgModelOrder+1 ){
+			if( static_cast<int>( bgModelAlpha.size() ) > bgModelOrder+1 ){
+				bgModelAlpha.resize( bgModelOrder+1 );
+			} else{
+				bgModelAlpha.resize( bgModelOrder+1, bgModelAlpha.back() );
+			}
+		}
+	} else {
+		if( static_cast<int>( bgModelAlpha.size() ) != bgModelOrder+1 ){
+			if( static_cast<int>( bgModelAlpha.size() ) > bgModelOrder+1 ){
+				bgModelAlpha.resize( bgModelOrder+1 );
+			} else{
+				bgModelAlpha.resize( bgModelOrder+1, bgModelAlpha.back() );
+			}
+		}
+	}
 	// em options
 	opt >> GetOpt::Option( "maxEMIterations", maxEMIterations );
 	opt >> GetOpt::Option( 'e', "epsilon", epsilon );
@@ -231,9 +270,9 @@ void Global::printHelp(){
 	printf("\n 			--BaMMFile <STRING> \n"
 			"				file that contains BaMM data. \n\n");
 	printf("\n 		Options for inhomogeneous BaMM: \n");
-	printf("\n 			-k, --modelOrder <INTEGER> \n"
+	printf("\n 			-k, --order <INTEGER> \n"
 			"				model Order. The default is 2. \n\n");
-	printf("\n 			-a, --modelAlpha <FLOAT> [<FLOAT>...] \n"
+	printf("\n 			-a, --alpha <FLOAT> [<FLOAT>...] \n"
 			"				Order-specific prior strength. The default is 1.0 (for k = 0) and\n"
 			"				20 x 3^(k-1) (for k > 0). The options -b and -g are ignored.\n\n");
 	printf("\n 			--extend <INTEGER>{1, 2} \n"
@@ -243,9 +282,9 @@ void Global::printHelp(){
 			"				adds two positions to both sides of initial BaMMs. By default, BaMMs\n"
 			"				are not being extended.\n\n");
 	printf("\n 		Options for homogeneous (background) BaMM: \n");
-	printf("\n 			-K, --bgModelOrder <INTEGER> \n"
+	printf("\n 			-K, --Order <INTEGER> \n"
 			"				Order. The default is 2.\n\n");
-	printf("\n 			-A, --bgModelAlpha <FLOAT> \n"
+	printf("\n 			-A, --Alpha <FLOAT> \n"
 			"				Prior strength. The default is 10.0.\n\n");
 	printf("\n 		Options for EM: \n");
 	printf("\n 			-q <FLOAT> \n"

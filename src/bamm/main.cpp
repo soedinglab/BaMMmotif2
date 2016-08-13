@@ -27,7 +27,7 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "************************\n" );
 	fprintf( stderr, "*   Background Model   *\n" );
 	fprintf( stderr, "************************\n" );
-	BackgroundModel* bgModel = new BackgroundModel( Global::negSequenceSet, Global::bgModelOrder, Global::bgModelAlpha );
+	BackgroundModel* bgModel = new BackgroundModel( *Global::negSequenceSet, Global::bgModelOrder, Global::bgModelAlpha );
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "*********************\n" );
@@ -50,7 +50,7 @@ int main( int nargs, char* args[] ){
 	motifs.write();
 
 	// evaluate motifs
-//	if( Global::FDR ){
+	if( Global::FDR ){
 		fprintf( stderr, "\n" );
 		fprintf( stderr, "***********\n" );
 		fprintf( stderr, "*   FDR   *\n" );
@@ -60,7 +60,7 @@ int main( int nargs, char* args[] ){
 			fdr.evaluateMotif();
 			fdr.write();
 		}
-//	}
+	}
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "******************\n" );

@@ -57,7 +57,7 @@ MotifSet::MotifSet(){
 }
 
 MotifSet::~MotifSet(){
-	std::cout << "Destructor for MotifSet class works fine. \n";
+
 }
 
 std::vector<Motif*> MotifSet::getMotifs(){

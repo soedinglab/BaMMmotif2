@@ -29,12 +29,12 @@ public:
 	static char*		posSequenceFilename;				// filename of positive sequence FASTA file
 	static char*		posSequenceBasename;				// basename of positive sequence FASTA file
 	static SequenceSet*	posSequenceSet;						// positive Sequence Set
-	static std::vector< std::vector<int> >	posFoldIndices;	// sequence indices for positive sequence set
+	static std::vector<std::vector<int>>	posFoldIndices;	// sequence indices for positive sequence set
 
 	static char*		negSequenceFilename;				// filename of negative sequence FASTA file
 	static char*		negSequenceBasename;				// basename of negative sequence FASTA file
 	static SequenceSet*	negSequenceSet;						// negative Sequence Set
-	static std::vector< std::vector<int> >	negFoldIndices;	// sequence indices for given negative sequence set
+	static std::vector<std::vector<int>>	negFoldIndices;	// sequence indices for given negative sequence set
 	static bool			negGiven;							// a flag for the given negative sequence set by user
 
 	// weighting options
@@ -53,11 +53,13 @@ public:
 	// model options
 	static int			modelOrder;							// model order
 	static std::vector<float> modelAlpha;					// initial alphas
+	static float		modelBeta;							// alpha_k = beta x gamma^(k-1) for k > 0
+	static float		modelGamma;
 	static std::vector<int>	addColumns;						// add columns to the left and right of models used to initialize Markov models
 
 	// background model options
 	static int			bgModelOrder;						// background model order, defaults to 2
-	static float		bgModelAlpha;						// background model alpha
+	static std::vector<float> bgModelAlpha;					// background model alpha
 
 	// EM options
 	static unsigned int	maxEMIterations;					// maximum number of iterations

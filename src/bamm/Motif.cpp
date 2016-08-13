@@ -23,7 +23,7 @@ Motif::Motif( int length ){
 
 	v_bg_ = ( float* )calloc( Y_[1], sizeof( float ) );
 
-	BackgroundModel bg;
+	BackgroundModel bg( *Global::negSequenceSet, Global::bgModelOrder, Global::bgModelAlpha );
 	for( y = 0; y < Y_[1]; y++ )
 		v_bg_[y] = bg.getVbg()[0][y];
 
@@ -97,12 +97,13 @@ void Motif::initFromBindingSites( char* filename ){
 
 		// add alphabets randomly at the beginning of each binding site
 		for( i = 0; i < Global::addColumns.at(0); i++ )
-			bindingsite.insert( bindingsite.begin(), Alphabet::getBase( rand() % Y_[1] + 1 ) );
+			bindingsite.insert( bindingsite.begin(), Alphabet::getBase( static_cast<uint8_t>( rand() % Y_[1] + 1) ) );
+
 		// add alphabets randomly at the end of each binding site
 		for( i = 0; i < Global::addColumns.at(1); i++ )
-			bindingsite.insert( bindingsite.end(), Alphabet::getBase( rand() % Y_[1] + 1 ) );
+			bindingsite.insert( bindingsite.end(), Alphabet::getBase( static_cast<uint8_t>( rand() % Y_[1] + 1) ) );
 
-		bindingSiteWidth = bindingsite.length();
+		bindingSiteWidth = static_cast<int>( bindingsite.length() );
 
 		if( bindingSiteWidth != W_ ){					// all the binding sites should have the same length
 			fprintf( stderr, "Error: Length of binding site on line %d differs.\n"
@@ -166,19 +167,19 @@ void Motif::calculateV(){
 	// for k = 0, v_ = freqs:
 	for( y = 0; y < Y_[1]; y++ )
 		for( j = 0; j < W_; j++ )
-			v_[0][y][j] = ( n_[0][y][j] + Global::modelAlpha.at(0) * v_bg_[y] )
-						/ ( N_ + Global::modelAlpha.at(0) );
+			v_[0][y][j] = ( static_cast<int>( n_[0][y][j] ) + Global::modelAlpha.at(0) * v_bg_[y] )
+						/ ( static_cast<int>( N_ ) + Global::modelAlpha.at(0) );
 
 	// for k > 0:
 	for( k = 1; k < K_+1; k++ ){
 		for( y = 0; y < Y_[k+1]; y++ ){
-			y2 = y % Y_[k];						// cut off the first nucleotide in (k+1)-mer y
-			yk = y / Y_[1];						// cut off the last nucleotide in (k+1)-mer y
+			y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer y
+			yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer y
 			for( j = 0; j < k; j++ )						// when j < k, i.e. p(A|CG) = p(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
 			for( j = k; j < W_; j++ )
-				v_[k][y][j] = ( n_[k][y][j] + Global::modelAlpha.at(k) * v_[k-1][y2][j] )
-							/ ( n_[k-1][yk][j-1] + Global::modelAlpha.at(k) );
+				v_[k][y][j] = ( static_cast<int>( n_[k][y][j] ) + Global::modelAlpha.at(k) * v_[k-1][y2][j] )
+							/ ( static_cast<int>( n_[k-1][yk][j-1] ) + Global::modelAlpha.at(k) );
 		}
 	}
 }
@@ -212,8 +213,8 @@ void Motif::updateV( float*** n, float** alpha ){
 	// for k > 0:
 	for( k = 1; k < K_+1; k++ ){
 		for( y = 0; y < Y_[k+1]; y++ ){
-			y2 = y % Y_[k];						// cut off the first nucleotide in (k+1)-mer
-			yk = y / Y_[1];						// cut off the last nucleotide in (k+1)-mer
+			y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
+			yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer
 			for( j = 0; j < k; j++ )						// when j < k, i.e. p(A|CG) = p(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
 			for( j = k; j < W_; j++ )
@@ -226,12 +227,12 @@ void Motif::updateV( float*** n, float** alpha ){
 void Motif::print(){
 	printf( " _______________________\n"
 			"|                       |\n"
-			"|  v for Initial Model  |\n"
+			"|  n for Initial Model  |\n"
 			"|_______________________|\n\n" );
 	for( int j = 0; j < W_; j++ ){
 		for( int k = 0; k < K_+1; k++ ){
 			for( int y = 0; y < Y_[k+1]; y++ )
-				std::cout << std::scientific << v_[k][y][j] << '\t';
+				std::cout << std::scientific << n_[k][y][j] << '\t';
 			std::cout << std::endl;
 		}
 		std::cout << std::endl;
