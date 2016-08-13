@@ -7,8 +7,13 @@
 
 static char*							baseName( const char* filePath );
 static void								createDirectory( char* dir );
-static std::vector<std::vector<int>>	generateFoldIndices( unsigned int N, unsigned int folds );
-static int								ipow( unsigned int base, int exp );	// calculate the power for integer base
+static std::vector<std::vector<int>>	generateFoldIndices( int N, int folds );
+
+										// calculate the power for integer base
+static int								ipow( unsigned int base, int exp );
+
+										// Quick sort algorithm in descending order
+static void								quickSort( std::vector<float> arr, int left, int right );
 
 inline char* baseName( const char* filePath ){
 
@@ -50,18 +55,18 @@ inline void createDirectory( char* dir ){
 	}
 }
 
-inline std::vector<std::vector<int>> generateFoldIndices( unsigned int N, unsigned int folds ){
+inline std::vector<std::vector<int>> generateFoldIndices( int N, int folds ){
 
 	std::vector<std::vector<int>> indices( folds );
 
-	for( unsigned int i = 0; i < N; i++ ){
-		for( unsigned int j = 0; j < folds; j++ ){
-			if( i < N ){
-				indices[j].push_back( i );
-			}
+	int n = 0;
+	for( int f = 0; f < folds; f++ ){
+		while( n < N ){
+			indices[f].push_back( n );
+			n++;
+			continue;
 		}
 	}
-
 	return indices;
 }
 
@@ -79,6 +84,28 @@ inline int ipow( unsigned int base, int exp ){
     return res;
 }
 
+inline void quickSort( std::vector<float> arr, int left, int right ){
 
+	int i = left, j = right;
+	float tmp;
+	float pivot = arr[( left + right ) / 2];
+
+	/* partition */
+	while( i <= j ){
+		while( arr[i] - pivot > 0 )	i++;
+		while( arr[j] - pivot < 0 )	j--;
+		if( i <= j ){
+			tmp = arr[i];
+			arr[i] = arr[j];
+			arr[j] = tmp;
+			i++;
+			j--;
+		}
+	}
+
+	/* recursion */
+	if( left < j )	quickSort( arr, left, j );
+	if( i < right )	quickSort( arr, i, right );
+}
 
 #endif /* UTILS_H_ */

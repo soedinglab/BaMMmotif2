@@ -54,33 +54,7 @@ private:
 
 	void 		    calculatePR();
 
-					// Quick sort algorithm in descending order
-	void			quickSort( std::vector<float> arr, int left, int right );
 };
-
-inline void quickSort( std::vector<float> arr, int left, int right ) {
-
-	int i = left, j = right;
-	float tmp;
-	float pivot = arr[( left + right ) / 2];
-
-	/* partition */
-	while( i <= j ){
-		while( arr[i] - pivot > 0 )	i++;
-		while( arr[j] - pivot < 0 )	j--;
-		if( i <= j ){
-			tmp = arr[i];
-			arr[i] = arr[j];
-			arr[j] = tmp;
-			i++;
-			j--;
-		}
-	}
-
-	/* recursion */
-	if( left < j )	quickSort( arr, left, j );
-	if( i < right )	quickSort( arr, i, right );
-}
 
 #endif /* FDR_H_ */
 

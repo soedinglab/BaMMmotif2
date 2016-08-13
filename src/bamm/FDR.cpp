@@ -57,7 +57,7 @@ void FDR::evaluateMotif(){
 		}
 		testFold_.push_back( fold );
 
-		BackgroundModel* bg = new BackgroundModel( Global::negSequenceSet,
+		BackgroundModel* bg = new BackgroundModel( *Global::negSequenceSet,
 													Global::bgModelOrder,
 													Global::bgModelAlpha,
 													Global::posFoldIndices,
