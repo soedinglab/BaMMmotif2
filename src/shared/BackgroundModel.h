@@ -23,7 +23,7 @@ public:
 	BackgroundModel( SequenceSet& sequenceSet,
 			         int order,
 			         std::vector<float> alpha,
-			         std::vector<std::vector<int>> foldIndices = std::vector<std::vector<int>>(),
+			         std::vector< std::vector<int> > foldIndices = std::vector< std::vector<int> >(),
 			         std::vector<int> folds = std::vector<int>() );
 
 	BackgroundModel( std::string filePath );

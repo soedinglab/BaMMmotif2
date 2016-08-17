@@ -24,7 +24,7 @@ private:
 	float score( BackgroundModel& bamm, SequenceSet& sequenceSet );
 
 	BackgroundModelSet* bamms_;
-	std::vector<std::vector<float>> posteriors_;
+	std::vector< std::vector<float> > posteriors_;
 };
 
 #endif /* VIRUSHOSTINTERACTIONS_H_ */

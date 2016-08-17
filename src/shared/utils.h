@@ -8,7 +8,7 @@
 static char*							baseName( const char* filePath );
 static void								createDirectory( char* dir );
 static int								ipow( unsigned int base, int exp );							// calculate the power for integer base
-static std::vector<std::vector<int>>	generateFoldIndices( unsigned int N, unsigned int folds );
+static std::vector< std::vector<int> >	generateFoldIndices( unsigned int N, unsigned int folds );
 static void								quickSort( std::vector<float> arr, int left, int right );	// sort in descending order using
 
 inline char* baseName( const char* filePath ){
@@ -51,9 +51,9 @@ inline void createDirectory( char* dir ){
 	}
 }
 
-inline std::vector<std::vector<int>> generateFoldIndices( unsigned int N, unsigned int folds ){
+inline std::vector< std::vector<int> > generateFoldIndices( unsigned int N, unsigned int folds ){
 
-	std::vector<std::vector<int>> indices( folds );
+	std::vector< std::vector<int> > indices( folds );
 
 	for( unsigned int i = 0; i < N; i++ ){
 		for( unsigned int j = 0; j < folds; j++ ){

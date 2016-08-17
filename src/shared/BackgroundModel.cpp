@@ -3,7 +3,7 @@
 BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 		                          int order,
 		                          std::vector<float> alpha,
-		                          std::vector<std::vector<int>> foldIndices,
+		                          std::vector< std::vector<int> > foldIndices,
 		                          std::vector<int> folds ){
 
 
