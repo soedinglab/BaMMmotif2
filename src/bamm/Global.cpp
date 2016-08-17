@@ -7,12 +7,12 @@ char*               Global::outputDirectory = NULL;			// output directory
 char*               Global::posSequenceFilename = NULL;		// filename of positive sequence FASTA file
 char*				Global::posSequenceBasename = NULL;		// basename of positive sequence FASTA file
 SequenceSet*        Global::posSequenceSet = NULL;			// positive Sequence Set
-std::vector<std::vector<int>>	Global::posFoldIndices;		// sequence indices for positive sequence set
+std::vector< std::vector<int> >	Global::posFoldIndices;		// sequence indices for positive sequence set
 
 char*               Global::negSequenceFilename = NULL;		// filename of negative sequence FASTA file
 char*				Global::negSequenceBasename = NULL;		// basename of negative sequence FASTA file
 SequenceSet*        Global::negSequenceSet = NULL;			// negative Sequence Set
-std::vector<std::vector<int>>	Global::negFoldIndices;		// sequence indices for given negative sequence set
+std::vector< std::vector<int> >	Global::negFoldIndices;		// sequence indices for given negative sequence set
 bool				Global::negGiven = false;				// a flag for the given negative sequence set by user
 
 // weighting options

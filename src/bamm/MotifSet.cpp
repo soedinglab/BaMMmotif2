@@ -28,7 +28,7 @@ MotifSet::MotifSet(){
 			exit( -1 );
 		} else {
 			getline( file, seq );					// get length of the first sequence
-			length = seq.length();
+			length = (int) seq.length();
 		}
 
 		length += Global::addColumns.at(0) + Global::addColumns.at(1);

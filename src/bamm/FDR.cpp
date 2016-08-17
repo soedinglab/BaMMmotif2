@@ -153,56 +153,56 @@ void FDR::scoreSequenceSet( Motif* motif, BackgroundModel* bg, SequenceSet* seqS
 
 void FDR::calculatePR(){
 
-	// sort log odds scores from large to small
-	quickSort( posS_max_, 0, sizeof( posS_max_ ) - 1 );
-	quickSort( negS_max_, 0, sizeof( negS_max_ ) - 1 );
-	quickSort( posS_all_, 0, sizeof( posS_all_ ) - 1 );
-	quickSort( negS_all_, 0, sizeof( negS_all_ ) - 1 );
-
-	unsigned int size_max = sizeof( posS_max_ ) + sizeof( negS_max_ );
-	unsigned int size_all = sizeof( posS_all_ ) + sizeof( negS_all_ );
-	unsigned int i;
-	unsigned int i_posM = 0, i_negM = 0;		// index for arrays storing the max log odds scores
-	unsigned int i_posA = 0, i_negA = 0;		// index for arrays storing the complete log odds scores
-
-	// rank and score these log odds score values
-
-	// For "many occurence per sequence" (MOPS) model
-	float max_diff = 0.0f;						// maximal difference between TFP and FP
-	unsigned int idx_max;								// indice when the difference between TFP and FP reaches maximum
-	for( i = 0; i < size_all; i++ ){
-		if( posS_all_[i] > negS_all_[i] || i_posA == 0 || i_negA == sizeof( negS_all_ ) ){
-			i_posA++;
-		} else {
-			i_negA++;
-		}
-		FP_MOPS_[i] = i_negA / Global::mFold;
-		TFP_MOPS_[i] = i_posA;
-		if( max_diff < TFP_MOPS_[i] - FP_MOPS_[i] ){
-			max_diff = TFP_MOPS_[i] - FP_MOPS_[i];
-		}
-		if( TFP_MOPS_[i] - FP_MOPS_[i] == max_diff ){
-			idx_max = i;
-		}
-	}
-	for( i = 0; i < idx_max; i++ ){
-		P_MOPS_.push_back(  1 - FP_MOPS_[i] / TFP_MOPS_[i] );
-		R_MOPS_.push_back( ( TFP_MOPS_[i] - FP_MOPS_[i] ) / max_diff );
-	}
-
-	// For "zero or one occurrence per sequence" (ZOOPS) model
-	int N = Global::posSequenceSet->getN();
-	for( i = 0; i < size_max; i++ ){
-		if( posS_max_[i] > negS_max_[i] || i_posM == 0 || i_negM == sizeof( negS_max_ ) ){
-			i_posM++;
-		} else {
-			i_negM++;
-		}
-		TP_ZOOPS_[i] = i_posM;
-		P_ZOOPS_.push_back( i_posM / ( i+1 ) );
-		R_ZOOPS_.push_back( i_posM / N );
-	}
-
+//	// sort log odds scores from large to small
+//	quickSort( posS_max_, 0, sizeof( posS_max_ ) - 1 );
+//	quickSort( negS_max_, 0, sizeof( negS_max_ ) - 1 );
+//	quickSort( posS_all_, 0, sizeof( posS_all_ ) - 1 );
+//	quickSort( negS_all_, 0, sizeof( negS_all_ ) - 1 );
+//
+//	unsigned int size_max = sizeof( posS_max_ ) + sizeof( negS_max_ );
+//	unsigned int size_all = sizeof( posS_all_ ) + sizeof( negS_all_ );
+//	unsigned int i;
+//	unsigned int i_posM = 0, i_negM = 0;		// index for arrays storing the max log odds scores
+//	unsigned int i_posA = 0, i_negA = 0;		// index for arrays storing the complete log odds scores
+//
+//	// rank and score these log odds score values
+//
+//	// For "many occurence per sequence" (MOPS) model
+//	float max_diff = 0.0f;						// maximal difference between TFP and FP
+//	unsigned int idx_max;								// indice when the difference between TFP and FP reaches maximum
+//	for( i = 0; i < size_all; i++ ){
+//		if( posS_all_[i] > negS_all_[i] || i_posA == 0 || i_negA == sizeof( negS_all_ ) ){
+//			i_posA++;
+//		} else {
+//			i_negA++;
+//		}
+//		FP_MOPS_[i] = i_negA / Global::mFold;
+//		TFP_MOPS_[i] = i_posA;
+//		if( max_diff < TFP_MOPS_[i] - FP_MOPS_[i] ){
+//			max_diff = TFP_MOPS_[i] - FP_MOPS_[i];
+//		}
+//		if( TFP_MOPS_[i] - FP_MOPS_[i] == max_diff ){
+//			idx_max = i;
+//		}
+//	}
+//	for( i = 0; i < idx_max; i++ ){
+//		P_MOPS_.push_back(  1 - FP_MOPS_[i] / TFP_MOPS_[i] );
+//		R_MOPS_.push_back( ( TFP_MOPS_[i] - FP_MOPS_[i] ) / max_diff );
+//	}
+//
+//	// For "zero or one occurrence per sequence" (ZOOPS) model
+//	int N = Global::posSequenceSet->getN();
+//	for( i = 0; i < size_max; i++ ){
+//		if( posS_max_[i] > negS_max_[i] || i_posM == 0 || i_negM == sizeof( negS_max_ ) ){
+//			i_posM++;
+//		} else {
+//			i_negM++;
+//		}
+//		TP_ZOOPS_[i] = i_posM;
+//		P_ZOOPS_.push_back( i_posM / ( i+1 ) );
+//		R_ZOOPS_.push_back( i_posM / N );
+//	}
+//
 }
 void FDR::print(){
 

@@ -32,7 +32,7 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 		for( s_idx = 0; s_idx < Global::posFoldIndices[folds_[f_idx]].size(); s_idx++ ){
 			posSeqs_.push_back( Global::posSequenceSet->getSequences()[s_idx] );
 		}
-		posSetN_ += Global::posFoldIndices[folds_[f_idx]].size();
+		posSetN_ +=  static_cast<unsigned int>( Global::posFoldIndices[folds_[f_idx]].size() );
 	}
 
 	// allocate memory for s_[y][j] and initialize it

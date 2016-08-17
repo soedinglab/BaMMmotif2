@@ -167,8 +167,8 @@ void Motif::calculateV(){
 	// for k = 0, v_ = freqs:
 	for( y = 0; y < Y_[1]; y++ )
 		for( j = 0; j < W_; j++ )
-			v_[0][y][j] = ( static_cast<int>( n_[0][y][j] ) + Global::modelAlpha.at(0) * v_bg_[y] )
-						/ ( static_cast<int>( N_ ) + Global::modelAlpha.at(0) );
+			v_[0][y][j] = ( static_cast<float>( n_[0][y][j] ) + Global::modelAlpha.at(0) * v_bg_[y] )
+						/ ( static_cast<float>( N_ ) + Global::modelAlpha.at(0) );
 
 	// for k > 0:
 	for( k = 1; k < K_+1; k++ ){
@@ -178,8 +178,8 @@ void Motif::calculateV(){
 			for( j = 0; j < k; j++ )						// when j < k, i.e. p(A|CG) = p(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
 			for( j = k; j < W_; j++ )
-				v_[k][y][j] = ( static_cast<int>( n_[k][y][j] ) + Global::modelAlpha.at(k) * v_[k-1][y2][j] )
-							/ ( static_cast<int>( n_[k-1][yk][j-1] ) + Global::modelAlpha.at(k) );
+				v_[k][y][j] = ( static_cast<float>( n_[k][y][j] ) + Global::modelAlpha.at(k) * v_[k-1][y2][j] )
+							/ ( static_cast<float>( n_[k-1][yk][j-1] ) + Global::modelAlpha.at(k) );
 		}
 	}
 }
