@@ -22,7 +22,6 @@ BackgroundModelSet::BackgroundModelSet( char* inputDirectory, char* extension, i
 					BackgroundModel* bamm = new BackgroundModel( *sequenceSet, order, alpha );
 
 					backgroundModels_.push_back( bamm );
-					N_++;
 				}
 			}
 		}
@@ -53,7 +52,6 @@ BackgroundModelSet::BackgroundModelSet( char* inputDirectory, char* extension ){
 
 					BackgroundModel* bamm = new BackgroundModel( filep );
 					backgroundModels_.push_back( bamm );
-					N_++;
 				}
 			}
 		}
@@ -66,30 +64,29 @@ BackgroundModelSet::BackgroundModelSet( char* inputDirectory, char* extension ){
 
 BackgroundModelSet::~BackgroundModelSet(){
 
-	for( std::list<BackgroundModel*>::iterator iter = backgroundModels_.begin(); iter != backgroundModels_.end(); ){
-		delete *iter;
-		iter = backgroundModels_.erase( iter );
+	for( size_t i = 0; i < backgroundModels_.size(); i++ ){
+		delete backgroundModels_[i];
 	}
 }
 
-std::list<BackgroundModel*>& BackgroundModelSet::getBackgroundModels(){
+std::vector<BackgroundModel*>& BackgroundModelSet::getBackgroundModels(){
     return backgroundModels_;
 }
 
-int BackgroundModelSet::getN(){
-    return N_;
+size_t BackgroundModelSet::getN(){
+    return( backgroundModels_.size() );
 }
 
 void BackgroundModelSet::print(){
 
-	for( std::list<BackgroundModel*>::iterator iter = backgroundModels_.begin(); iter != backgroundModels_.end(); iter++ ){
-		( *iter )->print();
+	for( size_t i = 0; i < backgroundModels_.size(); i++ ){
+		backgroundModels_[i]->print();
 	}
 }
 
 void BackgroundModelSet::write( char* dir ){
 
-	for( std::list<BackgroundModel*>::iterator iter = backgroundModels_.begin(); iter != backgroundModels_.end(); iter++ ){
-		( *iter )->write( dir );
+	for( size_t i = 0; i < backgroundModels_.size(); i++ ){
+		backgroundModels_[i]->write( dir );
 	}
 }

@@ -2,7 +2,7 @@
 #define BACKGROUNDMODELSET_H_
 
 #include <fstream>	// e.g. std::ifstream
-#include <list>
+#include <vector>
 
 #include <dirent.h>		// e.g. opendir
 #include <string.h>		// e.g. strcmp
@@ -23,16 +23,15 @@ public:
 
 	~BackgroundModelSet();
 
-	std::list<BackgroundModel*>& getBackgroundModels();
-	int getN();
+	std::vector<BackgroundModel*>& getBackgroundModels();
+	size_t getN();
 
 	void print();
 	void write( char* dir );
 
 private:
 
-	std::list<BackgroundModel*>	backgroundModels_;
-	int          				N_ = 0;				// number of background models
+	std::vector<BackgroundModel*>	backgroundModels_;
 };
 
 #endif /* BACKGROUNDMODELSET_H_ */

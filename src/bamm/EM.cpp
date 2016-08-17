@@ -7,7 +7,7 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 	W_ = motif_->getW();
 
 	bg_ = bg;
-	v_bg_ = bg_->getVbg();
+	v_bg_ = bg_->getV();
 
 	K_ = Global::modelOrder;
 	k_bg_ = Global::bgModelOrder;

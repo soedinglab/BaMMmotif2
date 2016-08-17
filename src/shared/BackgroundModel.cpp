@@ -49,9 +49,9 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 		}
 	}
 
-	n_bg_ = ( int** )malloc( ( K_+1 ) * sizeof( int* ) );
+	n_ = ( int** )malloc( ( K_+1 ) * sizeof( int* ) );
 	for( int k = 0; k <= K_; k++ ){
-		n_bg_[k] = ( int* )calloc( Y_[k+1], sizeof( int ) );
+		n_[k] = ( int* )calloc( Y_[k+1], sizeof( int ) );
 	}
 	// calculate counts
 	// loop over folds
@@ -67,11 +67,11 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 				// loop over sequence positions
 				for( int i = k; i < L; i++ ){
 					// extract (k+1)mer
-					int y = sequenceSet.getSequences()[s_idx]->extractKmer( i, std::min( i, k ) );
+					int y = sequenceSet.getSequences()[s_idx]->extractKmer( i, k );
 					// skip non-defined alphabet letters
 					if( y >= 0 ){
 						// count (k+1)mer
-						n_bg_[k][y]++;
+						n_[k][y]++;
 
 					}
 				}
@@ -79,20 +79,20 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 		}
 	}
 
-	v_bg_ = ( float** )malloc( ( K_+1 ) * sizeof( float* ) );
+	v_ = ( float** )malloc( ( K_+1 ) * sizeof( float* ) );
 	for( int k = 0; k <= K_; k++ ){
-		v_bg_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
+		v_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
 	}
 	// calculate conditional probabilities from counts
-	calculateVbg();
+	calculateV();
 }
 
 BackgroundModel::BackgroundModel( std::string filePath ){
 
 	name_.assign( baseName( filePath.c_str() ) );
 
-	n_bg_ = NULL;
-	v_bg_ = NULL;
+	n_ = NULL;
+	v_ = NULL;
 
 	struct stat sb;
 
@@ -130,9 +130,9 @@ BackgroundModel::BackgroundModel( std::string filePath ){
 				Y_.push_back( ipow( Alphabet::getSize(), k ) );
 			}
 
-			v_bg_ = ( float** )malloc( ( K_+1 ) * sizeof( float* ) );
+			v_ = ( float** )malloc( ( K_+1 ) * sizeof( float* ) );
 			for( int k = 0; k <= K_; k++ ){
-				v_bg_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
+				v_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
 			}
 
 			float value;
@@ -140,7 +140,7 @@ BackgroundModel::BackgroundModel( std::string filePath ){
 				for( int y = 0; y < Y_[k+1]; y++ ){
 
 					if( fscanf( file, "%e", &value ) != EOF ){
-						v_bg_[k][y] = value;
+						v_[k][y] = value;
 
 					} else{
 
@@ -161,17 +161,17 @@ BackgroundModel::BackgroundModel( std::string filePath ){
 
 BackgroundModel::~BackgroundModel(){
 
-	if( n_bg_ != NULL ){
+	if( n_ != NULL ){
 		for( int k = 0; k <= K_; k++ ){
-			free( n_bg_[k] );
+			free( n_[k] );
 		}
-		free( n_bg_ );
+		free( n_ );
 	}
-	if( v_bg_ != NULL ){
+	if( v_ != NULL ){
 		for( int k = 0; k <= K_; k++ ){
-			free( v_bg_[k] );
+			free( v_[k] );
 		}
-		free( v_bg_ );
+		free( v_ );
 	}
 }
 
@@ -179,8 +179,36 @@ std::string BackgroundModel::getName(){
     return name_;
 }
 
-float** BackgroundModel::getVbg(){
-    return v_bg_;
+int BackgroundModel::getOrder(){
+    return K_;
+}
+
+float** BackgroundModel::getV(){
+    return v_;
+}
+
+void BackgroundModel::expV(){
+
+	for( int k = 0; k <= K_; k++ ){
+		for( int y = 0; y < Y_[k+1]; y++ ){
+			v_[k][y] = expf( v_[k][y] );
+		}
+	}
+	vIsLog_ = false;
+}
+
+void BackgroundModel::logV(){
+
+	for( int k = 0; k <= K_; k++ ){
+		for( int y = 0; y < Y_[k+1]; y++ ){
+			v_[k][y] = logf( v_[k][y] );
+		}
+	}
+	vIsLog_ = true;
+}
+
+bool BackgroundModel::vIsLog(){
+	return vIsLog_;
 }
 
 void BackgroundModel::print(){
@@ -199,7 +227,7 @@ void BackgroundModel::print(){
 	}
 	std::cout << std::endl;
 
-	if( n_bg_ != NULL ){
+	if( n_ != NULL ){
 
 		std::cout << " ________" << std::endl;
 		std::cout << "|        |" << std::endl;
@@ -208,9 +236,9 @@ void BackgroundModel::print(){
 		std::cout << std::endl;
 
 		for( int k = 0; k <= K_; k++ ){
-			std::cout << n_bg_[k][0];
+			std::cout << n_[k][0];
 			for( int y = 1; y < Y_[k+1]; y++ ){
-				std::cout << " " << n_bg_[k][y];
+				std::cout << " " << n_[k][y];
 			}
 			std::cout << std::endl;
 		}
@@ -223,9 +251,9 @@ void BackgroundModel::print(){
 	std::cout << std::endl;
 
 	for( int k = 0; k <= K_; k++ ){
-		std::cout << std::fixed << std::setprecision( 3 ) << v_bg_[k][0];
+		std::cout << std::fixed << std::setprecision( 3 ) << v_[k][0];
 		for( int y = 1; y < Y_[k+1]; y++ ){
-			std::cout << " " << std::fixed << std::setprecision( 3 ) << v_bg_[k][y];
+			std::cout << " " << std::fixed << std::setprecision( 3 ) << v_[k][y];
 		}
 		std::cout << std::endl;
 	}
@@ -234,34 +262,42 @@ void BackgroundModel::print(){
 void BackgroundModel::write( char* dir ){
 
 	std::ofstream file( std::string( dir ) + '/' + name_ + ".hb" );
+	if( file.is_open() ){
 
-	file << "# K = " << K_ << std::endl;
-	file << "# A =";
-	for( int k = 0; k <= K_; k++ ){
-		file << " " << A_[k];
-	}
-	file << std::endl;
-
-	for( int k = 0; k <= K_; k++ ){
-		file << std::fixed << std::setprecision( 6 ) << v_bg_[k][0];
-		for( int y = 1; y < Y_[k+1]; y++ ){
-			file << std::fixed << std::setprecision( 6 ) << " " << v_bg_[k][y];
+		file << "# K = " << K_ << std::endl;
+		file << "# A =";
+		for( int k = 0; k <= K_; k++ ){
+			file << " " << A_[k];
 		}
 		file << std::endl;
+
+		for( int k = 0; k <= K_; k++ ){
+			file << std::fixed << std::setprecision( 6 ) << v_[k][0];
+			for( int y = 1; y < Y_[k+1]; y++ ){
+				file << std::fixed << std::setprecision( 6 ) << " " << v_[k][y];
+			}
+			file << std::endl;
+		}
+		file.close();
+
+	} else{
+
+		std::cerr << "Error: Cannot write into output directory: " << dir << std::endl;
+		exit( -1 );
 	}
 }
 
-void BackgroundModel::calculateVbg(){
+void BackgroundModel::calculateV(){
 
 	int baseCounts = 0;
 	for( int y = 0; y < Y_[1]; y++ ){
-		baseCounts += n_bg_[0][y];
+		baseCounts += n_[0][y];
 	}
 
 	// calculate probabilities for order k = 0
 	for( int y = 0; y < Y_[1]; y++ ){
-		v_bg_[0][y] = ( static_cast<float>( n_bg_[0][y] ) + A_[0] * 0.25f ) / // cope with absent bases using pseudocounts
-				      ( static_cast<float>( baseCounts ) + A_[0] );
+		v_[0][y] = ( static_cast<float>( n_[0][y] ) + A_[0] * 0.25f ) // cope with absent bases using pseudocounts
+				   / ( static_cast<float>( baseCounts ) + A_[0] );
 	}
 
 	// calculate probabilities for order k > 0
@@ -271,17 +307,16 @@ void BackgroundModel::calculateVbg(){
 			int y2 = y % Y_[k];
 			// omit last base (e.g. ACG) from y (e.g. ACGT)
 			int yk = y / Y_[1];
-			v_bg_[k][y] = ( static_cast<float>( n_bg_[k][y] ) + A_[k] * v_bg_[k-1][y2] ) /
-					      ( static_cast<float>( n_bg_[k-1][yk] ) + A_[k] );
-
+			v_[k][y] = ( static_cast<float>( n_[k][y] ) + A_[k] * v_[k-1][y2] )
+					   / ( static_cast<float>( n_[k-1][yk] ) + A_[k] );
 		}
 		// normalize probabilities
 		float factor = 0.0f;
 		for( int y = 0; y < Y_[k+1]; y++ ){
-			factor += v_bg_[k][y];
+			factor += v_[k][y];
 			if( ( y+1 ) % Y_[1] == 0 ){
 				for( int i = 0; i < Y_[1]; i++ ){
-					v_bg_[k][y-i] /= factor;
+					v_[k][y-i] /= factor;
 				}
 				factor = 0.0f;
 			}

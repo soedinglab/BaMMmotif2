@@ -25,7 +25,7 @@ Motif::Motif( int length ){
 
 	BackgroundModel bg( *Global::negSequenceSet, Global::bgModelOrder, Global::bgModelAlpha );
 	for( y = 0; y < Y_[1]; y++ )
-		v_bg_[y] = bg.getVbg()[0][y];
+		v_bg_[y] = bg.getV()[0][y];
 
 }
 
