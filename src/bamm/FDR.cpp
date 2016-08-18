@@ -60,6 +60,7 @@ void FDR::evaluateMotif(){
 		BackgroundModel* bg = new BackgroundModel( *Global::negSequenceSet,
 													Global::bgModelOrder,
 													Global::bgModelAlpha,
+													Global::interpolateBG,
 													Global::posFoldIndices,
 													trainFolds_ );
 

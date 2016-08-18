@@ -65,15 +65,14 @@ void Alphabet::destruct(){
 }
 
 void Alphabet::debug(){
-    // exhaustive printout to check if Alphabet initialisation works
-    //        std::cout << std::setw(10) << std::fixed << std::setprecision(2) << negSequenceSet->getBaseFrequencies()[i] << std::endl;
-
-    static int      size_;                  // alphabet size
-    static char*    alphabet_;              // alphabet bases ([A,C,G,T], [A,C,G,T,mC], ...)
-    static char*    complementAlphabet_;    // complementary alphabet bases ([T,G,C,A], [T,G,C,A,G], ...)
-    static uint8_t* baseToCode_;            // convert base to encoding
-    static char*    codeToBase_;            // convert encoding to base
-    static uint8_t* codeToComplementCode_;  // convert encoding to complement encoding
+    // exhaustive printout to check if Alphabet initialization works
+//    std::cout << std::setw(10) << std::fixed << "Alphabet::size_ = ";
+//    std::cout << std::setw(10) << std::fixed << std::setprecision(2) << size_ << std::endl;
+    std::cout << std::setw(10) << std::fixed << std::setprecision(2) << "Alphabet::alphabet_ = " << alphabet_ << std::endl;
+//    std::cout << std::setw(10) << std::fixed << std::setprecision(2) << "Alphabet::complementAlphabet_ = " << complementAlphabet_ << std::endl;
+//    std::cout << std::setw(10) << std::fixed << std::setprecision(2) << "Alphabet::baseToCode_ = " << baseToCode_ << std::endl;
+//    std::cout << std::setw(10) << std::fixed << std::setprecision(2) << "Alphabet::codeToBase_ = " << codeToBase_ << std::endl;
+//    std::cout << std::setw(10) << std::fixed << std::setprecision(2) << "Alphabet::codeToComplementCode_ = " << codeToComplementCode_ << std::endl;
 }
 
 

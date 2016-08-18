@@ -34,6 +34,10 @@ std::vector<float> 	Global::modelAlpha( modelOrder+1, 10.0f );	// initial alphas
 float				Global::modelBeta = 20.0f;				// alpha_k = beta x gamma^(k-1) for k > 0
 float				Global::modelGamma = 3.0f;
 std::vector<int>    Global::addColumns(2);					// add columns to the left and right of initial model
+bool                Global::interpolate = true;             // calculate prior probabilities from lower-order probabilities
+                                                            // instead of background frequencies of mononucleotides
+bool                Global::interpolateBG = true;           // calculate prior probabilities from lower-order probabilities
+                                                            // instead of background frequencies of mononucleotides
 
 // background model options
 int        			Global::bgModelOrder = 2;				// background model order, defaults to 2
@@ -408,7 +412,7 @@ void Global::debug(){
     fprintf( stdout, "\n\n");
     fprintf( stdout, "posFoldIndices \n");
     for( size_t fold = 0; fold < posFoldIndices.size(); fold++ ){
-        fprintf( stdout, "               %d . fold  = ", fold );
+        fprintf( stdout, "               %d . fold  = ", static_cast<int>( fold ) );
         for( int n = 0; n < std::min( 10,  static_cast<int>( posFoldIndices[fold].size() )); n++ ){
             fprintf( stdout, "%d ", posFoldIndices[fold][n] );
         }
@@ -418,7 +422,7 @@ void Global::debug(){
         fprintf( stdout, "\n");
         fprintf( stdout, "negFoldIndices \n");
         for( size_t fold = 0; fold < negFoldIndices.size() ; fold++ ){
-            fprintf( stdout, "               %d . fold  = ", fold );
+            fprintf( stdout, "               %d . fold  = ", static_cast<int>( fold ) );
             for( int n = 0; n < std::min( 10,  static_cast<int>( negFoldIndices[fold].size() )); n++ ){
                 fprintf( stdout, "%d ", negFoldIndices[fold][n] );
             }

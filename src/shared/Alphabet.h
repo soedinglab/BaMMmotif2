@@ -2,7 +2,8 @@
 #define ALPHABET_H_
 
 #include <cstring>	// e.g. std::strcmp
-#include <iostream>	// e.g. std::cerr
+#include <iostream>	// e.g. std::cerr, std::cout, std::endl
+#include <iomanip>  // e.g. std::setprecision
 
 #include <ctype.h>	// e.g. tolower
 #include <stdint.h>	// e.g. uint8_t
