@@ -54,6 +54,7 @@ int        			Global::cvFold = 5;						// size of cross-validation folds
 
 // printout options
 bool                Global::verbose = false;
+bool                Global::debugMode = false;                  // debug-mode: prints out everything.
 bool                Global::saveInitBaMMs = false;
 bool				Global::saveBaMMs = true;
 
@@ -62,6 +63,11 @@ void Global::init( int nargs, char* args[] ){
 	readArguments( nargs, args );
 
 	Alphabet::init( alphabetType );
+
+	if( debugMode ){
+	  Global::debug();
+//	  Alphabet::debug();
+	}
 
 	// read in positive sequence set
 	posSequenceSet = new SequenceSet( posSequenceFilename );
@@ -230,6 +236,7 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	// printout options
 	opt >> GetOpt::OptionPresent( "verbose", verbose );
+	opt >> GetOpt::OptionPresent( "debug", debugMode );
 	opt >> GetOpt::OptionPresent( "saveInitBaMMs", saveInitBaMMs);
 	opt >> GetOpt::OptionPresent( "saveBaMMs", saveBaMMs);
 
@@ -324,10 +331,120 @@ void Global::printHelp(){
 
 void Global::destruct(){
 	Alphabet::destruct();
-	if( alphabetType ) delete[] alphabetType;
-	if( posSequenceBasename ) free( posSequenceBasename );
-	if( negSequenceBasename ) free( negSequenceBasename );
-	if( posSequenceSet ) delete posSequenceSet;
-	if( negGiven ) delete negSequenceSet;
-	if( initialModelBasename ) free( initialModelBasename );
+
+	if( outputDirectory      != NULL ) free( outputDirectory );
+	if( posSequenceFilename  != NULL ) free( posSequenceFilename );
+	if( posSequenceBasename  != NULL ) free( posSequenceBasename );
+	if( posSequenceSet       != NULL ) delete posSequenceSet;
+
+	if( negSequenceFilename  != NULL ) free( negSequenceFilename );
+	if( negSequenceBasename  != NULL ) free( negSequenceFilename );
+	if( negSequenceSet       != NULL ) delete negSequenceSet;
+
+	if( intensityFilename    != NULL ) free( intensityFilename );
+	if( alphabetType         != NULL ) delete[] ( alphabetType );
+
+	if( BaMMpatternFilename  != NULL ) free( BaMMpatternFilename );
+    if( bindingSiteFilename  != NULL ) free( bindingSiteFilename );
+    if( PWMFilename          != NULL ) free( PWMFilename );
+    if( BaMMFilename         != NULL ) free( BaMMFilename );
+    if( initialModelBasename != NULL ) free( initialModelBasename );
 }
+
+void Global::debug(){
+
+    // 1. check Global Parameter settings:
+    fprintf( stdout, "outputDirectory        = %s \n", outputDirectory);
+    fprintf( stdout, "posSequenceFilename    = %s \n", posSequenceFilename);
+    fprintf( stdout, "posSequenceBasename    = %s \n", posSequenceBasename);
+    fprintf( stdout, "negSequenceFilename    = %s \n", negSequenceFilename);
+    fprintf( stdout, "negSequenceBasename    = %s \n", negSequenceBasename);
+    fprintf( stdout, "\n");
+    fprintf( stdout, "negGiven               = %d \n", negGiven);
+    fprintf( stdout, "intensityFilename      = %s \n", intensityFilename);
+    fprintf( stdout, "alphabetType           = %s \n", alphabetType);
+    fprintf( stdout, "revcomp                = %d \n", revcomp);
+    fprintf( stdout, "\n");
+    fprintf( stdout, "BaMMpatternFilename    = %s \n", BaMMpatternFilename);
+    fprintf( stdout, "bindingSiteFilename    = %s \n", bindingSiteFilename);
+    fprintf( stdout, "PWMFilename            = %s \n", PWMFilename);
+    fprintf( stdout, "BaMMFilename           = %s \n", BaMMFilename);
+    fprintf( stdout, "initialModelBasename   = %s \n", initialModelBasename);
+    fprintf( stdout, "\n");
+    fprintf( stdout, "modelOrder             = %d \n", modelOrder);
+    fprintf( stdout, "modelBeta              = %f \n", modelBeta);
+    fprintf( stdout, "modelGamma             = %f \n", modelGamma);
+    fprintf( stdout, "modelAlpha             =");
+    for( int k = 0; k < modelOrder + 1; k++ ){
+        fprintf( stdout, " %f", modelAlpha[k]);
+    }
+    fprintf( stdout, " \n");
+    fprintf( stdout, "addColumns             = %d %d \n", addColumns.at(0), addColumns.at(1));
+    fprintf( stdout, " \n");
+    fprintf( stdout, "bgModelAlpha           =");
+    for( int k = 0; k < bgModelOrder + 1; k++ ){
+        fprintf( stdout, " %f", bgModelAlpha[k]);
+    }
+    fprintf( stdout, " \n");
+    fprintf( stdout, "bgModelOrder           = %d \n", bgModelOrder);
+    fprintf( stdout, "maxEMIterations        = %d \n", maxEMIterations);
+    fprintf( stdout, "epsilon                = %f \n", epsilon);
+    fprintf( stdout, "noAlphaOptimization    = %d \n", noAlphaOptimization);
+    fprintf( stdout, "noAlphaOptimization    = %d \n", noAlphaOptimization);
+    fprintf( stdout, "setSlow                = %d \n", setSlow);
+    fprintf( stdout, "\n");
+    fprintf( stdout, "FDR                    = %d \n", FDR);
+    fprintf( stdout, "mFold                  = %d \n", mFold);
+    fprintf( stdout, "cvFold                 = %d \n", cvFold);
+    fprintf( stdout, "\n");
+    fprintf( stdout, "verbose                = %d \n", verbose);
+    fprintf( stdout, "debugMode              = %d \n", debugMode);
+    fprintf( stdout, "saveInitBaMMs          = %d \n", saveInitBaMMs);
+    fprintf( stdout, "saveBaMMs              = %d \n", saveBaMMs);
+
+    fprintf( stdout, "posSequenceSet::sequenceFilepath_  = %s \n", posSequenceSet->getSequenceFilepath());
+    fprintf( stdout, "posSequenceSet::intensityFilepath_ = %s \n", posSequenceSet->getIntensityFilepath());
+    fprintf( stdout, "posSequenceSet::N_                 = %s \n", posSequenceSet->getN());
+    fprintf( stdout, "posSequenceSet::minL_              = %s \n", posSequenceSet->getMinL());
+    fprintf( stdout, "posSequenceSet::maxL_              = %s \n", posSequenceSet->getMaxL());
+    fprintf( stdout, "posSequenceSet::baseFrequencies_   =");
+    for( int i = 0; i < Alphabet::getSize(); i++ ){
+        fprintf( stdout, " %s", posSequenceSet->getBaseFrequencies()[i]);
+    }
+    fprintf( stdout, "\n");
+
+    fprintf( stdout, "negSequenceSet::sequenceFilepath_  = %s \n", negSequenceSet->getSequenceFilepath());
+    fprintf( stdout, "negSequenceSet::intensityFilepath_ = %s \n", negSequenceSet->getIntensityFilepath());
+    fprintf( stdout, "negSequenceSet::N_                 = %s \n", negSequenceSet->getN());
+    fprintf( stdout, "negSequenceSet::minL_              = %s \n", negSequenceSet->getMinL());
+    fprintf( stdout, "negSequenceSet::maxL_              = %s \n", negSequenceSet->getMaxL());
+    fprintf( stdout, "negSequenceSet::baseFrequencies_   =");
+    for( int i = 0; i < Alphabet::getSize(); i++ ){
+        fprintf( stdout, " %s", negSequenceSet->getBaseFrequencies()[i]);
+    }
+    fprintf( stdout, "\n");
+    fprintf( stdout, "posFoldIndices \n");
+    for( int fold = 0; fold < posFoldIndices.size(); fold++ ){
+        fprintf( stdout, "               %d . fold  = ", fold );
+        for( int n = 0; n <= 5; n++ ){
+            fprintf( stdout, "%d ", posFoldIndices[fold][n] );
+        }
+        fprintf( stdout, " ..... ( L = %d )\n ", posFoldIndices[fold].size() );
+    }
+    fprintf( stdout, "\n");
+    fprintf( stdout, "negFoldIndices \n");
+    for( int fold = 0; fold < negFoldIndices.size(); fold++ ){
+        fprintf( stdout, "               %d . fold  = ", fold );
+        for( int n = 0; n <= 5; n++ ){
+            fprintf( stdout, "%d ", negFoldIndices[fold][n] );
+        }
+        fprintf( stdout, " ..... ( L = %d )\n ", negFoldIndices[fold].size() );
+    }
+
+}
+
+
+
+
+
+
