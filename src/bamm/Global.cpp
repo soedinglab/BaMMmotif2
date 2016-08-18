@@ -429,6 +429,7 @@ void Global::debug(){
             fprintf( stdout, " ..... ( L = %d )\n", static_cast<int>( negFoldIndices[fold].size() ));
         }
     }
+    fprintf( stdout, "\n\n");
 
 
 }

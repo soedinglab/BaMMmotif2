@@ -66,13 +66,24 @@ void Alphabet::destruct(){
 
 void Alphabet::debug(){
     // exhaustive printout to check if Alphabet initialization works
-//    std::cout << std::setw(10) << std::fixed << "Alphabet::size_ = ";
-//    std::cout << std::setw(10) << std::fixed << std::setprecision(2) << size_ << std::endl;
-    std::cout << std::setw(10) << std::fixed << std::setprecision(2) << "Alphabet::alphabet_ = " << alphabet_ << std::endl;
-//    std::cout << std::setw(10) << std::fixed << std::setprecision(2) << "Alphabet::complementAlphabet_ = " << complementAlphabet_ << std::endl;
-//    std::cout << std::setw(10) << std::fixed << std::setprecision(2) << "Alphabet::baseToCode_ = " << baseToCode_ << std::endl;
-//    std::cout << std::setw(10) << std::fixed << std::setprecision(2) << "Alphabet::codeToBase_ = " << codeToBase_ << std::endl;
-//    std::cout << std::setw(10) << std::fixed << std::setprecision(2) << "Alphabet::codeToComplementCode_ = " << codeToComplementCode_ << std::endl;
+    fprintf( stdout, "Alphabet::size_                 = %d \n", size_);
+    fprintf( stdout, "Alphabet::alphabet_             = %s \n", alphabet_);
+    fprintf( stdout, "Alphabet::complementAlphabet_   = %s \n", complementAlphabet_);
+    fprintf( stdout, "Alphabet::codeToBase_           = ");
+    for( int i = 0; i < size_; i++ ){
+        fprintf( stdout, " %d ", codeToBase_[i+1]);
+    }
+    fprintf( stdout, "\n");
+    fprintf( stdout, "Alphabet::baseToCode_           = ");
+    for( int i = 0; i < size_; i++ ){
+        fprintf( stdout, " %d ", baseToCode_[( int )alphabet_[i]]);
+    }
+    fprintf( stdout, "\n");
+    fprintf( stdout, "Alphabet::codeToComplementCode_ = ");
+    for( int i = 0; i < size_; i++ ){
+        fprintf( stdout, " %d ", codeToComplementCode_[i+1]);
+    }
+    fprintf( stdout, "\n");
 }
 
 

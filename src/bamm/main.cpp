@@ -25,7 +25,7 @@ int main( int nargs, char* args[] ){
 
     if( Global::debugMode ){
       Global::debug();
-//      Alphabet::debug();
+      Alphabet::debug();
     }
 
 	fprintf( stderr, "\n" );
