@@ -59,9 +59,11 @@ inline std::vector< std::vector<int> > generateFoldIndices( unsigned int N, unsi
 
 	std::vector< std::vector<int> > indices( folds );
 
-	for( unsigned int i = 0; i < N; i++ ){
+	for( unsigned int i = 0; i < N; i += folds ){
 		for( unsigned int j = 0; j < folds; j++ ){
-				indices[j].push_back( i );
+		    if( i+j < N ){
+				indices[j].push_back( i+j );
+		    }
 		}
 	}
 	return indices;

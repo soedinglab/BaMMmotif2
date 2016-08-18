@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <algorithm>                                        // std::min
 
 #include "../shared/SequenceSet.h"
 #include "../shared/Alphabet.h"
@@ -75,11 +76,13 @@ public:
 	// further FDR options...
 
 	static bool			verbose;							// verbose printouts, defaults to false
+	static bool         debugMode;                          // verbose printouts for debugging, defaults to false
 	static bool			saveInitBaMMs;						// Write initialized BaMM(s) to disk.
 	static bool			saveBaMMs;							// Write optimized BaMM(s) to disk.
 
 	static void         init( int nargs, char* args[] );
 	static void         destruct();
+	static void         debug();
 
 	static char* 		String( const char *s );			// convert const char* to string, for GetOpt library
 

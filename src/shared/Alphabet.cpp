@@ -64,6 +64,19 @@ void Alphabet::destruct(){
 	}
 }
 
+void Alphabet::debug(){
+    // exhaustive printout to check if Alphabet initialisation works
+    //        std::cout << std::setw(10) << std::fixed << std::setprecision(2) << negSequenceSet->getBaseFrequencies()[i] << std::endl;
+
+    static int      size_;                  // alphabet size
+    static char*    alphabet_;              // alphabet bases ([A,C,G,T], [A,C,G,T,mC], ...)
+    static char*    complementAlphabet_;    // complementary alphabet bases ([T,G,C,A], [T,G,C,A,G], ...)
+    static uint8_t* baseToCode_;            // convert base to encoding
+    static char*    codeToBase_;            // convert encoding to base
+    static uint8_t* codeToComplementCode_;  // convert encoding to complement encoding
+}
+
+
 char* Alphabet::getAlphabet(){
 	return alphabet_;
 }

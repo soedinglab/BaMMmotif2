@@ -10,9 +10,6 @@
 
 class Sequence{
 
-friend class SequenceSet;
-friend class EM;
-
 public:
 
 	Sequence( uint8_t* sequence, int L, std::string header, std::vector<int> Y, bool revcomp = false );
