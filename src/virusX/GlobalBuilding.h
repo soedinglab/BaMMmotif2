@@ -25,6 +25,9 @@ public:
 	static float				modelBeta;			// alpha_k = beta x gamma^(k-1) for k > 0
 	static float				modelGamma;			// - " -
 
+	static bool					interpolate;		// calculate prior probabilities from lower-order probabilities
+													// instead of background frequencies of mononucleotides
+
 	static std::string			name;				// program name
 	static std::string			version;			// program version number
 
@@ -37,8 +40,8 @@ public:
 
 private:
 
-	static int	        readArguments( int nargs, char* args[] );
-	static void	        printHelp();
+	static int	    readArguments( int nargs, char* args[] );
+	static void	    printHelp();
 };
 
 inline char* Global::String( const char *s ){

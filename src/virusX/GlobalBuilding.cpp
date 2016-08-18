@@ -10,6 +10,9 @@ std::vector<float>	Global::modelAlpha( modelOrder+1, 1.0f );	// background model
 float				Global::modelBeta = 10.0f;					// alpha_k = beta x gamma^(k-1) for k > 0
 float				Global::modelGamma = 2.0f;					// - " -
 
+bool				Global::interpolate = true;					// calculate prior probabilities from lower-order probabilities
+																// instead of background frequencies of mononucleotides
+
 bool                Global::verbose = false;					// verbose printouts
 
 std::string			Global::name="build";						// program name
@@ -102,6 +105,10 @@ int Global::readArguments( int nargs, char* args[] ){
 		}
 	}
 
+	if( opt >> GetOpt::OptionPresent( "nonBayesian" ) ){
+		interpolate = false;
+	}
+
 	if( opt >> GetOpt::OptionPresent( 'o', "outputDirectory" ) ){
 		opt >> GetOpt::Option( 'o', "outputDirectory", outputDirectory );
 		struct stat sb;
@@ -167,6 +174,9 @@ void Global::printHelp(){
 	printf( "      -g, --gamma <FLOAT>\n"
 			"          Calculate order-specific alphas according to beta x gamma^(k-1) (for\n"
 			"          k > 0). The default is 3.0.\n\n" );
+	printf( "      --nonBayesian\n"
+			"          Calculate prior probabilities from background frequencies of\n"
+			"          mononucleotides instead of lower-order probabilities.\n\n" );
 	printf( "  Output options\n" );
 	printf( "      -o, --outputDirectory <DIRPATH>\n"
 			"          Output directory for Bayesian homogenous Markov models. The input\n"

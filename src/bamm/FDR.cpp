@@ -114,7 +114,7 @@ void FDR::scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<int> 
 		for( i = 0; i < LW1; i++ ){
 			for( j = 0; j < W; j++ ){
 				y = posSeqs[testIndices[n]]->extractKmer( i + k, k );
-				posS_[testIndices[n]][i] += ( logf( motif->getV()[k][y][j] ) - logf( bg->getVbg()[K_bg][y] ) );
+				posS_[testIndices[n]][i] += ( logf( motif->getV()[k][y][j] ) - logf( bg->getV()[K_bg][y] ) );
 			}
 			if( posS_[testIndices[n]][i] > maxS ){
 				maxS = posS_[testIndices[n]][i];
@@ -140,7 +140,7 @@ void FDR::scoreSequenceSet( Motif* motif, BackgroundModel* bg, SequenceSet* seqS
 		for( i = 0; i < LW1; i++ ){
 			for( j = 0; j < W; j++ ){
 				y = seqSet->getSequences()[n]->extractKmer( i + k, k );
-				negS_[n][i] += ( logf( motif->getV()[k][y][j] ) - logf( bg->getVbg()[K][y] ) );
+				negS_[n][i] += ( logf( motif->getV()[k][y][j] ) - logf( bg->getV()[K][y] ) );
 			}
 			if( negS_[n][i] > maxS ){
 				maxS = negS_[n][i];

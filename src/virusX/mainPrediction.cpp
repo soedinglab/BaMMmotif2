@@ -13,6 +13,7 @@ int main( int nargs, char* args[] ){
 		interactions->print();
 	}
 
+	delete interactions;
 	Global::destruct();
 
 	return 0;

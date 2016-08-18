@@ -1,15 +1,19 @@
 #ifndef UTILS_H_
 #define UTILS_H_
 
+#include <numeric>		// e.g. std::numeric
 #include <vector>
 
 #include <sys/stat.h>	// e.g. stat
 
 static char*							baseName( const char* filePath );
 static void								createDirectory( char* dir );
-static int								ipow( unsigned int base, int exp );							// calculate the power for integer base
 static std::vector< std::vector<int> >	generateFoldIndices( unsigned int N, unsigned int folds );
+static int								ipow( unsigned int base, int exp );							// calculate the power for integer base
 static void								quickSort( std::vector<float> arr, int left, int right );	// sort in descending order using
+
+template <typename T>
+std::vector<size_t> sortIndices( const std::vector<T> &v ); // returns a permutation which rearranges v into ascending order
 
 inline char* baseName( const char* filePath ){
 
@@ -99,6 +103,23 @@ inline void quickSort( std::vector<float> arr, int left, int right ){
 	/* recursion */
 	if( left < j )	quickSort( arr, left, j );
 	if( i < right )	quickSort( arr, i, right );
+}
+
+template <typename T>
+inline std::vector<size_t> sortIndices( const std::vector<T>& v ){
+
+  // initialize with original indices
+  std::vector<size_t> idx( v.size() );
+  iota( idx.begin(), idx.end(), 0 );
+
+  // sort indices based on comparing values in v
+  sort( idx.begin(), idx.end(),
+		[&v]( size_t i1, size_t i2 ){
+	        return v[i1] < v[i2];
+        }
+      );
+
+  return idx;
 }
 
 #endif /* UTILS_H_ */

@@ -35,8 +35,8 @@ public:
 
 private:
 
-	static int	        readArguments( int nargs, char* args[] );
-	static void	        printHelp();
+	static int	    readArguments( int nargs, char* args[] );
+	static void	    printHelp();
 };
 
 inline char* Global::String( const char *s ){
