@@ -10,7 +10,9 @@ VirusHostInteractions::VirusHostInteractions( char* inputDirectoryBaMMs, char* e
 }
 
 VirusHostInteractions::~VirusHostInteractions(){
-
+	if( bamms_ != NULL ){
+		delete bamms_;
+	}
 }
 
 void VirusHostInteractions::predict( char* inputDirectorySeqs, char* extensionSeqs ){
@@ -21,6 +23,9 @@ void VirusHostInteractions::predict( char* inputDirectorySeqs, char* extensionSe
 	struct stat sb;
 
 	if( ( dir = opendir( inputDirectorySeqs ) ) != NULL ){
+
+		posteriors_.clear();
+		posteriors_.resize( bamms_->getN() );
 
 		while( ( ent = readdir( dir ) ) != NULL ){
 
@@ -34,13 +39,17 @@ void VirusHostInteractions::predict( char* inputDirectorySeqs, char* extensionSe
 					SequenceSet* sequenceSet = new SequenceSet( filep );
 					sequenceSetNames_.push_back( baseName( sequenceSet->getSequenceFilepath().c_str() ) );
 
-					std::vector<double> llikelihoods( bamms_->getN() );
 					// calculate log likelihoods
-					for( unsigned int i = 0; i < bamms_->getN(); i++ ){
+					std::vector<double> llikelihoods( bamms_->getN() );
+					for( size_t i = 0; i < bamms_->getN(); i++ ){
 						llikelihoods[i] = score( *bamms_->getBackgroundModels()[i], *sequenceSet );
 					}
+
 					// calculate posterior probabilities
-					posteriors_.push_back( calculatePosteriors( llikelihoods ) );
+					std::vector<double> posteriors = calculatePosteriors( llikelihoods );
+					for( size_t i = 0; i < posteriors_.size(); i++ ){
+						posteriors_[i].push_back( posteriors[i] );
+					}
 				}
 			}
 		}
@@ -59,6 +68,53 @@ void VirusHostInteractions::print(){
 
 	std::vector<size_t> bammNameIndices = sortIndices( bammNames_ );
 	std::vector<size_t> sequenceSetNameIndices = sortIndices( sequenceSetNames_ );
+
+	std::cout << " _________" << std::endl;
+	std::cout << "|*       *|" << std::endl;
+	std::cout << "| Summary |" << std::endl;
+	std::cout << "|*_______*|" << std::endl;
+	std::cout << std::endl;
+
+	int w1 = 0;
+	for( size_t i = 0; i < sequenceSetNames_.size(); i++ ){
+		int w = static_cast<int>( sequenceSetNames_[i].length() );
+		w1 = w > w1 ? w : w1;
+	}
+
+	int w2 = 0;
+	for( size_t i = 0; i < bestBammIndices_.size(); i++ ){
+		int w = static_cast<int>( bammNames_[bestBammIndices_[i]].length() );
+		w2 = w > w2 ? w : w2;
+	}
+
+	int w3 = 0;
+	for( size_t i = 0; i < secondBestBammIndices_.size(); i++ ){
+		int w = static_cast<int>( bammNames_[secondBestBammIndices_[i]].length() );
+		w3 = w > w3 ? w : w3;
+	}
+
+	for( size_t j = 0; j < sequenceSetNames_.size(); j++ ){
+
+		std::cout << std::setw( w1 );
+		std::cout << sequenceSetNames_[sequenceSetNameIndices[j]];
+		std::cout << '\t';
+		std::cout << std::setw( w2+1 );
+		std::cout << bammNames_[bestBammIndices_[sequenceSetNameIndices[j]]];
+		std::cout << std::setw( 5 ) << std::fixed << std::setprecision( 2 );
+		std::cout << bestBammPosteriors_[sequenceSetNameIndices[j]];
+		std::cout << '\t';
+		std::cout << std::setw( w3+1 );
+		std::cout << bammNames_[secondBestBammIndices_[sequenceSetNameIndices[j]]];
+		std::cout << std::setw( 5 ) << std::fixed << std::setprecision( 2 );
+		std::cout << secondBestBammPosteriors_[sequenceSetNameIndices[j]];
+		std::cout << std::endl;
+	}
+
+	std::cout << " _________________________" << std::endl;
+	std::cout << "|*                       *|" << std::endl;
+	std::cout << "| Virus-Host Interactions |" << std::endl;
+	std::cout << "|*_______________________*|" << std::endl;
+	std::cout << std::endl;
 
 	int wmax = 0;
 
@@ -83,7 +139,7 @@ void VirusHostInteractions::print(){
 		for( size_t j = 0; j < posteriors_[bammNameIndices[i]].size(); j++ ){
 
 			std::cout << std::setw( static_cast<int>( sequenceSetNames_[sequenceSetNameIndices[j]].length()+1 ) );
-			std::cout << std::fixed << std::setprecision( 3 );
+			std::cout << std::fixed << std::setprecision( 2 );
 			std::cout << posteriors_[bammNameIndices[i]][sequenceSetNameIndices[j]];
 		}
 		std::cout << std::endl;
@@ -92,27 +148,36 @@ void VirusHostInteractions::print(){
 
 void VirusHostInteractions::write( char* outputDirectory ){
 
-	std::ofstream file( std::string( outputDirectory ) + '/' + "vhi.tab" );
+	std::vector<size_t> bammNameIndices = sortIndices( bammNames_ );
+	std::vector<size_t> sequenceSetNameIndices = sortIndices( sequenceSetNames_ );
+
+	std::ofstream file( std::string( outputDirectory ) + '/' + "vhi.summary" );
 	if( file.is_open() ){
 
-		std::vector<size_t> bammNameIndices = sortIndices( bammNames_ );
-		std::vector<size_t> sequenceSetNameIndices = sortIndices( sequenceSetNames_ );
+		for( size_t j = 0; j < sequenceSetNames_.size(); j++ ){
 
-		file << "#";
-		for( size_t j = 0; j < bestBammIndices_.size(); j++ ){
-			file << " " << bammNameIndices[bestBammIndices_[sequenceSetNameIndices[j]]]+1;
+			file << sequenceSetNames_[sequenceSetNameIndices[j]];
+			file << '\t';
+			file << bammNames_[bestBammIndices_[sequenceSetNameIndices[j]]];
+			file << '\t';
+			file << std::fixed << std::setprecision( 2 ) << bestBammPosteriors_[sequenceSetNameIndices[j]];
+			file << '\t';
+			file << bammNames_[secondBestBammIndices_[sequenceSetNameIndices[j]]];
+			file << '\t';
+			file << std::fixed << std::setprecision( 2 ) << secondBestBammPosteriors_[sequenceSetNameIndices[j]];
+			file << std::endl;
 		}
-		file << std::endl;
-		file << "#";
-		for( size_t j = 0; j < bestBammPosteriors_.size(); j++ ){
-			file << " " << std::fixed << std::setprecision( 2 ) << bestBammPosteriors_[sequenceSetNameIndices[j]];
-		}
-		file << std::endl;
-		file << "#";
-		for( size_t j = 0; j < secondBestBammPosteriors_.size(); j++ ){
-			file << " " << std::fixed << std::setprecision( 2 ) << secondBestBammPosteriors_[sequenceSetNameIndices[j]];
-		}
-		file << std::endl;
+		file.close();
+
+	} else{
+
+		std::cerr << "Error: Cannot write into output directory: " << outputDirectory << std::endl;
+		exit( -1 );
+	}
+
+	file.clear();
+	file.open( std::string( outputDirectory ) + '/' + "vhi.matrix" );
+	if( file.is_open() ){
 
 		file << sequenceSetNames_[sequenceSetNameIndices[0]];
 		for( size_t j = 1; j < sequenceSetNames_.size(); j++ ){
@@ -147,6 +212,9 @@ void VirusHostInteractions::aggregatePosteriors(){
 	bestBammPosteriors_.clear();
 	bestBammPosteriors_.resize( sequenceSetNames_.size(), 0.0 );
 
+	secondBestBammIndices_.clear();
+	secondBestBammIndices_.resize( sequenceSetNames_.size(), 0 );
+
 	secondBestBammPosteriors_.clear();
 	secondBestBammPosteriors_.resize( sequenceSetNames_.size(), 0.0 );
 
@@ -155,6 +223,7 @@ void VirusHostInteractions::aggregatePosteriors(){
 
 			if( posteriors_[i][j] > bestBammPosteriors_[j] ){
 
+				secondBestBammIndices_[j] = bestBammIndices_[j];
 				secondBestBammPosteriors_[j] = bestBammPosteriors_[j];
 
 				bestBammIndices_[j] = i;
@@ -162,6 +231,7 @@ void VirusHostInteractions::aggregatePosteriors(){
 
 			} else if( posteriors_[i][j] > secondBestBammPosteriors_[j] ){
 
+				secondBestBammIndices_[j] = i;
 				secondBestBammPosteriors_[j] = posteriors_[i][j];
 			}
 		}

@@ -1,6 +1,6 @@
 #include "BackgroundModelSet.h"
 
-BackgroundModelSet::BackgroundModelSet( char* inputDirectory, char* extension, int order, std::vector<float> alpha ){
+BackgroundModelSet::BackgroundModelSet( char* inputDirectory, char* extension, int order, std::vector<float> alpha, bool interpolate ){
 
 	DIR* dir;
 	struct dirent* ent;
@@ -19,7 +19,7 @@ BackgroundModelSet::BackgroundModelSet( char* inputDirectory, char* extension, i
 				if( strcmp( ext+1, extension ) == 0 ){
 
 					SequenceSet* sequenceSet = new SequenceSet( filep );
-					BackgroundModel* bamm = new BackgroundModel( *sequenceSet, order, alpha );
+					BackgroundModel* bamm = new BackgroundModel( *sequenceSet, order, alpha, interpolate );
 
 					backgroundModels_.push_back( bamm );
 				}

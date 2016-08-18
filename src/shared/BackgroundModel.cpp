@@ -3,6 +3,7 @@
 BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 		                          int order,
 		                          std::vector<float> alpha,
+		                          bool interpolate,
 		                          std::vector<std::vector<int>> foldIndices,
 		                          std::vector<int> folds ){
 
@@ -24,6 +25,7 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 	}
 
 	A_ = alpha;
+	interpolate_ = interpolate;
 
 	if( folds.empty() ){
 		if( foldIndices.empty() ){
@@ -213,11 +215,19 @@ bool BackgroundModel::vIsLog(){
 
 void BackgroundModel::print(){
 
-	std::cout << " ___________________" << std::endl;
-	std::cout << "|*                 *|" << std::endl;
-	std::cout << "| Homogeneous BaMM! |" << std::endl;
-	std::cout << "|*_________________*|" << std::endl;
-	std::cout << std::endl;
+	if( interpolate_ ){
+		std::cout << " ___________________________________" << std::endl;
+		std::cout << "|*                                 *|" << std::endl;
+		std::cout << "| Homogeneous Bayesian Markov Model |" << std::endl;
+		std::cout << "|*_________________________________*|" << std::endl;
+		std::cout << std::endl;
+	} else{
+		std::cout << " __________________________" << std::endl;
+		std::cout << "|*                        *|" << std::endl;
+		std::cout << "| Homogeneous Markov Model |" << std::endl;
+		std::cout << "|*________________________*|" << std::endl;
+		std::cout << std::endl;
+	}
 
 	std::cout << "name = " << name_ << std::endl << std::endl;
 	std::cout << "K = " << K_ << std::endl;
@@ -261,7 +271,7 @@ void BackgroundModel::print(){
 
 void BackgroundModel::write( char* dir ){
 
-	std::ofstream file( std::string( dir ) + '/' + name_ + ".hb" );
+	std::ofstream file( std::string( dir ) + '/' + name_ + ( interpolate_ ? ".hb" : ".hnb" ) );
 	if( file.is_open() ){
 
 		file << "# K = " << K_ << std::endl;
@@ -307,8 +317,13 @@ void BackgroundModel::calculateV(){
 			int y2 = y % Y_[k];
 			// omit last base (e.g. ACG) from y (e.g. ACGT)
 			int yk = y / Y_[1];
-			v_[k][y] = ( static_cast<float>( n_[k][y] ) + A_[k] * v_[k-1][y2] )
-					   / ( static_cast<float>( n_[k-1][yk] ) + A_[k] );
+			if( interpolate_ ){
+				v_[k][y] = ( static_cast<float>( n_[k][y] ) + A_[k] * v_[k-1][y2] )
+						   / ( static_cast<float>( n_[k-1][yk] ) + A_[k] );
+			} else{
+				v_[k][y] = ( static_cast<float>( n_[k][y] ) + A_[k] * 0.25f )
+						   / ( static_cast<float>( n_[k-1][yk] ) + A_[k] );
+			}
 		}
 		// normalize probabilities
 		float factor = 0.0f;

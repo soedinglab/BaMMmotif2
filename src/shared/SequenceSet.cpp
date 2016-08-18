@@ -28,6 +28,11 @@ SequenceSet::SequenceSet( std::string sequenceFilepath, bool revcomp, std::strin
 }
 
 SequenceSet::~SequenceSet(){
+
+	for( size_t i = 0; i < sequences_.size(); i++ ){
+		delete sequences_[i];
+	}
+
 	if( baseFrequencies_ ){
 		delete[] baseFrequencies_;
 	}
