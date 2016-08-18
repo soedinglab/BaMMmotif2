@@ -14,9 +14,6 @@
 
 class SequenceSet{
 
-friend class Sequence;
-friend class EM;
-
 public:
 
 	SequenceSet( std::string sequenceFilepath, bool revcomp = false, std::string intensityFilepath = "" );

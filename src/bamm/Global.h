@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <algorithm>                                        // std::min
 
 #include "../shared/SequenceSet.h"
 #include "../shared/Alphabet.h"

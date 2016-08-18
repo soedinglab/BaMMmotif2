@@ -14,6 +14,7 @@ public:
 
 	static void		init( char* alphabetType );
 	static void		destruct();
+	static void     debug();
 
 	static int		getSize();
 	static char* 	getAlphabet();

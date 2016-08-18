@@ -23,6 +23,11 @@ int main( int nargs, char* args[] ){
 	// initialization
 	Global::init( nargs, args );
 
+    if( Global::debugMode ){
+      Global::debug();
+//      Alphabet::debug();
+    }
+
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "************************\n" );
 	fprintf( stderr, "*   Background Model   *\n" );

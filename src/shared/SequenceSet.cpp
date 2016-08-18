@@ -29,8 +29,8 @@ SequenceSet::SequenceSet( std::string sequenceFilepath, bool revcomp, std::strin
 
 SequenceSet::~SequenceSet(){
 	if( baseFrequencies_ ) delete[] baseFrequencies_;
-	for (int i = 0; i < sequences_.size(); ++i) {
-	    delete sequences_[i]; // Calls ~object (which deallocates sequences_[i]->sequence_)and deallocates *sequences_[i]
+	for (size_t i = 0; i < sequences_.size(); ++i) {
+	    delete sequences_[i]; // Calls ~sequence_ (which deallocates sequences_[i]->sequence_)and deallocates *sequences_[i]
 	}
 }
 
