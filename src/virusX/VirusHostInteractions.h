@@ -1,8 +1,6 @@
 #ifndef VIRUSHOSTINTERACTIONS_H_
 #define VIRUSHOSTINTERACTIONS_H_
 
-#include <algorithm>	// delete
-#include <limits>		// delete
 #include <vector>
 
 #include <dirent.h>		// e.g. opendir
@@ -18,14 +16,14 @@ public:
 	VirusHostInteractions( char* inputDirectoryBaMMs, char* extensionBaMMs );
 	~VirusHostInteractions();
 
-	void predict( char* inputDirectorySeqs, char* extensionSeqs );
+	void predict( char* inputDirectorySeqs, char* extensionSeqs ); // calculate posterior probabilities
 
 	void print();
 	void write( char* outputDirectory );
 
 private:
 
-	void				aggregatePosteriors();										// aggregate M x N matrix of posterior probabilities
+	void aggregatePosteriors();							// aggregate M x N matrix of posterior probabilities
 
 	BackgroundModelSet* bamms_;
 

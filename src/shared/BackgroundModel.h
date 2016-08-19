@@ -42,7 +42,17 @@ public:
 
 	// calculate the log likelihood for the sequence set
 	// afterwards v_ contains log probabilities
-	double		calculateLogLikelihood( SequenceSet& sequenceSet );
+	double calculateLogLikelihood( SequenceSet& sequenceSet,
+			                       std::vector<std::vector<int>> foldIndices = std::vector<std::vector<int>>(),
+			                       std::vector<int> folds = std::vector<int>() );
+
+	// calculate positional likelihoods for the sequence set
+	// and write likelihoods to file
+	// afterwards v_ contains log probabilities
+	void calculatePosLogLikelihoods( SequenceSet& sequenceSet,
+			                         char* outputDirectory,
+			                         std::vector<std::vector<int>> foldIndices = std::vector<std::vector<int>>(),
+			                         std::vector<int> folds = std::vector<int>() );
 
 	void 		print();
 	void 		write( char* dir );
