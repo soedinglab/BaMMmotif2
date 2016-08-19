@@ -213,6 +213,32 @@ bool BackgroundModel::vIsLog(){
 	return vIsLog_;
 }
 
+double BackgroundModel::calculateLogLikelihood( SequenceSet& sequenceSet ){
+
+	if( !( vIsLog_ ) ){
+		logV();
+	}
+
+	double llikelihood = 0.0;
+
+	int N = sequenceSet.getN();
+	for( int n = 0; n < N; n++ ){
+
+		int L = sequenceSet.getSequences()[n]->getL();
+		for( int i = 0; i < L; i++ ){
+
+			int k = std::min( i, K_ );
+			int y = sequenceSet.getSequences()[n]->extractKmer( i, k );
+
+			if( y >= 0 ){ // skip non-defined alphabet letters
+				llikelihood += v_[k][y]; // add log probabilities
+			}
+		}
+	}
+
+	return llikelihood;
+}
+
 void BackgroundModel::print(){
 
 	if( interpolate_ ){

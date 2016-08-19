@@ -40,6 +40,10 @@ public:
 
 	bool		vIsLog();
 
+	// calculate the log likelihood for the sequence set
+	// afterwards v_ contains log probabilities
+	double		calculateLogLikelihood( SequenceSet& sequenceSet );
+
 	void 		print();
 	void 		write( char* dir );
 

@@ -1,16 +1,22 @@
 #ifndef UTILS_H_
 #define UTILS_H_
 
+#include <algorithm>	// e.g. std::sort
+#include <limits>		// e.g. std::numeric_limits
 #include <numeric>		// e.g. std::numeric
 #include <vector>
 
 #include <sys/stat.h>	// e.g. stat
 
 static char*							baseName( const char* filePath );
+// calculate posterior probabilities from log likelihoods
+std::vector<double>						calculatePosteriorProbabilities( std::vector<double> lLikelihoods );
 static void								createDirectory( char* dir );
-static std::vector<std::vector<int>>	generateFoldIndices( unsigned int N, unsigned int folds );
-static int								ipow( unsigned int base, int exp );							// calculate the power for integer base
-static void								quickSort( std::vector<float> arr, int left, int right );	// sort in descending order using
+static std::vector< std::vector<int> >	generateFoldIndices( unsigned int N, unsigned int folds );
+// calculate the power for integer base
+static int								ipow( unsigned int base, int exp );
+// sort in descending order using
+static void								quickSort( std::vector<float> arr, int left, int right );
 
 template <typename T>
 std::vector<size_t> sortIndices( const std::vector<T> &v ); // returns a permutation which rearranges v into ascending order
@@ -38,6 +44,48 @@ inline char* baseName( const char* filePath ){
 	baseName[i-start] = '\0';
 
 	return baseName;
+}
+
+inline std::vector<double> calculatePosteriorProbabilities( std::vector<double> lLikelihoods ){
+
+	// see http://stats.stackexchange.com/questions/66616/converting-normalizing-very-small-likelihood-values-to-probability/66621#66621
+
+	int d = std::numeric_limits<double>::digits10; // digits of precision
+
+	double epsilon = pow( 10, -d );
+	long unsigned int N = lLikelihoods.size();
+
+	double limit = log( epsilon ) - log( static_cast<double>( N ) );
+
+	// sort indices into ascending order
+	std::vector<size_t> order = sortIndices( lLikelihoods );
+	// sort likelihoods into ascending order
+	std::sort( lLikelihoods.begin(), lLikelihoods.end() );
+
+	for( unsigned int i = 0; i < N; i++ ){
+		lLikelihoods[i] = lLikelihoods[i] - lLikelihoods[N-1];
+	}
+
+	double partition = 0.0;
+
+	for( unsigned int i = 0; i < N; i++ ){
+		if( lLikelihoods[i] >= limit ){
+			lLikelihoods[i] = exp( lLikelihoods[i] );
+			partition += lLikelihoods[i];
+		}
+	}
+
+	std::vector<double> posteriors( N );
+
+	for( unsigned int i = 0; i < N; i++ ){
+		if( lLikelihoods[i] >= limit ){
+			posteriors[order[i]] = lLikelihoods[i] / partition;
+		} else{
+			posteriors[order[i]] = 0.0;
+		}
+	}
+
+	return( posteriors );
 }
 
 inline void createDirectory( char* dir ){

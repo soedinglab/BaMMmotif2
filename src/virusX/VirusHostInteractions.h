@@ -1,8 +1,8 @@
 #ifndef VIRUSHOSTINTERACTIONS_H_
 #define VIRUSHOSTINTERACTIONS_H_
 
-#include <algorithm>	// e.g. std::sort
-#include <limits>		// e.g. std::numeric_limits
+#include <algorithm>	// delete
+#include <limits>		// delete
 #include <vector>
 
 #include <dirent.h>		// e.g. opendir
@@ -26,8 +26,6 @@ public:
 private:
 
 	void				aggregatePosteriors();										// aggregate M x N matrix of posterior probabilities
-	std::vector<double> calculatePosteriors( std::vector<double> llikelihoods );	// calculate posterior probabilities from log likelihoods
-	double				score( BackgroundModel& bamm, SequenceSet& sequenceSet );	// calculate log likelihood
 
 	BackgroundModelSet* bamms_;
 
