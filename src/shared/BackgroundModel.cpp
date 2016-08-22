@@ -65,7 +65,7 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 			// get sequence length
 			int L = sequenceSet.getSequences()[s_idx]->getL();
 			// loop over order
-			for( int k = 0; k < ( K_+1 ); k++ ){
+			for( int k = 0; k <= K_; k++ ){
 				// loop over sequence positions
 				for( int i = k; i < L; i++ ){
 					// extract (k+1)mer
@@ -213,6 +213,149 @@ bool BackgroundModel::vIsLog(){
 	return vIsLog_;
 }
 
+double BackgroundModel::calculateLogLikelihood( SequenceSet& sequenceSet,
+		                                        std::vector<std::vector<int>> foldIndices,
+		                                        std::vector<int> folds ){
+
+	if( !( vIsLog_ ) ){
+		logV();
+	}
+
+	if( folds.empty() ){
+		if( foldIndices.empty() ){
+
+			folds.push_back( 0 );
+
+			foldIndices.push_back( std::vector<int>() );
+			for( int n = 0; n < sequenceSet.getN(); n++ ){
+				foldIndices[0].push_back( n );
+			}
+		} else{
+			folds.resize( foldIndices.size() );
+			std::iota( std::begin( folds ), std::end( folds ), 0 );
+		}
+	} else if( foldIndices.empty() ){
+
+		folds.clear();
+		folds.push_back( 0 );
+
+		foldIndices.push_back( std::vector<int>() );
+		for( int n = 0; n < sequenceSet.getN(); n++ ){
+			foldIndices[0].push_back( n );
+		}
+	}
+
+	double lLikelihood = 0.0;
+
+	// loop over folds
+	for( size_t f = 0; f < folds.size(); f++ ){
+		// loop over fold indices
+		for( size_t f_idx = 0; f_idx < foldIndices[folds[f]].size(); f_idx++ ){
+			// get sequence index
+			int s_idx = foldIndices[folds[f]][f_idx];
+			// get sequence length
+			int L = sequenceSet.getSequences()[s_idx]->getL();
+			// loop over sequence positions
+			for( int i = 0; i < L; i++ ){
+				// calculate k
+				int k = std::min( i, K_ );
+				// extract (k+1)mer
+				int y = sequenceSet.getSequences()[s_idx]->extractKmer( i, k );
+				// skip non-defined alphabet letters
+				if( y >= 0 ){
+					// add log probabilities
+					lLikelihood += v_[k][y];
+				}
+			}
+		}
+	}
+
+	return lLikelihood;
+}
+
+void BackgroundModel::calculatePosLogLikelihoods( SequenceSet& sequenceSet,
+		                                          char* outputDirectory,
+		                                          std::vector<std::vector<int>> foldIndices,
+		                                          std::vector<int> folds ){
+
+	if( !( vIsLog_ ) ){
+		logV();
+	}
+
+	if( folds.empty() ){
+		if( foldIndices.empty() ){
+
+			folds.push_back( 0 );
+
+			foldIndices.push_back( std::vector<int>() );
+			for( int n = 0; n < sequenceSet.getN(); n++ ){
+				foldIndices[0].push_back( n );
+			}
+		} else{
+			folds.resize( foldIndices.size() );
+			std::iota( std::begin( folds ), std::end( folds ), 0 );
+		}
+	} else if( foldIndices.empty() ){
+
+		folds.clear();
+		folds.push_back( 0 );
+
+		foldIndices.push_back( std::vector<int>() );
+		for( int n = 0; n < sequenceSet.getN(); n++ ){
+			foldIndices[0].push_back( n );
+		}
+	}
+
+	std::ofstream file( std::string( outputDirectory ) + '/'
+			            + baseName( sequenceSet.getSequenceFilepath().c_str() )
+			            + '_' + name_ + ".lhs" );
+
+	if( file.is_open() ){
+
+		// loop over folds
+		for( size_t f = 0; f < folds.size(); f++ ){
+			// loop over fold indices
+			for( size_t f_idx = 0; f_idx < foldIndices[folds[f]].size(); f_idx++ ){
+				// get sequence index
+				int s_idx = foldIndices[folds[f]][f_idx];
+				// get sequence length
+				int L = sequenceSet.getSequences()[s_idx]->getL();
+				// loop over sequence positions
+				for( int i = 0; i < ( L-K_ ); i++ ){
+					// reset log likelihood
+					double lLikelihood = 0.0;
+					// loop over order
+					for( int k = 0; k <= K_; k++ ){
+						// extract (k+1)mer
+						int y = sequenceSet.getSequences()[s_idx]->extractKmer( i+k, k );
+						if( y >= 0 ){
+							// sum up log probabilities
+							lLikelihood += v_[k][y];
+						} else{
+							// cannot calculate log probability for (k+1)mer and neither (K_+1)mer
+							lLikelihood = 1.0;
+							break;
+						}
+					}
+					file << ( i == 0 ? "" : " " );
+					if( lLikelihood > 0.0 ){
+						file << "NA";
+					} else{
+						file << std::scientific << std::setprecision( 6 ) << lLikelihood;
+					}
+				}
+				file << std::endl;
+			}
+		}
+		file.close();
+
+	} else{
+
+		std::cerr << "Error: Cannot write into output directory: " << outputDirectory << std::endl;
+		exit( -1 );
+	}
+}
+
 void BackgroundModel::print(){
 
 	if( interpolate_ ){
@@ -282,9 +425,9 @@ void BackgroundModel::write( char* dir ){
 		file << std::endl;
 
 		for( int k = 0; k <= K_; k++ ){
-			file << std::fixed << std::setprecision( 6 ) << v_[k][0];
+			file << std::scientific << std::setprecision( 6 ) << v_[k][0];
 			for( int y = 1; y < Y_[k+1]; y++ ){
-				file << std::fixed << std::setprecision( 6 ) << " " << v_[k][y];
+				file << std::scientific << std::setprecision( 6 ) << " " << v_[k][y];
 			}
 			file << std::endl;
 		}

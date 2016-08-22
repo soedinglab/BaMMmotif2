@@ -39,14 +39,20 @@ void VirusHostInteractions::predict( char* inputDirectorySeqs, char* extensionSe
 					SequenceSet* sequenceSet = new SequenceSet( filep );
 					sequenceSetNames_.push_back( baseName( sequenceSet->getSequenceFilepath().c_str() ) );
 
-					// calculate log likelihoods
-					std::vector<double> llikelihoods( bamms_->getN() );
-					for( size_t i = 0; i < bamms_->getN(); i++ ){
-						llikelihoods[i] = score( *bamms_->getBackgroundModels()[i], *sequenceSet );
-					}
+//					// calculate log likelihoods
+//					std::vector<double> llikelihoods( bamms_->getN() );
+//					for( size_t i = 0; i < bamms_->getN(); i++ ){
+//						llikelihoods[i] = score( *bamms_->getBackgroundModels()[i], *sequenceSet );
+//					}
+//
+//					// calculate posterior probabilities
+//					std::vector<double> posteriors = calculatePosteriors( llikelihoods );
+//					for( size_t i = 0; i < posteriors_.size(); i++ ){
+//						posteriors_[i].push_back( posteriors[i] );
+//					}
 
 					// calculate posterior probabilities
-					std::vector<double> posteriors = calculatePosteriors( llikelihoods );
+					std::vector<double> posteriors = bamms_->calculatePosteriorProbabilities( *sequenceSet );
 					for( size_t i = 0; i < posteriors_.size(); i++ ){
 						posteriors_[i].push_back( posteriors[i] );
 					}
@@ -236,72 +242,4 @@ void VirusHostInteractions::aggregatePosteriors(){
 			}
 		}
 	}
-}
-
-std::vector<double> VirusHostInteractions::calculatePosteriors( std::vector<double> llikelihoods ){
-
-	// see http://stats.stackexchange.com/questions/66616/converting-normalizing-very-small-likelihood-values-to-probability/66621#66621
-
-	int d = std::numeric_limits<double>::digits10; // digits of precision
-
-	double epsilon = pow( 10, -d );
-	long unsigned int N = llikelihoods.size();
-
-	double limit = log( epsilon ) - log( static_cast<double>( N ) );
-
-	// sort indices into ascending order
-	std::vector<size_t> order = sortIndices( llikelihoods );
-	// sort likelihoods into ascending order
-	std::sort( llikelihoods.begin(), llikelihoods.end() );
-
-	for( unsigned int i = 0; i < N; i++ ){
-		llikelihoods[i] = llikelihoods[i] - llikelihoods[N-1];
-	}
-
-	double partition = 0.0;
-
-	for( unsigned int i = 0; i < N; i++ ){
-		if( llikelihoods[i] >= limit ){
-			llikelihoods[i] = exp( llikelihoods[i] );
-			partition += llikelihoods[i];
-		}
-	}
-
-	std::vector<double> posteriors( N );
-
-	for( unsigned int i = 0; i < N; i++ ){
-		if( llikelihoods[i] >= limit ){
-			posteriors[order[i]] = llikelihoods[i] / partition;
-		} else{
-			posteriors[order[i]] = 0.0;
-		}
-	}
-
-	return( posteriors );
-}
-
-double VirusHostInteractions::score( BackgroundModel& bamm, SequenceSet& sequenceSet ){
-
-	if( !( bamm.vIsLog() ) ){
-		bamm.logV();
-	}
-
-	double likelihood = 0.0;
-
-	int N = sequenceSet.getN();
-	for( int n = 0; n < N; n++ ){
-
-		int L = sequenceSet.getSequences()[n]->getL();
-		for( int i = 0; i < L; i++ ){
-
-			int k = std::min( i, bamm.getOrder() );
-			int y = sequenceSet.getSequences()[n]->extractKmer( i, k );
-
-			if( y >= 0 ){ // skip non-defined alphabet letters
-				likelihood += bamm.getV()[k][y]; // add log probabilities
-			}
-		}
-	}
-
-	return likelihood;
 }
