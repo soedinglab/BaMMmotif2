@@ -307,8 +307,9 @@ void BackgroundModel::calculatePosLogLikelihoods( SequenceSet& sequenceSet,
 	}
 
 	std::ofstream file( std::string( outputDirectory ) + '/'
+			            + name_ + '_'
 			            + baseName( sequenceSet.getSequenceFilepath().c_str() )
-			            + '_' + name_ + ".lhs" );
+			            + ".lhs" );
 
 	if( file.is_open() ){
 

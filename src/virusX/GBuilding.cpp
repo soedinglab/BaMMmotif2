@@ -1,4 +1,4 @@
-#include "GlobalBuilding.h"
+#include "GBuilding.h"
 
 char*               Global::inputDirectory = NULL;				// input directory
 char*               Global::outputDirectory = NULL;				// output directory
@@ -146,18 +146,27 @@ int Global::readArguments( int nargs, char* args[] ){
 
 void Global::printHelp(){
 
+	bool virusHostHelp = true; // print virus-host interaction or rather unspecific help comments
 	bool developerHelp = false; // print developer-specific options
 
 	printf( "\n" );
 	printf( "SYNOPSIS\n" );
 	printf( "      build DIRPATH [OPTIONS]\n\n" );
 	printf( "DESCRIPTION\n" );
-	printf( "      Learn homogeneous Bayesian Markov models (BaMMs) from bacterial genomes.\n\n" );
-	printf( "      DIRPATH\n"
-			"          Input directory with bacterial genomes in FASTA format (one file per\n"
-			"          genome). The default filename extension searched for is <fasta>. Use\n"
-			"          option -e (--extension) to change the default setting.\n\n" );
-	printf("OPTIONS\n");
+	if( virusHostHelp ){
+		printf( "      Learn homogeneous Bayesian Markov models (BaMMs) from bacterial genomes.\n\n" );
+		printf( "      DIRPATH\n"
+				"          Input directory with bacterial genomes in FASTA format (one file per\n"
+				"          genome). The default filename extension searched for is <fasta>. Use\n"
+				"          option -e (--extension) to change the default setting.\n\n" );
+	} else{
+		printf( "      Learn homogeneous Bayesian Markov models (BaMMs) from sequence sets.\n\n" );
+		printf( "      DIRPATH\n"
+				"          Input directory with sequence sets in FASTA format. The default\n"
+				"          filename extension searched for is <fasta>. Use option -e\n"
+				"          (--extension) to change the default setting.\n\n" );
+	}
+	printf( "OPTIONS\n" );
 	printf( "  Options for input files\n" );
 	printf( "      -e, --extension <STRING>\n"
 			"          The filename extension of FASTA files searched for in the input\n"

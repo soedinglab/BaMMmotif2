@@ -46,8 +46,8 @@ public:
 			                       std::vector<std::vector<int>> foldIndices = std::vector<std::vector<int>>(),
 			                       std::vector<int> folds = std::vector<int>() );
 
-	// calculate positional likelihoods for the sequence set
-	// and write likelihoods to file
+	// calculate positional log likelihoods for the sequence set
+	// and write log likelihoods to file
 	// afterwards v_ contains log probabilities
 	void calculatePosLogLikelihoods( SequenceSet& sequenceSet,
 			                         char* outputDirectory,

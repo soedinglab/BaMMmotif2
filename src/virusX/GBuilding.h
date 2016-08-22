@@ -1,5 +1,5 @@
-#ifndef GLOBALBUILDING_H_
-#define GLOBALBUILDING_H_
+#ifndef GBUILDING_H_
+#define GBUILDING_H_
 
 #include <string>
 
@@ -57,4 +57,4 @@ namespace GetOpt{
 	}
 }
 
-#endif /* GLOBALBUILDING_H_ */
+#endif /* GBUILDING_H_ */
