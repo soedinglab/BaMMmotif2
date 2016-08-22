@@ -1,5 +1,5 @@
-#ifndef GLOBALPREDICTION_H_
-#define GLOBALPREDICTION_H_
+#ifndef GSCORE_H_
+#define GSCORE_H_
 
 #include <string>
 
@@ -15,18 +15,18 @@ class Global{
 
 public:
 
-	static char*				inputDirectoryBaMMs;	// input directory with BaMM files
-	static char*				inputDirectorySeqs;		// input directory with FASTA files
+	static char*		inputDirectoryBaMMs;	// input directory with BaMM files
+	static char*		inputDirectorySeqs;		// input directory with FASTA files
 
-	static char*				outputDirectory;		// output directory
+	static char*		outputDirectory;		// output directory
 
-	static char*				extensionBaMMs;			// extension of BaMM files, defaults to hb
-	static char*				extensionSeqs;			// extension of FASTA files, defaults to fasta
+	static char*		extensionBaMMs;			// extension of BaMM files, defaults to hb
+	static char*		extensionSeqs;			// extension of FASTA files, defaults to fasta
 
-	static std::string			name;					// program name
-	static std::string			version;				// program version number
+	static std::string	name;					// program name
+	static std::string	version;				// program version number
 
-	static bool					verbose;				// verbose printouts, defaults to false
+	static bool			verbose;				// verbose printouts, defaults to false
 
 	static void		init( int nargs, char* args[] );
 	static void		destruct();
@@ -52,4 +52,4 @@ namespace GetOpt{
 	}
 }
 
-#endif /* GLOBALPREDICTION_H_ */
+#endif /* GSCORE_H_ */

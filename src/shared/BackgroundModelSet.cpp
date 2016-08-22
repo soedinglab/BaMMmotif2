@@ -77,6 +77,29 @@ size_t BackgroundModelSet::getN(){
     return( backgroundModels_.size() );
 }
 
+std::vector<double> BackgroundModelSet::calculateLogLikelihoods( SequenceSet& sequenceSet ){
+
+	std::vector<double> llikelihoods( backgroundModels_.size() );
+
+	for( size_t i = 0; i < backgroundModels_.size(); i++ ){
+
+		llikelihoods[i] = backgroundModels_[i]->calculateLogLikelihood( sequenceSet );
+	}
+	return llikelihoods;
+}
+
+std::vector<double> BackgroundModelSet::calculatePosteriorProbabilities( SequenceSet& sequenceSet ){
+
+	return ::calculatePosteriorProbabilities( calculateLogLikelihoods( sequenceSet ) );
+}
+
+void BackgroundModelSet::calculatePosLogLikelihoods( SequenceSet& sequenceSet, char* outputDirectory ){
+
+	for( size_t i = 0; i < backgroundModels_.size(); i++ ){
+		backgroundModels_[i]->calculatePosLogLikelihoods( sequenceSet, outputDirectory );
+	}
+}
+
 void BackgroundModelSet::print(){
 
 	for( size_t i = 0; i < backgroundModels_.size(); i++ ){

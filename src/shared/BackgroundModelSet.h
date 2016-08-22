@@ -26,6 +26,18 @@ public:
 	std::vector<BackgroundModel*>& getBackgroundModels();
 	size_t getN();
 
+	// calculate log likelihoods for the sequence set
+	// afterwards the background models contain log probabilities in v_
+	std::vector<double> calculateLogLikelihoods( SequenceSet& sequenceSet );
+
+	// calculate posterior probabilities for the sequence set
+	std::vector<double> calculatePosteriorProbabilities( SequenceSet& sequenceSet );
+
+	// calculate positional log likelihoods for the sequence set
+	// and write log likelihoods to file
+	// afterwards the background models contain log probabilities in v_
+	void calculatePosLogLikelihoods( SequenceSet& sequenceSet, char* outputDirectory );
+
 	void print();
 	void write( char* dir );
 

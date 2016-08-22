@@ -1,4 +1,4 @@
-#include "GlobalBuilding.h"
+#include "GBuilding.h"
 #include "../shared/BackgroundModelSet.h"
 
 int main( int nargs, char* args[] ){

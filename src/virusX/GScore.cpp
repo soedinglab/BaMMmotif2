@@ -1,17 +1,17 @@
-#include "GlobalPrediction.h"
+#include "GScore.h"
 
-char*               Global::inputDirectoryBaMMs = NULL;		// input directory with BaMM files
-char*               Global::inputDirectorySeqs = NULL;		// input directory with FASTA files
+char*		Global::inputDirectoryBaMMs = NULL;	// input directory with BaMM files
+char*		Global::inputDirectorySeqs = NULL;	// input directory with FASTA files
 
-char*               Global::outputDirectory = NULL;			// output directory
+char*		Global::outputDirectory = NULL;		// output directory
 
-char*				Global::extensionBaMMs = NULL;			// extension of BaMM files, defaults to hb
-char*				Global::extensionSeqs = NULL;			// extension of FASTA files, defaults to fasta
+char*		Global::extensionBaMMs = NULL;		// extension of BaMM files, defaults to hb
+char*		Global::extensionSeqs = NULL;		// extension of FASTA files, defaults to fasta
 
-bool                Global::verbose = false;				// verbose printouts
+bool		Global::verbose = false;			// verbose printouts
 
-std::string			Global::name="predict";					// program name
-std::string			Global::version="0.1.1";				// program version number
+std::string	Global::name="score";				// program name
+std::string	Global::version="0.1.1";			// program version number
 
 void Global::init( int nargs, char* args[] ){
 
@@ -81,7 +81,7 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	std::vector<std::string> argv;
 	opt >> GetOpt::GlobalOption( argv );
-	if( !( argv.size() < 3 ) ){
+	if( !( argv.size() == 2 ) ){
 		std::cerr << "Error: Input directories are missing" << std::endl;
 		printHelp();
 		exit( -1 );
@@ -113,29 +113,29 @@ void Global::printHelp(){
 
 	printf( "\n" );
 	printf( "SYNOPSIS\n" );
-	printf( "      predict BAMMDIRPATH VIRDIRPATH [OPTIONS]\n\n" );
+	printf( "      score BAMMDIRPATH FASTADIRPATH [OPTIONS]\n\n" );
 	printf( "DESCRIPTION\n" );
-	printf( "      Predict virus-host interactions using precomputed homogeneous Bayesian\n"
-			"      Markov models (BaMMs) of bacterial genomes.\n\n" );
+	printf( "      Calculate positional log likelihoods for sequence sets in FASTA format\n"
+			"      using pre-built homogeneous Bayesian Markov models (BaMMs).\n\n" );
 	printf( "      BAMMDIRPATH\n"
-			"          Input directory with homogeneous Bayesian Markov models (BaMMs) of\n"
-			"          bacterial genomes. The default filename extension searched for is\n"
-			"          <hb>. Use option -e (--extensionBaMMs) to change the default setting.\n\n" );
-	printf( "      VIRDIRPATH\n"
-			"          Input directory with viral sequences in FASTA format (one file per\n"
-			"          virus). The default filename extension searched for is <fasta>. Use\n"
-			"          option -E (--extensionSeqs) to change the default setting.\n\n" );
-	printf("OPTIONS\n");
+			"          Input directory with homogeneous Bayesian Markov models (BaMMs). The\n"
+			"          default filename extension searched for is <hb>. Use option -e\n"
+			"          (--extensionBaMMs) to change the default setting.\n\n" );
+	printf( "      FASTADIRPATH\n"
+			"          Input directory with sequence sets in FASTA format. The default\n"
+			"          filename extension searched for is <fasta>. Use option -E\n"
+			"          (--extensionSeqs) to change the default setting.\n\n" );
+	printf( "OPTIONS\n" );
 	printf( "  Options for input files\n" );
 	printf( "      -e, --extensionBaMMs <STRING>\n"
 			"          The filename extension of BaMM files searched for in BAMMDIRPATH. The\n"
 			"          default is <hb>.\n\n" );
 	printf( "      -E, --extensionSeqs <STRING>\n"
-			"          The filename extension of FASTA files searched for in VIRDIRPATH. The\n"
-			"          default is <fasta>.\n\n" );
+			"          The filename extension of FASTA files searched for in FASTADIRPATH.\n"
+			"          The default is <fasta>.\n\n" );
 	printf( "  Output options\n" );
 	printf( "      -o, --outputDirectory <DIRPATH>\n"
-			"          Output directory for virus-host interactions. VIRDIRPATH is the\n"
+			"          Output directory for positional log likelihoods. FASTADIRPATH is the\n"
 			"          default output directory.\n\n" );
 	printf( "      -v, --verbose\n"
 			"          Verbose terminal printouts.\n\n" );
