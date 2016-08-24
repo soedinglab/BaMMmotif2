@@ -74,7 +74,6 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 					if( y >= 0 ){
 						// count (k+1)mer
 						n_[k][y]++;
-
 					}
 				}
 			}
@@ -273,13 +272,13 @@ double BackgroundModel::calculateLogLikelihood( SequenceSet& sequenceSet,
 	return lLikelihood;
 }
 
-void BackgroundModel::calculatePosLogLikelihoods( SequenceSet& sequenceSet,
-		                                          char* outputDirectory,
-		                                          std::vector<std::vector<int>> foldIndices,
-		                                          std::vector<int> folds ){
+void BackgroundModel::calculatePosLikelihoods( SequenceSet& sequenceSet,
+		                                       char* outputDirectory,
+		                                       std::vector<std::vector<int>> foldIndices,
+		                                       std::vector<int> folds ){
 
-	if( !( vIsLog_ ) ){
-		logV();
+	if( vIsLog_ ){
+		expV();
 	}
 
 	if( folds.empty() ){
@@ -322,27 +321,16 @@ void BackgroundModel::calculatePosLogLikelihoods( SequenceSet& sequenceSet,
 				// get sequence length
 				int L = sequenceSet.getSequences()[s_idx]->getL();
 				// loop over sequence positions
-				for( int i = 0; i < ( L-K_ ); i++ ){
-					// reset log likelihood
-					double lLikelihood = 0.0;
-					// loop over order
-					for( int k = 0; k <= K_; k++ ){
-						// extract (k+1)mer
-						int y = sequenceSet.getSequences()[s_idx]->extractKmer( i+k, k );
-						if( y >= 0 ){
-							// sum up log probabilities
-							lLikelihood += v_[k][y];
-						} else{
-							// cannot calculate log probability for (k+1)mer and neither (K_+1)mer
-							lLikelihood = 1.0;
-							break;
-						}
-					}
+				for( int i = 0; i < L; i++ ){
+					// calculate k
+					int k = std::min( i, K_ );
+					// extract (k+1)mer
+					int y = sequenceSet.getSequences()[s_idx]->extractKmer( i, k );
 					file << ( i == 0 ? "" : " " );
-					if( lLikelihood > 0.0 ){
+					if( y < 0 ){
 						file << "NA";
 					} else{
-						file << std::scientific << std::setprecision( 6 ) << lLikelihood;
+						file << std::scientific << std::setprecision( 6 ) << v_[k][y];
 					}
 				}
 				file << std::endl;
@@ -415,7 +403,7 @@ void BackgroundModel::print(){
 
 void BackgroundModel::write( char* dir ){
 
-	std::ofstream file( std::string( dir ) + '/' + name_ + ( interpolate_ ? ".hb" : ".hnb" ) );
+	std::ofstream file( std::string( dir ) + '/' + name_ + ( interpolate_ ? ".hbcp" : ".hnbcp" ) );
 	if( file.is_open() ){
 
 		file << "# K = " << K_ << std::endl;
@@ -439,6 +427,58 @@ void BackgroundModel::write( char* dir ){
 		std::cerr << "Error: Cannot write into output directory: " << dir << std::endl;
 		exit( -1 );
 	}
+
+	// calculate probabilities from conditional probabilities
+	float** p = ( float** )malloc( ( K_+1 ) * sizeof( float* ) );
+	for( int k = 0; k <= K_; k++ ){
+		p[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
+	}
+
+	// calculate probabilities for order k = 0
+	for( int y = 0; y < Y_[1]; y++ ){
+		p[0][y] = v_[0][y];
+	}
+
+	// calculate probabilities for order k > 0
+	// e.g. p(ACGT) = p(T|ACG) * p(ACG)
+	for( int k = 1; k <= K_; k++ ){
+		for( int y = 0; y < Y_[k+1]; y++ ){
+			// omit last base (e.g. ACG) from y (e.g. ACGT)
+			int yk = y / Y_[1];
+			p[k][y] =  v_[k][y] * p[k-1][yk];
+		}
+	}
+
+	file.clear();
+	file.open( std::string( dir ) + '/' + name_ + ( interpolate_ ? ".hbp" : ".hnbp" ) );
+	if( file.is_open() ){
+
+		file << "# K = " << K_ << std::endl;
+		file << "# A =";
+		for( int k = 0; k <= K_; k++ ){
+			file << " " << A_[k];
+		}
+		file << std::endl;
+
+		for( int k = 0; k <= K_; k++ ){
+			file << std::scientific << std::setprecision( 6 ) << v_[k][0];
+			for( int y = 1; y < Y_[k+1]; y++ ){
+				file << std::scientific << std::setprecision( 6 ) << " " << p[k][y];
+			}
+			file << std::endl;
+		}
+		file.close();
+
+	} else{
+
+		std::cerr << "Error: Cannot write into output directory: " << dir << std::endl;
+		exit( -1 );
+	}
+
+	for( int k = 0; k <= K_; k++ ){
+		free( p[k] );
+	}
+	free( p );
 }
 
 void BackgroundModel::calculateV(){

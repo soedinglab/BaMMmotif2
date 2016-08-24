@@ -78,8 +78,8 @@ void BackgroundModelSetScore::score( char* inputDirectorySeqs, char* extensionSe
 					SequenceSet* sequenceSet = new SequenceSet( filep );
 					sequenceSetNames_.push_back( baseName( sequenceSet->getSequenceFilepath().c_str() ) );
 
-					// calculate positional log likelihoods
-					bamms_->calculatePosLogLikelihoods( *sequenceSet, outputDirectory );
+					// calculate positional likelihoods
+					bamms_->calculatePosLikelihoods( *sequenceSet, outputDirectory );
 				}
 			}
 		}

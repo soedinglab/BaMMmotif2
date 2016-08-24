@@ -5,7 +5,7 @@ char*		Global::inputDirectorySeqs = NULL;	// input directory with FASTA files
 
 char*		Global::outputDirectory = NULL;		// output directory
 
-char*		Global::extensionBaMMs = NULL;		// extension of BaMM files, defaults to hb
+char*		Global::extensionBaMMs = NULL;		// extension of BaMM files, defaults to hbcp
 char*		Global::extensionSeqs = NULL;		// extension of FASTA files, defaults to fasta
 
 bool		Global::verbose = false;			// verbose printouts
@@ -60,7 +60,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	if( opt >> GetOpt::OptionPresent( 'e', "extensionBaMMs" ) ){
 		opt >> GetOpt::Option( 'e', "extensionBaMMs", extensionBaMMs );
 	} else {
-		extensionBaMMs = strdup( "hb" );
+		extensionBaMMs = strdup( "hbcp" );
 	}
 
 	if( opt >> GetOpt::OptionPresent( 'E', "extensionSeqs" ) ){
@@ -115,11 +115,11 @@ void Global::printHelp(){
 	printf( "SYNOPSIS\n" );
 	printf( "      score BAMMDIRPATH FASTADIRPATH [OPTIONS]\n\n" );
 	printf( "DESCRIPTION\n" );
-	printf( "      Calculate positional log likelihoods for sequence sets in FASTA format\n"
-			"      using pre-built homogeneous Bayesian Markov models (BaMMs).\n\n" );
+	printf( "      Calculate positional likelihoods for sequence sets in FASTA format using\n"
+			"      pre-built homogeneous Bayesian Markov models (BaMMs).\n\n" );
 	printf( "      BAMMDIRPATH\n"
 			"          Input directory with homogeneous Bayesian Markov models (BaMMs). The\n"
-			"          default filename extension searched for is <hb>. Use option -e\n"
+			"          default filename extension searched for is <hbcp>. Use option -e\n"
 			"          (--extensionBaMMs) to change the default setting.\n\n" );
 	printf( "      FASTADIRPATH\n"
 			"          Input directory with sequence sets in FASTA format. The default\n"
@@ -129,13 +129,13 @@ void Global::printHelp(){
 	printf( "  Options for input files\n" );
 	printf( "      -e, --extensionBaMMs <STRING>\n"
 			"          The filename extension of BaMM files searched for in BAMMDIRPATH. The\n"
-			"          default is <hb>.\n\n" );
+			"          default is <hbcp>.\n\n" );
 	printf( "      -E, --extensionSeqs <STRING>\n"
 			"          The filename extension of FASTA files searched for in FASTADIRPATH.\n"
 			"          The default is <fasta>.\n\n" );
 	printf( "  Output options\n" );
 	printf( "      -o, --outputDirectory <DIRPATH>\n"
-			"          Output directory for positional log likelihoods. FASTADIRPATH is the\n"
+			"          Output directory for positional likelihoods. FASTADIRPATH is the\n"
 			"          default output directory.\n\n" );
 	printf( "      -v, --verbose\n"
 			"          Verbose terminal printouts.\n\n" );

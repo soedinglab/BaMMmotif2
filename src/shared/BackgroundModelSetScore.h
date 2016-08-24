@@ -18,7 +18,7 @@ public:
 
 	// calculate posterior probabilities
 	void predict( char* inputDirectorySeqs, char* extensionSeqs );
-	// calculate positional log likelihoods and write log likelihoods to file
+	// calculate positional likelihoods and write likelihoods to file
 	void score( char* inputDirectorySeqs, char* extensionSeqs, char* outputDirectory );
 
 	void print();

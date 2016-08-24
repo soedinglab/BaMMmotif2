@@ -33,10 +33,9 @@ public:
 	// calculate posterior probabilities for the sequence set
 	std::vector<double> calculatePosteriorProbabilities( SequenceSet& sequenceSet );
 
-	// calculate positional log likelihoods for the sequence set
-	// and write log likelihoods to file
-	// afterwards the background models contain log probabilities in v_
-	void calculatePosLogLikelihoods( SequenceSet& sequenceSet, char* outputDirectory );
+	// calculate positional likelihoods for the sequence set
+	// and write likelihoods to file
+	void calculatePosLikelihoods( SequenceSet& sequenceSet, char* outputDirectory );
 
 	void print();
 	void write( char* dir );

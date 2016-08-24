@@ -93,10 +93,10 @@ std::vector<double> BackgroundModelSet::calculatePosteriorProbabilities( Sequenc
 	return ::calculatePosteriorProbabilities( calculateLogLikelihoods( sequenceSet ) );
 }
 
-void BackgroundModelSet::calculatePosLogLikelihoods( SequenceSet& sequenceSet, char* outputDirectory ){
+void BackgroundModelSet::calculatePosLikelihoods( SequenceSet& sequenceSet, char* outputDirectory ){
 
 	for( size_t i = 0; i < backgroundModels_.size(); i++ ){
-		backgroundModels_[i]->calculatePosLogLikelihoods( sequenceSet, outputDirectory );
+		backgroundModels_[i]->calculatePosLikelihoods( sequenceSet, outputDirectory );
 	}
 }
 

@@ -20,7 +20,7 @@ public:
 
 	static char*		outputDirectory;		// output directory
 
-	static char*		extensionBaMMs;			// extension of BaMM files, defaults to hb
+	static char*		extensionBaMMs;			// extension of BaMM files, defaults to hbcp
 	static char*		extensionSeqs;			// extension of FASTA files, defaults to fasta
 
 	static std::string	name;					// program name

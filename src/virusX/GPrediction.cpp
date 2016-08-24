@@ -5,7 +5,7 @@ char*		Global::inputDirectorySeqs = NULL;	// input directory with FASTA files
 
 char*		Global::outputDirectory = NULL;		// output directory
 
-char*		Global::extensionBaMMs = NULL;		// extension of BaMM files, defaults to hb
+char*		Global::extensionBaMMs = NULL;		// extension of BaMM files, defaults to hbcp
 char*		Global::extensionSeqs = NULL;		// extension of FASTA files, defaults to fasta
 
 bool		Global::verbose = false;			// verbose printouts
@@ -60,7 +60,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	if( opt >> GetOpt::OptionPresent( 'e', "extensionBaMMs" ) ){
 		opt >> GetOpt::Option( 'e', "extensionBaMMs", extensionBaMMs );
 	} else {
-		extensionBaMMs = strdup( "hb" );
+		extensionBaMMs = strdup( "hbcp" );
 	}
 
 	if( opt >> GetOpt::OptionPresent( 'E', "extensionSeqs" ) ){
@@ -126,7 +126,8 @@ void Global::printHelp(){
 		printf( "      BAMMDIRPATH\n"
 				"          Input directory with homogeneous Bayesian Markov models (BaMMs) of\n"
 				"          bacterial genomes. The default filename extension searched for is\n"
-				"          <hb>. Use option -e (--extensionBaMMs) to change the default setting.\n\n" );
+				"          <hbcp>. Use option -e (--extensionBaMMs) to change the default\n"
+				"          setting.\n\n" );
 		printf( "      VIRDIRPATH\n"
 				"          Input directory with viral sequences in FASTA format (one file per\n"
 				"          virus). The default filename extension searched for is <fasta>. Use\n"
@@ -136,7 +137,7 @@ void Global::printHelp(){
 				"      pre-built homogeneous Bayesian Markov models (BaMMs).\n\n" );
 		printf( "      BAMMDIRPATH\n"
 				"          Input directory with homogeneous Bayesian Markov models (BaMMs). The\n"
-				"          default filename extension searched for is <hb>. Use option -e\n"
+				"          default filename extension searched for is <hbcp>. Use option -e\n"
 				"          (--extensionBaMMs) to change the default setting.\n\n" );
 		printf( "      FASTADIRPATH\n"
 				"          Input directory with sequence sets in FASTA format. The default\n"
@@ -147,7 +148,7 @@ void Global::printHelp(){
 	printf( "  Options for input files\n" );
 	printf( "      -e, --extensionBaMMs <STRING>\n"
 			"          The filename extension of BaMM files searched for in BAMMDIRPATH. The\n"
-			"          default is <hb>.\n\n" );
+			"          default is <hbcp>.\n\n" );
 	if( virusHostHelp ){
 		printf( "      -E, --extensionSeqs <STRING>\n"
 				"          The filename extension of FASTA files searched for in VIRDIRPATH. The\n"

@@ -46,20 +46,23 @@ public:
 			                       std::vector<std::vector<int>> foldIndices = std::vector<std::vector<int>>(),
 			                       std::vector<int> folds = std::vector<int>() );
 
-	// calculate positional log likelihoods for the sequence set
-	// and write log likelihoods to file
-	// afterwards v_ contains log probabilities
-	void calculatePosLogLikelihoods( SequenceSet& sequenceSet,
-			                         char* outputDirectory,
-			                         std::vector<std::vector<int>> foldIndices = std::vector<std::vector<int>>(),
-			                         std::vector<int> folds = std::vector<int>() );
+	// calculate positional likelihoods for the sequence set
+	// and write likelihoods to file
+	void calculatePosLikelihoods( SequenceSet& sequenceSet,
+			                      char* outputDirectory,
+			                      std::vector<std::vector<int>> foldIndices = std::vector<std::vector<int>>(),
+			                      std::vector<int> folds = std::vector<int>() );
 
-	void 		print();
-	void 		write( char* dir );
+
+	void 	print();
+	void 	write( char* dir );
 
 private:
 
-	void 		calculateV();	// calculate conditional probabilities from counts
+	// calculate probabilities from conditional probabilities
+	void	calculateProbabilities( float** p );
+	// calculate conditional probabilities from counts
+	void 	calculateV();
 
 	std::string			name_;					// basename of sequence set file
 
