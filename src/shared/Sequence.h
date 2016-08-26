@@ -31,7 +31,7 @@ public:
 
 private:
 
-	uint8_t* 			appendRevComp( uint8_t* sequence, int L ); // append the sequence's reverse complement to the sequence
+	void 			appendRevComp( uint8_t* sequence, int L ); // append the sequence's reverse complement to the sequence
 
 	uint8_t*	    	sequence_;			// sequence in alphabet encoding
 	int    				L_;					// sequence length

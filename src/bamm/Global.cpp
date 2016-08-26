@@ -68,21 +68,13 @@ void Global::init( int nargs, char* args[] ){
 
 	Alphabet::init( alphabetType );
 
-	// read in positive sequence set
+	// read in positive and negative sequence set
 	posSequenceSet = new SequenceSet( posSequenceFilename );
+	negSequenceSet = new SequenceSet( negSequenceFilename );
 
-	// read in or generate negative sequence set
-	if( !negGiven ){										// use positive for negative sequence set
-		negSequenceSet = new SequenceSet( posSequenceFilename );
-	} else {												// read in negative sequence set
-		negSequenceSet = new SequenceSet( negSequenceFilename );
-	}
-
-	// generate fold indices for postive (and negative) sequence set(s)
+	// generate fold indices for positive and negative sequence set
 	Global::posFoldIndices = generateFoldIndices( posSequenceSet->getN(), cvFold );
-	if( negGiven ){
-		Global::negFoldIndices = generateFoldIndices( negSequenceSet->getN(), cvFold );
-	}
+	Global::negFoldIndices = generateFoldIndices( negSequenceSet->getN(), cvFold );
 
 	// optional: read in sequence intensities (header and intensity columns?)
 	if( intensityFilename != 0 ){
@@ -121,9 +113,10 @@ int Global::readArguments( int nargs, char* args[] ){
 	// negative sequence set
 	if( opt >> GetOpt::OptionPresent( "negSeqFile" ) ){
 		opt >> GetOpt::Option( "negSeqFile", negSequenceFilename );
-		negSequenceBasename = baseName( negSequenceFilename );
-		negGiven = true;
+	}else{
+	    negSequenceFilename = posSequenceFilename;
 	}
+	negSequenceBasename = baseName( negSequenceFilename );
 
 	// Alphabet Type
 	if( opt >> GetOpt::OptionPresent( "alphabet" ) ){
