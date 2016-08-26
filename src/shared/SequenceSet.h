@@ -28,6 +28,7 @@ public:
 	float* 					getBaseFrequencies();
 
 	void					print();			// print sequences
+	void                    debug();            // exhaustive printouts
 
 private:
 
@@ -40,15 +41,14 @@ private:
 	unsigned int 			maxL_;				// length of the longest sequence
 	float* 					baseFrequencies_;	// monomer frequencies
 
-	bool					revcomp_;			// sequences comprise reverse complements
 	std::vector<int>		Y_;					// contains 1 at position 0
 												// and the number of oligomers y for increasing order k at positions k+1
 												// e.g.
 												// alphabet size_ = 4: Y_ = 4^0 4^1 4^2 ... 4^15 < std::numeric_limits<int>::max()
 												// limits the length of oligomers to 15 (and the order to 14)
 
-	int 					readFASTA();			            // read in FASTA file
-	int 					readIntensities();		            // read in intensity file
+	int 					readFASTA( bool revcomp = false );	 // read in FASTA file
+	int 					readIntensities();		             // read in intensity file
 };
 
 #endif /* SEQUENCESET_H_ */

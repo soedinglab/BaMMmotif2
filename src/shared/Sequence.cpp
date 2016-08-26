@@ -79,11 +79,10 @@ void Sequence::print(){
 	std::cout << std::endl;
 }
 
-uint8_t* Sequence::appendRevComp( uint8_t* sequence, int L ){
+void Sequence::appendRevComp( uint8_t* sequence, int L ){
 
 	for( int i = 0; i < L; i++ ){
 		sequence_[i] = sequence[i];										// the sequence
 		sequence_[2*L-i] = Alphabet::getComplementCode( sequence[i] );	// and its reverse complement
 	}
-	return sequence_;
 }
