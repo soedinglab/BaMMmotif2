@@ -76,7 +76,7 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 EM::~EM(){
 
 	int k, y;
-	unsigned int n;
+	size_t n;
 	for( y = 0; y < Y_[K_+1]; y++ )
 		free( s_[y] );
 	free( s_ );
@@ -354,7 +354,7 @@ void EM::optimizeAlphas(){
 }
 
 void EM::optimizeQ(){
-	// optimize Q function
+	// optimize q
 	// motif.updateV()
 }
 
