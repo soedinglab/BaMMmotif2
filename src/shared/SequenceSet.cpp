@@ -15,10 +15,6 @@ SequenceSet::SequenceSet( std::string sequenceFilepath, bool revcomp, std::strin
 	int l = static_cast<int>( floorf(
 				logf( static_cast<float>( std::numeric_limits<int>::max() ) ) /
 				logf( static_cast<float>( Alphabet::getSize() ) ) ) );
-	for( int i = 0; i <= l; i++ ){
-		Y_.push_back( ipow( Alphabet::getSize(), i ) );
-	}
-
 	readFASTA();
 
 	if( !( intensityFilepath.empty() ) ){
@@ -124,7 +120,7 @@ int SequenceSet::readFASTA(){
 								}
 								baseCounts[encoding[i]-1]++; // count base
 							}
-							sequences_.push_back( new Sequence( encoding, L, header, Y_, revcomp_ ) );
+							sequences_.push_back( new Sequence( encoding, L, header, revcomp_ ) );
 
 							sequence.clear();
 							header.clear();
@@ -188,7 +184,7 @@ int SequenceSet::readFASTA(){
 					}
 					baseCounts[encoding[i]-1]++; // count base
 				}
-				sequences_.push_back( new Sequence( encoding, L, header, Y_, revcomp_ ) );
+				sequences_.push_back( new Sequence( encoding, L, header, revcomp_ ) );
 
 				sequence.clear();
 				header.clear();

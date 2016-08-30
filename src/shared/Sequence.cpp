@@ -1,6 +1,6 @@
 #include "Sequence.h"
 
-Sequence::Sequence( uint8_t* sequence, int L, std::string header, std::vector<int> Y, bool revcomp ){
+Sequence::Sequence( uint8_t* sequence, int L, std::string header, bool revcomp ){
 
 	if( revcomp ){
 		L_ = 2 * L + 1;
@@ -12,7 +12,9 @@ Sequence::Sequence( uint8_t* sequence, int L, std::string header, std::vector<in
 		std::memcpy( sequence_, sequence, L_ );
 	}
 	header_ = header;
-	Y_ = Y;
+	for( int k = 0; k < Global::modelOrder + 2; k++ ){
+		Y_.push_back( ipow( Alphabet::getSize(), k ) );
+	}
 }
 
 Sequence::~Sequence(){
@@ -62,7 +64,7 @@ int	Sequence::extractKmer( int i, int k ){
 	for( int j = k; j >= 0; j-- ){
 		if( sequence_[i-j] > 0 ){
 			y += ( sequence_[i-j] -1 ) * Y_[j];
-		} else{
+		} else {
 			y = -1; // for non-defined alphabet letters
 			break;
 		}

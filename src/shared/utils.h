@@ -15,8 +15,6 @@ static void								createDirectory( char* dir );
 static std::vector< std::vector<int> >	generateFoldIndices( unsigned int N, unsigned int folds );
 // calculate the power for integer base
 static int								ipow( unsigned int base, int exp );
-// sort in descending order using
-static void								quickSort( std::vector<float> arr, int left, int right );
 
 template <typename T>
 std::vector<size_t> sortIndices( const std::vector<T> &v ); // returns a permutation which rearranges v into ascending order
@@ -129,30 +127,6 @@ inline int ipow( unsigned int base, int exp ){
     }
 
     return res;
-}
-
-inline void quickSort( std::vector<float> arr, int left, int right ){
-
-	int i = left, j = right;
-	float tmp;
-	float pivot = arr[( left + right ) / 2];
-
-	/* partition */
-	while( i <= j ){
-		while( arr[i] - pivot > 0 )	i++;
-		while( arr[j] - pivot < 0 )	j--;
-		if( i <= j ){
-			tmp = arr[i];
-			arr[i] = arr[j];
-			arr[j] = tmp;
-			i++;
-			j--;
-		}
-	}
-
-	/* recursion */
-	if( left < j )	quickSort( arr, left, j );
-	if( i < right )	quickSort( arr, i, right );
 }
 
 template <typename T>

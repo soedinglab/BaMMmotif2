@@ -6,13 +6,15 @@
 
 #include <stdint.h>	// e.g. uint8_t
 
+#include "../bamm/Global.h"
 #include "Alphabet.h"
+#include "utils.h"
 
 class Sequence{
 
 public:
 
-	Sequence( uint8_t* sequence, int L, std::string header, std::vector<int> Y, bool revcomp = false );
+	Sequence( uint8_t* sequence, int L, std::string header, bool revcomp = false );
 	~Sequence();
 
 	uint8_t*        getSequence();
