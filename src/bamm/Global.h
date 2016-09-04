@@ -76,7 +76,7 @@ public:
 	// FDR options
 	static bool			FDR;								// triggers False-Discovery-Rate (FDR) estimation
 	static int			mFold;								// number of negative sequences as multiple of positive sequences
-	static int			cvFold;								// number of cross-validation(cv) folds
+	static int			cvFold;								// number of cross-validation (cv) folds
 	// further FDR options...
 
 	static bool			verbose;							// verbose printouts, defaults to false

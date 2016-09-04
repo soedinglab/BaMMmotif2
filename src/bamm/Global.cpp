@@ -78,7 +78,7 @@ void Global::init( int nargs, char* args[] ){
 		negSequenceSet = new SequenceSet( negSequenceFilename );
 	}
 
-	// generate fold indices for postive (and negative) sequence set(s)
+	// generate fold indices for positive (and negative) sequence set(s)
 	Global::posFoldIndices = generateFoldIndices( posSequenceSet->getN(), cvFold );
 	if( negGiven ){
 		Global::negFoldIndices = generateFoldIndices( negSequenceSet->getN(), cvFold );
@@ -97,7 +97,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	 * process flags from user
 	 */
 
-	if( nargs < 3 ) {									// At least 2 parameters are required, but this is not precise, needed to be specified!!
+	if( nargs < 3 ) {										// At least 2 parameters are required, TODO:but this is not precise, needed to be specified!!
 		fprintf( stderr, "Error: Arguments are missing! \n" );
 		printHelp();
 		exit( -1 );
@@ -200,6 +200,10 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	// background model options
 	opt >> GetOpt::Option( 'K', "Order", bgModelOrder );
+	if( bgModelOrder > modelOrder ){
+		std::cerr << "The order of background model should not exceed the order of motif model!\n";
+		exit( -1 );
+	}
 	if( opt >> GetOpt::OptionPresent( 'A', "Alpha" ) ){
 		bgModelAlpha.clear();
 		opt >> GetOpt::Option( 'A', "Alpha", bgModelAlpha );
@@ -216,6 +220,11 @@ int Global::readArguments( int nargs, char* args[] ){
 				bgModelAlpha.resize( bgModelOrder+1 );
 			} else{
 				bgModelAlpha.resize( bgModelOrder+1, bgModelAlpha.back() );
+			}
+		}
+		if( bgModelOrder > 0 ){
+			for( int k = 1; k < bgModelOrder + 1; k++ ){
+				bgModelAlpha[k] = modelBeta * powf( modelGamma, static_cast<float>( k ) - 1.0f );
 			}
 		}
 	}
@@ -239,10 +248,6 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "saveInitBaMMs", saveInitBaMMs);
 	opt >> GetOpt::OptionPresent( "saveBaMMs", saveBaMMs);
 
-	if( opt.options_remain() ){
-		std::cerr << "Warning: Unknown options remaining..." << std::endl;
-		return false;
-	}
 	return 0;
 }
 
@@ -289,7 +294,8 @@ void Global::printHelp(){
 			"				are not being extended.\n\n");
 	printf("\n 		Options for homogeneous (background) BaMM: \n");
 	printf("\n 			-K, --Order <INTEGER> \n"
-			"				Order. The default is 2.\n\n");
+			"				Order. The default is 2.\n"
+			"				Order of background model should not exceed order of motif model.\n\n");
 	printf("\n 			-A, --Alpha <FLOAT> \n"
 			"				Prior strength. The default is 10.0.\n\n");
 	printf("\n 		Options for EM: \n");
@@ -432,9 +438,3 @@ void Global::debug(){
 
 
 }
-
-
-
-
-
-
