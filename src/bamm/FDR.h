@@ -22,8 +22,8 @@ private:
 
 	Motif*				motif_;				// motif learned on full SequenceSet
 
-	std::vector<int>	testFold_;			// fold index for test set
-	std::vector<int>	trainFolds_;		// fold index for training set
+	int					testFold_;			// fold index for test set
+	std::vector<int>	trainFolds_;		// fold indices for training set
 
 	float**				freqs_;				// store the frequencies of (k+1)-mer for each test set
 
@@ -43,18 +43,18 @@ private:
 	float*				FP_mops_;			// false positive values for MOPS model
 	float*				TFP_mops_;			// true and false positive values for MOPS model
 
-					// generate background sample sequence set
-	SequenceSet*	sampleSequenceSet( int fold );
-					// generate sample sequence based on k-mer probabilities
-	Sequence*		sampleSequence();
+							// generate background sample sequence set
+	std::vector<Sequence*>	sampleSequenceSet( int fold );
+							// generate sample sequence based on k-mer probabilities
+	Sequence*				sampleSequence();
 
-					// score Global::posSequenceSet using Global::foldIndices and folds
-	void 	        scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<int> testFold );
+							// score Global::posSequenceSet using Global::foldIndices and folds
+	void 	        		scoreSequenceSet( Motif* motif, BackgroundModel* bg, int testFold );
 
-					// score SequenceSet sequences
-	void 		    scoreSequenceSet( Motif* motif, BackgroundModel* bg, SequenceSet* seqSet );
+							// score SequenceSet sequences
+	void 		    		scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqSet );
 
-	void 		    calculatePR();
+	void 		   			calculatePR();
 
 };
 
