@@ -91,13 +91,12 @@ inline void createDirectory( char* dir ){
 	struct stat fileStatus;
 
 	if( stat( dir, &fileStatus ) != 0 ){
-
-		char* cmd = ( char* )calloc( 1024, sizeof( char ) );
-		if( system( cmd ) != 0 ){
-			fprintf( stderr, "Error: Directory %s could not be created\n", dir );
+		std::cout << "Status: Output directory does not exist. "
+				"New directory is created automatically.\n";
+		if( system( ( "mkdir " + std::string( dir ) ).c_str() ) != 0 ){
+			std::cerr << "Error: Directory " << dir << " could not be created" << std::endl;
 			exit( -1 );
 		}
-		free( cmd );
 	}
 }
 
