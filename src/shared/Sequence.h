@@ -6,7 +6,6 @@
 
 #include <stdint.h>	// e.g. uint8_t
 
-#include "../bamm/Global.h"
 #include "Alphabet.h"
 #include "utils.h"
 
@@ -39,14 +38,11 @@ private:
 	int    				L_;					// sequence length
 	std::string			header_;			// sequence header
 
-	std::vector<int>	Y_;					// contains 1 at position 0
-											// and the number of oligomers y for increasing order k at positions k+1
-											// e.g.
-											// alphabet size_ = 4: Y_ = 4^0 4^1 4^2 ... 4^15 < std::numeric_limits<int>::max()
-											// limits the length of oligomers to 15 (and the order to 14)
-
 	float				intensity_ = 0.0f;	// sequence intensity
 	float				weight_ = 0.0f;		// sequence weight calculated from its intensity
+
+	int 				A_;					// size of alphabet
+											// This has to be here because in extractKmer() function, it is needed.
 };
 
 #endif /* SEQUENCE_H_ */

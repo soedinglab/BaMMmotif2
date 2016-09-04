@@ -39,10 +39,6 @@ private:
 	float***    v_;				                		// conditional probabilities for (k+1)-mers y at motif position j
 	int***		n_;										// counts of (k+1)-mer for all y at motif position j
 	float*		v_bg_;									// conditional probabilities for monomers from background model
-	int			K_ = Global::modelOrder;
-	std::vector<int>		Y_;							// contains 1 at position 0
-														// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
-														// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
 
 	void 		calculateV();							// calculate v from k-mer counts n and global alphas
 };
