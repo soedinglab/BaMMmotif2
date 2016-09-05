@@ -32,7 +32,10 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "************************\n" );
 	fprintf( stderr, "*   Background Model   *\n" );
 	fprintf( stderr, "************************\n" );
-	BackgroundModel* bgModel = new BackgroundModel( *Global::negSequenceSet, Global::bgModelOrder, Global::bgModelAlpha );
+	BackgroundModel* bgModel = new BackgroundModel( *Global::negSequenceSet,
+													Global::bgModelOrder,
+													Global::bgModelAlpha );
+	bgModel->write( Global::outputDirectory );
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "*********************\n" );
@@ -76,9 +79,10 @@ int main( int nargs, char* args[] ){
 			<< "\n	"<< Global::posSequenceSet->getN() << " sequences. max.length: " <<
 			Global::posSequenceSet->getMaxL() << ", min.length: " <<
 			Global::posSequenceSet->getMinL() << "\n	base frequencies:";
-	for( int i = 0; i < Alphabet::getSize(); i++ )
+	for( int i = 0; i < Alphabet::getSize(); i++ ){
 		std::cout << ' ' << Global::posSequenceSet->getBaseFrequencies()[i]
 		          << "(" << Alphabet::getAlphabet()[i] << ")";
+	}
 	if( Global::negSequenceFilename ){
 		std::cout << "\nGiven negative sequence set is " << Global::negSequenceBasename
 				<< "\n	"<< Global::negSequenceSet->getN() << " sequences. max.length: "
@@ -87,14 +91,18 @@ int main( int nargs, char* args[] ){
 		for( int i = 0; i < Alphabet::getSize(); i++ )
 			std::cout << ' ' << Global::negSequenceSet->getBaseFrequencies()[i]
 			          << "(" << Alphabet::getAlphabet()[i] << ")";
-	} else
+	} else {
 		std::cout << "\nNone negative sequence set is given";
+	}
 	std::cout << "\nGiven initial model is " << Global::initialModelBasename;
-	if( Global::FDR )	std::cout << "\nGiven folds for FDR estimation: " << Global::cvFold;
-	if( Global::setSlow )
+	if( Global::FDR ){
+		std::cout << "\nGiven folds for FDR estimation: " << Global::cvFold;
+	}
+	if( Global::setSlow ){
 		std::cout << "\n***** This is a slow EM version. *****";
-	else
+	} else {
 		std::cout << "\n***** This is a fast EM version. *****";
+	}
 
 	fprintf( stdout, "\n-------------- Runtime: %ld seconds (%0.2f minutes) --------------\n",
 			time( NULL )-timestamp, ( float )( time( NULL )-timestamp )/60.0f );

@@ -1,18 +1,18 @@
 #include "Sequence.h"
 
-Sequence::Sequence( uint8_t* sequence, int L, std::string header, std::vector<int> Y, bool revcomp ){
+Sequence::Sequence( uint8_t* sequence, int L, std::string header, bool revcomp ){
 
 	if( revcomp ){
 		L_ = 2 * L + 1;
-		sequence_ = ( uint8_t* )calloc( L_, sizeof( uint8_t) );
+		sequence_ = ( uint8_t* )calloc( L_, sizeof( uint8_t ) );
 		appendRevComp( sequence, L );
 	} else{
 		L_ = L;
-		sequence_ = ( uint8_t* )calloc( L_, sizeof( uint8_t) );
+		sequence_ = ( uint8_t* )calloc( L_, sizeof( uint8_t ) );
 		std::memcpy( sequence_, sequence, L_ );
 	}
 	header_ = header;
-	Y_ = Y;
+	A_ = Alphabet::getSize();
 }
 
 Sequence::~Sequence(){
@@ -61,9 +61,9 @@ int	Sequence::extractKmer( int i, int k ){
 	int y = 0;
 	for( int j = k; j >= 0; j-- ){
 		if( sequence_[i-j] > 0 ){
-			y += ( sequence_[i-j] -1 ) * Y_[j];
-		} else{
-			y = -1; // for non-defined alphabet letters
+			y += ( sequence_[i-j] -1 ) * ipow( A_, j );
+		} else {
+			y = -1; 													// for non-defined alphabet letters
 			break;
 		}
 	}
