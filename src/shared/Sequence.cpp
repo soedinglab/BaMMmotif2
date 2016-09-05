@@ -1,6 +1,6 @@
 #include "Sequence.h"
 
-Sequence::Sequence( uint8_t* sequence, int L, std::string header, bool revcomp ){
+Sequence::Sequence( uint8_t* sequence, int L, std::string header, std::vector<int> Y, bool revcomp ){
 
 	if( revcomp ){
 		L_ = 2 * L + 1;
@@ -12,7 +12,8 @@ Sequence::Sequence( uint8_t* sequence, int L, std::string header, bool revcomp )
 		std::memcpy( sequence_, sequence, L_ );
 	}
 	header_ = header;
-	A_ = Alphabet::getSize();
+	Y_ = Y;
+
 }
 
 Sequence::~Sequence(){
@@ -61,7 +62,7 @@ int	Sequence::extractKmer( int i, int k ){
 	int y = 0;
 	for( int j = k; j >= 0; j-- ){
 		if( sequence_[i-j] > 0 ){
-			y += ( sequence_[i-j] -1 ) * ipow( A_, j );
+			y += ( sequence_[i-j] -1 ) * Y_[j];
 		} else {
 			y = -1; 													// for non-defined alphabet letters
 			break;

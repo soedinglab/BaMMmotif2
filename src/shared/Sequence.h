@@ -13,7 +13,7 @@ class Sequence{
 
 public:
 
-	Sequence( uint8_t* sequence, int L, std::string header, bool revcomp = false );
+	Sequence( uint8_t* sequence, int L, std::string header, std::vector<int> Y, bool revcomp = false );
 	~Sequence();
 
 	uint8_t*        getSequence();
@@ -34,15 +34,18 @@ private:
 
 	void 			appendRevComp( uint8_t* sequence, int L ); // append the sequence's reverse complement to the sequence
 
-	uint8_t*	    	sequence_;			// sequence in alphabet encoding
-	int    				L_;					// sequence length
-	std::string			header_;			// sequence header
+	uint8_t*		sequence_;						// sequence in alphabet encoding
+	int				L_;								// sequence length
+	std::string		header_;						// sequence header
 
-	float				intensity_ = 0.0f;	// sequence intensity
-	float				weight_ = 0.0f;		// sequence weight calculated from its intensity
+	float			intensity_ = 0.0f;				// sequence intensity
+	float			weight_ = 0.0f;					// sequence weight calculated from its intensity
 
-	int 				A_;					// size of alphabet
-											// This has to be here because in extractKmer() function, it is needed.
+	std::vector<int> Y_;							// contains 1 at position 0
+													// and the number of oligomers y for increasing order k at positions k+1
+													// e.g.
+													// alphabet size_ = 4: Y_ = 4^0 4^1 4^2 ... 4^15 < std::numeric_limits<int>::max()
+													// limits the length of oligomers to 15 (and the order to 14)
 };
 
 #endif /* SEQUENCE_H_ */

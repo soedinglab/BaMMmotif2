@@ -228,6 +228,11 @@ Sequence* FDR::sampleSequence(){
 	int A = Alphabet::getSize();
 	int K = Global::modelOrder;
 
+	std::vector<int> Y;
+	for( k = 0; k < Global::modelOrder + 2; k++ ){
+		Y.push_back( ipow( A, k ) );
+	}
+
 	// get a random number for the first nucleotide
 	random = ( double )rand() / ( double )RAND_MAX;
 	f = 0.0f;
@@ -245,7 +250,7 @@ Sequence* FDR::sampleSequence(){
 		// calculate y of K-mer
 		yk = 0;
 		for( k = std::min( i, K ); k > 0; k-- ){
-			yk += ( sequence[i-k] - 1 ) * ipow( A, k );
+			yk += ( sequence[i-k] - 1 ) * Y[k];
 		}
 
 		// assign a nucleotide based on K-mer frequency
@@ -260,7 +265,7 @@ Sequence* FDR::sampleSequence(){
 		}
 	}
 
-	Sequence* sampleSequence = new Sequence( sequence, L, header );
+	Sequence* sampleSequence = new Sequence( sequence, L, header, Y, Global::revcomp );
 
 	// only for testing: print out generated sequence
 //	for( i = 0; i < L; i++ ){
