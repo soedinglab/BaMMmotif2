@@ -6,7 +6,7 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 	bg_ = bg;
 
 	int y, k, j, L;
-	size_t n, f_idx, s_idx;
+
 	int A = Alphabet::getSize();
 	int W = motif_->getW();
 
@@ -19,9 +19,9 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 
 	// copy selected positive sequences due to folds
 	posSeqs_.clear();
-	for( f_idx = 0; f_idx < folds_.size(); f_idx++ ){
-		for( s_idx = 0; s_idx < Global::posFoldIndices[folds_[f_idx]].size(); s_idx++ ){
-			posSeqs_.push_back( Global::posSequenceSet->getSequences()[s_idx] );
+	for( size_t f_idx = 0; f_idx < folds_.size(); f_idx++ ){
+		for( size_t s_idx = 0; s_idx < Global::posFoldIndices[folds_[f_idx]].size(); s_idx++ ){
+			posSeqs_.push_back( Global::posSequenceSet->getSequences()[Global::posFoldIndices[folds_[f_idx]][s_idx]] );
 		}
 	}
 
@@ -32,7 +32,7 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 
     // allocate memory for r_[n][i] and initialize it
 	r_ = ( float** )calloc( posSeqs_.size(), sizeof( float* ) );
-    for( n = 0; n < posSeqs_.size(); n++ ){
+    for( size_t n = 0; n < posSeqs_.size(); n++ ){
     	if( Global::setSlow ){
     		L = posSeqs_[n]->getL() - W + 1;
     	} else {
@@ -43,13 +43,10 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 
     // allocate memory for n_[k][y][j] and probs_[k][y][j] and initialize them
 	n_ = ( float*** )calloc( Global::modelOrder+1, sizeof( float** ) );
-	probs_ = ( float*** )calloc( Global::modelOrder+1, sizeof( float** ) );
 	for( k = 0; k < Global::modelOrder+1; k++ ){
 		n_[k] = ( float** )calloc( ipow( A, k+1 ), sizeof( float* ) );
-		probs_[k] = ( float** )calloc( ipow( A, k+1 ), sizeof( float* ) );
 		for( y = 0; y < ipow( A, k+1 ); y++ ){
 			n_[k][y] = ( float* )calloc( W, sizeof( float ) );
-			probs_[k][y] = ( float* )calloc( W, sizeof( float ) );
 		}
 	}
 
@@ -72,7 +69,7 @@ EM::~EM(){
 	}
 	free( s_ );
 
-	for( size_t n = 0; n < folds_.size(); n++ ){
+	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 		free( r_[n] );
 	}
 	free( r_ );
@@ -80,13 +77,10 @@ EM::~EM(){
 	for( int k = 0; k < Global::modelOrder+1; k++ ){
 		for( int y = 0; y < ipow( A, k+1 ); y++ ){
 			free( n_[k][y] );
-			free( probs_[k][y] );
 		}
 		free( n_[k] );
-		free( probs_[k] );
 	}
 	free( n_ );
-	free( probs_ );
 
 	for( int k = 0; k < Global::modelOrder+1; k++ ){
 		free( alpha_[k] );
@@ -105,11 +99,13 @@ int EM::learnMotif(){
 	bool iterate = true;									// flag for iterating before convergence
 	int A = Alphabet::getSize();
 	int W = motif_->getW();
+	int K_model = Global::modelOrder;
+	int K_bg = Global::bgModelOrder;
 
-	int k, y, j, y2, yk;
+	int y, y_bg, j;
 	float v_diff, llikelihood_prev, llikelihood_diff;
 //	float Qfunc_prev, Qfunc_diff;
-	float** v_prev;											// hold the parameters before EM
+	float** v_prev;											// hold the parameters of the highest-order before EM
 
 	// allocate memory for parameters v[y][j] with the highest order
 	v_prev = ( float** )calloc( ipow( A, Global::modelOrder+1 ), sizeof( float* ) );
@@ -130,6 +126,21 @@ int EM::learnMotif(){
 		}
 		llikelihood_prev = llikelihood_;
 //		Qfunc_prev = Qfunc_;
+
+		// compute log odd scores s[y][j], log likelihoods of the highest order K
+		for( y = 0; y < ipow( A, K_model+1 ); y++ ){
+			for( j = 0; j < W; j++ ){
+				if( K_model == K_bg ){
+					s_[y][j] = logf( motif_->getV()[K_model][y][j] ) - logf( bg_->getV()[K_bg][y] );
+				} else if( K_model > K_bg ) {
+					y_bg = y % ipow( A, K_bg+1 );
+					s_[y][j] = logf( motif_->getV()[K_model][y][j] ) - logf( bg_->getV()[K_bg][y_bg] );
+				} else {									// already checked in Global::readArguments()
+					std::cerr << "Error: Background order cannot exceed model order! \n";
+					exit( -1 );
+				}
+			}
+		}
 
 		// E-step: calculate posterior
 		EStep();
@@ -169,26 +180,8 @@ int EM::learnMotif(){
 		if( v_diff < Global::epsilon )	iterate = false;
 	}
 
-	// calculate probabilities, i.e. p(ACG) = p(G|AC) * p(AC)
-	// when k = 0:
-	for( j = 0; j < W; j++ ){
-		for( y = 0; y < A; y++ ){
-			probs_[0][y][j] = motif_->getV()[0][y][j];
-		}
-	}
-	// when k > 0:
-	for( k = 1; k < Global::modelOrder+1; k++){
-		for( y = 0; y < ipow( A, k+1 ); y++ ){
-			y2 = y % ipow( A, k );							// cut off the first nucleotide in (k+1)-mer
-			yk = y / A;										// cut off the last nucleotide in (k+1)-mer
-			for( j = 0; j < k; j++ ){
-				probs_[k][y][j] = probs_[k-1][y2][j];		// i.e. p(ACG) = p(CG)
-			}
-			for( j = k; j < W; j++ ){
-				probs_[k][y][j] =  motif_->getV()[k][y][j] * probs_[k-1][yk][j-1];
-			}
-		}
-	}
+	// calculate probabilities
+	motif_->calculateP();
 
 //	if( Global::verbose ) print();
 
@@ -203,31 +196,13 @@ int EM::learnMotif(){
 
 void EM::EStep(){
 
-	int L, LW1, y, j, y_bg, i;
+	int L, LW1, y, j, i;
 	float prior_i;											// positional preference prior state for p(z_n = i), motif present
 	float prior_0 = 1 - q_;									// positional preference prior state for p(z_n = 0), no motif present
 	float normFactor;										// normalize responsibilities r[n][i]
 	llikelihood_ = 0.0f;									// reset log likelihood
-
 	int K_model = Global::modelOrder;
-	int K_bg = Global::bgModelOrder;
-	int A = Alphabet::getSize();
 	int W = motif_->getW();
-
-	// compute log odd scores s[y][j], log likelihoods with the highest order K
-	for( y = 0; y < ipow( A, K_model+1 ); y++ ){
-		for( j = 0; j < W; j++ ){
-			if( K_model == K_bg ){
-				s_[y][j] = logf( motif_->getV()[K_model][y][j] ) - logf( bg_->getV()[K_bg][y] );
-			} else if( K_model > K_bg ) {
-				y_bg = y % ipow( A, K_bg+1 );
-				s_[y][j] = logf( motif_->getV()[K_model][y][j] ) - logf( bg_->getV()[K_bg][y_bg] );
-			} else {										// already checked in Global::readArguments()
-				std::cerr << "Error: Background order cannot exceed model order! \n";
-				exit( -1 );
-			}
-		}
-	}
 
 	// calculate responsibilities r_[n][i] at position i in sequence n
 	if( Global::setSlow ){
@@ -247,10 +222,9 @@ void EM::EStep(){
 			for( i = 0; i < LW1; i++ ){
 				for( j = 0; j < W; j++ ){
 					y = posSeqs_[n]->extractKmer( i+j, std::min( i+j, K_model ) );
-					if( y != -1 )							// skip 'N' and other unknown alphabets
+					if( y != -1 ){							// skip 'N' and other unknown alphabets
 						r_[n][i] += s_[y][j];
-					else									// r = 0 when unknown letter occurs
-						r_[n][i] = 0.0f;
+					}
 				}
 				r_[n][i] = expf( r_[n][i] ) * prior_i;
 				normFactor += r_[n][i];
@@ -262,6 +236,12 @@ void EM::EStep(){
 			for( i = 0; i < LW1; i++ ){						// responsibility normalization
 				r_[n][i] /= normFactor;
 			}
+
+			// only for testing: print out posterior parameter r:
+//			for( i = 0; i < LW1; i++ ){
+//				std::cout << std::scientific << std::setprecision(6) << "r["<< n+1 << "][" << i << "] = " << r_[n][i] << ' ';
+//			}
+//			std::cout << std::endl;
 
 			llikelihood_ += logf( normFactor );
 		}
@@ -284,8 +264,6 @@ void EM::EStep(){
 				for( j = 0; j < std::min( W, i+1 ); j++ ){	// j runs over all motif positions
 					if( y != -1 ){							// skip 'N' and other unknown alphabets
 						r_[n][L-i+j-1] += s_[y][j];
-					} else {
-						r_[n][i] = 0.0f;					// r = 0 when unknown letter occurs
 					}
 				}
 			}
@@ -332,8 +310,6 @@ void EM::MStep(){
 					y = posSeqs_[n]->extractKmer( i+j, std::min( i+j, Global::modelOrder ) );
 					if( y != -1 ){							// skip 'N' and other unknown alphabets
 						n_[Global::modelOrder][y][j] += r_[n][i];
-					} else {
-						break;
 					}
 				}
 			}
@@ -348,8 +324,6 @@ void EM::MStep(){
 				for( j = 0; j < std::min( W, i+1 ); j++ ){
 					if( y != -1 && ( i-j ) < LW1 ){			// skip 'N' and other unknown alphabets
 						n_[Global::modelOrder][y][j] += r_[n][L-i+j-1];
-					} else {
-						break;
 					}
 				}
 			}
@@ -367,10 +341,11 @@ void EM::MStep(){
 	}
 
 	// compute the Q function
-	Qfunc_ = calculateQfunc();
+//	Qfunc_ = calculateQfunc();
 
 	// update model parameters v[k][y][j]
 	motif_->updateV( n_, alpha_ );
+
 }
 
 void EM::optimizeAlphas(){
@@ -397,7 +372,9 @@ float EM::calculateQfunc(){
 		for( i = 0; i <= LW1; i++ ){
 			for( j = 0; j < W; j++ ){
 				y =  posSeqs_[n]->extractKmer( i, std::min( i, Global::modelOrder ) );
-				sumS += s_[y][j];
+				if( y != -1 ){
+					sumS += s_[y][j];
+				}
 			}
 			Qfunc += r_[n][i] * sumS;
 		}
@@ -430,13 +407,11 @@ void EM::print(){
 void EM::write(){
 
 	/**
-	 * save EM parameters in six flat files:
-	 * (1) posSequenceBasename.conds: 		conditional probabilities after EM
-	 * (2) posSequenceBasename.probs: 		probabilities after EM
-	 * (3) posSequenceBasename.EMcounts:	refined counts of (k+1)-mers
-	 * (4) posSequenceBasename.EMposterior: responsibilities, posterior distributions
-	 * (5) posSequenceBasename.EMalpha:		hyper-parameter alphas
-	 * (6) posSequenceBasename.EMlogScores:	log scores
+	 * save EM parameters in four flat files:
+	 * (1) posSequenceBasename.EMcounts:	refined counts of (k+1)-mers
+	 * (2) posSequenceBasename.EMposterior: responsibilities, posterior distributions
+	 * (3) posSequenceBasename.EMalpha:		hyper-parameter alphas
+	 * (4) posSequenceBasename.EMlogScores:	log scores
 	 */
 
 	int k, y, j, i, L;
@@ -446,26 +421,16 @@ void EM::write(){
 	std::string opath = std::string( Global::outputDirectory ) + '/'
 						+ std::string( Global::posSequenceBasename );
 
-	// output conditional probabilities v[k][y][j] and (k+1)-mer counts n[k][y][j]
-	std::string opath_v = opath + ".conds";
-	std::string opath_p = opath + ".probs";
+	// output (k+1)-mer counts n[k][y][j]
 	std::string opath_n = opath + ".EMcounts";
-	std::ofstream ofile_v( opath_v.c_str() );
-	std::ofstream ofile_p( opath_p.c_str() );
 	std::ofstream ofile_n( opath_n.c_str() );
 	for( j = 0; j < W; j++ ){
 		for( k = 0; k < Global::modelOrder+1; k++ ){
 			for( y = 0; y < ipow( A, k+1 ); y++ ){
-				ofile_v << std::scientific << std::setprecision(8) << motif_->getV()[k][y][j] << ' ';
-				ofile_p << std::scientific << std::setprecision(8) << probs_[k][y][j] << ' ';
 				ofile_n << std::scientific << n_[k][y][j] << ' ';
 			}
-			ofile_v << std::endl;
-			ofile_p << std::endl;
 			ofile_n << std::endl;
 		}
-		ofile_v << std::endl;
-		ofile_p << std::endl;
 		ofile_n << std::endl;
 	}
 

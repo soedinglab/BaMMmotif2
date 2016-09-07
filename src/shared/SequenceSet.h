@@ -49,7 +49,6 @@ private:
 
 	int 					readFASTA( bool revcomp = false );	 // read in FASTA file
 	int 					readIntensities();		             // read in intensity file
-
 };
 
 #endif /* SEQUENCESET_H_ */

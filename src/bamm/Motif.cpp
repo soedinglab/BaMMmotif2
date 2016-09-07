@@ -9,12 +9,15 @@ Motif::Motif( int length ){
 
 	v_ = ( float*** )calloc( Global::modelOrder+1, sizeof( float** ) );
 	n_ = ( int*** )calloc( Global::modelOrder+1, sizeof( int** ) );
+	p_ =  ( float*** )calloc( Global::modelOrder+1, sizeof( float** ) );
 	for( k = 0; k < Global::modelOrder+1; k++ ){
 		v_[k] = ( float** )calloc( ipow( A, k+1 ), sizeof( float* ) );
 		n_[k] = ( int** )calloc( ipow( A, k+1 ), sizeof( int* ) );
+		p_[k] = ( float** )calloc( ipow( A, k+1 ), sizeof( float* ) );
 		for( y = 0; y < ipow( A, k+1 ); y++ ){
 			v_[k][y] = ( float* )calloc( W_, sizeof( float ) );
 			n_[k][y] = ( int* )calloc( W_, sizeof( int ) );
+			p_[k][y] = ( float* )calloc( W_, sizeof( float ) );
 		}
 	}
 
@@ -25,8 +28,9 @@ Motif::Motif( int length ){
 						 Global::bgModelAlpha,
 						 Global::interpolateBG );
 
-	for( y = 0; y < A; y++ )
+	for( y = 0; y < A; y++ ){
 		v_bg_[y] = bg.getV()[0][y];
+	}
 
 }
 
@@ -39,15 +43,19 @@ Motif::Motif( const Motif& other ){ 		// deep copy
 
 	v_ = ( float*** )malloc( ( Global::modelOrder+1 )* sizeof( float** ) );
 	n_ = ( int*** )malloc( ( Global::modelOrder+1 ) * sizeof( int** ) );
+	p_ = ( float*** )malloc( ( Global::modelOrder+1 )* sizeof( float** ) );
 	for( k = 0; k < Global::modelOrder+1; k++ ){
 		v_[k] = ( float** )malloc( ipow( A, k+1 ) * sizeof( float* ) );
 		n_[k] = ( int** )malloc( ipow( A, k+1 ) * sizeof( int* ) );
+		p_[k] = ( float** )malloc( ipow( A, k+1 ) * sizeof( float* ) );
 		for( y = 0; y < ipow( A, k+1 ); y++ ){
 			v_[k][y] = ( float* )malloc( W_ * sizeof( float ) );
 			n_[k][y] = ( int* )malloc( W_ * sizeof( int ) );
+			p_[k][y] = ( float* )malloc( W_ * sizeof( float ) );
 			for( j = 0; j < W_; j++ ){
 				v_[k][y][j] = other.v_[k][y][j];
 				n_[k][y][j] = other.n_[k][y][j];
+				p_[k][y][j] = other.p_[k][y][j];
 			}
 		}
 	}
@@ -67,12 +75,15 @@ Motif::~Motif(){
 		for( int y = 0; y < ipow( A, k+1 ); y++ ){
 			free( v_[k][y] );
 			free( n_[k][y] );
+			free( p_[k][y] );
 		}
 		free( v_[k] );
 		free( n_[k] );
+		free( p_[k] );
 	}
 	free( v_ );
 	free( n_ );
+	free( p_ );
 
 	free( v_bg_ );
 
@@ -166,6 +177,14 @@ int Motif::getW(){
 	return W_;
 }
 
+float*** Motif::getV(){
+	return v_;
+}
+
+float*** Motif::getP(){
+	return p_;
+}
+
 void Motif::calculateV(){
 
 	int y, j, k, y2, yk;
@@ -191,10 +210,6 @@ void Motif::calculateV(){
 	}
 }
 
-float*** Motif::getV(){
-	return v_;
-}
-
 // update v from fractional k-mer counts n and current alphas
 void Motif::updateV( float*** n, float** alpha ){
 
@@ -205,15 +220,18 @@ void Motif::updateV( float*** n, float** alpha ){
 
 	// sum up the n over (k+1)-mers at different position of motif
 	float* sumN = ( float* )calloc( W_, sizeof( float ) );
-	for( j = 0; j < W_; j++ )
-		for( y = 0; y < A; y++ )
+	for( j = 0; j < W_; j++ ){
+		for( y = 0; y < A; y++ ){
 			sumN[j] += n[0][y][j];
+		}
+	}
 
 	// for k = 0, v_ = freqs:
 	for( y = 0; y < A; y++ ){
-		for( j = 0; j < W_; j++ )
+		for( j = 0; j < W_; j++ ){
 			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * v_bg_[y] )
 						/ ( sumN[j] + alpha[0][j] );
+		}
 	}
 
 	free( sumN );
@@ -223,14 +241,42 @@ void Motif::updateV( float*** n, float** alpha ){
 		for( y = 0; y < ipow( A, k+1 ); y++ ){
 			y2 = y % ipow( A, k );							// cut off the first nucleotide in (k+1)-mer
 			yk = y / A;										// cut off the last nucleotide in (k+1)-mer
-			for( j = 0; j < k; j++ )						// when j < k, i.e. p(A|CG) = p(A|C)
+			for( j = 0; j < k; j++ ){						// when j < k, i.e. p(A|CG) = p(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
-			for( j = k; j < W_; j++ )
+			}
+			for( j = k; j < W_; j++ ){
 				v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
 							/ ( n[k-1][yk][j-1] + alpha[k][j] );
+			}
 		}
 	}
 }
+void Motif::calculateP(){
+	// calculate probabilities, i.e. p(ACG) = p(G|AC) * p(AC)
+	int j, y, k, y2, yk;
+	int A = Alphabet::getSize();
+	// when k = 0:
+	for( j = 0; j < W_; j++ ){
+		for( y = 0; y < A; y++ ){
+			p_[0][y][j] = v_[0][y][j];
+		}
+	}
+	// when k > 0:
+	for( k = 1; k < Global::modelOrder+1; k++){
+		for( y = 0; y < ipow( A, k+1 ); y++ ){
+			y2 = y % ipow( A, k );							// cut off the first nucleotide in (k+1)-mer
+			yk = y / A;										// cut off the last nucleotide in (k+1)-mer
+			for( j = 0; j < k; j++ ){
+				p_[k][y][j] = p_[k-1][y2][j];				// i.e. p(ACG) = p(CG)
+			}
+			for( j = k; j < W_; j++ ){
+				p_[k][y][j] =  v_[k][y][j] * p_[k-1][yk][j-1];
+			}
+		}
+	}
+
+}
+
 
 void Motif::print(){
 	printf( " _______________________\n"

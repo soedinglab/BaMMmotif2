@@ -81,28 +81,37 @@ void MotifSet::print(){
 void MotifSet::write(){
 
 	/**
-	 * save all the motifs learned by BaMM in one flat flie:
-	 * posSequenceBasename.motifs: list conditional probabilities for each motif after EM training
+	 * save all the motifs learned by BaMM in two flat files:
+	 * (1) posSequenceBasename.conds: 		conditional probabilities after EM
+	 * (2) posSequenceBasename.probs: 		probabilities of PWM after EM
 	 */
 
 	std::string opath = std::string( Global::outputDirectory )  + '/'
-			+ std::string( Global::posSequenceBasename ) + ".motifs";
-	std::ofstream ofile( opath.c_str() );
+			+ std::string( Global::posSequenceBasename );
 
-	int i, j, k, y, W;
-	float*** v_motif;
+	// output conditional probabilities v[k][y][j] and probabilities prob[k][y][j]
+	std::string opath_v = opath + ".conds";
+	std::string opath_p = opath + ".probs";
+	std::ofstream ofile_v( opath_v.c_str() );
+	std::ofstream ofile_p( opath_p.c_str() );
+	int i, j, k, y;
 
 	for( i = 0; i < N_; i++ ){
-		ofile << "Motif " << i+1 <<":" << std::endl;
-		W =  motifs_[i]->getW();
-		v_motif =  motifs_[i]->getV();
-		for( j = 0; j < W; j++ ){
+
+		ofile_v << "> motif " << i+1 <<":" << std::endl;
+		ofile_p << "> motif " << i+1 <<":" << std::endl;
+
+		for( j = 0; j < motifs_[i]->getW(); j++ ){
 			for( k = 0; k < Global::modelOrder+1; k++ ){
-				for( y = 0; y < ipow( Alphabet::getSize(), k+1 ); y++ )
-					ofile << std::scientific << std::setprecision(8) << v_motif[k][y][j] << ' ';
-				ofile << std::endl;
+				for( y = 0; y < ipow( Alphabet::getSize(), k+1 ); y++ ){
+					ofile_v << std::scientific << std::setprecision(8) << motifs_[i]->getV()[k][y][j] << ' ';
+					ofile_p << std::scientific << std::setprecision(8) << motifs_[i]->getP()[k][y][j] << ' ';
+				}
+				ofile_v << std::endl;
+				ofile_p << std::endl;
 			}
-			ofile << std::endl;
+			ofile_v << std::endl;
+			ofile_p << std::endl;
 		}
 	}
 }

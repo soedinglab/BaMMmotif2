@@ -295,7 +295,7 @@ void FDR::calculatePR(){
 
 	// For "many occurrence per sequence" (MOPS) model
 	float max_diff = 0.0f;						// maximal difference between TFP and FP
-	size_t idx_max;								// index when the difference between TFP and FP reaches maximum
+	size_t idx_max = 0;								// index when the difference between TFP and FP reaches maximum
 	for( i = 0; i < size_all; i++ ){
 		if( posS_all_[i_posA] > negS_all_[i_negA] || i_posA == 0 || i_negA == negS_all_.size() ){
 			i_posA++;

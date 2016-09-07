@@ -21,7 +21,6 @@ SequenceSet::SequenceSet( std::string sequenceFilepath, bool revcomp, std::strin
 
 	readFASTA( revcomp );
 
-
 	if( !( intensityFilepath.empty() ) ){
 		intensityFilepath_ = intensityFilepath;
 		readIntensities();
@@ -278,7 +277,6 @@ void SequenceSet::debug(){
 
         fprintf( stdout, "Final Numbers: N_ = %d maxL_ = %d minL_ = %d \n", N, maxL, minL);
 
-
          // calculate the sum of bases
         unsigned int sumCounts = 0;
         for( int i = 0; i < Alphabet::getSize(); i++ )
@@ -351,7 +349,6 @@ int SequenceSet::readFASTA( bool revcomp ){
 							}
 							sequences_.push_back( new Sequence( encoding, L, header, Y_, revcomp ) );
 
-
 							sequence.clear();
 							header.clear();
 
@@ -415,7 +412,6 @@ int SequenceSet::readFASTA( bool revcomp ){
 					baseCounts[encoding[i]-1]++; // count base
 				}
 				sequences_.push_back( new Sequence( encoding, L, header, Y_, revcomp ) );
-
 
 				sequence.clear();
 				header.clear();

@@ -26,7 +26,9 @@ public:
 	int			getN();									// get the number of motifs N
 	int         getW(); 								// get motif length w
 	float***    getV();									// get conditional probabilities v
+	float***	getP();									// get probabilities p
 	void        updateV( float*** n, float** alpha );
+	void		calculateP();							// calculate probabilities p
 
 	void 		print();					   			// print v to console
 	void 		write();					    		// write v (basename.bmm). Include header with alphabetType
@@ -37,10 +39,12 @@ private:
 	int			N_ = 0;									// number of binding sites
 	int 		W_;					    				// motif length
 	float***    v_;				                		// conditional probabilities for (k+1)-mers y at motif position j
+	float***	p_;										// probabilities for (k+1)-mers y at motif position j
 	int***		n_;										// counts of (k+1)-mer for all y at motif position j
 	float*		v_bg_;									// conditional probabilities for monomers from background model
 
 	void 		calculateV();							// calculate v from k-mer counts n and global alphas
+
 };
 
 #endif /* MOTIF_H_ */

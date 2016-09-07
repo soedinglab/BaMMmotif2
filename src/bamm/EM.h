@@ -24,7 +24,6 @@ private:
 	float**					s_;					// log scores of each (k+1)-mer at each position
 	float** 				r_;		        	// responsibilities at position i in sequence n
 	float*** 				n_;	            	// fractional counts n for (k+1)-mers y at motif position j
-	float***				probs_;				// probabilities of PWM
 
 	float** 				alpha_;	        	// pseudo-count hyper-parameter for order k and motif position j
 	float 					q_ = 0.9f; 			// hyper-parameter q specifies the fraction of sequences containing motif

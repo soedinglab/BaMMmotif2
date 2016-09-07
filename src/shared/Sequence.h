@@ -7,7 +7,6 @@
 #include <stdint.h>	// e.g. uint8_t
 
 #include "Alphabet.h"
-#include "utils.h"
 
 class Sequence{
 
