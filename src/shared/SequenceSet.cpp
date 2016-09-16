@@ -15,8 +15,16 @@ SequenceSet::SequenceSet( std::string sequenceFilepath, bool revcomp, std::strin
 				logf( static_cast<float>( std::numeric_limits<int>::max() ) ) /
 				logf( static_cast<float>( Alphabet::getSize() ) ) ) );
 
+	int K = 2;
+
 	for( int i = 0; i <= l; i++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), i ) );
+	}
+
+	// allocate memory for calculating kmer frequencies
+	kmerFrequencies_ = ( float** )calloc( K+1, sizeof( float* ) );
+	for( int k = 0; k <= K; k++ ){
+		kmerFrequencies_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
 	}
 
 	readFASTA( revcomp );
@@ -25,6 +33,7 @@ SequenceSet::SequenceSet( std::string sequenceFilepath, bool revcomp, std::strin
 		intensityFilepath_ = intensityFilepath;
 		readIntensities();
 	}
+
 }
 
 SequenceSet::~SequenceSet(){
@@ -36,6 +45,7 @@ SequenceSet::~SequenceSet(){
 	if( baseFrequencies_ ){
 		delete[] baseFrequencies_;
 	}
+
 }
 
 std::string SequenceSet::getSequenceFilepath(){
@@ -66,11 +76,16 @@ float* SequenceSet::getBaseFrequencies(){
 	return baseFrequencies_;
 }
 
+float** SequenceSet::getKmerFrequencies(){
+	return kmerFrequencies_;
+}
+
 void SequenceSet::print(){
 
 	for( int i = 0; i < N_; i++ ){
 		sequences_[i]->print();
 	}
+
 }
 
 void SequenceSet::debug(){
@@ -299,7 +314,7 @@ void SequenceSet::debug(){
 int SequenceSet::readFASTA( bool revcomp ){
 
 	/**
-	 * while reading in the sequences do
+	 * while reading in the sequences do:
 	 * 1. extract the header for each sequence
 	 * 2. calculate the min. and max. sequence length in the file
 	 * 3. count the number of sequences
@@ -313,6 +328,8 @@ int SequenceSet::readFASTA( bool revcomp ){
 
 	std::string line, header, sequence;
 	std::ifstream file( sequenceFilepath_.c_str() ); // opens FASTA file
+
+	int K = 2/*Global::modelOrder*/;
 
 	if( file.is_open() ){
 
@@ -342,10 +359,21 @@ int SequenceSet::readFASTA( bool revcomp ){
 							for( int i = 0; i < L; i++ ){
 								encoding[i] = Alphabet::getCode( sequence[i] );
 								if( encoding[i] == 0 ){
-									std::cerr << "Warning: The FASTA file contains an undefined base: " << sequence[i] << std::endl;
+									std::cerr << "Warning: The FASTA file contains an undefined base: " <<
+											sequence[i] << " at sequence " << header << std::endl;
 									continue; // exclude undefined base from base counts
+								} else {
+									// cout (k+1)-mers for each sequence
+									for( int k = 0; k < K+1; k++ ){
+										int y = 0;
+										for( int j = std::min( i, k ); j >= 0; j-- ){
+											y += ( encoding[i-j] - 1 ) * Y_[j];
+										}
+										kmerFrequencies_[k][y]++;
+									}
 								}
-								baseCounts[encoding[i]-1]++; // count base
+									baseCounts[encoding[i]-1]++; // count base
+
 							}
 							sequences_.push_back( new Sequence( encoding, L, header, Y_, revcomp ) );
 
@@ -406,8 +434,18 @@ int SequenceSet::readFASTA( bool revcomp ){
 				for( int i = 0; i < L; i++ ){
 					encoding[i] = Alphabet::getCode( sequence[i] );
 					if( encoding[i] == 0 ){
-						std::cerr << "Warning: The FASTA file contains an undefined base: " << sequence[i] << std::endl;
+						std::cerr << "Warning: The FASTA file contains an undefined base: " <<
+								sequence[i] << " at sequence " << header << std::endl;
 						continue; // exclude undefined base from base counts
+					} else {
+						// cout (k+1)-mers for each sequence
+						for( int k = 0; k < K+1; k++ ){
+							int y = 0;
+							for( int j = std::min( i, k ); j >= 0; j-- ){
+								y += ( encoding[i-j] - 1 ) * Y_[j];
+							}
+							kmerFrequencies_[k][y]++;
+						}
 					}
 					baseCounts[encoding[i]-1]++; // count base
 				}
@@ -442,7 +480,19 @@ int SequenceSet::readFASTA( bool revcomp ){
 	for( int i = 0; i < Alphabet::getSize(); i++ )
 		sumCounts += baseCounts[i];
 
-	// calculate base frequencies
+	// calculate kmer frequencies
+	// for k > 0:
+	for( int k = K; k > 0; k-- ){
+		for( int y = 0; y < Y_[k+1]; y++ ){
+			int yk = y / Y_[1];
+			kmerFrequencies_[k][y] /= kmerFrequencies_[k-1][yk];
+		}
+	}
+	// for k = 0:
+	float sumFreq = 0.0f;
+	for( int y = 0; y < Y_[1]; y++ )	sumFreq += kmerFrequencies_[0][y];
+	for( int y = 0; y < Y_[1]; y++ )	kmerFrequencies_[0][y] /= sumFreq;
+
 	baseFrequencies_ = new float[Alphabet::getSize()];
 	for( int i = 0; i < Alphabet::getSize(); i++ )
 		baseFrequencies_[i] = static_cast<float>( baseCounts[i] ) /
