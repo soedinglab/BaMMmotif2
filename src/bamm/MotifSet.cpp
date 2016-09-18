@@ -90,11 +90,16 @@ void MotifSet::write(){
 			+ std::string( Global::posSequenceBasename );
 
 	// output conditional probabilities v[k][y][j] and probabilities prob[k][y][j]
-	std::string opath_v = opath + ".conds";
-	std::string opath_p = opath + ".probs";
+	std::string opath_v = opath + ".ihbcp"; 	// inhomogeneous bamm conditional probabilities
+	std::string opath_p = opath + ".ihbp";		// inhomogeneous bamm probabilities
 	std::ofstream ofile_v( opath_v.c_str() );
 	std::ofstream ofile_p( opath_p.c_str() );
 	int i, j, k, y;
+
+	std::vector<int> Y;
+	for( k = 0; k < Global::modelOrder+2; k++ ){
+		Y.push_back( ipow( Alphabet::getSize(), k ) );
+	}
 
 	for( i = 0; i < N_; i++ ){
 
@@ -103,7 +108,7 @@ void MotifSet::write(){
 
 		for( j = 0; j < motifs_[i]->getW(); j++ ){
 			for( k = 0; k < Global::modelOrder+1; k++ ){
-				for( y = 0; y < ipow( Alphabet::getSize(), k+1 ); y++ ){
+				for( y = 0; y < Y[k+1]; y++ ){
 					ofile_v << std::scientific << std::setprecision(8) << motifs_[i]->getV()[k][y][j] << ' ';
 					ofile_p << std::scientific << std::setprecision(8) << motifs_[i]->getP()[k][y][j] << ' ';
 				}

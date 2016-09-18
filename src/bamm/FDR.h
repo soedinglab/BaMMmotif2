@@ -43,8 +43,13 @@ private:
 	float*				FP_mops_;			// false positive values for MOPS model
 	float*				TFP_mops_;			// true and false positive values for MOPS model
 
+	std::vector<int>	Y_;					// contains 1 at position 0
+											// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
+											// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
+
 							// generate background sample sequence set
 	std::vector<Sequence*>	sampleSequenceSet( int fold );
+
 							// generate sample sequence based on k-mer probabilities
 	Sequence*				sampleSequence();
 
@@ -54,6 +59,7 @@ private:
 							// score SequenceSet sequences
 	void 		    		scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqSet );
 
+							// calculate precision and recall for both ZOOPS and MOPS models
 	void 		   			calculatePR();
 
 };

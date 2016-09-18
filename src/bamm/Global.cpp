@@ -72,7 +72,6 @@ void Global::init( int nargs, char* args[] ){
 	posSequenceSet = new SequenceSet( posSequenceFilename );
 	negSequenceSet = new SequenceSet( negSequenceFilename );
 
-
 	// generate fold indices for positive and negative sequence set
 	Global::posFoldIndices = generateFoldIndices( posSequenceSet->getN(), cvFold );
 	Global::negFoldIndices = generateFoldIndices( negSequenceSet->getN(), cvFold );
@@ -230,17 +229,17 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "setSlow", setSlow );
 
 	// FDR options
-	if( opt >> GetOpt::OptionPresent( "FDR", FDR) ){
-		opt >> GetOpt::OptionPresent( "FDR", FDR);
-		opt >> GetOpt::Option( 'm', mFold  );
-		opt >> GetOpt::Option( 'n', cvFold );
+	if( opt >> GetOpt::OptionPresent( "FDR", FDR ) ){
+		opt >> GetOpt::OptionPresent( "FDR", FDR );
+		opt >> GetOpt::Option( 'm', "mFold", mFold  );
+		opt >> GetOpt::Option( 'n', "cvFold", cvFold );
 	}
 
 	// printout options
 	opt >> GetOpt::OptionPresent( "verbose", verbose );
 	opt >> GetOpt::OptionPresent( "debug", debugMode );
-	opt >> GetOpt::OptionPresent( "saveInitBaMMs", saveInitBaMMs);
-	opt >> GetOpt::OptionPresent( "saveBaMMs", saveBaMMs);
+	opt >> GetOpt::OptionPresent( "saveInitBaMMs", saveInitBaMMs );
+	opt >> GetOpt::OptionPresent( "saveBaMMs", saveBaMMs );
 
 	return 0;
 }
@@ -311,10 +310,10 @@ void Global::printHelp(){
 	printf("\n 		Options for FDR: \n");
 	printf("\n 			--FDR \n"
 			"				triggers False-Discovery-Rate (FDR) estimation.\n\n");
-	printf("\n 			-m <INTEGER>\n"
+	printf("\n 			-m, --mFold <INTEGER>\n"
 			"				number of negative sequences as multiple of positive sequences."
 			"				The default is 20.\n\n");
-	printf("\n 			-n <INTEGER>\n"
+	printf("\n 			-n, --cvFold <INTEGER>\n"
 			"				number of cross-validation folds. The default is 5.\n\n");
 	printf("\n 		Options for output:	\n");
 	printf("\n 			--verbose \n"
@@ -330,12 +329,12 @@ void Global::printHelp(){
 
 void Global::destruct(){
     Alphabet::destruct();
-    if( alphabetType ) delete[] alphabetType;
-    if( posSequenceBasename ) free( posSequenceBasename );
-    if( negSequenceBasename ) free( negSequenceBasename );
-    if( posSequenceSet ) delete posSequenceSet;
-    if( negSequenceSet ) delete negSequenceSet;
-    if( initialModelBasename ) free( initialModelBasename );
+    if( alphabetType ) 			delete[] alphabetType;
+    if( posSequenceBasename ) 	free( posSequenceBasename );
+    if( negSequenceBasename ) 	free( negSequenceBasename );
+    if( posSequenceSet )	 	delete posSequenceSet;
+    if( negSequenceSet ) 		delete negSequenceSet;
+    if( initialModelBasename ) 	free( initialModelBasename );
 }
 
 void Global::debug(){

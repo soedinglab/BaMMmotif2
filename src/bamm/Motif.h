@@ -2,6 +2,7 @@
 #define MOTIF_H_
 
 #include <assert.h>
+#include <math.h>	// e.g. logf
 
 #include "Global.h"
 #include "../shared/BackgroundModel.h"
@@ -30,12 +31,18 @@ public:
 	void        updateV( float*** n, float** alpha );
 	void		calculateP();							// calculate probabilities p
 
+	void 		expV();
+	void 		logV();
+	bool		vIsLog();
+
 	void 		print();					   			// print v to console
 	void 		write();					    		// write v (basename.bmm). Include header with alphabetType
 
 private:
 
 	bool		isInitialized_ = false;		    		// assert in all public methods
+	bool		vIsLog_ = false;						// v_ contains log probabilities
+
 	int			N_ = 0;									// number of binding sites
 	int 		W_;					    				// motif length
 	float***    v_;				                		// conditional probabilities for (k+1)-mers y at motif position j
@@ -45,6 +52,9 @@ private:
 
 	void 		calculateV();							// calculate v from k-mer counts n and global alphas
 
+	std::vector<int>	Y_;								// contains 1 at position 0
+														// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
+														// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
 };
 
 #endif /* MOTIF_H_ */

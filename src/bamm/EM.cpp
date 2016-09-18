@@ -6,9 +6,11 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 	bg_ = bg;
 
 	int y, k, j, L;
-
-	int A = Alphabet::getSize();
 	int W = motif_->getW();
+
+	for( int k = 0; k < Global::modelOrder+2; k++ ){
+		Y_.push_back( ipow( Alphabet::getSize(), k ) );
+	}
 
 	if( folds.empty() ){										// for the complete sequence set
 		folds_.resize( Global::cvFold );
@@ -26,26 +28,27 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 	}
 
 	// allocate memory for s_[y][j] and initialize it
-	s_ = ( float** )calloc( ipow( A, Global::modelOrder+1 ), sizeof( float* ) );
-	for( y = 0; y < ipow( A, Global::modelOrder+1 ); y++ )
+	s_ = ( float** )calloc( Y_[Global::modelOrder+1], sizeof( float* ) );
+	for( y = 0; y < Y_[Global::modelOrder+1]; y++ ){
 		s_[y] = ( float* )calloc( W, sizeof( float ) );
+	}
 
-    // allocate memory for r_[n][i] and initialize it
+	// allocate memory for r_[n][i] and initialize it
 	r_ = ( float** )calloc( posSeqs_.size(), sizeof( float* ) );
-    for( size_t n = 0; n < posSeqs_.size(); n++ ){
-    	if( Global::setSlow ){
-    		L = posSeqs_[n]->getL() - W + 1;
-    	} else {
-    		L = posSeqs_[n]->getL();
-    	}
-    	r_[n] = ( float* )calloc( L, sizeof( float ) );
-    }
+	for( size_t n = 0; n < posSeqs_.size(); n++ ){
+		if( Global::setSlow ){
+			L = posSeqs_[n]->getL() - W + 1;
+		} else {
+			L = posSeqs_[n]->getL();
+		}
+		r_[n] = ( float* )calloc( L, sizeof( float ) );
+	}
 
-    // allocate memory for n_[k][y][j] and probs_[k][y][j] and initialize them
+	// allocate memory for n_[k][y][j] and probs_[k][y][j] and initialize them
 	n_ = ( float*** )calloc( Global::modelOrder+1, sizeof( float** ) );
 	for( k = 0; k < Global::modelOrder+1; k++ ){
-		n_[k] = ( float** )calloc( ipow( A, k+1 ), sizeof( float* ) );
-		for( y = 0; y < ipow( A, k+1 ); y++ ){
+		n_[k] = ( float** )calloc( Y_[k+1], sizeof( float* ) );
+		for( y = 0; y < Y_[k+1]; y++ ){
 			n_[k][y] = ( float* )calloc( W, sizeof( float ) );
 		}
 	}
@@ -59,12 +62,12 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 		}
 	}
 
+
 }
 
 EM::~EM(){
 
-	int A = Alphabet::getSize();
-	for( int y = 0; y < ipow( A, Global::modelOrder+1 ); y++ ){
+	for( int y = 0; y < Y_[Global::modelOrder+1]; y++ ){
 		free( s_[y] );
 	}
 	free( s_ );
@@ -75,7 +78,7 @@ EM::~EM(){
 	free( r_ );
 
 	for( int k = 0; k < Global::modelOrder+1; k++ ){
-		for( int y = 0; y < ipow( A, k+1 ); y++ ){
+		for( int y = 0; y < Y_[k+1]; y++ ){
 			free( n_[k][y] );
 		}
 		free( n_[k] );
@@ -97,19 +100,17 @@ int EM::learnMotif(){
 			"|______|\n\n" );
 
 	bool iterate = true;									// flag for iterating before convergence
-	int A = Alphabet::getSize();
 	int W = motif_->getW();
 	int K_model = Global::modelOrder;
 	int K_bg = Global::bgModelOrder;
 
 	int y, y_bg, j;
-	float v_diff, llikelihood_prev, llikelihood_diff;
-//	float Qfunc_prev, Qfunc_diff;
+	float v_diff, llikelihood_prev, llikelihood_diff = 0.0f;
 	float** v_prev;											// hold the parameters of the highest-order before EM
 
 	// allocate memory for parameters v[y][j] with the highest order
-	v_prev = ( float** )calloc( ipow( A, Global::modelOrder+1 ), sizeof( float* ) );
-	for( y = 0; y < ipow( A, Global::modelOrder+1 ); y++ ){
+	v_prev = ( float** )calloc( Y_[Global::modelOrder+1], sizeof( float* ) );
+	for( y = 0; y < Y_[Global::modelOrder+1]; y++ ){
 		v_prev[y] = ( float* )calloc( W, sizeof( float ) );
 	}
 
@@ -119,26 +120,18 @@ int EM::learnMotif(){
 		EMIterations_++;
 
 		// before EM, get parameter variables before EM
-		for( y = 0; y < ipow( A, Global::modelOrder+1 ); y++ ){
+		for( y = 0; y < Y_[Global::modelOrder+1]; y++ ){
 			for( j = 0; j < W; j++ ){
 				v_prev[y][j] = motif_->getV()[Global::modelOrder][y][j];
 			}
 		}
 		llikelihood_prev = llikelihood_;
-//		Qfunc_prev = Qfunc_;
 
 		// compute log odd scores s[y][j], log likelihoods of the highest order K
-		for( y = 0; y < ipow( A, K_model+1 ); y++ ){
+		for( y = 0; y < Y_[K_model+1]; y++ ){
 			for( j = 0; j < W; j++ ){
-				if( K_model == K_bg ){
-					s_[y][j] = logf( motif_->getV()[K_model][y][j] ) - logf( bg_->getV()[K_bg][y] );
-				} else if( K_model > K_bg ) {
-					y_bg = y % ipow( A, K_bg+1 );
-					s_[y][j] = logf( motif_->getV()[K_model][y][j] ) - logf( bg_->getV()[K_bg][y_bg] );
-				} else {									// already checked in Global::readArguments()
-					std::cerr << "Error: Background order cannot exceed model order! \n";
-					exit( -1 );
-				}
+				y_bg = y % Y_[K_bg+1];
+				s_[y][j] = logf( motif_->getV()[K_model][y][j] ) - logf( bg_->getV()[K_bg][y_bg] );
 			}
 		}
 
@@ -156,37 +149,30 @@ int EM::learnMotif(){
 
 		// check likelihood for convergence
 		v_diff = 0.0f;									 	// reset difference of posterior probabilities
-		for( y = 0; y < ipow( A, Global::modelOrder+1 ); y++ ){
+
+		for( y = 0; y < Y_[Global::modelOrder+1]; y++ ){
 			for( j = 0; j < W; j++ ){
 				v_diff += fabsf( motif_->getV()[Global::modelOrder][y][j] - v_prev[y][j] );
 			}
 		}
 		llikelihood_diff = llikelihood_ - llikelihood_prev;
-//		Qfunc_diff = Qfunc_ - Qfunc_prev;
 
 		if( Global::verbose ){
-			std::cout << "At " << EMIterations_ << "th iteration:\n";
-			std::cout << "	- parameter difference = " << v_diff << "\n";
-			std::cout << "	- log likelihood = " << llikelihood_ << "\n";
-			std::cout << "	- log likelihood difference = " << llikelihood_diff;
-			if( llikelihood_diff < 0 ) std::cout << " decreasing...";
+			std::cout << "At " << EMIterations_ << "th iteration:	";
+			std::cout << "para_diff = " << v_diff << ",	";
+			std::cout << "log likelihood = " << llikelihood_ << " 	";
+			if( llikelihood_diff < 0 && EMIterations_ > 1 ) std::cout << " decreasing...";
 			std::cout << std::endl;
-
-//			std::cout << "	- Q function = " << Qfunc_ << "\n";
-//			std::cout << "	- Q function difference = " << Qfunc_diff;
-//			if( Qfunc_diff < 0 ) std::cout << " decreasing...";
-//			std::cout << std::endl;
 		}
-		if( v_diff < Global::epsilon )	iterate = false;
+		if( v_diff < Global::epsilon )					iterate = false;
+		if( llikelihood_diff < 0 && EMIterations_ > 1 )	iterate = false;
 	}
 
 	// calculate probabilities
 	motif_->calculateP();
 
-//	if( Global::verbose ) print();
-
 	// free memory
-	for( y = 0; y < ipow( A, Global::modelOrder+1 ); y++ ){
+	for( y = 0; y < Y_[Global::modelOrder+1]; y++ ){
 		free( v_prev[y] );
 	}
 	free( v_prev );
@@ -196,13 +182,13 @@ int EM::learnMotif(){
 
 void EM::EStep(){
 
-	int L, LW1, y, j, i;
+	int L, LW1, k, y, j, i;
 	float prior_i;											// positional preference prior state for p(z_n = i), motif present
 	float prior_0 = 1 - q_;									// positional preference prior state for p(z_n = 0), no motif present
 	float normFactor;										// normalize responsibilities r[n][i]
-	llikelihood_ = 0.0f;									// reset log likelihood
 	int K_model = Global::modelOrder;
 	int W = motif_->getW();
+	llikelihood_ = 0.0f;									// reset log likelihood
 
 	// calculate responsibilities r_[n][i] at position i in sequence n
 	if( Global::setSlow ){
@@ -221,12 +207,26 @@ void EM::EStep(){
 			prior_i = q_ / static_cast<float>( LW1 );		// p(z_n = i), i > 0
 			for( i = 0; i < LW1; i++ ){
 				for( j = 0; j < W; j++ ){
-					y = posSeqs_[n]->extractKmer( i+j, std::min( i+j, K_model ) );
+					k = std::min( i+j, K_model );
+					y = posSeqs_[n]->extractKmer( i+j, k );
 					if( y != -1 ){							// skip 'N' and other unknown alphabets
 						r_[n][i] += s_[y][j];
+					} /*else if ( j < K_model ){			// for N exists and j < K occasions
+						y = posSeqs_[n]->extractKmer( i+j, j );
+						if( y != -1 ){
+							r_[n][i] += s_[y][j];
+						} else {
+							r_[n][i] = 0.0f;
+							break;
+						}
+					}*/ else {
+						r_[n][i] = 0.0f;
+						break;
 					}
 				}
-				r_[n][i] = expf( r_[n][i] ) * prior_i;
+				if( r_[n][i] != 0.0f ){
+					r_[n][i] = expf( r_[n][i] ) * prior_i;
+				}
 				normFactor += r_[n][i];
 			}
 
@@ -260,24 +260,45 @@ void EM::EStep(){
 			// when p(z_n > 0)
 			prior_i = q_ / static_cast<float>( LW1 );		// p(z_n = i), i > 0
 			for( i = 0; i < L; i++ ){						// i runs over all nucleotides in sequence
-				y = posSeqs_[n]->extractKmer( i, std::min( i, K_model ) );	// extract (k+1)-mer y from positions (i-k,...,i)
+				k = std::min( i, K_model );
+				y = posSeqs_[n]->extractKmer( i, k );		// extract (k+1)-mer y from positions (i-k,...,i)
 				for( j = 0; j < std::min( W, i+1 ); j++ ){	// j runs over all motif positions
 					if( y != -1 ){							// skip 'N' and other unknown alphabets
 						r_[n][L-i+j-1] += s_[y][j];
+					}/* else if( j < K_model ){
+						y = posSeqs_[n]->extractKmer( i, K_model-j );
+						if( y != -1 ){
+							r_[n][L-i+j-1] += s_[y][j];
+						} else {
+							r_[n][L-i+j-1] = 0.0f;
+							break;
+						}
+					}*/ else {
+						r_[n][L-i+j-1] = 0.0f;
+						break;
 					}
 				}
 			}
 			for( i = W-1; i < L; i++ ){
-				r_[n][i] = expf( r_[n][i] ) * prior_i;
+				if( r_[n][i] != 0.0f ){
+					r_[n][i] = expf( r_[n][i] ) * prior_i;
+				}
 				normFactor += r_[n][i];
 			}
 
 			// when p(z_n = 0)
 			normFactor += prior_0;
 
-			for( i = W-1; i < L; i++ ){						// responsibility normalization
+			// normalize responsibilities
+			for( i = W-1; i < L; i++ ){
 				r_[n][i] /= normFactor;
 			}
+
+			// only for testing: print out posterior parameter r:
+//			for( i = L-1; i >= W-1; i-- ){
+//				std::cout << std::scientific << std::setprecision(6) << "r["<< n+1 << "][" << i << "] = " << r_[n][i] << ' ';
+//			}
+//			std::cout << std::endl;
 
 			llikelihood_ += logf( normFactor );
 		}
@@ -287,12 +308,11 @@ void EM::EStep(){
 void EM::MStep(){
 
 	int L, LW1, k, y, y2, j, i;
-	int A = Alphabet::getSize();
 	int W = motif_->getW();
 
 	// reset the fractional counts n
 	for( k = 0; k < Global::modelOrder+1; k++ ){
-		for( y = 0; y < ipow( A, k+1 ); y++ ){
+		for( y = 0; y < Y_[k+1]; y++ ){
 			for( j = 0; j < W; j++ ){
 				n_[k][y][j] = 0.0f;
 			}
@@ -307,7 +327,8 @@ void EM::MStep(){
 			LW1 = L - W + 1;
 			for( i = 0; i < LW1; i++ ){						// i runs over all nucleotides in sequence
 				for( j = 0; j < W; j++ ){					// j runs over all motif positions
-					y = posSeqs_[n]->extractKmer( i+j, std::min( i+j, Global::modelOrder ) );
+					k = std::min( i+j, Global::modelOrder );
+					y = posSeqs_[n]->extractKmer( i+j, k );
 					if( y != -1 ){							// skip 'N' and other unknown alphabets
 						n_[Global::modelOrder][y][j] += r_[n][i];
 					}
@@ -320,7 +341,8 @@ void EM::MStep(){
 			L = posSeqs_[n]->getL();
 			LW1 = L - W + 1;
 			for( i = 0; i < L; i++ ){
-				y = posSeqs_[n]->extractKmer( i, std::min( i, Global::modelOrder ) );
+				k =  std::min( i, Global::modelOrder );
+				y = posSeqs_[n]->extractKmer( i, k );
 				for( j = 0; j < std::min( W, i+1 ); j++ ){
 					if( y != -1 && ( i-j ) < LW1 ){			// skip 'N' and other unknown alphabets
 						n_[Global::modelOrder][y][j] += r_[n][L-i+j-1];
@@ -332,16 +354,13 @@ void EM::MStep(){
 
 	// compute fractional occurrence counts from higher to lower order
 	for( k = Global::modelOrder; k > 0; k-- ){				// k runs over all orders
-		for( y = 0; y < ipow( A, k+1 ); y++ ){
-			y2 = y % ipow( A, k );							// cut off the first nucleotide in (k+1)-mer
+		for( y = 0; y < Y_[k+1]; y++ ){
+			y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
 			for( j = 0; j < W; j++ ){
 				n_[k-1][y2][j] += n_[k][y][j];
 			}
 		}
 	}
-
-	// compute the Q function
-//	Qfunc_ = calculateQfunc();
 
 	// update model parameters v[k][y][j]
 	motif_->updateV( n_, alpha_ );
@@ -360,7 +379,7 @@ void EM::optimizeQ(){
 
 float EM::calculateQfunc(){
 
-	int L, LW1, i, j, y;
+	int L, LW1, i, k, y, j;
 	float sumS = 0.0f, Qfunc = 0.0f;
 	float prior_i, prior_0 = 1 - q_;
 	int W = motif_->getW();
@@ -371,7 +390,8 @@ float EM::calculateQfunc(){
 		prior_i = q_ / static_cast<float>( LW1 );
 		for( i = 0; i <= LW1; i++ ){
 			for( j = 0; j < W; j++ ){
-				y =  posSeqs_[n]->extractKmer( i, std::min( i, Global::modelOrder ) );
+				k = std::min( j, Global::modelOrder );
+				y =  posSeqs_[n]->extractKmer( i, k );
 				if( y != -1 ){
 					sumS += s_[y][j];
 				}
@@ -381,7 +401,6 @@ float EM::calculateQfunc(){
 		Qfunc += ( r_[n][0] * logf( prior_0 ) + ( 1 - r_[n][0] ) * logf( prior_i ) );
 	}
 	return Qfunc;
-
 }
 
 void EM::print(){
@@ -390,18 +409,16 @@ void EM::print(){
 	std::cout << "|                                    |" << std::endl;
 	std::cout << "| Conditional probabilities after EM |" << std::endl;
 	std::cout << "|____________________________________|" << std::endl;
-	int A = Alphabet::getSize();
 	int W = motif_->getW();
 	for( int j = 0; j < W; j++ ){
 		for( int k = 0; k < Global::modelOrder+1; k++ ){
-			for( int y = 0; y < ipow( A, k+1 ); y++ ){
+			for( int y = 0; y < Y_[k+1]; y++ ){
 				std::cout << std::scientific << motif_->getV()[k][y][j] << '\t';
 			}
 			std::cout << std::endl;
 		}
 		std::cout << std::endl;
 	}
-
 }
 
 void EM::write(){
@@ -415,7 +432,6 @@ void EM::write(){
 	 */
 
 	int k, y, j, i, L;
-	int A = Alphabet::getSize();
 	int W = motif_->getW();
 
 	std::string opath = std::string( Global::outputDirectory ) + '/'
@@ -426,7 +442,7 @@ void EM::write(){
 	std::ofstream ofile_n( opath_n.c_str() );
 	for( j = 0; j < W; j++ ){
 		for( k = 0; k < Global::modelOrder+1; k++ ){
-			for( y = 0; y < ipow( A, k+1 ); y++ ){
+			for( y = 0; y < Y_[k+1]; y++ ){
 				ofile_n << std::scientific << n_[k][y][j] << ' ';
 			}
 			ofile_n << std::endl;
@@ -457,7 +473,7 @@ void EM::write(){
 	for( k = 0; k < Global::modelOrder+1; k++ ){
 		ofile_alpha << "k = " << k << std::endl;
 		for( j = 0; j < W; j++ ){
-			ofile_alpha << std::setprecision(1) << alpha_[k][j] << ' ';
+			ofile_alpha << std::setprecision( 1 ) << alpha_[k][j] << ' ';
 		}
 		ofile_alpha << std::endl;
 	}
@@ -465,9 +481,9 @@ void EM::write(){
 	// output log scores s[y][j]
 	std::string opath_s = opath + ".EMlogScores";
 	std::ofstream ofile_s( opath_s.c_str() );
-	for( y = 0; y < ipow( A, Global::modelOrder+1 ); y++ ){
+	for( y = 0; y < Y_[Global::modelOrder+1]; y++ ){
 		for( j = 0; j < W; j++ ){
-			ofile_s << std::fixed << std::setprecision(6) << s_[y][j] << '	';
+			ofile_s << std::fixed << std::setprecision( 6 ) << s_[y][j] << '	';
 		}
 		ofile_s << std::endl;
 	}
