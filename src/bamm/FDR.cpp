@@ -179,7 +179,6 @@ void FDR::scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<Seque
 // generate negative sequences based on each test set
 std::vector<Sequence*> FDR::sampleSequenceSet(){
 
-	int i;
 	int posN = Global::posSequenceSet->getN();
 	int negN = posN * Global::mFold;
 	float** freqs = Global::posSequenceSet->getKmerFrequencies();
@@ -187,16 +186,17 @@ std::vector<Sequence*> FDR::sampleSequenceSet(){
 	// generate sample sequence set based on the (k+1)-mer frequencies
 	std::vector<Sequence*> sampleSet;
 
-	for( i = 0; i < negN; i++ ){
+	for( int n = 0; n < negN; n++ ){
 
+		// generate sample sequence
 		int L = Global::posSequenceSet->getMaxL();  		// TODO: better to use the average length of all the sequences
 		uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
-		std::string header = "sample sequence";
+		std::string header = "> sample sequence";
 
 		int i, k, yk;
 		double f, random;
 		uint8_t a;
-		int K = Global::modelOrder;
+		int K = 2 /*Global::modelOrder*/;					// Fix the kmer frequencies to order 2
 
 		// get a random number for the first nucleotide
 		random = ( double )rand() / ( double )RAND_MAX;
