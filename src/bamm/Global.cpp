@@ -393,21 +393,14 @@ void Global::debug(){
     fprintf( stdout, "posSequenceSet::N_                 = %d \n", posSequenceSet->getN());
     fprintf( stdout, "posSequenceSet::minL_              = %d \n", posSequenceSet->getMinL());
     fprintf( stdout, "posSequenceSet::maxL_              = %d \n", posSequenceSet->getMaxL());
-    fprintf( stdout, "posSequenceSet::baseFrequencies_   =");
-    for( int i = 0; i < Alphabet::getSize(); i++ ){
-        fprintf( stdout, " %f", posSequenceSet->getBaseFrequencies()[i]);
-    }
+
     fprintf( stdout, "\n\n");
     fprintf( stdout, "negSequenceSet::sequenceFilepath_  = %s \n", negSequenceSet->getSequenceFilepath().c_str());
     fprintf( stdout, "negSequenceSet::intensityFilepath_ = %s \n", negSequenceSet->getIntensityFilepath().c_str());
     fprintf( stdout, "negSequenceSet::N_                 = %d \n", negSequenceSet->getN());
     fprintf( stdout, "negSequenceSet::minL_              = %d \n", negSequenceSet->getMinL());
     fprintf( stdout, "negSequenceSet::maxL_              = %d \n", negSequenceSet->getMaxL());
-    fprintf( stdout, "negSequenceSet::baseFrequencies_   =");
-    for( int i = 0; i < Alphabet::getSize(); i++ ){
-        fprintf( stdout, " %f", negSequenceSet->getBaseFrequencies()[i]);
-//        std::cout << std::setw(10) << std::fixed << std::setprecision(2) << negSequenceSet->getBaseFrequencies()[i] << std::endl;
-    }
+
     fprintf( stdout, "\n\n");
     fprintf( stdout, "posFoldIndices \n");
     for( size_t fold = 0; fold < posFoldIndices.size(); fold++ ){

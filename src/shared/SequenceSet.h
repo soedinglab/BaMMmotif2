@@ -25,7 +25,6 @@ public:
 	int 					getN();
 	unsigned int 			getMinL();
 	unsigned int			getMaxL();
-	float* 					getBaseFrequencies();
 	float** 				getKmerFrequencies();
 
 	void					print();			// print sequences
@@ -40,7 +39,6 @@ private:
 	int 					N_;					// number of sequences
 	unsigned int 			minL_;				// length of the shortest sequence
 	unsigned int 			maxL_;				// length of the longest sequence
-	float* 					baseFrequencies_;	// monomer frequencies
 	float** 				kmerFrequencies_;	// kmer frequencies
 
 	std::vector<int>		Y_;					// contains 1 at position 0

@@ -99,6 +99,8 @@ int EM::learnMotif(){
 			"|  EM  |\n"
 			"|______|\n\n" );
 
+	long timestamp = time( NULL );
+
 	bool iterate = true;									// flag for iterating before convergence
 	int W = motif_->getW();
 	int K_model = Global::modelOrder;
@@ -176,6 +178,9 @@ int EM::learnMotif(){
 		free( v_prev[y] );
 	}
 	free( v_prev );
+
+	fprintf( stdout, "\n--- Runtime for EM: %ld seconds (%0.2f minutes) ---\n",
+			time( NULL )-timestamp, ( float )( time( NULL )-timestamp )/60.0f );
 
     return 0;
 }

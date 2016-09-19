@@ -25,15 +25,13 @@ private:
 	int					testFold_;			// fold index for test set
 	std::vector<int>	trainFolds_;		// fold indices for training set
 
-	float**				freqs_;				// store the frequencies of (k+1)-mer for each test set
+	float**				posScores_;			// store the full set of log odds scores for positive set
+	float**				negScores_;			// store the full set of log odds scores for negative set
 
-	float**				posS_;				// store the full set of log odds scores for positive set
-	float**				negS_;				// store the full set of log odds scores for negative set
-
-	std::vector<float>	posS_all_;			// log odds scores on positive test SequenceSets
-	std::vector<float> 	negS_all_;			// log odds scores on negative test SequenceSets
-	std::vector<float>	posS_max_;			// largest log odds scores on positive test SequenceSet
-	std::vector<float>	negS_max_;			// largest log odds scores on negative test SequenceSet
+	std::vector<float>	posScores_all_;		// all the log odds scores on positive test SequenceSet
+	std::vector<float> 	negScores_all_;		// all the log odds scores on negative test SequenceSet
+	std::vector<float>	posScores_max_;		// largest log odds scores on positive test SequenceSet
+	std::vector<float>	negScores_max_;		// largest log odds scores on negative test SequenceSet
 
 	std::vector<float>	P_zoops_;			// precision for ZOOPS model
 	std::vector<float>	R_zoops_;			// recall for ZOOPS model
@@ -48,10 +46,7 @@ private:
 											// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
 
 							// generate background sample sequence set
-	std::vector<Sequence*>	sampleSequenceSet( int fold );
-
-							// generate sample sequence based on k-mer probabilities
-	Sequence*				sampleSequence();
+	std::vector<Sequence*>	sampleSequenceSet();
 
 							// score Global::posSequenceSet using Global::foldIndices and folds
 	void 	        		scoreSequenceSet( Motif* motif, BackgroundModel* bg, int testFold );
@@ -65,4 +60,3 @@ private:
 };
 
 #endif /* FDR_H_ */
-

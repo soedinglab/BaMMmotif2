@@ -6,7 +6,6 @@
 # 2. The precision versus recall curve for the MOPS model
 # 3. The precision versus recall curve for the ZOOPS model
 # 4. Comparision of precision-recall curves for bothe MOPS and ZOOPS models
-# Run this R script in the OutDir/result/ folder.
 #####################################################
 
 args <- commandArgs( trailingOnly = TRUE )
@@ -14,7 +13,6 @@ print( args )
 
 dir <- args[1]		# Directory for input and output
 name <- args[2]		# name of the dataset 
-fold <- args[3]		# fold of cross-validation
 
 # plot FP vs. TP+FP curve for MOPS model
 FPmops <- read.table( paste( dir, name, ".mops.fp", sep = "" ), fileEncoding="latin1" )
@@ -30,7 +28,7 @@ plot(
 	col = "chocolate1",
 	cex.lab = 1.5, cex.axis = 1.5, cex.main = 1.5, cex.sub = 1.5
 )
-abline( 0, fold, lwd = 2.5, col = "grey66" )
+abline( 0, 1, lwd = 2.5, col = "grey66" )
 dev.off()
 
 # plot precision vs. recall curve for MOPS model
@@ -81,7 +79,7 @@ plot(
 	col = "deepskyblue",
 	cex.lab = 1.5, cex.axis = 1.5, cex.main = 1.5, cex.sub = 1.5
 )
-par( new=T )
+par( new = T )
 #### Plot for ZOOPS: 
 plot(
 	recallZOOPS$V1, precisionZOOPS$V1, 
@@ -92,7 +90,7 @@ plot(
 	col = "chartreuse4",
 	axes = F
 )
-par( new=F )
+par( new = F )
 legend(
 	'bottomleft', 
 	c( "MOPS model", "ZOOPS model" ), 
@@ -102,34 +100,3 @@ legend(
 )
 dev.off()
 
-############ Test: (* will be deleted later)
-# plot precision curve for MOPS model
-png( file = paste( dir, name, '_precision_MOPS.png', sep = "" ) )
-par( oma = c(1,1,1,1) )
-plot(
-	precisionMOPS$V1, 
-	main = paste( name, "(MOPS model)" ), 
-	# xlim = range( 0,1 ), ylim = range( 0,1 ), 
-	xlab = "scale", 
-	ylab = "precision (positive predictive value)", 
-	type = "l", lwd = 2.5,
-	col = "deepskyblue",
-	cex.lab = 1.5, cex.axis = 1.5, cex.main = 1.5, cex.sub = 1.5
-)
-dev.off()
-
-# plot recall curve for MOPS model
-png( file = paste( dir, name, '_recall_MOPS.png', sep = "" ) )
-par( oma = c(1,1,1,1) )
-plot(
-	recallMOPS$V1, 
-	main = paste( name, "(MOPS model)" ), 
-	# xlim = range( 0,1 ), ylim = range( 0,1 ), 
-	xlab = "scale", 
-	ylab = "recall (sensitivity)", 
-	type = "l", lwd = 2.5,
-	col = "deepskyblue",
-	cex.lab = 1.5, cex.axis = 1.5, cex.main = 1.5, cex.sub = 1.5
-)
-dev.off()
-######### end of test #######

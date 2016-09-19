@@ -35,7 +35,6 @@ int main( int nargs, char* args[] ){
 	BackgroundModel* bgModel = new BackgroundModel( *Global::negSequenceSet,
 													Global::bgModelOrder,
 													Global::bgModelAlpha );
-	bgModel->write( Global::outputDirectory );
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "*********************\n" );
@@ -80,7 +79,7 @@ int main( int nargs, char* args[] ){
 			Global::posSequenceSet->getMaxL() << ", min.length: " <<
 			Global::posSequenceSet->getMinL() << "\n	base frequencies:";
 	for( int i = 0; i < Alphabet::getSize(); i++ ){
-		std::cout << ' ' << Global::posSequenceSet->getBaseFrequencies()[i]
+		std::cout << ' ' << Global::posSequenceSet->getKmerFrequencies()[0][i]
 		          << "(" << Alphabet::getAlphabet()[i] << ")";
 	}
 	if( Global::negSequenceFilename ){
@@ -89,7 +88,7 @@ int main( int nargs, char* args[] ){
 				<< Global::negSequenceSet->getMaxL() << ", min.length: " <<
 				Global::negSequenceSet->getMinL() << "\n	base frequencies:";
 		for( int i = 0; i < Alphabet::getSize(); i++ )
-			std::cout << ' ' << Global::negSequenceSet->getBaseFrequencies()[i]
+			std::cout << ' ' << Global::negSequenceSet->getKmerFrequencies()[0][i]
 			          << "(" << Alphabet::getAlphabet()[i] << ")";
 	} else {
 		std::cout << "\nNone negative sequence set is given";
