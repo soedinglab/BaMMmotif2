@@ -48,9 +48,10 @@ private:
 	void EStep();								// E-step
 	void MStep();								// M-step
 
-	void optimizeAlphas();			    		// optimize alpha hyper-parameters
+	void optimizeAlphas();              		// optimize alpha hyper-parameters
 	void optimizeQ();							// optimize hyper-parameter q
 	float calculateQfunc();						// calculate incomplete Q-function
+	double calculateQfunc_gradient(double alpha ); // calculate gradient of Q-function
 
 };
 

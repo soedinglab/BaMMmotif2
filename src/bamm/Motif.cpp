@@ -161,6 +161,10 @@ int Motif::getW(){
 	return W_;
 }
 
+int Motif::getK(){
+	return K_;
+}
+
 void Motif::calculateV(){
 
 	int y, j, k, y2, yk;

@@ -1,4 +1,4 @@
-#include "EM.h"
+include "EM.h"
 
 EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 
@@ -349,8 +349,18 @@ void EM::MStep(){
 }
 
 void EM::optimizeAlphas(){
-	// optimize alphas
-	// motif.updateV()
+	int j = 0; // j is the position in the motif W: for now we will only focus on a position un-specific alpha value
+
+	double min_brent = 1.0;
+   	double max_brent = 1e4;
+    double tolerance = 0.001;
+
+    for( int cur_order = 0 ; cur_order <= motif_->getK(); cur_order++ ){
+ //   	int cur_order = order;
+    	double optim_alpha = zbrent( calculateQfunc_gradient, min_brent, max_brent, tolerance);
+        alpha_[cur_order][j] = (float)optim_alpha;
+    }
+    motif_->updateV( n_ , alpha_ );
 }
 
 void EM::optimizeQ(){
@@ -382,6 +392,40 @@ float EM::calculateQfunc(){
 
 }
 
+double EM::calculateQfunc_gradient( double alpha){
+
+	double gam  = 3.0;
+	double beta = 20.0;
+	float*** v = motif_->getV();
+	float** v_bg = bg_->getV();
+	int k = motif_->getK();
+	int W = motif_->getW();
+
+	double alpha_prior = 2 / alpha + ( beta * pow( gam, k ) ) / pow( alpha , 2 ) ;
+	double sum_over_y = 0.0;
+
+	if( k == 0 ){
+		for( int y = 0; y < Y_[1]; y++ ){
+			for( int j = 0; j < W_; j++ ){
+				sum_over_y += v_bg[y] * ( lgamma( alpha * v_bg[y] + 1 ) - log( v[k][y][j] ) );
+			}
+		}
+	}
+	if( k > 0 ){
+		for( int y = 0; y < Y_[k+1]; y++ ){
+			int y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
+			for( int j = 0; j < k; j++ ){			     		// when j < k, i.e. p(A|CG) = p(A|C)
+				sum_over_y += v[k-1][y2][j] * ( lgamma( alpha * v[k-1][y2][j] +1 ) - log( v[k][y2][j] ) );
+			}
+			for( int j = k; j < W_; j++ ){
+				sum_over_y += v[k-1][y2][j] * ( lgamma( alpha * v[k-1][y2][j] +1 ) - log( v[k][y][j] ) );
+			}
+		}
+	}
+	double grad = pow( 4, k ) * lgamma( alpha + 4 ) - sum_over_y - alpha_prior;
+	return grad;
+}
+
 void EM::print(){
 
 	for( int j = 0; j < W_; j++ ){
@@ -394,6 +438,9 @@ void EM::print(){
 	}
 
 }
+
+
+
 
 void EM::write(){
 
