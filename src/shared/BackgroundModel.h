@@ -55,6 +55,7 @@ public:
 
 
 	void 	print();
+    // afterwards v_ contains exp probabilities
 	void 	write( char* dir );
 
 private:

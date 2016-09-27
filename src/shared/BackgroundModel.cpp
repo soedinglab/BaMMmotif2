@@ -57,9 +57,9 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 	}
 	// calculate counts
 	// loop over folds
-	for( unsigned int f = 0; f < folds.size(); f++ ){
+	for( size_t f = 0; f < folds.size(); f++ ){
 		// loop over fold indices
-		for( unsigned int f_idx = 0; f_idx < foldIndices[folds[f]].size(); f_idx++ ){
+		for( size_t f_idx = 0; f_idx < foldIndices[folds[f]].size(); f_idx++ ){
 			// get sequence index
 			int s_idx = foldIndices[folds[f]][f_idx];
 			// get sequence length
@@ -402,6 +402,10 @@ void BackgroundModel::print(){
 }
 
 void BackgroundModel::write( char* dir ){
+
+    if( vIsLog_ ){
+        expV();
+    }
 
 	std::ofstream file( std::string( dir ) + '/' + name_ + ( interpolate_ ? ".hbcp" : ".hnbcp" ) );
 	if( file.is_open() ){

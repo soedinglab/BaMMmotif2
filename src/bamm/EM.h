@@ -45,6 +45,14 @@ private:
 												// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
 												// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
 
+	void EStep();								// E-step
+	void MStep();								// M-step
+
+	void optimizeAlphas();              		// optimize alpha hyper-parameters
+	void optimizeQ();							// optimize hyper-parameter q
+	float calculateQfunc();						// calculate incomplete Q-function
+	double calculateQfunc_gradient(double alpha ); // calculate gradient of Q-function
+
 };
 
 #endif /* EM_H_ */

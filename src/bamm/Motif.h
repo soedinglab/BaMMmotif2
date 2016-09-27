@@ -26,6 +26,7 @@ public:
 
 	int			getN();									// get the number of motifs N
 	int         getW(); 								// get motif length w
+	int 		getK();									// get motif order k
 	float***    getV();									// get conditional probabilities v
 	float***	getP();									// get probabilities p
 	void        updateV( float*** n, float** alpha );

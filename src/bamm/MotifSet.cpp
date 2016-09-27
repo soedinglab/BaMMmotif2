@@ -53,7 +53,9 @@ MotifSet::MotifSet(){
 }
 
 MotifSet::~MotifSet(){
-
+    for( size_t i = 0; i < motifs_.size(); i++ ){
+        delete motifs_[i];
+    }
 }
 
 std::vector<Motif*> MotifSet::getMotifs(){
