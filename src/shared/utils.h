@@ -21,7 +21,7 @@
 #ifndef M_LN2l
 /** the natural logarithm of 2 in high precision */
 #define M_LN2l 0.6931471805599453094172321214581766L
-#endif‚
+#endif
 
 static char*							baseName( const char* filePath );
 // calculate posterior probabilities from log likelihoods
@@ -378,5 +378,4 @@ inline long double digamma(long double x)
 		return resul ;
 	}
 }
-
 #endif /* UTILS_H_ */
