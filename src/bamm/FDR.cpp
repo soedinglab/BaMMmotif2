@@ -7,7 +7,7 @@ FDR::FDR( Motif* motif ){
 	motif_ = motif;
 
 	trainFolds_.resize( Global::cvFold - 1 );
-	testFold_ = 0;
+	testFold_.resize( 1 );
 
 	for( int k = 0; k < Global::modelOrder+2; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
@@ -49,26 +49,39 @@ FDR::~FDR(){
 
 void FDR::evaluateMotif(){
 
+	Motif fullMotif = Motif( *motif_ );
+
 	for( int fold = 0; fold < Global::cvFold; fold++ ){
+
+		// reset motif_ to the full motif
+		motif_ = Motif( fullMotif );
 
 		// assign training and test folds
 		trainFolds_.clear();
+		testFold_.clear();
 
 		for( int f = 0; f < Global::cvFold; f++ ){
 			if( f != fold ){
 				trainFolds_.push_back( f );
 			}
 		}
-		testFold_ = fold;
+		testFold_.push_back( fold );
 
-		BackgroundModel* bg = new BackgroundModel( *Global::negSequenceSet,
+		BackgroundModel* trainBgModel = new BackgroundModel( *Global::negSequenceSet,
 													Global::bgModelOrder,
 													Global::bgModelAlpha,
 													Global::interpolateBG,
 													Global::posFoldIndices,
 													trainFolds_ );
 
-		EM* em = new EM( motif_, bg, trainFolds_ );
+		BackgroundModel* testBgModel = new BackgroundModel( *Global::posSequenceSet,
+													Global::bgModelOrder,
+													Global::bgModelAlpha,
+													Global::interpolateBG,
+													Global::posFoldIndices,
+													testFold_ );
+
+		EM* em = new EM( motif_, trainBgModel, trainFolds_ );
 		em->learnMotif();
 
 		// score positive test sequences
@@ -76,30 +89,24 @@ void FDR::evaluateMotif(){
 				"|                             |\n"
 				"|  score test set for fold-%d  |\n"
 				"|_____________________________|\n\n", fold );
-		scoreSequenceSet( motif_, bg, testFold_ );
+		scoreSequenceSet( motif_, trainBgModel, testFold_ );
 
-		delete bg;
+		// generate negative sequences
+		printf( " __________________________________\n"
+				"|                                  |\n"
+				"|  create negative set for fold-%d  |\n"
+				"|__________________________________|\n\n", fold );
+		std::vector<Sequence*> negTestSequenceSet = sampleSequenceSet( testBgModel->getV() );
+		// score negative sequences
+		printf( " _________________________________\n"
+				"|                                 |\n"
+				"|  score negative set for fold-%d  |\n"
+				"|_________________________________|\n\n", fold );
+		scoreSequenceSet( motif_, trainBgModel, negTestSequenceSet );
+
+		delete trainBgModel;
 		delete em;
 	}
-
-	// generate negative sequences
-	printf( " _______________________\n"
-			"|                       |\n"
-			"|  create negative set  |\n"
-			"|_______________________|\n\n" );
-	std::vector<Sequence*> negSequenceSet = sampleSequenceSet( );
-
-	BackgroundModel* bg = new BackgroundModel( *Global::negSequenceSet,
-												Global::bgModelOrder,
-												Global::bgModelAlpha,
-												Global::interpolateBG );
-
-	// score negative sequences
-	printf( " _____________________\n"
-			"|                     |\n"
-			"|  score negative set |\n"
-			"|_____________________|\n\n" );
-	scoreSequenceSet( motif_, bg, negSequenceSet );
 
 	printf( " __________________________________\n"
 			"|                                  |\n"
@@ -107,18 +114,16 @@ void FDR::evaluateMotif(){
 			"|__________________________________|\n\n" );
 	calculatePR();
 
-	delete bg;
-
 }
 
 // score Global::posSequenceSet using Global::posFoldIndices and folds
-void FDR::scoreSequenceSet( Motif* motif, BackgroundModel* bg, int testFold ){
+void FDR::scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<int> testFold ){
 
 	int K_motif = Global::modelOrder;
 	int K_bg = Global::bgModelOrder;
 	int W = motif_->getW();
 	int i, LW1, k, y, j;
-	std::vector<int> testIndices = Global::posFoldIndices[testFold];
+	std::vector<int> testIndices = Global::posFoldIndices[testFold(0)];
 	float maxS;												// maximal logOddsScore over all positions for each sequence
 
 	for( size_t n = 0; n < testIndices.size(); n++ ){
@@ -176,66 +181,140 @@ void FDR::scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<Seque
 	}
 }
 
-// generate negative sequences based on each test set
-std::vector<Sequence*> FDR::sampleSequenceSet(){
+//// generate negative sequences based on full positive set
+//std::vector<Sequence*> FDR::sampleSequenceSet(){
+//
+//	int posN = Global::posSequenceSet->getN();
+//	int negN = posN * Global::mFold;
+//	float** freqs = Global::posSequenceSet->getKmerFrequencies();
+//
+//	// generate sample sequence set based on the (k+1)-mer frequencies
+//	std::vector<Sequence*> sampleSet;
+//
+//	for( int n = 0; n < negN; n++ ){
+//
+//		// generate sample sequence
+//		int L = Global::posSequenceSet->getMaxL();  		// TODO: better to use the average length of all the sequences
+//		uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
+//		std::string header = "> sample sequence";
+//
+//		int i, k, yk;
+//		double f, random;
+//		uint8_t a;
+//		int K = std::min( 5, Global::modelOrder );			// Fix the kmer frequencies to order 2
+//
+//		// get a random number for the first nucleotide
+//		random = ( double )rand() / ( double )RAND_MAX;
+//		f = 0.0f;
+//		for( a = 1; a <= Y_[1]; a++ ){
+//			f += freqs[0][a-1];
+//			if( random <= f ){
+//				sequence[0] = a;
+//				break;
+//			}
+//			if( sequence[0] == 0 )	sequence[0] = a;		// Trick: this is to solve the numerical problem
+//		}
+//
+//		for( i = 1; i < L; i++ ){
+//			random = ( double )rand() / ( double )RAND_MAX;	// get another random double number
+//			// calculate y of K-mer
+//			yk = 0;
+//			for( k = std::min( i, K ); k > 0; k-- ){
+//				yk += ( sequence[i-k] - 1 ) * Y_[k];
+//			}
+//
+//			// assign a nucleotide based on K-mer frequency
+//			f = 0.0f;
+//			for( a = 1; a <= Y_[1]; a++ ){
+//				f += freqs[std::min( i, K )][yk+a-1];
+//				if( random <= f ){
+//					sequence[i] = a;
+//					break;
+//				}
+//				if( sequence[i] == 0 )	sequence[i] = a;	// Trick: this is to solve the numerical problem
+//			}
+//		}
+//
+//		Sequence* sampleSequence = new Sequence( sequence, L, header, Y_, Global::revcomp );
+//		sampleSet.push_back( sampleSequence );
+//	}
+//
+//	return sampleSet;
+//
+//}
 
+
+// generate negative sequences based on each test set
+std::vector<Sequence*> FDR::sampleSequenceSet( float** v ){
+
+	int k, y, yk, i, L;
 	int posN = Global::posSequenceSet->getN();
-	int negN = posN * Global::mFold;
-	float** freqs = Global::posSequenceSet->getKmerFrequencies();
+	int negN = posN * Global::mFold / Global::cvFold;	// TODO: default Global::mFold / Global::cvFold to an integer
 
 	// generate sample sequence set based on the (k+1)-mer frequencies
 	std::vector<Sequence*> sampleSet;
-
-	for( int n = 0; n < negN; n++ ){
-
-		// generate sample sequence
-		int L = Global::posSequenceSet->getMaxL();  		// TODO: better to use the average length of all the sequences
-		uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
-		std::string header = "> sample sequence";
-
-		int i, k, yk;
-		double f, random;
-		uint8_t a;
-		int K = std::min( 5, Global::modelOrder );			// Fix the kmer frequencies to order 2
-
-		// get a random number for the first nucleotide
-		random = ( double )rand() / ( double )RAND_MAX;
-		f = 0.0f;
-		for( a = 1; a <= Y_[1]; a++ ){
-			f += freqs[0][a-1];
-			if( random <= f ){
-				sequence[0] = a;
-				break;
-			}
-			if( sequence[0] == 0 )	sequence[0] = a;		// Trick: this is to solve the numerical problem
-		}
-
-		for( i = 1; i < L; i++ ){
-			random = ( double )rand() / ( double )RAND_MAX;	// get another random double number
-			// calculate y of K-mer
-			yk = 0;
-			for( k = std::min( i, K ); k > 0; k-- ){
-				yk += ( sequence[i-k] - 1 ) * Y_[k];
-			}
-
-			// assign a nucleotide based on K-mer frequency
-			f = 0.0f;
-			for( a = 1; a <= Y_[1]; a++ ){
-				f += freqs[std::min( i, K )][yk+a-1];
-				if( random <= f ){
-					sequence[i] = a;
-					break;
-				}
-				if( sequence[i] == 0 )	sequence[i] = a;	// Trick: this is to solve the numerical problem
-			}
-		}
-
-		Sequence* sampleSequence = new Sequence( sequence, L, header, Y_, Global::revcomp );
-		sampleSet.push_back( sampleSequence );
+													// but it has to be considered if the quotient is not an integer
+	for( i = 0; i < negN; i++ ){
+		sampleSet.push_back( sampleSequence( v ) );
 	}
 
 	return sampleSet;
 
+}
+
+// generate sample sequence based on k-mer probabilities
+Sequence* FDR::sampleSequence( float** v ){
+
+	int L = Global::posSequenceSet->getMinL();  		// TODO: better to use the average length of all the sequences
+	uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
+	std::string header = "sample sequence";
+
+	int i, k, yk;
+	double f, random;
+	uint8_t a;
+	int K = Global::modelOrder;
+
+	// get a random number for the first nucleotide
+	random = ( double )rand() / ( double )RAND_MAX;
+	f = 0.0f;
+	for( a = 1; a <= Y_[1]; a++ ){
+		f += v[0][a-1];
+		if( random <= f ){
+			sequence[0] = a;
+			break;
+		}
+		if( sequence[0] == 0 )	sequence[0] = a;		// Trick: this is to solve the numerical problem
+	}
+
+	for( i = 1; i < L; i++ ){
+		random = ( double )rand() / ( double )RAND_MAX;	// get another random double number
+		// calculate y of K-mer
+		yk = 0;
+		for( k = std::min( i, K ); k > 0; k-- ){
+			yk += ( sequence[i-k] - 1 ) * Y_[k];
+		}
+
+		// assign a nucleotide based on K-mer frequency
+		f = 0.0f;
+		for( a = 1; a <= Y_[1]; a++ ){
+			f += v[std::min( i, K )][yk+a-1];
+			if( random <= f ){
+				sequence[i] = a;
+				break;
+			}
+			if( sequence[i] == 0 )	sequence[i] = a;	// Trick: this is to solve the numerical problem
+		}
+	}
+
+	Sequence* sampleSequence = new Sequence( sequence, L, header, Y_, Global::revcomp );
+
+	// only for testing: print out generated sequence
+//	for( i = 0; i < L; i++ ){
+//		std::cout << unsigned( sampleSequence->getSequence()[i] );
+//	}
+//	std::cout << std::endl;
+
+	return sampleSequence;
 }
 
 void FDR::calculatePR(){

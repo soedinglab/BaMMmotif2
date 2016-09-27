@@ -171,7 +171,7 @@ int EM::learnMotif(){
 			std::cout << std::endl;
 		}
 		if( v_diff < Global::epsilon )					iterate = false;
-//		if( llikelihood_diff < 0 && EMIterations_ > 1 )	iterate = false;
+		if( llikelihood_diff < 0 && EMIterations_ > 1 )	iterate = false;
 	}
 
 	// calculate probabilities
@@ -183,8 +183,8 @@ int EM::learnMotif(){
 	}
 	free( v_prev );
 
-	fprintf( stdout, "\n--- Runtime for EM: %ld seconds (%0.2f minutes) ---\n",
-			time( NULL )-timestamp, ( float )( time( NULL )-timestamp )/60.0f );
+	fprintf( stdout, "\n--- Runtime for EM: %0.4f seconds (%0.8f minutes) ---\n",
+			(float)( time( NULL )-timestamp ), ( float )( time( NULL )-timestamp )/60.0f );
 
     return 0;
 }
@@ -383,19 +383,21 @@ void EM::MStep(){
 
 }
 
+//typedef int( EM::*EMMemFn)(double a);
+
 void EM::optimizeAlphas(){
-	int j = 0; // j is the position in the motif W: for now we will only focus on a position un-specific alpha value
 
-	double min_brent = 1.0;
-   	double max_brent = 1e4;
-    double tolerance = 0.001;
+	float min_brent = 1.0f;
+   	float max_brent = 1e4;
+    float tolerance = 0.001f;
 
-    for( int cur_order = 0 ; cur_order <= motif_->getK(); cur_order++ ){
- //   	int cur_order = order;
-    	double optim_alpha = zbrent( calculateQfunc_gradient, min_brent, max_brent, tolerance);
-        alpha_[cur_order][j] = (float)optim_alpha;
-    }
-    motif_->updateV( n_ , alpha_ );
+    for( int k = 0 ; k <= Global::modelOrder; k++ ){
+    	float optim_alpha = zbrent( *this, &EM::calculateQfunc_gradient, min_brent, max_brent, tolerance, k);
+    	for( int j = 0; j < motif_->getW() ; j++ ){
+    		alpha_[k][j] = optim_alpha;
+    	}
+	}
+	motif_->updateV( n_ , alpha_ );
 }
 
 void EM::optimizeQ(){
@@ -430,37 +432,31 @@ float EM::calculateQfunc(){
 	return Qfunc;
 }
 
-double EM::calculateQfunc_gradient( double alpha){
+float EM::calculateQfunc_gradient( float alpha ,int K ){
 
-	double gam  = 3.0;
-	double beta = 20.0;
 	float*** v = motif_->getV();
 	float** v_bg = bg_->getV();
-	int k = motif_->getK();
 	int W = motif_->getW();
 
-	double alpha_prior = 2 / alpha + ( beta * pow( gam, k ) ) / pow( alpha , 2 ) ;
-	double sum_over_y = 0.0;
+	float alpha_prior = - 2 / alpha + ( Global::modelBeta * powf( Global::modelGamma, (float) K ) ) / powf( alpha , 2.0f ) ;
+	float sum_over_y = 0.0f;
 
-	if( k == 0 ){
+	if( K == 0 ){
 		for( int y = 0; y < Y_[1]; y++ ){
 			for( int j = 0; j < W; j++ ){
-				sum_over_y += v_bg[y] * ( lgamma( alpha * v_bg[y] + 1 ) - log( v[k][y][j] ) );
+				sum_over_y += v_bg[0][y] * ( digammaf( alpha * v_bg[0][y] + 1 ) - logf( v[0][y][j] ) );
 			}
 		}
 	}
-	if( k > 0 ){
-		for( int y = 0; y < Y_[k+1]; y++ ){
-			int y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
-			for( int j = 0; j < k; j++ ){			     		// when j < k, i.e. p(A|CG) = p(A|C)
-				sum_over_y += v[k-1][y2][j] * ( lgamma( alpha * v[k-1][y2][j] +1 ) - log( v[k][y2][j] ) );
-			}
-			for( int j = k; j < W; j++ ){
-				sum_over_y += v[k-1][y2][j] * ( lgamma( alpha * v[k-1][y2][j] +1 ) - log( v[k][y][j] ) );
+	if( K > 0 ){
+		for( int y = 0; y < Y_[K+1]; y++ ){
+			int y2 = y % Y_[K];									// cut off the first nucleotide in (k+1)-mer
+			for( int j = 0; j < W; j++ ){
+				sum_over_y += v[K-1][y2][j] * ( digammaf( alpha * v[K-1][y2][j] + 1 ) - logf( v[K][y][j] ) );
 			}
 		}
 	}
-	double grad = pow( 4, k ) * lgamma( alpha + 4 ) - sum_over_y - alpha_prior;
+	float grad = ( float )ipow( Alphabet::getSize(), K ) * digammaf( alpha + ( float )Alphabet::getSize() ) - sum_over_y + alpha_prior;
 	return grad;
 }
 

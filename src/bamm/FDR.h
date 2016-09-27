@@ -22,7 +22,7 @@ private:
 
 	Motif*				motif_;				// motif learned on full SequenceSet
 
-	int					testFold_;			// fold index for test set
+	std::vector<int>	testFold_;			// fold index for test set
 	std::vector<int>	trainFolds_;		// fold indices for training set
 
 	float**				posScores_;			// store the full set of log odds scores for positive set
@@ -46,10 +46,12 @@ private:
 											// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
 
 							// generate background sample sequence set
-	std::vector<Sequence*>	sampleSequenceSet();
+	std::vector<Sequence*>	sampleSequenceSet( float** freq );
+
+	Sequence* 				sampleSequence( float** freq );
 
 							// score Global::posSequenceSet using Global::foldIndices and folds
-	void 	        		scoreSequenceSet( Motif* motif, BackgroundModel* bg, int testFold );
+	void 	        		scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<int> testFold );
 
 							// score SequenceSet sequences
 	void 		    		scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqSet );

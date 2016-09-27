@@ -23,6 +23,26 @@
 #define M_LN2l 0.6931471805599453094172321214581766L
 #endif
 
+#ifndef M_PIf
+/** The constant Pi for float */
+#define M_PIf 3.14159265f
+#endif
+
+#ifndef M_GAMMAf
+/** Euler's constant for float */
+#define M_GAMMAf 0.57721566f
+#endif
+
+#ifndef M_LN2f
+/** the natural logarithm of 2 for float */
+#define M_LN2f 0.69314718f
+#endif
+
+#ifndef CALL_EM_FN
+#define CALL_EM_FN( object, ptrToFunc )( ( object ).*( ptrToFunc ) )
+#endif
+
+
 static char*							baseName( const char* filePath );
 // calculate posterior probabilities from log likelihoods
 std::vector<double>						calculatePosteriorProbabilities( std::vector<double> lLikelihoods );
@@ -160,23 +180,25 @@ inline std::vector<size_t> sortIndices( const std::vector<T>& v ){
   return idx;
 }
 
-inline double sign( double a, double b){
+inline float sign( float a, float b ){
     // return value of a with sign of b
     if( ( a < 0.0 && b < 0.0 ) || (a > 0.0 && b > 0.0 ) ){
         return a;
-    }else{
+    } else {
         return -a;
     }
 }
 
-template <class T> inline double zbrent(T &func, const double x1, const double x2, const double tol){
-        // Using Brents method, return the root of a function of functior func known to lie between x1 and x2. The root will be refined until its accuracy it tol.
+
+template <class T> inline float zbrent(T &obj, float ( T::*func )( float , int ), const float x1, const float x2, const float tol, int k){
+        // Using Brents method, return the root of a function of function func known to lie between x1 and x2. The root will be refined until its accuracy it tol.
 
         // Maximum allowed number of iterations.
-        const int ITMAX=100;
+        const int ITMAX=std::numeric_limits<int>::max();
         //Machine floating-point precision.
-        const double EPS = std::numeric_limits<double>::epsilon();
-        double a=x1 , b=x2, c=x2, d, e, fa=func( a ), fb=func( b ), fc, p, q, r, s, tol1, xm;
+        const float EPS = std::numeric_limits<float>::epsilon();
+        float a=x1 , b=x2, c=x2, d=b-a, e=b-a, fa=CALL_EM_FN( obj, func )( a ,k ), fb=CALL_EM_FN( obj, func )( b ,k ), fc, p, q, r, s, tol1, xm;
+
         if(( fa > 0.0 && fb > 0.0 ) || ( fa < 0.0 && fb < 0.0 )){
             printf("\n Root must be bracketed in zbrent ");
             printf("\n fa = %f ; fb = %f \n ", fa,fb);
@@ -197,7 +219,7 @@ template <class T> inline double zbrent(T &func, const double x1, const double x
                 fc = fa;
                 e = d = b-a;
             }
-            if( fabs(fc) < fabs(fb) ){
+            if( fabsf(fc) < fabsf(fb) ){
                 a = b;
                 b = c;
                 c = a;
@@ -206,29 +228,29 @@ template <class T> inline double zbrent(T &func, const double x1, const double x
                 fc = fa;
             }
             // Convergence check.
-            tol1 = 2.0* EPS * fabs(b) + 0.5 * tol;
-            xm = 0.5 * ( c-b );
-            if( fabs(xm) <= tol1 || fb == 0.0 ){
+            tol1 = 2.0f * EPS * fabsf(b) + 0.5f * tol;
+            xm = 0.5f * ( c-b );
+            if( fabsf(xm) <= tol1 || fb == 0.0 ){
                 return b;
             }
-            if( fabs(e) >= tol1 && fabs(fa) > fabs(fb) ){
+            if( fabsf(e) >= tol1 && fabsf(fa) > fabsf(fb) ){
                 // Attempt inverse quadratic interpolation
                 s = fb / fa;
                 if( a == c ){
-                    p = 2.0 * xm * s;
-                    q = 1.0 -s;
+                    p = 2.0f * xm * s;
+                    q = 1.0f -s;
                 } else {
                     q = fa / fc;
                     r = fb / fc;
-                    p = s * (2.0 * xm * q * ( q - r ) - ( b - a ) * ( r - 1.0 ));
-                    q = ( q - 1.0 ) * ( r - 1.0 ) * ( s * 1.0 );
+                    p = s * (2.0f * xm * q * ( q - r ) - ( b - a ) * ( r - 1.0f ));
+                    q = ( q - 1.0f ) * ( r - 1.0f ) * ( s * 1.0f );
                 }
                 if( p > 0.0 ){
                     q = -q;
                 }
-                p = fabs(p);
-                double min1 = 3.0 * xm * q - fabs(tol1 * q);
-                double min2 = fabs(e * q);
+                p = fabsf(p);
+                float min1 = 3.0f * xm * q - fabsf( tol1 * q );
+                float min2 = fabsf(e * q);
                 if(2.0 * p < ( min1 < min2 ? min1 : min2 )){
                     // Accept interpolation.
                     e = d;
@@ -246,21 +268,19 @@ template <class T> inline double zbrent(T &func, const double x1, const double x
             // move last best guess to a
             a = b;
             fa = fb;
-            if( fabs(d) > tol1 ){
+            if( fabsf(d) > tol1 ){
                 // Evaluate new trial root
                 b += d;
-                fb = func( b ); // THIS WAS ADDED BY ME!
+                fb = CALL_EM_FN( obj, func )( b , k ); // THIS WAS ADDED BY ME!
             } else{
                 b += sign( tol1, xm );
-                fb = func( b );
+                fb = CALL_EM_FN( obj, func )( b , k);
             }
         }
         printf( "Maximum number of iterations exceeded in zbrent ");
         exit(0);
 }
 
-
-//
 /** The digamma function in long double precision.
 * @param x the real value of the argument
 * @return the value of the digamma (psi) function at that point
@@ -270,6 +290,8 @@ template <class T> inline double zbrent(T &func, const double x1, const double x
 * this piece of code is needed for the gradient calculation
 * within the conjugate gradient for the alpha learning
 */
+// TODO: check if float digamma function gives reasonable results compared to digamma(ld) based on toz example data
+// TODO: delete long double when float digamma works (if not try double precision instead)
 inline long double digamma(long double x)
 {
 	/* force into the interval 1..3 */
@@ -349,6 +371,87 @@ inline long double digamma(long double x)
 			Tn = Tn1 ;
 		}
 		return resul ;
+	}
+}
+
+inline float digammaf( float x ){
+	/* force into the interval 1..3 */
+	if( x < 0.0f )
+		return digammaf(1.0f-x)+M_PIf/tanf(M_PIf*(1.0f-x)) ;	/* reflection formula */
+	else if( x < 1.0f )
+		return digammaf(1.0f+x)-1.0f/x ;
+	else if ( x == 1.0f)
+		return -M_GAMMAf ;
+	else if ( x == 2.0f)
+		return 1.0f-M_GAMMAf ;
+	else if ( x == 3.0f)
+		return 1.5f-M_GAMMAf ;
+	else if ( x > 3.0f)
+		/* duplication formula */
+		return 0.5f*(digammaf(x/2.0f)+digammaf((x+1.0f)/2.0f))+M_LN2f ;
+	else
+	{
+		/* Just for your information, the following lines contain
+		* the Maple source code to re-generate the table that is
+		* eventually becoming the Kncoe[] array below
+		* interface(prettyprint=0) :
+		* Digits := 63 :
+		* r := 0 :
+		*
+		* for l from 1 to 60 do
+		* 	d := binomial(-1/2,l) :
+		* 	r := r+d*(-1)^l*(Zeta(2*l+1) -1) ;
+		* 	evalf(r) ;
+		* 	print(%,evalf(1+Psi(1)-r)) ;
+		*o d :
+		*
+		* for N from 1 to 28 do
+		* 	r := 0 :
+		* 	n := N-1 :
+		*
+ 		*	for l from iquo(n+3,2) to 70 do
+		*		d := 0 :
+ 		*		for s from 0 to n+1 do
+ 		*		 d := d+(-1)^s*binomial(n+1,s)*binomial((s-1)/2,l) :
+ 		*		od :
+ 		*		if 2*l-n > 1 then
+ 		*		r := r+d*(-1)^l*(Zeta(2*l-n) -1) :
+ 		*		fi :
+ 		*	od :
+ 		*	print(evalf((-1)^n*2*r)) ;
+ 		*od :
+ 		*quit :
+		*/
+		static float Kncoe[] = {
+		.30459198f,
+		.72037977f,		-.12454959f,
+		.27769457e-1f, 	-.67762371e-2f,
+		.17238755e-2f, 	-.44817699e-3f,
+		.11793660e-3f, 	-.31253894e-4f,
+		.83173997e-5f, 	-.22191427e-5f,
+		.59302266e-6f, 	-.15863051e-6f,
+		.42459203e-7f, 	-.11369129e-7f,
+		.30450221e-8f, 	-.81568455e-9f,
+		.21852324e-9f, 	-.58546491e-10f,
+		.15686348e-10f, -.42029496e-11f,
+		.11261435e-11f, -.30174353e-12f,
+		.80850955e-13f, -.21663779e-13f,
+		.58047634e-14f, -.15553767e-14f,
+		.41676108e-15f,	-.11167065e-15f } ;
+
+		register float Tn_1 = 1.0f ;	/* T_{n-1}(x), started at n=1 */
+		register float Tn = x-2.0f ;	/* T_{n}(x) , started at n=1 */
+		register float result = Kncoe[0] + Kncoe[1]*Tn ;
+
+		x -= 2.0f;
+
+		for( size_t n = 2; n < sizeof( Kncoe ) / sizeof( float ); n++ ){
+			const float Tn1 = 2.0f * x * Tn - Tn_1;	/* Chebyshev recursion, Eq. 22.7.4 Abramowitz-Stegun */
+			result += Kncoe[n] * Tn1;
+			Tn_1 = Tn;
+			Tn = Tn1;
+		}
+		return result;
 	}
 }
 #endif /* UTILS_H_ */
