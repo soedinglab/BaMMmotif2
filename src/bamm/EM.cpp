@@ -133,7 +133,10 @@ int EM::learnMotif(){
 		for( y = 0; y < Y_[K_model+1]; y++ ){
 			for( j = 0; j < W; j++ ){
 				y_bg = y % Y_[K_bg+1];
-				s_[y][j] = logf( motif_->getV()[K_model][y][j] ) - logf( bg_->getV()[K_bg][y_bg] );
+				// calculate s in log space:
+//				s_[y][j] = logf( motif_->getV()[K_model][y][j] ) - logf( bg_->getV()[K_bg][y_bg] );
+				// calculate s in linear space:
+				s_[y][j] = motif_->getV()[K_model][y][j] / bg_->getV()[K_bg][y_bg];
 			}
 		}
 
@@ -149,25 +152,26 @@ int EM::learnMotif(){
 		// * optional: optimize parameter q
 		if( !Global::noQOptimization )		optimizeQ();
 
-		// check likelihood for convergence
-		v_diff = 0.0f;									 	// reset difference of posterior probabilities
+		// check parameter difference for convergence
+		v_diff = 0.0f;
 
 		for( y = 0; y < Y_[Global::modelOrder+1]; y++ ){
 			for( j = 0; j < W; j++ ){
 				v_diff += fabsf( motif_->getV()[Global::modelOrder][y][j] - v_prev[y][j] );
 			}
 		}
+		// check likelihood for convergence
 		llikelihood_diff = llikelihood_ - llikelihood_prev;
 
 		if( Global::verbose ){
-			std::cout << "At " << EMIterations_ << "th iteration:	";
+			std::cout << EMIterations_ << "th iteration:	";
 			std::cout << "para_diff = " << v_diff << ",	";
 			std::cout << "log likelihood = " << llikelihood_ << " 	";
-			if( llikelihood_diff < 0 && EMIterations_ > 1 ) std::cout << " decreasing...";
+			if( llikelihood_diff < 0 && EMIterations_ > 1) std::cout << " decreasing...";
 			std::cout << std::endl;
 		}
 		if( v_diff < Global::epsilon )					iterate = false;
-		if( llikelihood_diff < 0 && EMIterations_ > 1 )	iterate = false;
+//		if( llikelihood_diff < 0 && EMIterations_ > 1 )	iterate = false;
 	}
 
 	// calculate probabilities
@@ -205,7 +209,10 @@ void EM::EStep(){
 
 			// reset r_[n][i]
 			for( i = 0; i < LW1; i++ ){
-				r_[n][i] = 0.0f;
+				// calculation in log space:
+//				r_[n][i] = 0.0f;
+				// calculation in linear space:
+				r_[n][i] = 1.0f;
 			}
 
 			// when p(z_n > 0)
@@ -215,7 +222,10 @@ void EM::EStep(){
 					k = std::min( i+j, K_model );
 					y = posSeqs_[n]->extractKmer( i+j, k );
 					if( y != -1 ){							// skip 'N' and other unknown alphabets
-						r_[n][i] += s_[y][j];
+						// calculation in log space:
+//						r_[n][i] += s_[y][j];
+						// calculation in linear space:
+						r_[n][i] *= s_[y][j];
 					} /*else if ( j < K_model ){			// for N exists and j < K occasions
 						y = posSeqs_[n]->extractKmer( i+j, j );
 						if( y != -1 ){
@@ -230,7 +240,10 @@ void EM::EStep(){
 					}
 				}
 				if( r_[n][i] != 0.0f ){
-					r_[n][i] = expf( r_[n][i] ) * prior_i;
+					// calculation in exponential space:
+//					r_[n][i] = expf( r_[n][i] ) * prior_i;
+					// calculation in linear space:
+					r_[n][i] = r_[n][i] * prior_i;
 				}
 				normFactor += r_[n][i];
 			}
@@ -242,13 +255,8 @@ void EM::EStep(){
 				r_[n][i] /= normFactor;
 			}
 
-			// only for testing: print out posterior parameter r:
-//			for( i = 0; i < LW1; i++ ){
-//				std::cout << std::scientific << std::setprecision(6) << "r["<< n+1 << "][" << i << "] = " << r_[n][i] << ' ';
-//			}
-//			std::cout << std::endl;
-
 			llikelihood_ += logf( normFactor );
+
 		}
 	} else {
 		// fast code:
@@ -259,7 +267,10 @@ void EM::EStep(){
 
 			// reset r_[n][i]
 			for( i = 0; i < L; i++ ){
-				r_[n][i] = 0.0f;
+				// calculation in log space:
+//				r_[n][i] = 0.0f;
+				// calculation in linear space:
+				r_[n][i] = 1.0f;
 			}
 
 			// when p(z_n > 0)
@@ -269,7 +280,10 @@ void EM::EStep(){
 				y = posSeqs_[n]->extractKmer( i, k );		// extract (k+1)-mer y from positions (i-k,...,i)
 				for( j = 0; j < std::min( W, i+1 ); j++ ){	// j runs over all motif positions
 					if( y != -1 ){							// skip 'N' and other unknown alphabets
-						r_[n][L-i+j-1] += s_[y][j];
+						// calculation in log space:
+//						r_[n][L-i+j-1] += s_[y][j];
+						// calculation in linear space:
+						r_[n][L-i+j-1] *= s_[y][j];
 					}/* else if( j < K_model ){
 						y = posSeqs_[n]->extractKmer( i, K_model-j );
 						if( y != -1 ){
@@ -286,7 +300,10 @@ void EM::EStep(){
 			}
 			for( i = W-1; i < L; i++ ){
 				if( r_[n][i] != 0.0f ){
-					r_[n][i] = expf( r_[n][i] ) * prior_i;
+					// calculation in exponential space:
+//					r_[n][i] = expf( r_[n][i] ) * prior_i;
+					// calculation in linear space:
+					r_[n][i] = r_[n][i] * prior_i;
 				}
 				normFactor += r_[n][i];
 			}
@@ -298,12 +315,6 @@ void EM::EStep(){
 			for( i = W-1; i < L; i++ ){
 				r_[n][i] /= normFactor;
 			}
-
-			// only for testing: print out posterior parameter r:
-//			for( i = L-1; i >= W-1; i-- ){
-//				std::cout << std::scientific << std::setprecision(6) << "r["<< n+1 << "][" << i << "] = " << r_[n][i] << ' ';
-//			}
-//			std::cout << std::endl;
 
 			llikelihood_ += logf( normFactor );
 		}
@@ -478,7 +489,7 @@ void EM::write(){
 	for( k = 0; k < Global::modelOrder+1; k++ ){
 		ofile_alpha << "k = " << k << std::endl;
 		for( j = 0; j < W; j++ ){
-			ofile_alpha << std::setprecision( 1 ) << alpha_[k][j] << ' ';
+			ofile_alpha << std::setprecision( 3 ) << alpha_[k][j] << ' ';
 		}
 		ofile_alpha << std::endl;
 	}

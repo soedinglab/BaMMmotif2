@@ -103,8 +103,8 @@ void MotifSet::write(){
 
 	for( i = 0; i < N_; i++ ){
 
-		ofile_v << "> motif " << i+1 <<":" << std::endl;
-		ofile_p << "> motif " << i+1 <<":" << std::endl;
+//		ofile_v << "> motif " << i+1 <<":" << std::endl;
+//		ofile_p << "> motif " << i+1 <<":" << std::endl;
 
 		for( j = 0; j < motifs_[i]->getW(); j++ ){
 			for( k = 0; k < Global::modelOrder+1; k++ ){

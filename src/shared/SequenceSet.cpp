@@ -15,7 +15,7 @@ SequenceSet::SequenceSet( std::string sequenceFilepath, bool revcomp, std::strin
 				logf( static_cast<float>( std::numeric_limits<int>::max() ) ) /
 				logf( static_cast<float>( Alphabet::getSize() ) ) ) );
 
-	int K = 2 /*Global::modelOrder*/;  // TODO:hardcode. Better to adjust it to model order
+	int K = 5 /*Global::modelOrder*/;  // TODO:hardcode. Better to adjust it to model order
 
 	for( int i = 0; i <= l; i++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), i ) );
@@ -303,7 +303,7 @@ int SequenceSet::readFASTA( bool revcomp ){
 	std::string line, header, sequence;
 	std::ifstream file( sequenceFilepath_.c_str() ); // opens FASTA file
 
-	int K = 2 /*Global::modelOrder*/;
+	int K = 5 /*Global::modelOrder*/;
 
 	if( file.is_open() ){
 

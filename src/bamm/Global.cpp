@@ -30,7 +30,7 @@ char*				Global::initialModelBasename = NULL;	// basename of initial model
 
 // model options
 int        			Global::modelOrder = 2;					// model order
-std::vector<float> 	Global::modelAlpha( modelOrder+1, 10.0f );	// initial alphas
+std::vector<float> 	Global::modelAlpha( modelOrder+1, 1.0f );	// initial alphas
 float				Global::modelBeta = 20.0f;				// alpha_k = beta x gamma^(k-1) for k > 0
 float				Global::modelGamma = 3.0f;
 std::vector<int>    Global::addColumns(2);					// add columns to the left and right of initial model
@@ -41,7 +41,7 @@ bool                Global::interpolateBG = true;           // calculate prior p
 
 // background model options
 int        			Global::bgModelOrder = 2;				// background model order, defaults to 2
-std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 10.0f );	// background model alpha
+std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.0f );	// background model alpha
 
 // EM options
 unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();	// maximum number of iterations

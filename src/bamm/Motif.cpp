@@ -275,35 +275,6 @@ void Motif::calculateP(){
 	}
 }
 
-void Motif::expV(){
-
-	for( int k = 0; k <= Global::modelOrder; k++ ){
-		for( int y = 0; y < Y_[k+1]; y++ ){
-			for( int j = 0; j < W_; j++ ){
-				v_[k][y][j] = expf( v_[k][y][j] );
-			}
-		}
-	}
-	vIsLog_ = false;
-}
-
-void Motif::logV(){
-
-	for( int k = 0; k <= Global::modelOrder; k++ ){
-		for( int y = 0; y < Y_[k+1]; y++ ){
-			for( int j = 0; j < W_; j++ ){
-				v_[k][y][j] = expf( v_[k][y][j] );
-			}
-		}
-	}
-	vIsLog_ = true;
-}
-
-bool Motif::vIsLog(){
-
-	return vIsLog_;
-}
-
 void Motif::print(){
 
 	printf( " _______________________\n"
@@ -334,9 +305,6 @@ void Motif::write(){
 	std::string opath_n = opath + ".counts";
 	std::ofstream ofile_v( opath_v.c_str() );
 	std::ofstream ofile_n( opath_n.c_str() );
-
-	// make sure that v is in log space
-	if( vIsLog_ )	expV();
 
 	for( int j = 0; j < W_; j++ ){
 		for( int k = 0; k < Global::modelOrder+1; k++ ){

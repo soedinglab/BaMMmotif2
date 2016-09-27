@@ -196,7 +196,7 @@ std::vector<Sequence*> FDR::sampleSequenceSet(){
 		int i, k, yk;
 		double f, random;
 		uint8_t a;
-		int K = 2 /*Global::modelOrder*/;					// Fix the kmer frequencies to order 2
+		int K = std::min( 5, Global::modelOrder );			// Fix the kmer frequencies to order 2
 
 		// get a random number for the first nucleotide
 		random = ( double )rand() / ( double )RAND_MAX;

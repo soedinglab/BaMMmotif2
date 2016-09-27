@@ -31,17 +31,12 @@ public:
 	void        updateV( float*** n, float** alpha );
 	void		calculateP();							// calculate probabilities p
 
-	void 		expV();
-	void 		logV();
-	bool		vIsLog();
-
 	void 		print();					   			// print v to console
 	void 		write();					    		// write v (basename.bmm). Include header with alphabetType
 
 private:
 
 	bool		isInitialized_ = false;		    		// assert in all public methods
-	bool		vIsLog_ = false;						// v_ contains log probabilities
 
 	int			N_ = 0;									// number of binding sites
 	int 		W_;					    				// motif length
