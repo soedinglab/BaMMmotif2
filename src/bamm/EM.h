@@ -38,9 +38,11 @@ private:
 	void 					EStep();			// E-step
 	void 					MStep();			// M-step
 
-	void 					optimizeAlphas();	// optimize alpha hyper-parameters
+	void 					optimizeAlphas( float min = 0.1f, float max = 1e4, float tol = 0.001f);	// optimize alpha hyper-parameters
 	void 					optimizeQ();		// optimize hyper-parameter q
 	float 					calculateQfunc();	// calculate incomplete Q-function
+	float                   calculateLogPosterior(); // calculate log posterior likelihood
+
 
 	std::vector<int>		Y_;					// contains 1 at position 0
 												// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1

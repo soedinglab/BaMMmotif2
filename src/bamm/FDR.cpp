@@ -54,7 +54,7 @@ void FDR::evaluateMotif(){
 	for( int fold = 0; fold < Global::cvFold; fold++ ){
 
 		// reset motif_ to the full motif
-		motif_ = Motif( fullMotif );
+		//motif_ = Motif( fullMotif );
 
 		// assign training and test folds
 		trainFolds_.clear();
@@ -123,7 +123,7 @@ void FDR::scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<int> 
 	int K_bg = Global::bgModelOrder;
 	int W = motif_->getW();
 	int i, LW1, k, y, j;
-	std::vector<int> testIndices = Global::posFoldIndices[testFold(0)];
+	std::vector<int> testIndices = Global::posFoldIndices[testFold[0]];
 	float maxS;												// maximal logOddsScore over all positions for each sequence
 
 	for( size_t n = 0; n < testIndices.size(); n++ ){
