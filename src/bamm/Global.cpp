@@ -49,6 +49,7 @@ float               Global::epsilon = 0.001f;				// threshold for likelihood con
 bool                Global::noAlphaOptimization = false;	// disable alpha optimization
 bool                Global::noQOptimization = false;		// disable q optimization
 bool				Global::setSlow = false;				// develop with the slow EM version
+bool				Global::logEM = false;					// calculation EM steps in log space
 
 // FDR options
 bool                Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
@@ -227,6 +228,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "noAlphaOptimization", noAlphaOptimization );
 	opt >> GetOpt::OptionPresent( "noQOptimization", noQOptimization );
 	opt >> GetOpt::OptionPresent( "setSlow", setSlow );
+	opt >> GetOpt::OptionPresent( "logEM", logEM );
 
 	// FDR options
 	if( opt >> GetOpt::OptionPresent( "FDR", FDR ) ){
@@ -307,6 +309,8 @@ void Global::printHelp(){
 			"				disable q optimization. Defaults to false. *For developers.\n\n");
 	printf("\n 			--setSlow (*)\n"
 			"				use slow version of EM. Defaults to false. *For developers.\n\n");
+	printf("\n 			--logEM (*)\n"
+			"				calculate EM steps in log space. Defaults to false. *For developers.\n\n");
 	printf("\n 		Options for FDR: \n");
 	printf("\n 			--FDR \n"
 			"				triggers False-Discovery-Rate (FDR) estimation.\n\n");

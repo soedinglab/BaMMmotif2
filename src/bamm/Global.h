@@ -72,6 +72,7 @@ public:
 	static bool			noAlphaOptimization;				// disable alpha optimization
 	static bool			noQOptimization;					// disable q optimization
 	static bool			setSlow;							// develop with the slow EM version
+	static bool			logEM;								// calculation EM steps in log space
 
 	// FDR options
 	static bool			FDR;								// triggers False-Discovery-Rate (FDR) estimation

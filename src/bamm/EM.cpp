@@ -133,10 +133,12 @@ int EM::learnMotif(){
 		for( y = 0; y < Y_[K_model+1]; y++ ){
 			for( j = 0; j < W; j++ ){
 				y_bg = y % Y_[K_bg+1];
-				// calculate s in log space:
-//				s_[y][j] = logf( motif_->getV()[K_model][y][j] ) - logf( bg_->getV()[K_bg][y_bg] );
-				// calculate s in linear space:
-				s_[y][j] = motif_->getV()[K_model][y][j] / bg_->getV()[K_bg][y_bg];
+				if( Global::logEM )
+					// calculate s in log space:
+					s_[y][j] = logf( motif_->getV()[K_model][y][j] ) - logf( bg_->getV()[K_bg][y_bg] );
+				else
+					// calculate s in linear space:
+					s_[y][j] = motif_->getV()[K_model][y][j] / bg_->getV()[K_bg][y_bg];
 			}
 		}
 
@@ -183,8 +185,8 @@ int EM::learnMotif(){
 	}
 	free( v_prev );
 
-	fprintf( stdout, "\n--- Runtime for EM: %0.4f seconds (%0.8f minutes) ---\n",
-			(float)( time( NULL )-timestamp ), ( float )( time( NULL )-timestamp )/60.0f );
+	fprintf( stdout, "\n--- Runtime for EM: %f ms ( %ld seconds )---\n",
+			( double )( time( NULL )-timestamp ) / ( CLOCKS_PER_SEC / 1000 ), time( NULL )-timestamp );
 
     return 0;
 }
@@ -209,10 +211,12 @@ void EM::EStep(){
 
 			// reset r_[n][i]
 			for( i = 0; i < LW1; i++ ){
-				// calculation in log space:
-//				r_[n][i] = 0.0f;
-				// calculation in linear space:
-				r_[n][i] = 1.0f;
+				if( Global::logEM )
+					// calculation in log space:
+					r_[n][i] = 0.0f;
+				else
+					// calculation in linear space:
+					r_[n][i] = 1.0f;
 			}
 
 			// when p(z_n > 0)
@@ -222,10 +226,12 @@ void EM::EStep(){
 					k = std::min( i+j, K_model );
 					y = posSeqs_[n]->extractKmer( i+j, k );
 					if( y != -1 ){							// skip 'N' and other unknown alphabets
-						// calculation in log space:
-//						r_[n][i] += s_[y][j];
-						// calculation in linear space:
-						r_[n][i] *= s_[y][j];
+						if( Global::logEM )
+							// calculation in log space:
+							r_[n][i] += s_[y][j];
+						else
+							// calculation in linear space:
+							r_[n][i] *= s_[y][j];
 					} /*else if ( j < K_model ){			// for N exists and j < K occasions
 						y = posSeqs_[n]->extractKmer( i+j, j );
 						if( y != -1 ){
@@ -240,10 +246,12 @@ void EM::EStep(){
 					}
 				}
 				if( r_[n][i] != 0.0f ){
-					// calculation in exponential space:
-//					r_[n][i] = expf( r_[n][i] ) * prior_i;
-					// calculation in linear space:
-					r_[n][i] = r_[n][i] * prior_i;
+					if( Global::logEM )
+						// calculation in exponential space:
+						r_[n][i] = expf( r_[n][i] ) * prior_i;
+					else
+						// calculation in linear space:
+						r_[n][i] = r_[n][i] * prior_i;
 				}
 				normFactor += r_[n][i];
 			}
@@ -267,10 +275,12 @@ void EM::EStep(){
 
 			// reset r_[n][i]
 			for( i = 0; i < L; i++ ){
-				// calculation in log space:
-//				r_[n][i] = 0.0f;
-				// calculation in linear space:
-				r_[n][i] = 1.0f;
+				if( Global::logEM )
+					// calculation in log space:
+					r_[n][i] = 0.0f;
+				else
+					// calculation in linear space:
+					r_[n][i] = 1.0f;
 			}
 
 			// when p(z_n > 0)
@@ -280,10 +290,12 @@ void EM::EStep(){
 				y = posSeqs_[n]->extractKmer( i, k );		// extract (k+1)-mer y from positions (i-k,...,i)
 				for( j = 0; j < std::min( W, i+1 ); j++ ){	// j runs over all motif positions
 					if( y != -1 ){							// skip 'N' and other unknown alphabets
-						// calculation in log space:
-//						r_[n][L-i+j-1] += s_[y][j];
-						// calculation in linear space:
-						r_[n][L-i+j-1] *= s_[y][j];
+						if( Global::logEM )
+							// calculation in log space:
+							r_[n][L-i+j-1] += s_[y][j];
+						else
+							// calculation in linear space:
+							r_[n][L-i+j-1] *= s_[y][j];
 					}/* else if( j < K_model ){
 						y = posSeqs_[n]->extractKmer( i, K_model-j );
 						if( y != -1 ){
@@ -300,10 +312,12 @@ void EM::EStep(){
 			}
 			for( i = W-1; i < L; i++ ){
 				if( r_[n][i] != 0.0f ){
-					// calculation in exponential space:
-//					r_[n][i] = expf( r_[n][i] ) * prior_i;
-					// calculation in linear space:
-					r_[n][i] = r_[n][i] * prior_i;
+					if( Global::logEM )
+						// calculation in exponential space:
+						r_[n][i] = expf( r_[n][i] ) * prior_i;
+					else
+						// calculation in linear space:
+						r_[n][i] = r_[n][i] * prior_i;
 				}
 				normFactor += r_[n][i];
 			}
@@ -392,7 +406,7 @@ void EM::optimizeAlphas(){
     float tolerance = 0.001f;
 
     for( int k = 0 ; k <= Global::modelOrder; k++ ){
-    	float optim_alpha = zbrent( *this, &EM::calculateQfunc_gradient, min_brent, max_brent, tolerance, k);
+    	float optim_alpha = zbrent( *this, &EM::calculateQfunc_gradient, min_brent, max_brent, tolerance, k );
     	for( int j = 0; j < motif_->getW() ; j++ ){
     		alpha_[k][j] = optim_alpha;
     	}

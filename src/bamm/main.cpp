@@ -102,6 +102,11 @@ int main( int nargs, char* args[] ){
 	} else {
 		std::cout << "\n***** This is a fast EM version. *****";
 	}
+	if( Global::logEM ){
+		std::cout << "\n***** All EM steps are calculated in log space. *****";
+	} else {
+		std::cout << "\n***** All EM steps are calculated in linear space. *****";
+	}
 
 	fprintf( stdout, "\n-------------- Runtime: %ld seconds (%0.2f minutes) --------------\n",
 			time( NULL )-timestamp, ( float )( time( NULL )-timestamp )/60.0f );

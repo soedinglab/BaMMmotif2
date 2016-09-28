@@ -49,12 +49,13 @@ FDR::~FDR(){
 
 void FDR::evaluateMotif(){
 
-	Motif fullMotif = Motif( *motif_ );
-
+	std::cout << "Test 1 \n";
+	Motif* fullMotif = new Motif( *motif_ );
+	std::cout << "Test 2 \n";
 	for( int fold = 0; fold < Global::cvFold; fold++ ){
-
+		std::cout << "Test 3 \n";
 		// reset motif_ to the full motif
-		motif_ = Motif( fullMotif );
+		motif_ = fullMotif;
 
 		// assign training and test folds
 		trainFolds_.clear();
@@ -73,14 +74,14 @@ void FDR::evaluateMotif(){
 													Global::interpolateBG,
 													Global::posFoldIndices,
 													trainFolds_ );
-
+		std::cout << "Test 4 \n";
 		BackgroundModel* testBgModel = new BackgroundModel( *Global::posSequenceSet,
 													Global::bgModelOrder,
 													Global::bgModelAlpha,
 													Global::interpolateBG,
 													Global::posFoldIndices,
 													testFold_ );
-
+		std::cout << "Test 5 \n";
 		EM* em = new EM( motif_, trainBgModel, trainFolds_ );
 		em->learnMotif();
 
@@ -90,13 +91,14 @@ void FDR::evaluateMotif(){
 				"|  score test set for fold-%d  |\n"
 				"|_____________________________|\n\n", fold );
 		scoreSequenceSet( motif_, trainBgModel, testFold_ );
-
+		std::cout << "Test 6 \n";
 		// generate negative sequences
 		printf( " __________________________________\n"
 				"|                                  |\n"
 				"|  create negative set for fold-%d  |\n"
 				"|__________________________________|\n\n", fold );
 		std::vector<Sequence*> negTestSequenceSet = sampleSequenceSet( testBgModel->getV() );
+		std::cout << "Test 7 \n";
 		// score negative sequences
 		printf( " _________________________________\n"
 				"|                                 |\n"
@@ -123,7 +125,7 @@ void FDR::scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<int> 
 	int K_bg = Global::bgModelOrder;
 	int W = motif_->getW();
 	int i, LW1, k, y, j;
-	std::vector<int> testIndices = Global::posFoldIndices[testFold(0)];
+	std::vector<int> testIndices = Global::posFoldIndices[testFold[0]];
 	float maxS;												// maximal logOddsScore over all positions for each sequence
 
 	for( size_t n = 0; n < testIndices.size(); n++ ){
@@ -247,25 +249,21 @@ void FDR::scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<Seque
 // generate negative sequences based on each test set
 std::vector<Sequence*> FDR::sampleSequenceSet( float** v ){
 
-	int k, y, yk, i, L;
 	int posN = Global::posSequenceSet->getN();
 	int negN = posN * Global::mFold / Global::cvFold;	// TODO: default Global::mFold / Global::cvFold to an integer
 
 	// generate sample sequence set based on the (k+1)-mer frequencies
 	std::vector<Sequence*> sampleSet;
-													// but it has to be considered if the quotient is not an integer
-	for( i = 0; i < negN; i++ ){
+	for( int i = 0; i < negN; i++ ){
 		sampleSet.push_back( sampleSequence( v ) );
 	}
-
 	return sampleSet;
-
 }
 
 // generate sample sequence based on k-mer probabilities
 Sequence* FDR::sampleSequence( float** v ){
 
-	int L = Global::posSequenceSet->getMinL();  		// TODO: better to use the average length of all the sequences
+	int L = Global::posSequenceSet->getMaxL();  		// TODO: better to use the average length of all the sequences
 	uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
 	std::string header = "sample sequence";
 
@@ -307,12 +305,6 @@ Sequence* FDR::sampleSequence( float** v ){
 	}
 
 	Sequence* sampleSequence = new Sequence( sequence, L, header, Y_, Global::revcomp );
-
-	// only for testing: print out generated sequence
-//	for( i = 0; i < L; i++ ){
-//		std::cout << unsigned( sampleSequence->getSequence()[i] );
-//	}
-//	std::cout << std::endl;
 
 	return sampleSequence;
 }
