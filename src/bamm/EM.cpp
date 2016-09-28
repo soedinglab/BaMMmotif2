@@ -173,7 +173,7 @@ int EM::learnMotif(){
 			std::cout << std::endl;
 		}
 		if( v_diff < Global::epsilon )					iterate = false;
-		if( llikelihood_diff < 0 && EMIterations_ > 1 )	iterate = false;
+//		if( llikelihood_diff < 0 && EMIterations_ > 1 )	iterate = false;
 	}
 
 	// calculate probabilities
@@ -429,8 +429,6 @@ void EM::optimizeQ(){
 float EM::calculateLogPosterior(){
 
 	int y_bg, y_motif;
-
-	int N = posSeqs_.size();
     int W = motif_->getW();
     float*** v_motif = motif_->getV();
     float** v_bg = bg_->getV();
@@ -453,7 +451,7 @@ float EM::calculateLogPosterior(){
 
 	float lPosterior = 0.0f;
 
-	for( int n = 0; n < N ; n++ ){
+	for( size_t n = 0; n < posSeqs_.size() ; n++ ){
 		int L = posSeqs_[n]->getL();
 		for( int i = 0; i < L ; i++ ){
 			// add up background probabilities
@@ -472,27 +470,47 @@ float EM::calculateLogPosterior(){
 
 float EM::calculateQfunc(){
 
-	int L, LW1, i, k, y, j;
-	float sumS = 0.0f, Qfunc = 0.0f;
+	int L, y, y2, j;
+	float Qfunc = 0.0f;
 	float prior_i, prior_0 = 1 - q_;
-	int W = motif_->getW();
 
+	int W = motif_->getW();
+	int A = Alphabet::getSize();
+	int K = Global::modelOrder;
+	float*** v_motif = motif_->getV();
+
+    // the first part of Q function
+	for( y = 0; y < Y_[K+1]; y++ ){
+		for( j = 0; j < W; j++ ){
+			Qfunc += n_[K][y][j] * logf( v_motif[K][y][j] );
+		}
+	}
+
+	// the second part of Q function
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 		L = posSeqs_[n]->getL();
-		LW1 = L - W + 1;
-		prior_i = q_ / static_cast<float>( LW1 );
-		for( i = 0; i <= LW1; i++ ){
-			for( j = 0; j < W; j++ ){
-				k = std::min( j, Global::modelOrder );
-				y =  posSeqs_[n]->extractKmer( i, k );
-				if( y != -1 ){
-					sumS += s_[y][j];
-				}
-			}
-			Qfunc += r_[n][i] * sumS;
-		}
+		prior_i = q_ / static_cast<float>( L - W + 1 );
 		Qfunc += ( r_[n][0] * logf( prior_0 ) + ( 1 - r_[n][0] ) * logf( prior_i ) );
 	}
+
+	// the third and forth parts of Q function
+	for( j = 0; j < W; j++ ){
+		// the third part of Q function
+		// the first term
+		Qfunc += ( float )Y_[K] * lgammaf( alpha_[K][j] + ( float )A );
+		// the second and third terms
+		for( y = 0; y < Y_[K+1]; y++ ){
+			// the second term
+			y2 = y % Y_[K];							// cut off the first nucleotide in (k+1)-mer y
+			Qfunc -= lgammaf( alpha_[K][j] * v_motif[K-1][y2][j] + 1.0f );
+			// the third term
+			Qfunc += alpha_[K][j] * v_motif[K-1][y2][j] * logf( v_motif[K][y][j] );
+		}
+		// the forth part of Q function
+		Qfunc += ( - 2.0f * logf( alpha_[K][j] ) - Global::modelBeta * powf( Global::modelGamma, ( float )K ) /
+				alpha_[K][j] + logf( Global::modelBeta * powf( Global::modelGamma, ( float )K ) ) );
+	}
+
 	return Qfunc;
 }
 
@@ -502,7 +520,7 @@ float EM::calculateQfunc_gradient( float alpha ,int K ){
 	float** v_bg = bg_->getV();
 	int W = motif_->getW();
 
-	float alpha_prior = - 2 / alpha + ( Global::modelBeta * powf( Global::modelGamma, (float) K ) ) / powf( alpha , 2.0f ) ;
+	float alpha_prior = - 2.0f / alpha + ( Global::modelBeta * powf( Global::modelGamma, (float) K ) ) / powf( alpha , 2.0f ) ;
 	float sum_over_y = 0.0f;
 
 	if( K == 0 ){
@@ -549,7 +567,7 @@ void EM::write(){
 
 	/**
 	 * save EM parameters in four flat files:
-	 * (1) posSequenceBasename.EMcounts:	refined counts of (k+1)-mers
+	 * (1) posSequenceBasename.EMcounts:	refined fractional counts of (k+1)-mers
 	 * (2) posSequenceBasename.EMposterior: responsibilities, posterior distributions
 	 * (3) posSequenceBasename.EMalpha:		hyper-parameter alphas
 	 * (4) posSequenceBasename.EMlogScores:	log scores

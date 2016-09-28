@@ -50,7 +50,7 @@ FDR::~FDR(){
 void FDR::evaluateMotif(){
 
 	std::cout << "Test 1 \n";
-	Motif* fullMotif = new Motif( *motif_ );
+//	Motif* fullMotif = new Motif( *motif_ );
 	std::cout << "Test 2 \n";
 	for( int fold = 0; fold < Global::cvFold; fold++ ){
 		std::cout << "Test 3 \n";
