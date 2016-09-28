@@ -399,14 +399,21 @@ void EM::MStep(){
 
 //typedef int( EM::*EMMemFn)(double a);
 
-void EM::optimizeAlphas(){
-
-	float min_brent = 1.0f;
-   	float max_brent = 1e4;
-    float tolerance = 0.001f;
+void EM::optimizeAlphas( float min_brent, float max_brent, float tolerance ){
+//	if( Global::debugMode){
+//		fprintf( stderr, "\n ---------------------------------- \n");
+//		fprintf( stderr, "\n Verbose Output for Alpha Learning: \n");
+//		fprintf( stderr, "\n ---------------------------------- \n\n");
+//	}
 
     for( int k = 0 ; k <= Global::modelOrder; k++ ){
     	float optim_alpha = zbrent( *this, &EM::calculateQfunc_gradient, min_brent, max_brent, tolerance, k );
+
+
+//    	if( Global::debugMode ){
+//   		fprintf( stderr, "\n alpha_%d : \t %0.4f -> \t %0.4f \n ", k, alpha_[k][0], optim_alpha );
+//    	}
+
     	for( int j = 0; j < motif_->getW() ; j++ ){
     		alpha_[k][j] = optim_alpha;
     	}
@@ -418,6 +425,49 @@ void EM::optimizeQ(){
 
 	// optimize hyper-parameter q
 	// motif.updateV()
+}
+float EM::calculateLogPosterior(){
+
+	int y_bg, y_motif;
+
+	int N = posSeqs_.size();
+    int W = motif_->getW();
+    float*** v_motif = motif_->getV();
+    float** v_bg = bg_->getV();
+
+    // log v_bg
+    for( int k = 0; k <= Global::bgModelOrder; k++ ){
+    	for( int y = 0; y < Y_[k+1]; y++ ){
+    		v_bg[k][y] = logf( v_bg[k][y] );
+    	}
+    }
+
+    // log v_model
+    for( int k = 0; k <= Global::modelOrder; k++ ){
+    	for( int y = 0; y < Y_[k+1]; y++ ){
+    		for( int j = 0; j < W; j++ ){
+    			v_motif[k][y][j] = logf( v_motif[k][y][j] );
+    		}
+    	}
+    }
+
+	float lPosterior = 0.0f;
+
+	for( int n = 0; n < N ; n++ ){
+		int L = posSeqs_[n]->getL();
+		for( int i = 0; i < L ; i++ ){
+			// add up background probabilities
+			y_bg = posSeqs_[n]->extractKmer(i,std::min( i, Global::bgModelOrder ));
+			lPosterior += v_bg[Global::bgModelOrder][y_bg];
+		}
+		//if( "sequence has a motif: z_n > 0")
+		for( int j = 0; j < W; j++ ){
+			y_bg    = posSeqs_[n]->extractKmer(j,std::min( j, Global::bgModelOrder ));
+			y_motif = posSeqs_[n]->extractKmer(j,std::min( j, Global::modelOrder ));
+			lPosterior += ( v_motif[Global::modelOrder][y_motif][j] / v_bg[Global::bgModelOrder][y_bg] );
+		}
+	}
+	return lPosterior;
 }
 
 float EM::calculateQfunc(){

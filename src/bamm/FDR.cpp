@@ -55,7 +55,8 @@ void FDR::evaluateMotif(){
 	for( int fold = 0; fold < Global::cvFold; fold++ ){
 		std::cout << "Test 3 \n";
 		// reset motif_ to the full motif
-		motif_ = fullMotif;
+
+		//motif_ = Motif( fullMotif );
 
 		// assign training and test folds
 		trainFolds_.clear();
