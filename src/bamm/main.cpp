@@ -32,9 +32,11 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "************************\n" );
 	fprintf( stderr, "*   Background Model   *\n" );
 	fprintf( stderr, "************************\n" );
+	long timestampBg = time( NULL );
 	BackgroundModel* bgModel = new BackgroundModel( *Global::negSequenceSet,
 													Global::bgModelOrder,
 													Global::bgModelAlpha );
+	fprintf( stdout, "\n--- Runtime for Background initialization: %ld seconds ---\n", time( NULL )-timestampBg );
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "*********************\n" );

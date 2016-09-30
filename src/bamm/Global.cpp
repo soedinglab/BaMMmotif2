@@ -194,10 +194,10 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	// background model options
 	opt >> GetOpt::Option( 'K', "Order", bgModelOrder );
-	if( bgModelOrder > modelOrder ){
-		std::cerr << "The order of background model should not exceed the order of motif model!\n";
-		exit( -1 );
-	}
+//	if( bgModelOrder > modelOrder ){
+//		std::cerr << "The order of background model should not exceed the order of motif model!\n";
+//		exit( -1 );
+//	}
 	if( opt >> GetOpt::OptionPresent( 'A', "Alpha" ) ){
 		bgModelAlpha.clear();
 		opt >> GetOpt::Option( 'A', "Alpha", bgModelAlpha );
@@ -310,7 +310,7 @@ void Global::printHelp(){
 	printf("\n 			--setSlow (*)\n"
 			"				use slow version of EM. Defaults to false. *For developers.\n\n");
 	printf("\n 			--logEM (*)\n"
-			"				calculate EM steps in log space. Defaults to false. *For developers.\n\n");
+			"				calculate EM in log space. Defaults to false. *For developers.\n\n");
 	printf("\n 		Options for FDR: \n");
 	printf("\n 			--FDR \n"
 			"				triggers False-Discovery-Rate (FDR) estimation.\n\n");

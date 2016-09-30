@@ -9,7 +9,7 @@ FDR::FDR( Motif* motif ){
 	trainFolds_.resize( Global::cvFold - 1 );
 	testFold_.resize( 1 );
 
-	for( int k = 0; k < Global::modelOrder+2; k++ ){
+	for( int k = 0; k < std::max( Global::modelOrder+2, 4 ); k++ ){	// 4 is for cases when modelOrder < 2
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 
@@ -137,7 +137,7 @@ void FDR::scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<int> 
 				k = std::min( i+j, K_motif );
 				y = Global::posSequenceSet->getSequences()[testIndices[n]]->extractKmer( i+j, k );
 				posScores_[testIndices[n]][i] += ( logf( motif->getV()[K_motif][y][j] )
-											- logf( bg->getV()[K_bg][y] ) );
+											- logf( bg->getV()[std::min( K_motif, K_bg )][y] ) );
 			}
 
 			// take the complete logOddsScores for MOPS model:
@@ -169,7 +169,7 @@ void FDR::scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<Seque
 			for( j = 0; j < W; j++ ){
 				k = std::min(i+j, K_motif );
 				y = seqSet[n]->extractKmer( i+j, k );
-				negScores_[n][i] += ( logf( motif->getV()[K_motif][y][j] ) - logf( bg->getV()[K_bg][y] ) );
+				negScores_[n][i] += ( logf( motif->getV()[K_motif][y][j] ) - logf( bg->getV()[std::min( K_motif, K_bg )][y] ) );
 			}
 
 			// take the complete logOddsScores for MOPS model:

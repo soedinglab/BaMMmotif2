@@ -4,6 +4,8 @@
 
 MotifSet::MotifSet(){
 
+	long timestamp = time( NULL );
+
 	if( Global::BaMMpatternFilename != NULL ){
 
 	    // scan file and conduct for IUPAC pattern p
@@ -48,6 +50,8 @@ MotifSet::MotifSet(){
 		// motif.initFromBMM( file )
 		// motifs.push_back( motif )
 	}
+
+	fprintf( stdout, "\n--- Runtime for MotifSet initialization: %ld seconds ---\n", time( NULL )-timestamp );
 
 //	if( Global::verbose ) print();
 }
