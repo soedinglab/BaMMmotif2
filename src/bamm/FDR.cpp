@@ -13,6 +13,15 @@ FDR::FDR( Motif* motif ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 
+	// TODO: only for testing:
+	std::cout << "Motif parameter before CV, v[k][y][1]:\n";
+	for( int k = 0; k < Global::modelOrder+1; k++ ){
+		for( int y = 0; y < Y_[k+1]; y++ ){
+			std::cout << motif_->getV()[k][y][1] << '\t';
+		}
+		std::cout << std::endl;
+	}
+
 	int posN = Global::posSequenceSet->getN();
 	int negN = posN * Global::mFold;
 	int LW1 = Global::posSequenceSet->getMaxL()-motif_->getW()+1;
@@ -49,19 +58,28 @@ FDR::~FDR(){
 
 void FDR::evaluateMotif(){
 
-	std::cout << "Test 1 \n";
-//	Motif* fullMotif = new Motif( *motif_ );
-	std::cout << "Test 2 \n";
 	for( int fold = 0; fold < Global::cvFold; fold++ ){
-		std::cout << "Test 3 \n";
-		// reset motif_ to the full motif
 
-		//motif_ = Motif( fullMotif );
+		printf( " ________________________________\n"
+				"|                                |\n"
+				"|  Cross validation for fold-%d   |\n"
+				"|________________________________|\n\n", fold+1 );
+
+		Motif* fullMotif = motif_;
+
+		// TODO: only for testing:
+		std::cout << "Motif parameter before each fold of CV, v[k][y][1]:\n";
+
+		for( int k = 0; k < Global::modelOrder+1; k++ ){
+			for( int y = 0; y < Y_[k+1]; y++ ){
+				std::cout << fullMotif->getV()[k][y][1] << '\t';
+			}
+			std::cout << std::endl;
+		}
 
 		// assign training and test folds
 		trainFolds_.clear();
 		testFold_.clear();
-
 		for( int f = 0; f < Global::cvFold; f++ ){
 			if( f != fold ){
 				trainFolds_.push_back( f );
@@ -75,48 +93,40 @@ void FDR::evaluateMotif(){
 													Global::interpolateBG,
 													Global::posFoldIndices,
 													trainFolds_ );
-		std::cout << "Test 4 \n";
+
 		BackgroundModel* testBgModel = new BackgroundModel( *Global::posSequenceSet,
 													Global::bgModelOrder,
 													Global::bgModelAlpha,
 													Global::interpolateBG,
 													Global::posFoldIndices,
 													testFold_ );
-		std::cout << "Test 5 \n";
-		EM* em = new EM( motif_, trainBgModel, trainFolds_ );
+
+		EM* em = new EM( fullMotif, trainBgModel, trainFolds_ );
 		em->learnMotif();
 
+		long timestamp1 = time( NULL );
 		// score positive test sequences
-		printf( " _____________________________\n"
-				"|                             |\n"
-				"|  score test set for fold-%d  |\n"
-				"|_____________________________|\n\n", fold );
-		scoreSequenceSet( motif_, trainBgModel, testFold_ );
-		std::cout << "Test 6 \n";
-		// generate negative sequences
-		printf( " __________________________________\n"
-				"|                                  |\n"
-				"|  create negative set for fold-%d  |\n"
-				"|__________________________________|\n\n", fold );
-		std::vector<Sequence*> negTestSequenceSet = sampleSequenceSet( testBgModel->getV() );
-		std::cout << "Test 7 \n";
-		// score negative sequences
-		printf( " _________________________________\n"
-				"|                                 |\n"
-				"|  score negative set for fold-%d  |\n"
-				"|_________________________________|\n\n", fold );
-		scoreSequenceSet( motif_, trainBgModel, negTestSequenceSet );
+		scoreSequenceSet( fullMotif, trainBgModel, testFold_ );
+		fprintf( stdout, "\n--- Runtime for scoring positive test set: %ld seconds ---\n", time( NULL )-timestamp1 );
 
-		delete trainBgModel;
-		delete em;
+		long timestamp2 = time( NULL );
+		// generate negative sequences
+		std::vector<Sequence*> negTestSequenceSet = sampleSequenceSet( testBgModel->getV() );
+		fprintf( stdout, "\n--- Runtime for generating negative set: %ld seconds ---\n", time( NULL )-timestamp2 );
+
+		long timestamp3 = time( NULL );
+		// score negative sequences
+		scoreSequenceSet( fullMotif, trainBgModel, negTestSequenceSet );
+		fprintf( stdout, "\n--- Runtime for scoring negative sequence set: %ld seconds ---\n", time( NULL )-timestamp3 );
 	}
 
+	long timestamp4 = time( NULL );
 	printf( " __________________________________\n"
 			"|                                  |\n"
 			"|  calculate precision and recall  |\n"
 			"|__________________________________|\n\n" );
 	calculatePR();
-
+	fprintf( stdout, "\n--- Runtime for calculating precision and recall: %ld seconds ---\n", time( NULL )-timestamp4 );
 }
 
 // score Global::posSequenceSet using Global::posFoldIndices and folds
@@ -124,31 +134,33 @@ void FDR::scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<int> 
 
 	int K_motif = Global::modelOrder;
 	int K_bg = Global::bgModelOrder;
-	int W = motif_->getW();
+	int W = motif->getW();
 	int i, LW1, k, y, j;
 	std::vector<int> testIndices = Global::posFoldIndices[testFold[0]];
+	std::vector<Sequence*> posSeqs = Global::posSequenceSet->getSequences();
 	float maxS;												// maximal logOddsScore over all positions for each sequence
 
 	for( size_t n = 0; n < testIndices.size(); n++ ){
-		LW1 = Global::posSequenceSet->getSequences()[testIndices[n]]->getL() - W + 1;
-		maxS = -FLT_MAX;									// reset maxS to a minimum negative number
+		LW1 = posSeqs[testIndices[n]]->getL() - W + 1;
+		// reset maxS to a minimum negative number
+		maxS = -FLT_MAX;
 		for( i = 0; i < LW1; i++ ){
 			for( j = 0; j < W; j++ ){
 				k = std::min( i+j, K_motif );
-				y = Global::posSequenceSet->getSequences()[testIndices[n]]->extractKmer( i+j, k );
+				y = posSeqs[testIndices[n]]->extractKmer( i+j, k );
 				posScores_[testIndices[n]][i] += ( logf( motif->getV()[K_motif][y][j] )
 											- logf( bg->getV()[std::min( K_motif, K_bg )][y] ) );
 			}
 
 			// take the complete logOddsScores for MOPS model:
-			posScores_all_.push_back( posScores_[testIndices[n]][i] );
+			posScoresAll_.push_back( posScores_[testIndices[n]][i] );
 
 			// take the largest logOddsScore for ZOOPS model:
 			if( posScores_[testIndices[n]][i] > maxS ){
 				maxS = posScores_[testIndices[n]][i];
 			}
 		}
-		posScores_max_.push_back( maxS );
+		posScoresMax_.push_back( maxS );
 	}
 
 }
@@ -158,29 +170,30 @@ void FDR::scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<Seque
 
 	int K_motif = Global::modelOrder;
 	int K_bg = Global::bgModelOrder;
-	int W = motif_->getW();
+	int W = motif->getW();
 	int i, LW1, k, y, j;
+	std::vector<Sequence*> seqs = seqSet;
 	float maxS;												// maximal logOddsScore over all positions for each sequence
 
-	for( size_t n = 0; n < seqSet.size(); n++ ){
-		LW1 = seqSet[n]->getL() - W + 1;
+	for( size_t n = 0; n < seqs.size(); n++ ){
+		LW1 = seqs[n]->getL() - W + 1;
 		maxS = -FLT_MAX;
 		for( i = 0; i < LW1; i++ ){
 			for( j = 0; j < W; j++ ){
 				k = std::min(i+j, K_motif );
-				y = seqSet[n]->extractKmer( i+j, k );
+				y = seqs[n]->extractKmer( i+j, k );
 				negScores_[n][i] += ( logf( motif->getV()[K_motif][y][j] ) - logf( bg->getV()[std::min( K_motif, K_bg )][y] ) );
 			}
 
 			// take the complete logOddsScores for MOPS model:
-			negScores_all_.push_back( negScores_[n][i] );
+			negScoresAll_.push_back( negScores_[n][i] );
 
 			// take the largest logOddsScore for ZOOPS model:
 			if( negScores_[n][i] > maxS ){
 				maxS = negScores_[n][i];
 			}
 		}
-		negScores_max_.push_back( maxS );
+		negScoresMax_.push_back( maxS );
 	}
 }
 
@@ -314,15 +327,15 @@ void FDR::calculatePR(){
 
 	// Sort log odds scores from large to small
 	// for ZOOPS model:
-	std::sort( posScores_max_.begin(), posScores_max_.end(), std::greater<float>() );
-	std::sort( negScores_max_.begin(), negScores_max_.end(), std::greater<float>() );
+	std::sort( posScoresMax_.begin(), posScoresMax_.end(), std::greater<float>() );
+	std::sort( negScoresMax_.begin(), negScoresMax_.end(), std::greater<float>() );
 	// for MOPS model:
-	std::sort( posScores_all_.begin(), posScores_all_.end(), std::greater<float>() );
-	std::sort( negScores_all_.begin(), negScores_all_.end(), std::greater<float>() );
+	std::sort( posScoresAll_.begin(), posScoresAll_.end(), std::greater<float>() );
+	std::sort( negScoresAll_.begin(), negScoresAll_.end(), std::greater<float>() );
 
 	// Rank and score these log odds score values
-	size_t size_max = posScores_max_.size() + negScores_max_.size();
-	size_t size_all = posScores_all_.size() + negScores_all_.size();
+	size_t size_max = posScoresMax_.size() + negScoresMax_.size();
+	size_t size_all = posScoresAll_.size() + negScoresAll_.size();
 	size_t i;
 	size_t i_posM = 0, i_negM = 0;						// index for arrays storing the max log odds scores
 	size_t i_posA = 0, i_negA = 0;						// index for arrays storing the complete log odds scores
@@ -333,8 +346,8 @@ void FDR::calculatePR(){
 	size_t idx_max = 0;									// index when the difference between TFP and FP reaches maximum
 
 	for( i = 0; i < size_all; i++ ){
-		if( posScores_all_[i_posA] > negScores_all_[i_negA] ||
-				i_posA == 0 || i_negA == negScores_all_.size() ){
+		if( posScoresAll_[i_posA] > negScoresAll_[i_negA] ||
+				i_posA == 0 || i_negA == negScoresAll_.size() ){
 			i_posA++;
 		} else {
 			i_negA++;
@@ -362,8 +375,8 @@ void FDR::calculatePR(){
 
 	// For "zero or one occurrence per sequence" (ZOOPS) model
 	for( i = 0; i < size_max; i++ ){
-		if( posScores_max_[i_posM] > negScores_max_[i_negM] ||
-				i_posM == 0 || i_negM == negScores_max_.size() ){
+		if( posScoresMax_[i_posM] > negScoresMax_[i_negM] ||
+				i_posM == 0 || i_negM == negScoresMax_.size() ){
 			i_posM++;
 		} else {
 			i_negM++;

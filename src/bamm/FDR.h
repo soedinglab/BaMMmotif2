@@ -11,7 +11,6 @@ class FDR {
 public:
 
 	FDR( Motif* motif );
-//	FDR( const Motif& motif );
 	~FDR();
 
 	void evaluateMotif();
@@ -28,10 +27,10 @@ private:
 	float**				posScores_;			// store the full set of log odds scores for positive set
 	float**				negScores_;			// store the full set of log odds scores for negative set
 
-	std::vector<float>	posScores_all_;		// all the log odds scores on positive test SequenceSet
-	std::vector<float> 	negScores_all_;		// all the log odds scores on negative test SequenceSet
-	std::vector<float>	posScores_max_;		// largest log odds scores on positive test SequenceSet
-	std::vector<float>	negScores_max_;		// largest log odds scores on negative test SequenceSet
+	std::vector<float>	posScoresAll_;		// all the log odds scores on positive test SequenceSet
+	std::vector<float> 	negScoresAll_;		// all the log odds scores on negative test SequenceSet
+	std::vector<float>	posScoresMax_;		// largest log odds scores on positive test SequenceSet
+	std::vector<float>	negScoresMax_;		// largest log odds scores on negative test SequenceSet
 
 	std::vector<float>	P_zoops_;			// precision for ZOOPS model
 	std::vector<float>	R_zoops_;			// recall for ZOOPS model

@@ -32,11 +32,9 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "************************\n" );
 	fprintf( stderr, "*   Background Model   *\n" );
 	fprintf( stderr, "************************\n" );
-	long timestampBg = time( NULL );
 	BackgroundModel* bgModel = new BackgroundModel( *Global::negSequenceSet,
 													Global::bgModelOrder,
 													Global::bgModelAlpha );
-	fprintf( stdout, "\n--- Runtime for Background initialization: %ld seconds ---\n", time( NULL )-timestampBg );
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "*********************\n" );
@@ -64,11 +62,14 @@ int main( int nargs, char* args[] ){
 		fprintf( stderr, "***********\n" );
 		fprintf( stderr, "*   FDR   *\n" );
 		fprintf( stderr, "***********\n" );
+		long timestampFDR = time( NULL );
 		for( int N = 0; N < motifs.getN(); N++ ){
 			FDR fdr( motifs.getMotifs()[N] );
 			fdr.evaluateMotif();
 			fdr.write();
 		}
+		fprintf( stdout, "\n--- Runtime for FDR assessment: %ld seconds ---\n", time( NULL )-timestampFDR );
+
 	}
 
 	fprintf( stderr, "\n" );
@@ -81,7 +82,7 @@ int main( int nargs, char* args[] ){
 			Global::posSequenceSet->getMaxL() << ", min.length: " <<
 			Global::posSequenceSet->getMinL() << "\n	base frequencies:";
 	for( int i = 0; i < Alphabet::getSize(); i++ ){
-		std::cout << ' ' << Global::posSequenceSet->getKmerFrequencies()[0][i]
+		std::cout << ' ' << Global::posSequenceSet->getBaseFrequencies()[i]
 		          << "(" << Alphabet::getAlphabet()[i] << ")";
 	}
 	if( Global::negSequenceFilename ){
@@ -90,7 +91,7 @@ int main( int nargs, char* args[] ){
 				<< Global::negSequenceSet->getMaxL() << ", min.length: " <<
 				Global::negSequenceSet->getMinL() << "\n	base frequencies:";
 		for( int i = 0; i < Alphabet::getSize(); i++ )
-			std::cout << ' ' << Global::negSequenceSet->getKmerFrequencies()[0][i]
+			std::cout << ' ' << Global::negSequenceSet->getBaseFrequencies()[i]
 			          << "(" << Alphabet::getAlphabet()[i] << ")";
 	} else {
 		std::cout << "\nNone negative sequence set is given";

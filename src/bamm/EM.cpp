@@ -61,8 +61,6 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 			alpha_[k][j] = Global::modelAlpha[k];
 		}
 	}
-
-
 }
 
 EM::~EM(){

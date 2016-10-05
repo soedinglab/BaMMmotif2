@@ -24,17 +24,6 @@ Motif::Motif( int length ){
 		}
 	}
 
-	v_bg_ = ( float* )calloc( Y_[1], sizeof( float ) );
-
-	BackgroundModel bg( *Global::negSequenceSet,
-						 Global::bgModelOrder,
-						 Global::bgModelAlpha,
-						 Global::interpolateBG );
-
-	for( y = 0; y < Y_[1]; y++ ){
-		v_bg_[y] = bg.getV()[0][y];
-	}
-
 }
 
 Motif::Motif( const Motif& other ){ 		// deep copy
@@ -50,7 +39,7 @@ Motif::Motif( const Motif& other ){ 		// deep copy
 		v_[k] = ( float** )malloc( Y_[k+1] * sizeof( float* ) );
 		n_[k] = ( int** )malloc( Y_[k+1] * sizeof( int* ) );
 		p_[k] = ( float** )malloc( Y_[k+1] * sizeof( float* ) );
-		for( y = 0; y <Y_[k+1]; y++ ){
+		for( y = 0; y < Y_[k+1]; y++ ){
 			v_[k][y] = ( float* )malloc( W_ * sizeof( float ) );
 			n_[k][y] = ( int* )malloc( W_ * sizeof( int ) );
 			p_[k][y] = ( float* )malloc( W_ * sizeof( float ) );
@@ -63,11 +52,6 @@ Motif::Motif( const Motif& other ){ 		// deep copy
 	}
 
 	isInitialized_ = true;
-
-	v_bg_ = ( float* )calloc( Y_[1], sizeof( float ) );
-	for( y = 0; y < Y_[1]; y++ )
-		v_bg_[y] = other.v_bg_[y];
-
 }
 
 Motif::~Motif(){
@@ -85,8 +69,6 @@ Motif::~Motif(){
 	free( v_ );
 	free( n_ );
 	free( p_ );
-
-	free( v_bg_ );
 
 }
 
@@ -190,21 +172,25 @@ void Motif::calculateV(){
 	int y, j, k, y2, yk;
 
 	// for k = 0, v_ = freqs:
-	for( y = 0; y < Y_[1]; y++ )
-		for( j = 0; j < W_; j++ )
-			v_[0][y][j] = ( static_cast<float>( n_[0][y][j] ) + Global::modelAlpha.at(0) * v_bg_[y] )
+	for( y = 0; y < Y_[1]; y++ ){
+		for( j = 0; j < W_; j++ ){
+			v_[0][y][j] = ( static_cast<float>( n_[0][y][j] ) + Global::modelAlpha.at(0) * Global::negSequenceSet->getBaseFrequencies()[y] )
 						/ ( static_cast<float>( N_ ) + Global::modelAlpha.at(0) );
+		}
+	}
 
 	// for k > 0:
 	for( k = 1; k < Global::modelOrder+1; k++ ){
 		for( y = 0; y < Y_[k+1]; y++ ){
 			y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer y
 			yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer y
-			for( j = 0; j < k; j++ )						// when j < k, i.e. p(A|CG) = p(A|C)
+			for( j = 0; j < k; j++ ){						// when j < k, i.e. p(A|CG) = p(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
-			for( j = k; j < W_; j++ )
+			}
+			for( j = k; j < W_; j++ ){
 				v_[k][y][j] = ( static_cast<float>( n_[k][y][j] ) + Global::modelAlpha.at(k) * v_[k-1][y2][j] )
 							/ ( static_cast<float>( n_[k-1][yk][j-1] ) + Global::modelAlpha.at(k) );
+			}
 		}
 	}
 }
@@ -235,7 +221,7 @@ void Motif::updateV( float*** n, float** alpha ){
 //				fprintf( stderr, "v_[%d][%d][%d] -> %0.4f \n", k, y, j, v_[k][y][j] - (( n[0][y][j] + alpha[0][j] * v_bg_[y] )
 //						/ ( sumN[j] + alpha[0][j] )));
 //			}
-			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * v_bg_[y] )
+			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * Global::negSequenceSet->getBaseFrequencies()[y] )
 						/ ( sumN[j] + alpha[0][j] );
 		}
 	}
