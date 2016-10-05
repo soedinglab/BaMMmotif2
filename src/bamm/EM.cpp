@@ -105,6 +105,7 @@ int EM::learnMotif(){
 	int W = motif_->getW();
 	int K_model = Global::modelOrder;
 	int K_bg = Global::bgModelOrder;
+	int alphaIter = 13;
 
 	int y, y_bg, j;
 	float v_diff, llikelihood_prev, llikelihood_diff = 0.0f;
@@ -149,7 +150,16 @@ int EM::learnMotif(){
 		MStep();
 
 		// * optional: optimize parameter alpha
-		if( !Global::noAlphaOptimization )	optimizeAlphas();
+		if( !Global::noAlphaOptimization ){
+			// only run alpha optimization every 5th em-iteration.
+
+			if( EMIterations_ % alphaIter == 0 ){
+				testAlphaLearning();
+				printf( "FINISHED!\n");
+				exit(0);
+				optimizeAlphas();
+			}
+		}
 
 		// * optional: optimize parameter q
 		if( !Global::noQOptimization )		optimizeQ();
@@ -406,7 +416,8 @@ void EM::optimizeAlphas( float min_brent, float max_brent, float tolerance ){
 //		fprintf( stderr, "\n ---------------------------------- \n\n");
 //	}
 
-    for( int k = 0 ; k <= Global::modelOrder; k++ ){
+    //for( int k = 0 ; k <= Global::modelOrder; k++ ){
+    	int k = Global::modelOrder;
     	float optim_alpha = zbrent( *this, &EM::calculateQfunc_gradient, min_brent, max_brent, tolerance, k );
 
 
@@ -417,8 +428,36 @@ void EM::optimizeAlphas( float min_brent, float max_brent, float tolerance ){
     	for( int j = 0; j < motif_->getW() ; j++ ){
     		alpha_[k][j] = optim_alpha;
     	}
-	}
+	//}
 	motif_->updateV( n_ , alpha_ );
+}
+
+void EM::testAlphaLearning( ){
+
+	float alpha, alpha_min = 1, alpha_max = 5000;
+	std::vector<float> gradient, qvalue, posterior;
+
+	std::string opath = std::string( Global::outputDirectory ) + '/'
+			+ std::string( Global::posSequenceBasename );
+
+	std::string opath_n = opath + ".AlphaTesting";
+	std::ofstream ofile_n( opath_n.c_str() );
+
+	for( alpha = alpha_min; alpha < alpha_max; alpha++ ){
+		// update alpha
+		for( int j = 0; j < motif_->getW(); j++ ){
+			alpha_[Global::modelOrder][j] = alpha;
+		}
+		// adjust v_s to new alpha
+		motif_->updateV( n_, alpha_ );
+		// calculate and store Alpha_Gradient_Qfunc_LogPosterior
+		ofile_n << std::scientific << alpha << ' ';
+		ofile_n << std::scientific << calculateQfunc_gradient(alpha,Global::modelOrder) << ' ';
+		ofile_n << std::scientific << calculateQfunc() << ' ';
+		//ofile_n << std::scientific << calculateLogPosterior() << ' ';
+		ofile_n << std::endl;
+	}
+
 }
 
 void EM::optimizeQ(){
@@ -459,9 +498,10 @@ float EM::calculateLogPosterior(){
 			lPosterior += v_bg[Global::bgModelOrder][y_bg];
 		}
 		//if( "sequence has a motif: z_n > 0")
+		int i = 20; // i is the position of the motif in the sequence
 		for( int j = 0; j < W; j++ ){
-			y_bg    = posSeqs_[n]->extractKmer(j,std::min( j, Global::bgModelOrder ));
-			y_motif = posSeqs_[n]->extractKmer(j,std::min( j, Global::modelOrder ));
+			y_bg    = posSeqs_[n]->extractKmer(i+j,std::min( j, Global::bgModelOrder ));
+			y_motif = posSeqs_[n]->extractKmer(i+j,std::min( j, Global::modelOrder ));
 			lPosterior += ( v_motif[Global::modelOrder][y_motif][j] / v_bg[Global::bgModelOrder][y_bg] );
 		}
 	}
@@ -479,7 +519,7 @@ float EM::calculateQfunc(){
 	int K = Global::modelOrder;
 	float*** v_motif = motif_->getV();
 
-    // the first part of Q function
+	// the first part of Q function
 	for( y = 0; y < Y_[K+1]; y++ ){
 		for( j = 0; j < W; j++ ){
 			Qfunc += n_[K][y][j] * logf( v_motif[K][y][j] );
@@ -493,6 +533,7 @@ float EM::calculateQfunc(){
 		Qfunc += ( r_[n][0] * logf( prior_0 ) + ( 1 - r_[n][0] ) * logf( prior_i ) );
 	}
 
+/*
 	// the third and forth parts of Q function
 	for( j = 0; j < W; j++ ){
 		// the third part of Q function
@@ -510,6 +551,28 @@ float EM::calculateQfunc(){
 		Qfunc += ( - 2.0f * logf( alpha_[K][j] ) - Global::modelBeta * powf( Global::modelGamma, ( float )K ) /
 				alpha_[K][j] + logf( Global::modelBeta * powf( Global::modelGamma, ( float )K ) ) );
 	}
+*/
+
+/*
+	int n,i,y,j,L;
+	int W = motif_->getW();
+	float*** p = motif_->getP();
+	float Qfunc = 0.0f;
+	float prior_i, prior_0 = 1 - q_;
+
+
+	for( n = 0; n < posSeqs_.size(); n++ ){
+		L = posSeqs_[n]->getL();
+		prior_i = q_ / static_cast<float>( L - W + 1 );
+		for( i = 0; i <  L - W + 1 ; i++ ){
+			y = posSeqs_[n]->extractKmer( i, std::min( i, Global::modelOrder ) );
+			for( j = 0; j < W; j++ ){
+				Qfunc += r_[n][i] * log(p[Global::modelOrder][j][y]);
+			}
+		}
+		Qfunc += ( r_[n][0] * log( prior_0 ) + ( 1 - r_[n][0] ) * log( prior_i ) );
+	}
+*/
 
 	return Qfunc;
 }

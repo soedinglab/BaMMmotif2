@@ -196,7 +196,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::Option( 'K', "Order", bgModelOrder );
 	if( bgModelOrder > modelOrder ){
 		std::cerr << "The order of background model should not exceed the order of motif model!\n";
-		exit( -1 );
+		//exit( -1 );
 	}
 	if( opt >> GetOpt::OptionPresent( 'A', "Alpha" ) ){
 		bgModelAlpha.clear();
