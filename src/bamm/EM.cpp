@@ -8,7 +8,7 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 	int y, k, j, L;
 	int W = motif_->getW();
 
-	for( int k = 0; k < Global::modelOrder+2; k++ ){
+	for( k = 0; k < std::max( Global::modelOrder+2, 4 ); k++ ){	// 4 is for cases when modelOrder < 2
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 
@@ -136,10 +136,10 @@ int EM::learnMotif(){
 				y_bg = y % Y_[K_bg+1];
 				if( Global::logEM )
 					// calculate s in log space:
-					s_[y][j] = logf( motif_->getV()[K_model][y][j] ) - logf( bg_->getV()[K_bg][y_bg] );
+					s_[y][j] = logf( motif_->getV()[K_model][y][j] ) - logf( bg_->getV()[std::min( K_model, K_bg )][y_bg] );
 				else
 					// calculate s in linear space:
-					s_[y][j] = motif_->getV()[K_model][y][j] / bg_->getV()[K_bg][y_bg];
+					s_[y][j] = motif_->getV()[K_model][y][j] / bg_->getV()[std::min( K_model, K_bg )][y_bg];
 			}
 		}
 
@@ -183,7 +183,7 @@ int EM::learnMotif(){
 			std::cout << std::endl;
 		}
 		if( v_diff < Global::epsilon )					iterate = false;
-//		if( llikelihood_diff < 0 && EMIterations_ > 1 )	iterate = false;
+		if( llikelihood_diff < 0 && EMIterations_ > 1 )	iterate = false;
 	}
 
 	// calculate probabilities
@@ -195,8 +195,7 @@ int EM::learnMotif(){
 	}
 	free( v_prev );
 
-	fprintf( stdout, "\n--- Runtime for EM: %f ms ( %ld seconds )---\n",
-			( double )( time( NULL )-timestamp ) / ( CLOCKS_PER_SEC / 1000 ), time( NULL )-timestamp );
+	fprintf( stdout, "\n--- Runtime for EM: %ld seconds ---\n", time( NULL )-timestamp );
 
     return 0;
 }
@@ -494,7 +493,7 @@ float EM::calculateLogPosterior(){
 		int L = posSeqs_[n]->getL();
 		for( int i = 0; i < L ; i++ ){
 			// add up background probabilities
-			y_bg = posSeqs_[n]->extractKmer(i,std::min( i, Global::bgModelOrder ));
+			y_bg = posSeqs_[n]->extractKmer( i, std::min( i, Global::bgModelOrder ) );
 			lPosterior += v_bg[Global::bgModelOrder][y_bg];
 		}
 		//if( "sequence has a motif: z_n > 0")
