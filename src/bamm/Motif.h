@@ -29,6 +29,7 @@ public:
 	float***    getV();									// get conditional probabilities v
 	float***	getP();									// get probabilities p
 	void        updateV( float*** n, float** alpha );
+    void        updateVbyK( float*** n, float** alpha, int k ); // only update V's of order k (needed for testing alpha)
 	void		calculateP();							// calculate probabilities p
 
 	void 		print();					   			// print v to console

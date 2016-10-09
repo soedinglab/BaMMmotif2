@@ -47,6 +47,8 @@ std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.0f );	// background m
 unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();	// maximum number of iterations
 float               Global::epsilon = 0.001f;				// threshold for likelihood convergence parameter
 bool                Global::noAlphaOptimization = false;	// disable alpha optimization
+int                 Global::alphaIter = 10;                 // howmany iterations to wait before turning on Alpha Learning
+bool                Global::TESTING = false;                // turn on when you want to have printouts for checking alpha learning
 bool                Global::noQOptimization = false;		// disable q optimization
 bool				Global::setSlow = false;				// develop with the slow EM version
 bool				Global::logEM = false;					// calculation EM steps in log space
@@ -227,6 +229,8 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::Option( "maxEMIterations", maxEMIterations );
 	opt >> GetOpt::Option( 'e', "epsilon", epsilon );
 	opt >> GetOpt::OptionPresent( "noAlphaOptimization", noAlphaOptimization );
+    opt >> GetOpt::OptionPresent( "TESTING", TESTING );
+	opt >> GetOpt::Option( "alphaIter", alphaIter );
 	opt >> GetOpt::OptionPresent( "noQOptimization", noQOptimization );
 	opt >> GetOpt::OptionPresent( "setSlow", setSlow );
 	opt >> GetOpt::OptionPresent( "logEM", logEM );

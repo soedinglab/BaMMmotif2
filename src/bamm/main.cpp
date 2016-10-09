@@ -52,7 +52,7 @@ int main( int nargs, char* args[] ){
 	for( int N = 0; N < motifs.getN(); N++ ){
 		EM em( motifs.getMotifs()[N], bgModel );
 		em.learnMotif();
-		em.write();
+        em.write();
 	}
 
 	// write motifs

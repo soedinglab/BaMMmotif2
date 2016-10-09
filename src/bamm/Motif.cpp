@@ -208,62 +208,114 @@ void Motif::calculateV(){
 		}
 	}
 }
-
 // update v from fractional k-mer counts n and current alphas
 void Motif::updateV( float*** n, float** alpha ){
 
-//	if( Global::debugMode ){
-//		fprintf( stderr, " Updating V's ( Differences ) \n");
-//	}
+//  if( Global::debugMode ){
+//      fprintf( stderr, " Updating V's ( Differences ) \n");
+//  }
 
-	assert( isInitialized_ );
+    assert( isInitialized_ );
 
-	int y, j, k, y2, yk;
+    int y, j, k, y2, yk;
 
-	// sum up the n over (k+1)-mers at different position of motif
-	float* sumN = ( float* )calloc( W_, sizeof( float ) );
-	for( j = 0; j < W_; j++ ){
-		for( y = 0; y < Y_[1]; y++ ){
-			sumN[j] += n[0][y][j];
-		}
-	}
+    // sum up the n over (k+1)-mers at different position of motif
+    float* sumN = ( float* )calloc( W_, sizeof( float ) );
+    for( j = 0; j < W_; j++ ){
+        for( y = 0; y < Y_[1]; y++ ){
+            sumN[j] += n[0][y][j];
+        }
+    }
 
-	// for k = 0, v_ = freqs:
-	for( y = 0; y < Y_[1]; y++ ){
-		for( j = 0; j < W_; j++ ){
-//			if( Global::debugMode ){
-//				fprintf( stderr, "v_[%d][%d][%d] -> %0.4f \n", k, y, j, v_[k][y][j] - (( n[0][y][j] + alpha[0][j] * v_bg_[y] )
-//						/ ( sumN[j] + alpha[0][j] )));
-//			}
-			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * v_bg_[y] )
-						/ ( sumN[j] + alpha[0][j] );
-		}
-	}
+    // for k = 0, v_ = freqs:
+    for( y = 0; y < Y_[1]; y++ ){
+        for( j = 0; j < W_; j++ ){
+//          if( Global::debugMode ){
+//              fprintf( stderr, "v_[%d][%d][%d] -> %0.4f \n", k, y, j, v_[k][y][j] - (( n[0][y][j] + alpha[0][j] * v_bg_[y] )
+//                      / ( sumN[j] + alpha[0][j] )));
+//          }
+            v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * v_bg_[y] )
+                        / ( sumN[j] + alpha[0][j] );
+        }
+    }
 
-	free( sumN );
+    free( sumN );
 
-	// for k > 0:
-	for( k = 1; k < Global::modelOrder+1; k++ ){
-		for( y = 0; y < Y_[k+1]; y++ ){
-			y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
-			yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer
-			for( j = 0; j < k; j++ ){						// when j < k, i.e. p(A|CG) = p(A|C)
-//				if( Global::debugMode ){
-//					fprintf( stderr, "v_[%d][%d][%d] -> %0.4f \n", k, y, j, v_[k][y][j] - v_[k-1][y2][j]);
-//				}
-				v_[k][y][j] = v_[k-1][y2][j];
-			}
-			for( j = k; j < W_; j++ ){
-//				if( Global::debugMode ){
-//					fprintf( stderr, "v_[%d][%d][%d] -> %0.4f \n", k, y, j, v_[k][y][j] - (( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
-//							/ ( n[k-1][yk][j-1] + alpha[k][j] )));
-//				}
+    // for k > 0:
+    for( k = 1; k < Global::modelOrder+1; k++ ){
+        for( y = 0; y < Y_[k+1]; y++ ){
+            y2 = y % Y_[k];                                 // cut off the first nucleotide in (k+1)-mer
+            yk = y / Y_[1];                                 // cut off the last nucleotide in (k+1)-mer
+            for( j = 0; j < k; j++ ){                       // when j < k, i.e. p(A|CG) = p(A|C)
+//              if( Global::debugMode ){
+//                  fprintf( stderr, "v_[%d][%d][%d] -> %0.4f \n", k, y, j, v_[k][y][j] - v_[k-1][y2][j]);
+//              }
+                v_[k][y][j] = v_[k-1][y2][j];
+            }
+            for( j = k; j < W_; j++ ){
+//              if( Global::debugMode ){
+//                  fprintf( stderr, "v_[%d][%d][%d] -> %0.4f \n", k, y, j, v_[k][y][j] - (( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
+//                          / ( n[k-1][yk][j-1] + alpha[k][j] )));
+//              }
 
-				v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
-							/ ( n[k-1][yk][j-1] + alpha[k][j] );
-			}
-		}
-	}
+                v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
+                            / ( n[k-1][yk][j-1] + alpha[k][j] );
+            }
+        }
+    }
+}
+
+// update v from fractional k-mer counts n and current alphas
+void Motif::updateVbyK( float*** n, float** alpha, int k ){
+
+    assert( isInitialized_ );
+
+    int y, j, y2, yk;
+
+    // sum up the n over (k+1)-mers at different position of motif
+    float* sumN = ( float* )calloc( W_, sizeof( float ) );
+    for( j = 0; j < W_; j++ ){
+        for( y = 0; y < Y_[1]; y++ ){
+            sumN[j] += n[0][y][j];
+        }
+    }
+    if( k == 0 ){
+        // for k = 0, v_ = freqs:
+        for( y = 0; y < Y_[1]; y++ ){
+            for( j = 0; j < W_; j++ ){
+                //			if( Global::debugMode ){
+                //				fprintf( stderr, "v_[%d][%d][%d] -> %0.4f \n", k, y, j, v_[k][y][j] - (( n[0][y][j] + alpha[0][j] * v_bg_[y] )
+                //						/ ( sumN[j] + alpha[0][j] )));
+                //			}
+                v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * v_bg_[y] )
+						        / ( sumN[j] + alpha[0][j] );
+            }
+        }
+    }
+    free( sumN );
+
+    // for k > 0:
+    if(k > 0 ){
+        for( y = 0; y < Y_[k+1]; y++ ){
+            y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
+            yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer
+            for( j = 0; j < k; j++ ){						// when j < k, i.e. p(A|CG) = p(A|C)
+                //				if( Global::debugMode ){
+                //					fprintf( stderr, "v_[%d][%d][%d] -> %0.4f \n", k, y, j, v_[k][y][j] - v_[k-1][y2][j]);
+                //				}
+                v_[k][y][j] = v_[k-1][y2][j];
+            }
+            for( j = k; j < W_; j++ ){
+                //				if( Global::debugMode ){
+                //					fprintf( stderr, "v_[%d][%d][%d] -> %0.4f \n", k, y, j, v_[k][y][j] - (( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
+                //							/ ( n[k-1][yk][j-1] + alpha[k][j] )));
+                //				}
+
+                v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
+							        / ( n[k-1][yk][j-1] + alpha[k][j] );
+            }
+        }
+    }
 }
 
 void Motif::calculateP(){
