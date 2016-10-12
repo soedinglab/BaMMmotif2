@@ -199,18 +199,25 @@ template <class T> inline float zbrent(T &obj, float ( T::*func )( float , int )
         const float EPS = std::numeric_limits<float>::epsilon();
         float a=x1 , b=x2, c=x2, d=b-a, e=b-a, fa=CALL_EM_FN( obj, func )( a ,k ), fb=CALL_EM_FN( obj, func )( b ,k ), fc, p, q, r, s, tol1, xm;
 
-        if(( fa > 0.0 && fb > 0.0 ) || ( fa < 0.0 && fb < 0.0 )){
-            printf("\n Root must be bracketed in zbrent ");
-            printf("\n fa = %f ; fb = %f \n ", fa,fb);
-//            // find out which border ( min = x1 or max = x2 ) results in a higher likelihood.
-            // do this in EM an here just return a flag
-            return -1;
-        }
         if( fa < fb ){
             printf("\n Root defines a minimum -> do not optimize.\n ");
             // root defines a minimum -> do not optimize
-            return 0;
+            return -1;
         }
+        if(( fa > 0.0 && fb > 0.0 ) || ( fa < 0.0 && fb < 0.0 )){
+            printf("\n Root must be bracketed for order %d ", k);
+            printf("\n fa = %f ; fb = %f ", fa,fb);
+            // find out which border ( min = x1 or max = x2 ) results in a higher likelihood.
+            // do this in EM an here just return a flag
+            if( fabsf(fa) < fabsf(fb)){
+                printf(" --> choose %f ", a);
+                return a;
+            }else{
+                printf(" --> choose %f ", b);
+                return b;
+            }
+        }
+
         fc = fb;
         for( int iter = 0; iter < ITMAX; iter++){
             if(( fb > 0.0 && fc > 0.0 ) || ( fb < 0.0 && fc < 0.0 )){

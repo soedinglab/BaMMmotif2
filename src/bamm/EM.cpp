@@ -148,8 +148,7 @@ int EM::learnMotif(){
 		v_prev[y] = ( float* )calloc( W, sizeof( float ) );
 	}
 
-	q_func_old = calculateQfunc();
-	l_post_old = calculateLogPosterior();
+
 
 	// iterate over
 	while( iterate && ( EMIterations_ < Global::maxEMIterations ) ){
@@ -183,6 +182,12 @@ int EM::learnMotif(){
 		// M-step: update parameters
 		MStep();
 
+		// check EM-criteria
+		q_func_old = calculateQfunc();
+        l_post_old = calculateLogPosterior();
+     	// update model parameters v[k][y][j]
+		motif_->updateV( n_, alpha_ );
+
 		// * optional: optimize parameter alpha
 		if( !Global::noAlphaOptimization ){
 
@@ -198,7 +203,7 @@ int EM::learnMotif(){
 		// * optional: optimize parameter q
 		if( !Global::noQOptimization )		optimizeQ();
 
-		// chcek EM-criteria
+		// check EM-criteria
 		q_func_new = calculateQfunc();
 		l_post_new = calculateLogPosterior();
 
@@ -226,22 +231,25 @@ int EM::learnMotif(){
 			if( ( l_post_new - q_func_new ) < 0 ) std::cout << " ! lPost < Qfunc ! ";
 			std::cout << std::endl;
 		}
-		q_func_old = q_func_new;
-		l_post_old = l_post_new;
 
 		if( v_diff < Global::epsilon )					iterate = false;
 		//if( llikelihood_diff < 0 && EMIterations_ > 1 )	iterate = false;
 
 		// * testing: write out alpha, qfunc, gradient and posterior value for current EM iterations
 		if( Global::TESTING ){
+	        std::stringstream alphaIter;
+	        alphaIter << Global::alphaIter;
+
 		    std::string opath = std::string( Global::outputDirectory ) + '/'
 		            + std::string( Global::posSequenceBasename );
-		    std::string opath_testing = opath + ".TESTING";
+		    std::string opath_testing = opath + "emIter" + alphaIter.str() + ".TESTING";
 		    std::ofstream ofile_testing;
 		    ofile_testing.open( opath_testing.c_str() , std::ios_base::app);
 		    ofile_testing << std::scientific << calculateQfunc_gradient(alpha_[Global::modelOrder][0],Global::modelOrder) << ' ';
-		    ofile_testing << std::scientific << q_func_new << ' ';
-		    ofile_testing << std::scientific << l_post_new << ' ';
+            ofile_testing << std::scientific << q_func_new << ' ';
+		    ofile_testing << std::scientific << q_func_new - q_func_old << ' ';
+            ofile_testing << std::scientific << l_post_new << ' ';
+		    ofile_testing << std::scientific << l_post_new - l_post_old << ' ';
 		    for( int k = 0; k < Global::modelOrder+1; k++ ){
 		        ofile_testing << std::setprecision( 3 ) << alpha_[k][0] << ' ';
 		    }
@@ -463,9 +471,9 @@ void EM::MStep(){
 			}
 		}
 	}
-
-	// update model parameters v[k][y][j]
-	motif_->updateV( n_, alpha_ );
+//
+//	// update model parameters v[k][y][j]
+//	motif_->updateV( n_, alpha_ );
 
 }
 
@@ -673,7 +681,7 @@ float EM::calculateQfunc( int K ){
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 		L = posSeqs_[n]->getL();
 		prior_i = q_ / static_cast<float>( L - W + 1 );
-		Qfunc += ( r_[n][0] * logf( prior_0 ) + ( 1 - r_[n][0] ) * logf( prior_i ) );
+		Qfunc += ( prior_0 * logf( prior_0 ) + q_ * logf( prior_i ) );
 	}
 
 	// the third and forth parts of Q function
