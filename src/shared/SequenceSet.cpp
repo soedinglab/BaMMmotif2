@@ -295,8 +295,6 @@ int SequenceSet::readFASTA( bool revcomp ){
 	std::string line, header, sequence;
 	std::ifstream file( sequenceFilepath_.c_str() ); // opens FASTA file
 
-	int K = 5 /*Global::modelOrder*/;
-
 	if( file.is_open() ){
 
 		while( getline( file, line ).good() ){
@@ -334,22 +332,7 @@ int SequenceSet::readFASTA( bool revcomp ){
 
 									continue; // exclude undefined base from base counts
 
-								} else {
-
-									// cout (k+1)-mers for each sequence
-									for( int k = 0; k < K+1; k++ ){
-
-										int y = 0;
-
-										for( int j = std::min( i, k ); j >= 0; j-- ){
-
-											y += ( encoding[i-j] - 1 ) * Y_[j];
-
-										}
-
-									}
 								}
-
 								baseCounts[encoding[i]-1]++; // count base
 							}
 							sequences_.push_back( new Sequence( encoding, L, header, Y_, revcomp ) );
@@ -419,18 +402,6 @@ int SequenceSet::readFASTA( bool revcomp ){
 								sequence[i] << " at sequence " << header << std::endl;
 
 						continue; // exclude undefined base from base counts
-					} else {
-
-						// cout (k+1)-mers for each sequence
-						for( int k = 0; k < K+1; k++ ){
-
-							int y = 0;
-
-							for( int j = std::min( i, k ); j >= 0; j-- ){
-								y += ( encoding[i-j] - 1 ) * Y_[j];
-
-							}
-						}
 					}
 					baseCounts[encoding[i]-1]++; // count base
 				}

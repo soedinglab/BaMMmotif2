@@ -1,4 +1,4 @@
-#include <time.h>		// time()
+#include <time.h>		// time(), clock_t, clock, CLOCKS_PER_SEC
 #include <stdio.h>
 
 #include "Global.h"
@@ -10,7 +10,7 @@
 
 int main( int nargs, char* args[] ){
 
-	long timestamp = time( NULL );
+	clock_t t0 = clock();
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "======================================\n" );
@@ -62,14 +62,11 @@ int main( int nargs, char* args[] ){
 		fprintf( stderr, "***********\n" );
 		fprintf( stderr, "*   FDR   *\n" );
 		fprintf( stderr, "***********\n" );
-		long timestampFDR = time( NULL );
 		for( int N = 0; N < motifs.getN(); N++ ){
 			FDR fdr( motifs.getMotifs()[N] );
 			fdr.evaluateMotif();
 			fdr.write();
 		}
-		fprintf( stdout, "\n--- Runtime for FDR assessment: %ld seconds ---\n", time( NULL )-timestampFDR );
-
 	}
 
 	fprintf( stderr, "\n" );
@@ -111,8 +108,8 @@ int main( int nargs, char* args[] ){
 		std::cout << "\n***** All EM steps are calculated in linear space. *****";
 	}
 
-	fprintf( stdout, "\n-------------- Runtime: %ld seconds (%0.2f minutes) --------------\n",
-			time( NULL )-timestamp, ( float )( time( NULL )-timestamp )/60.0f );
+	fprintf( stdout, "\n-------------- Runtime: %.2f seconds (%0.2f minutes) --------------\n",
+			( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC, ( ( float )( clock() - t0 ) ) / ( CLOCKS_PER_SEC * 60.0f ) );
 
 	// free memory
 	if( bgModel ) delete bgModel;

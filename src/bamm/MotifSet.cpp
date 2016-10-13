@@ -87,8 +87,8 @@ void MotifSet::write(){
 
 	/**
 	 * save all the motifs learned by BaMM in two flat files:
-	 * (1) posSequenceBasename.conds: 		conditional probabilities after EM
-	 * (2) posSequenceBasename.probs: 		probabilities of PWM after EM
+	 * (1) posSequenceBasename.ihbcp: 		conditional probabilities after EM
+	 * (2) posSequenceBasename.ihbp: 		probabilities of PWM after EM
 	 */
 
 	std::string opath = std::string( Global::outputDirectory )  + '/'

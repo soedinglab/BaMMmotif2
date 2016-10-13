@@ -3,6 +3,7 @@
 EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 
 	motif_ = motif;
+	//motif_ =  new Motif( *motif );
 	bg_ = bg;
 
 	int y, k, j, L;
@@ -97,8 +98,7 @@ int EM::learnMotif(){
 			"|  EM  |\n"
 			"|______|\n\n" );
 
-	long timestamp = time( NULL );
-
+	clock_t t0 = clock();
 	bool iterate = true;									// flag for iterating before convergence
 	int W = motif_->getW();
 	int K_model = Global::modelOrder;
@@ -183,7 +183,7 @@ int EM::learnMotif(){
 	}
 	free( v_prev );
 
-	fprintf( stdout, "\n--- Runtime for EM: %ld seconds ---\n", time( NULL )-timestamp );
+	fprintf( stdout, "\n--- Runtime for EM: %.4f seconds ---\n", ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );
 
     return 0;
 }
@@ -423,6 +423,7 @@ void EM::optimizeQ(){
 	// optimize hyper-parameter q
 	// motif.updateV()
 }
+
 float EM::calculateLogPosterior(){
 
 	int y_bg, y_motif;
@@ -468,13 +469,14 @@ float EM::calculateLogPosterior(){
 float EM::calculateQfunc(){
 
 	int L, y, y2, j;
-	float Qfunc = 0.0f;
 	float prior_i, prior_0 = 1 - q_;
 
 	int W = motif_->getW();
 	int A = Alphabet::getSize();
 	int K = Global::modelOrder;
 	float*** v_motif = motif_->getV();
+
+	float Qfunc = 0.0f;
 
     // the first part of Q function
 	for( y = 0; y < Y_[K+1]; y++ ){
@@ -503,6 +505,7 @@ float EM::calculateQfunc(){
 			// the third term
 			Qfunc += alpha_[K][j] * v_motif[K-1][y2][j] * logf( v_motif[K][y][j] );
 		}
+
 		// the forth part of Q function
 		Qfunc += ( - 2.0f * logf( alpha_[K][j] ) - Global::modelBeta * powf( Global::modelGamma, ( float )K ) /
 				alpha_[K][j] + logf( Global::modelBeta * powf( Global::modelGamma, ( float )K ) ) );
@@ -557,9 +560,6 @@ void EM::print(){
 	}
 }
 
-
-
-
 void EM::write(){
 
 	/**
@@ -570,7 +570,7 @@ void EM::write(){
 	 * (4) posSequenceBasename.EMlogScores:	log scores
 	 */
 
-	int k, y, j, i, L;
+	int k, y, j;
 	int W = motif_->getW();
 
 	std::string opath = std::string( Global::outputDirectory ) + '/'
@@ -589,7 +589,9 @@ void EM::write(){
 		ofile_n << std::endl;
 	}
 
+/*	TODO: this file is too large for benchmarking
 	// output responsibilities r[n][i]
+	int i, L;
 	std::string opath_r = opath + ".EMposterior";
 	std::ofstream ofile_r( opath_r.c_str() );
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
@@ -605,6 +607,7 @@ void EM::write(){
 		}
 		ofile_r << std::endl;
 	}
+*/
 
 	// output parameter alphas alpha[k][j]
 	std::string opath_alpha = opath + ".EMalpha";

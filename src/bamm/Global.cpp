@@ -218,7 +218,8 @@ int Global::readArguments( int nargs, char* args[] ){
 		}
 		if( bgModelOrder > 0 ){
 			for( int k = 1; k < bgModelOrder + 1; k++ ){
-				bgModelAlpha[k] = modelBeta * powf( modelGamma, static_cast<float>( k ) - 1.0f );
+				bgModelAlpha[k] = 10.0f;
+//				bgModelAlpha[k] = modelBeta * powf( modelGamma, static_cast<float>( k ) - 1.0f );
 			}
 		}
 	}

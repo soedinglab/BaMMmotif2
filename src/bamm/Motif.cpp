@@ -4,7 +4,7 @@ Motif::Motif( int length ){
 
 	int k, y;
 
-	for( k = 0; k < Global::modelOrder+2; k++ ){
+	for( k = 0; k < std::max( Global::modelOrder+2, 4 ); k++ ){	// 4 is for cases when modelOrder < 2
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 
@@ -23,20 +23,23 @@ Motif::Motif( int length ){
 			p_[k][y] = ( float* )calloc( W_, sizeof( float ) );
 		}
 	}
-
 }
 
-Motif::Motif( const Motif& other ){ 		// deep copy
+Motif::Motif( const Motif& other ){ 		// copy constructor
 
 	int k, y, j;
 
+	for( k = 0; k < std::max( Global::modelOrder+2, 4 ); k++ ){
+		Y_.push_back( ipow( Alphabet::getSize(), k ) );
+	}
+
 	W_ = other.W_;
 
-	v_ = ( float*** )malloc( ( Global::modelOrder+1 )* sizeof( float** ) );
+	v_ = ( float*** )malloc( ( Global::modelOrder+1 ) * sizeof( float** ) );
 	n_ = ( int*** )malloc( ( Global::modelOrder+1 ) * sizeof( int** ) );
 	p_ = ( float*** )malloc( ( Global::modelOrder+1 )* sizeof( float** ) );
 	for( k = 0; k < Global::modelOrder+1; k++ ){
-		v_[k] = ( float** )malloc( Y_[k+1] * sizeof( float* ) );
+		v_[k] = ( float** )calloc( Y_[k+1], sizeof( float* ) );
 		n_[k] = ( int** )malloc( Y_[k+1] * sizeof( int* ) );
 		p_[k] = ( float** )malloc( Y_[k+1] * sizeof( float* ) );
 		for( y = 0; y < Y_[k+1]; y++ ){
@@ -202,7 +205,8 @@ void Motif::updateV( float*** n, float** alpha ){
 //		fprintf( stderr, " Updating V's ( Differences ) \n");
 //	}
 
-	assert( isInitialized_ );
+	// TODO: temporarily switch it off for FDR debugging, need to recover it!
+//	assert( isInitialized_ );
 
 	int y, j, k, y2, yk;
 

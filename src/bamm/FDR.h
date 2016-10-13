@@ -20,17 +20,10 @@ public:
 private:
 
 	Motif*				motif_;				// motif learned on full SequenceSet
-
-	std::vector<int>	testFold_;			// fold index for test set
 	std::vector<int>	trainFolds_;		// fold indices for training set
 
-	float**				posScores_;			// store the full set of log odds scores for positive set
-	float**				negScores_;			// store the full set of log odds scores for negative set
-
-	std::vector<float>	posScoresAll_;		// all the log odds scores on positive test SequenceSet
-	std::vector<float> 	negScoresAll_;		// all the log odds scores on negative test SequenceSet
-	std::vector<float>	posScoresMax_;		// largest log odds scores on positive test SequenceSet
-	std::vector<float>	negScoresMax_;		// largest log odds scores on negative test SequenceSet
+	std::vector<std::vector<float>> posSetScores_;
+	std::vector<std::vector<float>> negSetScores_;
 
 	std::vector<float>	P_zoops_;			// precision for ZOOPS model
 	std::vector<float>	R_zoops_;			// recall for ZOOPS model
@@ -43,20 +36,26 @@ private:
 	std::vector<int>	Y_;					// contains 1 at position 0
 											// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
 											// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
+	float**				testsetFreq_;		// kmer frequencies in the test set
+	int** 				testsetCount_;		// kmer counts in the test set
 
-							// generate background sample sequence set
-	std::vector<Sequence*>	sampleSequenceSet( float** freq );
+							// generate background sample sequence set based on the full positive sequence set
+	std::vector<Sequence*>	sampleSequenceSet();
 
-	Sequence* 				sampleSequence( float** freq );
+							// generate background sample sequence set based on each test set
+	std::vector<Sequence*>	sampleSequenceSet( std::vector<Sequence*> seqSet );
 
-							// score Global::posSequenceSet using Global::foldIndices and folds
-	void 	        		scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<int> testFold );
+							// generate negative sequence based on each sequence in the test set
+	Sequence* 				sampleSequence( int length, float** freq );
 
-							// score SequenceSet sequences
-	void 		    		scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqSet );
+							// score sequences for both positive and negative sets
+	std::vector<std::vector<float>>	scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqSet );
 
 							// calculate precision and recall for both ZOOPS and MOPS models
 	void 		   			calculatePR();
+
+							// calculate kmer frequencies for the test set
+	void					calculateFreq( std::vector<Sequence*> seqs );
 
 };
 
