@@ -8,7 +8,7 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 	int y, k, j, L;
 	int W = motif_->getW();
 
-	for( k = 0; k < std::max( Global::modelOrder+2, 4 ); k++ ){	// 4 is for cases when modelOrder < 2
+	for( k = 0; k < std::max( Global::modelOrder+2,  Global::bgModelOrder ); k++ ){	// 4 is for cases when modelOrder < 2
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 
@@ -92,6 +92,7 @@ EM::~EM(){
 
 }
 void EM::testFunctions(){
+
     // test if Qfunction fits to its gradient
     float change = 0.001f;
     for(int i = 0; i < 5; i++){
@@ -182,33 +183,18 @@ int EM::learnMotif(){
 		// M-step: update parameters
 		MStep();
 
-		// check EM-criteria
-		q_func_old = calculateQfunc();
-        l_post_old = calculateLogPosterior();
-     	// update model parameters v[k][y][j]
-		motif_->updateV( n_, alpha_ );
-
 		// * optional: optimize parameter alpha
 		if( !Global::noAlphaOptimization ){
-
-		    // only run alpha optimization every 5th em-iteration.
-		    if( EMIterations_ % Global::alphaIter == 0 ){
-				//testAlphaLearning();
-				//printf( "FINISHED!\n");
-				//exit(0);
-				optimizeAlphas();
-			}
+		    // only run alpha optimization every xth em-iteration.
+		    if( EMIterations_ % Global::alphaIter == 0 && EMIterations_ > 10){
+		        optimizeAlphas();
+		    }
 		}
 
 		// * optional: optimize parameter q
 		if( !Global::noQOptimization )		optimizeQ();
 
-		// check EM-criteria
-		q_func_new = calculateQfunc();
-		l_post_new = calculateLogPosterior();
-
-
-		// check parameter difference for convergence
+				// check parameter difference for convergence
 		v_diff = 0.0f;
 
 		for( y = 0; y < Y_[Global::modelOrder+1]; y++ ){
@@ -223,12 +209,7 @@ int EM::learnMotif(){
 			std::cout << EMIterations_ << "th iteration:	";
 			std::cout << "para_diff = " << v_diff << ",	";
 			std::cout << "log likelihood = " << llikelihood_ << " 	";
-			std::cout << "Qfunction " << q_func_new << " 	";
-			std::cout << "logPosterior " << l_post_new << " 	";
 			if( llikelihood_diff < 0 && EMIterations_ > 1) std::cout << " decreasing... ";
-			if( ( q_func_new - q_func_old ) < 0 ) std::cout << " ! qfunc decr.. !  ";
-			if( ( l_post_new - l_post_old ) < 0 ) std::cout << " ! lPost decr.. !  ";
-			if( ( l_post_new - q_func_new ) < 0 ) std::cout << " ! lPost < Qfunc ! ";
 			std::cout << std::endl;
 		}
 
@@ -236,25 +217,6 @@ int EM::learnMotif(){
 		//if( llikelihood_diff < 0 && EMIterations_ > 1 )	iterate = false;
 
 		// * testing: write out alpha, qfunc, gradient and posterior value for current EM iterations
-		if( Global::TESTING ){
-	        std::stringstream alphaIter;
-	        alphaIter << Global::alphaIter;
-
-		    std::string opath = std::string( Global::outputDirectory ) + '/'
-		            + std::string( Global::posSequenceBasename );
-		    std::string opath_testing = opath + "emIter" + alphaIter.str() + ".TESTING";
-		    std::ofstream ofile_testing;
-		    ofile_testing.open( opath_testing.c_str() , std::ios_base::app);
-		    ofile_testing << std::scientific << calculateQfunc_gradient(alpha_[Global::modelOrder][0],Global::modelOrder) << ' ';
-            ofile_testing << std::scientific << q_func_new << ' ';
-		    ofile_testing << std::scientific << q_func_new - q_func_old << ' ';
-            ofile_testing << std::scientific << l_post_new << ' ';
-		    ofile_testing << std::scientific << l_post_new - l_post_old << ' ';
-		    for( int k = 0; k < Global::modelOrder+1; k++ ){
-		        ofile_testing << std::setprecision( 3 ) << alpha_[k][0] << ' ';
-		    }
-		    ofile_testing << std::endl;
-		}
 	}
 
 	// calculate probabilities
@@ -471,28 +433,17 @@ void EM::MStep(){
 			}
 		}
 	}
-//
-//	// update model parameters v[k][y][j]
-//	motif_->updateV( n_, alpha_ );
+
+	// update model parameters v[k][y][j]
+	motif_->updateV( n_, alpha_ );
 
 }
 
 //typedef int( EM::*EMMemFn)(double a);
 
 void EM::optimizeAlphas( float min_brent, float max_brent, float tolerance ){
-    //	if( Global::debugMode){
-    //		fprintf( stderr, "\n ---------------------------------- \n");
-    //		fprintf( stderr, "\n Verbose Output for Alpha Learning: \n");
-    //		fprintf( stderr, "\n ---------------------------------- \n\n");
-    //	}
-
-    // for now: only optimize highest alpha
-    //int k = Global::modelOrder;
-    for( int k = 0; k < Global::modelOrder+1; k++ ){
+       for( int k = 1; k < Global::modelOrder+1; k++ ){
         float optim_alpha = zbrent( *this, &EM::calculateQfunc_gradient, min_brent, max_brent, tolerance, k );
-        //      if( Global::debugMode ){
-        //          fprintf( stderr, "\n alpha_%d : \t %0.4f -> \t %0.4f \n ", k, alpha_[k][0], optim_alpha );
-        //      }
 
         // only update in case a root is bracketed
         if( optim_alpha > 0 ){
@@ -505,61 +456,6 @@ void EM::optimizeAlphas( float min_brent, float max_brent, float tolerance ){
 }
 
 void EM::testAlphaLearning( ){
-	std::cout << "Starting AlphaLearningtesting...	";
-	std::cout << std::endl;
-
-	float alpha, alpha_min = 1, alpha_max = 30;
-
-	for(int k = 0; k <= Global::modelOrder; k++ ){
-		std::cout << k << " th Order " << ' ';
-		std::cout << std::endl;
-
-	    std::string opath = std::string( Global::outputDirectory ) + '/'
-	            + std::string( Global::posSequenceBasename );
-
-	    std::stringstream alphaIter;
-	    alphaIter << Global::alphaIter;
-
-        std::stringstream kstring;
-        kstring << k;
-
-
-	    std::string opath_n = opath + "_emIter_" + alphaIter.str() + "_Order_" + kstring.str() + ".AlphaTesting";
-	    std::ofstream ofile_n( opath_n.c_str() );
-
-	    for( alpha = alpha_min; alpha < alpha_max; alpha++ ){
-
-	    	std::cout << " 	alpha= " << alpha << ' ';
-
-	        // update alpha
-	        for( int j = 0; j < motif_->getW(); j++ ){
-	            alpha_[k][j] = alpha;
-	        }
-	        // adjust v_s to new alpha
-	        motif_->updateVbyK( n_, alpha_ ,k );
-	        // calculate and store Alpha_Gradient_Qfunc_LogPosterior
-	        ofile_n << std::scientific << alpha << ' ';
-	        ofile_n << std::scientific << calculateQfunc_gradient( alpha, k ) << ' ';
-	        std::cout << " 	gradient= " << calculateQfunc_gradient( alpha, k ) << ' ';
-	        ofile_n << std::scientific << calculateQfunc( k ) << ' ';
-	        std::cout << " 	Qfunction= " << calculateQfunc( k ) ;
-	        ofile_n << std::scientific << calculateLogPosterior( k ) << ' ';
-	        ofile_n << std::endl;
-	        std::cout << std::endl;
-//	        for(int turn = 0; turn < 10; turn++ ){
-//	        	    		alpha++;
-//	        }
-	    }
-
-	    std::cout << " 				Resetting v's " ;
-	    std::cout << std::endl << std::flush;
-
-	    // reset v's for initial alpha
-	    for( int j = 0; j < motif_->getW(); j++ ){
-	        alpha_[k][j] = Global::modelAlpha[k];
-	    }
-	    motif_->updateVbyK( n_, alpha_ ,k );
-	}
 }
 
 void EM::optimizeQ(){
