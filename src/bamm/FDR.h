@@ -20,7 +20,9 @@ public:
 private:
 
 	Motif*				motif_;				// motif learned on full SequenceSet
-	std::vector<int>	trainFolds_;		// fold indices for training set
+	std::vector<int>	trainsetFolds_;		// fold indices for training set
+	float**				testsetV_;			// kmer frequencies in the test set
+	int** 				testsetN_;			// kmer counts in the test set
 
 	std::vector<std::vector<float>> posSetScores_;
 	std::vector<std::vector<float>> negSetScores_;
@@ -36,8 +38,6 @@ private:
 	std::vector<int>	Y_;					// contains 1 at position 0
 											// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
 											// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
-	float**				testsetFreq_;		// kmer frequencies in the test set
-	int** 				testsetCount_;		// kmer counts in the test set
 
 							// generate background sample sequence set based on the full positive sequence set
 	std::vector<Sequence*>	sampleSequenceSet();
@@ -54,8 +54,8 @@ private:
 							// calculate precision and recall for both ZOOPS and MOPS models
 	void 		   			calculatePR();
 
-							// calculate kmer frequencies for the test set
-	void					calculateFreq( std::vector<Sequence*> seqs );
+							// calculate trimer conditional probabilities for the test set
+	void					calculateTrimerV( std::vector<Sequence*> seqs );
 
 };
 

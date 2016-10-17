@@ -36,7 +36,6 @@ public:
 	static char*		negSequenceBasename;				// basename of negative sequence FASTA file
 	static SequenceSet*	negSequenceSet;						// negative Sequence Set
 	static std::vector<std::vector<int>>	negFoldIndices;	// sequence indices for given negative sequence set
-	static bool			negGiven;							// a flag for the given negative sequence set by user
 
 	// weighting options
 	static char*		intensityFilename;					// filename of intensity file (i.e. for HT-SELEX data)
@@ -71,13 +70,15 @@ public:
 	static float		epsilon;							// threshold for likelihood convergence parameter
 	static bool			noAlphaOptimization;				// disable alpha optimization
 	static bool			noQOptimization;					// disable q optimization
-	static bool			setSlow;							// develop with the slow EM version
-	static bool			logEM;								// calculation EM steps in log space
 
 	// FDR options
 	static bool			FDR;								// triggers False-Discovery-Rate (FDR) estimation
 	static int			mFold;								// number of negative sequences as multiple of positive sequences
 	static int			cvFold;								// number of cross-validation (cv) folds
+	static char*		bgSequenceFilename;					// filename of background sequence FASTA file
+	static char*		bgSequenceBasename;					// basename of background sequence FASTA file
+	static SequenceSet*	bgSequenceSet;						// negative Sequence Set
+	static bool			bgSeqSetGiven;
 	// further FDR options...
 
 	static bool			verbose;							// verbose printouts, defaults to false
