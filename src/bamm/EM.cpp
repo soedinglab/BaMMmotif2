@@ -2,8 +2,7 @@
 
 EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 
-	// motif_ = motif;
-	motif_ =  new Motif( *motif );
+	motif_ = motif;
 	bg_ = bg;
 
 	int y, k, j, LW1;

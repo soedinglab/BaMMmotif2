@@ -55,7 +55,8 @@ int        			Global::cvFold = 5;						// size of cross-validation folds
 char*               Global::bgSequenceFilename = NULL;		// filename of negative sequence FASTA file
 char*				Global::bgSequenceBasename = NULL;		// basename of negative sequence FASTA file
 SequenceSet*        Global::bgSequenceSet = NULL;			// negative Sequence Set
-bool				Global::bgSeqSetGiven = false;
+bool				Global::bgSeqSetGiven = false;			// a flag to show if bg sequence set is given
+int 				Global::samplingOrder = 2;				// the kmer order for sampling negative sequence set
 // further FDR options...
 
 // printout options
@@ -240,6 +241,7 @@ int Global::readArguments( int nargs, char* args[] ){
 		if( opt >> GetOpt::Option( "bgSeqFile", bgSequenceFilename ) ){
 			bgSeqSetGiven = true;
 		}
+		opt >> GetOpt::Option( 's', "samplingOrder", samplingOrder );
 	}
 
 	// printout options

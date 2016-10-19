@@ -24,8 +24,10 @@ private:
 	float**				testsetV_;			// kmer frequencies in the test set
 	int** 				testsetN_;			// kmer counts in the test set
 
-	std::vector<std::vector<float>> posSetScores_;
-	std::vector<std::vector<float>> negSetScores_;
+	std::vector<float> 	posScoreAll_;		// store log odds scores over all positions on the sequences
+	std::vector<float> 	posScoreMax_;		// store maximal log odds score from each sequence
+	std::vector<float> 	negScoreAll_;
+	std::vector<float> 	negScoreMax_;
 
 	std::vector<float>	P_zoops_;			// precision for ZOOPS model
 	std::vector<float>	R_zoops_;			// recall for ZOOPS model
@@ -55,7 +57,8 @@ private:
 	void 		   			calculatePR();
 
 							// calculate trimer conditional probabilities for the test set
-	void					calculateTrimerV( std::vector<Sequence*> seqs );
+	void					calculateKmerV( std::vector<Sequence*> seqs );
+	void					writeLogOdds();
 
 };
 

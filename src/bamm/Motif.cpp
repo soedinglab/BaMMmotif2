@@ -177,7 +177,7 @@ void Motif::calculateV(){
 	// for k = 0, v_ = freqs:
 	for( y = 0; y < Y_[1]; y++ ){
 		for( j = 0; j < W_; j++ ){
-			v_[0][y][j] = ( static_cast<float>( n_[0][y][j] ) + Global::modelAlpha.at(0) * Global::posSequenceSet->getBaseFrequencies()[y] )
+			v_[0][y][j] = ( static_cast<float>( n_[0][y][j] ) + Global::modelAlpha.at(0) * Global::negSequenceSet->getBaseFrequencies()[y] )
 						/ ( static_cast<float>( N_ ) + Global::modelAlpha.at(0) );
 		}
 	}
@@ -224,7 +224,7 @@ void Motif::updateV( float*** n, float** alpha ){
 //				fprintf( stderr, "v_[%d][%d][%d] -> %0.4f \n", k, y, j, v_[k][y][j] - (( n[0][y][j] + alpha[0][j] * v_bg_[y] )
 //						/ ( sumN[j] + alpha[0][j] )));
 //			}
-			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * Global::posSequenceSet->getBaseFrequencies()[y] )
+			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * Global::negSequenceSet->getBaseFrequencies()[y] )
 						/ ( sumN[j] + alpha[0][j] );
 		}
 	}

@@ -49,7 +49,8 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*   Learn Motif by EM   *\n" );
 	fprintf( stderr, "*************************\n" );
 	for( int N = 0; N < motifs.getN(); N++ ){
-		EM em( motifs.getMotifs()[N], bgModel );
+		Motif* motif = new Motif( *motifs.getMotifs()[N] );
+		EM em( motif, bgModel );
 		em.learnMotif();
 		em.write();
 	}
@@ -64,7 +65,8 @@ int main( int nargs, char* args[] ){
 		fprintf( stderr, "*   FDR   *\n" );
 		fprintf( stderr, "***********\n" );
 		for( int N = 0; N < motifs.getN(); N++ ){
-			FDR fdr( motifs.getMotifs()[N] );
+			Motif* motif = new Motif( *motifs.getMotifs()[N] );
+			FDR fdr( motif );
 			fdr.evaluateMotif();
 			fdr.write();
 		}

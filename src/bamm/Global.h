@@ -78,7 +78,8 @@ public:
 	static char*		bgSequenceFilename;					// filename of background sequence FASTA file
 	static char*		bgSequenceBasename;					// basename of background sequence FASTA file
 	static SequenceSet*	bgSequenceSet;						// negative Sequence Set
-	static bool			bgSeqSetGiven;
+	static bool			bgSeqSetGiven;						// a flag to show if bg sequence set is given
+	static int 			samplingOrder;						// the kmer order for sampling negative sequence set
 	// further FDR options...
 
 	static bool			verbose;							// verbose printouts, defaults to false
