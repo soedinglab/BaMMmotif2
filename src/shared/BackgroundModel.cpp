@@ -7,7 +7,6 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 		                          std::vector< std::vector<int> > foldIndices,
 		                          std::vector<int> folds ){
 
-
 	name_.assign( baseName( sequenceSet.getSequenceFilepath().c_str() ) );
 
 	// calculate the maximum possible order
@@ -55,7 +54,9 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 	for( int k = 0; k <= K_; k++ ){
 		n_[k] = ( int* )calloc( Y_[k+1], sizeof( int ) );
 	}
+
 	// calculate counts
+	std::vector<Sequence*> seqs = sequenceSet.getSequences();
 	// loop over folds
 	for( size_t f = 0; f < folds.size(); f++ ){
 		// loop over fold indices
@@ -63,13 +64,13 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 			// get sequence index
 			int s_idx = foldIndices[folds[f]][f_idx];
 			// get sequence length
-			int L = sequenceSet.getSequences()[s_idx]->getL();
+			int L = seqs[s_idx]->getL();
 			// loop over order
 			for( int k = 0; k <= K_; k++ ){
 				// loop over sequence positions
 				for( int i = k; i < L; i++ ){
 					// extract (k+1)mer
-					int y = sequenceSet.getSequences()[s_idx]->extractKmer( i, k );
+					int y = seqs[s_idx]->extractKmer( i, k );
 					// skip non-defined alphabet letters
 					if( y >= 0 ){
 						// count (k+1)mer

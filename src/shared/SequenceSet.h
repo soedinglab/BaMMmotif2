@@ -25,7 +25,7 @@ public:
 	int 					getN();
 	unsigned int 			getMinL();
 	unsigned int			getMaxL();
-	float** 				getKmerFrequencies();
+	float* 					getBaseFrequencies();
 
 	void					print();			// print sequences
 	void                    debug();            // exhaustive printouts
@@ -39,7 +39,7 @@ private:
 	int 					N_;					// number of sequences
 	unsigned int 			minL_;				// length of the shortest sequence
 	unsigned int 			maxL_;				// length of the longest sequence
-	float** 				kmerFrequencies_;	// kmer frequencies
+	float*	 				baseFrequencies_;	// kmer frequencies
 
 	std::vector<int>		Y_;					// contains 1 at position 0
 												// and the number of oligomers y for increasing order k at positions k+1

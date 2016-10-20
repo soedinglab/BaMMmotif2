@@ -44,7 +44,6 @@ private:
 	float***    v_;				                		// conditional probabilities for (k+1)-mers y at motif position j
 	float***	p_;										// probabilities for (k+1)-mers y at motif position j
 	int***		n_;										// counts of (k+1)-mer for all y at motif position j
-	float*		v_bg_;									// conditional probabilities for monomers from background model
 
 	void 		calculateV();							// calculate v from k-mer counts n and global alphas
 

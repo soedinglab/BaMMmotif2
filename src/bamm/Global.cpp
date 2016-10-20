@@ -13,7 +13,6 @@ char*               Global::negSequenceFilename = NULL;		// filename of negative
 char*				Global::negSequenceBasename = NULL;		// basename of negative sequence FASTA file
 SequenceSet*        Global::negSequenceSet = NULL;			// negative Sequence Set
 std::vector< std::vector<int> >	Global::negFoldIndices;		// sequence indices for given negative sequence set
-bool				Global::negGiven = false;				// a flag for the given negative sequence set by user
 
 // weighting options
 char*               Global::intensityFilename = NULL;		// filename of intensity file (i.e. for HT-SELEX data)
@@ -50,13 +49,16 @@ bool                Global::noAlphaOptimization = false;	// disable alpha optimi
 int                 Global::alphaIter = 10;                 // alpha learning will happen in each alphaIter-th EMiteration
 bool                Global::TESTING = false;                // turn on when you want to have printouts for checking alpha learning
 bool                Global::noQOptimization = false;		// disable q optimization
-bool				Global::setSlow = false;				// develop with the slow EM version
-bool				Global::logEM = false;					// calculation EM steps in log space
 
 // FDR options
 bool                Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
 int        			Global::mFold = 20;						// number of negative sequences as multiple of positive sequences
 int        			Global::cvFold = 5;						// size of cross-validation folds
+char*               Global::bgSequenceFilename = NULL;		// filename of negative sequence FASTA file
+char*				Global::bgSequenceBasename = NULL;		// basename of negative sequence FASTA file
+SequenceSet*        Global::bgSequenceSet = NULL;			// negative Sequence Set
+bool				Global::bgSeqSetGiven = false;			// a flag to show if bg sequence set is given
+int 				Global::samplingOrder = 2;				// the kmer order for sampling negative sequence set
 // further FDR options...
 
 // printout options
@@ -74,7 +76,9 @@ void Global::init( int nargs, char* args[] ){
 	// read in positive and negative sequence set
 	posSequenceSet = new SequenceSet( posSequenceFilename );
 	negSequenceSet = new SequenceSet( negSequenceFilename );
-
+	if( bgSeqSetGiven ){
+		bgSequenceSet = new SequenceSet( bgSequenceFilename );
+	}
 	// generate fold indices for positive and negative sequence set
 	Global::posFoldIndices = generateFoldIndices( posSequenceSet->getN(), cvFold );
 	Global::negFoldIndices = generateFoldIndices( negSequenceSet->getN(), cvFold );
@@ -113,10 +117,10 @@ int Global::readArguments( int nargs, char* args[] ){
 		exit( -1 );
 	}
 
-	// negative sequence set
+	// read in negative sequence file
 	if( opt >> GetOpt::OptionPresent( "negSeqFile" ) ){
 		opt >> GetOpt::Option( "negSeqFile", negSequenceFilename );
-	}else{
+	} else {
 	    negSequenceFilename = posSequenceFilename;
 	}
 	negSequenceBasename = baseName( negSequenceFilename );
@@ -221,7 +225,8 @@ int Global::readArguments( int nargs, char* args[] ){
 		}
 		if( bgModelOrder > 0 ){
 			for( int k = 1; k < bgModelOrder + 1; k++ ){
-				bgModelAlpha[k] = modelBeta * powf( modelGamma, static_cast<float>( k ) - 1.0f );
+				bgModelAlpha[k] = 10.0f;
+//				bgModelAlpha[k] = modelBeta * powf( modelGamma, static_cast<float>( k ) - 1.0f );
 			}
 		}
 	}
@@ -232,14 +237,16 @@ int Global::readArguments( int nargs, char* args[] ){
     opt >> GetOpt::OptionPresent( "TESTING", TESTING );
 	opt >> GetOpt::Option( "alphaIter", alphaIter );
 	opt >> GetOpt::OptionPresent( "noQOptimization", noQOptimization );
-	opt >> GetOpt::OptionPresent( "setSlow", setSlow );
-	opt >> GetOpt::OptionPresent( "logEM", logEM );
 
 	// FDR options
 	if( opt >> GetOpt::OptionPresent( "FDR", FDR ) ){
 		opt >> GetOpt::OptionPresent( "FDR", FDR );
 		opt >> GetOpt::Option( 'm', "mFold", mFold  );
 		opt >> GetOpt::Option( 'n', "cvFold", cvFold );
+		if( opt >> GetOpt::Option( "bgSeqFile", bgSequenceFilename ) ){
+			bgSeqSetGiven = true;
+		}
+		opt >> GetOpt::Option( 's', "samplingOrder", samplingOrder );
 	}
 
 	// printout options
@@ -312,10 +319,6 @@ void Global::printHelp(){
 			"				disable alpha optimization. Defaults to false. *For developers.\n\n");
 	printf("\n 			--noQOptimization (*) \n"
 			"				disable q optimization. Defaults to false. *For developers.\n\n");
-	printf("\n 			--setSlow (*)\n"
-			"				use slow version of EM. Defaults to false. *For developers.\n\n");
-	printf("\n 			--logEM (*)\n"
-			"				calculate EM in log space. Defaults to false. *For developers.\n\n");
 	printf("\n 		Options for FDR: \n");
 	printf("\n 			--FDR \n"
 			"				triggers False-Discovery-Rate (FDR) estimation.\n\n");
@@ -343,6 +346,7 @@ void Global::destruct(){
     if( negSequenceBasename ) 	free( negSequenceBasename );
     if( posSequenceSet )	 	delete posSequenceSet;
     if( negSequenceSet ) 		delete negSequenceSet;
+    if( bgSequenceSet ) 		delete bgSequenceSet;
     if( initialModelBasename ) 	free( initialModelBasename );
 }
 
@@ -355,7 +359,6 @@ void Global::debug(){
     fprintf( stdout, "negSequenceFilename    = %s \n", negSequenceFilename);
     fprintf( stdout, "negSequenceBasename    = %s \n", negSequenceBasename);
     fprintf( stdout, "\n");
-    fprintf( stdout, "negGiven               = %d \n", negGiven);
     fprintf( stdout, "intensityFilename      = %s \n", intensityFilename);
     fprintf( stdout, "alphabetType           = %s \n", alphabetType);
     fprintf( stdout, "revcomp                = %d \n", revcomp);
@@ -386,7 +389,6 @@ void Global::debug(){
     fprintf( stdout, "epsilon                = %f \n", epsilon);
     fprintf( stdout, "noAlphaOptimization    = %d \n", noAlphaOptimization);
     fprintf( stdout, "noQOptimization        = %d \n", noQOptimization);
-    fprintf( stdout, "setSlow                = %d \n", setSlow);
     fprintf( stdout, "\n");
     fprintf( stdout, "FDR                    = %d \n", FDR);
     fprintf( stdout, "mFold                  = %d \n", mFold);
@@ -419,18 +421,4 @@ void Global::debug(){
         }
         fprintf( stdout, " ..... ( L = %d )\n", static_cast<int>( posFoldIndices[fold].size() ));
     }
-    if( negGiven ){
-        fprintf( stdout, "\n");
-        fprintf( stdout, "negFoldIndices \n");
-        for( size_t fold = 0; fold < negFoldIndices.size() ; fold++ ){
-            fprintf( stdout, "               %d . fold  = ", static_cast<int>( fold ) );
-            for( int n = 0; n < std::min( 10,  static_cast<int>( negFoldIndices[fold].size() )); n++ ){
-                fprintf( stdout, "%d ", negFoldIndices[fold][n] );
-            }
-            fprintf( stdout, " ..... ( L = %d )\n", static_cast<int>( negFoldIndices[fold].size() ));
-        }
-    }
-    fprintf( stdout, "\n\n");
-
-
 }
