@@ -203,14 +203,14 @@ Sequence* FDR::sampleSequence( int L, float** v ){
 		random = ( double )rand() / ( double )RAND_MAX;	// get another random double number
 		// calculate y of K-mer
 		int yk = 0;
-		for( int k = std::min( i, 2 ); k > 0; k-- ){
+		for( int k = std::min( i, Global::samplingOrder ); k > 0; k-- ){
 			yk += ( sequence[i-k] - 1 ) * Y_[k];
 		}
 
 		// assign a nucleotide based on K-mer frequency
 		f = 0.0f;
 		for( uint8_t a = 1; a <= Y_[1]; a++ ){
-			f += v[std::min( i, 2 )][yk+a-1];
+			f += v[std::min( i, Global::samplingOrder )][yk+a-1];
 			if( random <= f ){
 				sequence[i] = a;
 				break;
@@ -419,25 +419,15 @@ void FDR::writeLogOdds(){
 		ofile_zoops_posScore << posScoreMax_[i] << std::endl;
 	}
 
-	int j = 0;
-	for( int n = 0; n < posN; n++ ){
-		for( int i = 0; i < LW1; i++ ){
-			ofile_mops_posScore << posScoreAll_[j] << '	';
-			j++;
-		}
-		ofile_mops_posScore << std::endl;
+	for( int i = 0; i < posN * LW1; i++ ){
+		ofile_mops_posScore << posScoreAll_[i] << std::endl;
 	}
 
 	for( int i = 0; i < negN; i++ ){
 		ofile_zoops_negScore << negScoreMax_[i] << std::endl;
 	}
 
-	j = 0;
-	for( int n = 0; n < negN; n++ ){
-		for( int i = 0; i < LW1; i++ ){
-			ofile_mops_negScore << negScoreAll_[j] << '	';
-			j++;
-		}
-		ofile_mops_negScore << std::endl;
+	for( int i = 0; i < negN * LW1; i++ ){
+		ofile_mops_negScore << negScoreAll_[i] << std::endl;
 	}
 }
