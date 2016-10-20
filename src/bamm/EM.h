@@ -11,6 +11,7 @@ public:
 	EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds = std::vector<int>() );
 	~EM();
 
+	void                    testFunctions();
 	int						learnMotif();
 	void					print();
 	void					write();
@@ -38,10 +39,11 @@ private:
 	void 					EStep();			// E-step
 	void 					MStep();			// M-step
 
-	void 					optimizeAlphas( float min = 0.1f, float max = 1e4, float tol = 0.001f);	// optimize alpha hyper-parameters
+	void 					optimizeAlphas( float min = 0.1f, float max = 1e5, float tol = 0.001f);	// optimize alpha hyper-parameters
+	void                    testAlphaLearning( ); // printputs and writing values to file for testing (can be deleted later)
 	void 					optimizeQ();		// optimize hyper-parameter q
-	float 					calculateQfunc();	// calculate incomplete Q-function
-	float                   calculateLogPosterior(); // calculate log posterior likelihood
+	float 					calculateQfunc( int k = Global::modelOrder );	// calculate incomplete Q-function
+	float                   calculateLogPosterior( int k = Global::modelOrder ); // calculate log posterior likelihood
 
 
 	std::vector<int>		Y_;					// contains 1 at position 0

@@ -197,14 +197,8 @@ void Motif::calculateV(){
 		}
 	}
 }
-
 // update v from fractional k-mer counts n and current alphas
 void Motif::updateV( float*** n, float** alpha ){
-
-//	if( Global::debugMode ){
-//		fprintf( stderr, " Updating V's ( Differences ) \n");
-//	}
-
 	assert( isInitialized_ );
 
 	int y, j, k, y2, yk;
@@ -220,10 +214,6 @@ void Motif::updateV( float*** n, float** alpha ){
 	// for k = 0, v_ = freqs:
 	for( y = 0; y < Y_[1]; y++ ){
 		for( j = 0; j < W_; j++ ){
-//			if( Global::debugMode ){
-//				fprintf( stderr, "v_[%d][%d][%d] -> %0.4f \n", k, y, j, v_[k][y][j] - (( n[0][y][j] + alpha[0][j] * v_bg_[y] )
-//						/ ( sumN[j] + alpha[0][j] )));
-//			}
 			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * Global::negSequenceSet->getBaseFrequencies()[y] )
 						/ ( sumN[j] + alpha[0][j] );
 		}
@@ -237,17 +227,9 @@ void Motif::updateV( float*** n, float** alpha ){
 			y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
 			yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer
 			for( j = 0; j < k; j++ ){						// when j < k, i.e. p(A|CG) = p(A|C)
-//				if( Global::debugMode ){
-//					fprintf( stderr, "v_[%d][%d][%d] -> %0.4f \n", k, y, j, v_[k][y][j] - v_[k-1][y2][j]);
-//				}
 				v_[k][y][j] = v_[k-1][y2][j];
 			}
 			for( j = k; j < W_; j++ ){
-//				if( Global::debugMode ){
-//					fprintf( stderr, "v_[%d][%d][%d] -> %0.4f \n", k, y, j, v_[k][y][j] - (( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
-//							/ ( n[k-1][yk][j-1] + alpha[k][j] )));
-//				}
-
 				v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
 							/ ( n[k-1][yk][j-1] + alpha[k][j] );
 			}

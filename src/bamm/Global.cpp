@@ -43,9 +43,11 @@ int        			Global::bgModelOrder = 2;				// background model order, defaults t
 std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.0f );	// background model alpha
 
 // EM options
-unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();	// maximum number of iterations
+unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();  // maximum number of iterations
 float               Global::epsilon = 0.001f;				// threshold for likelihood convergence parameter
 bool                Global::noAlphaOptimization = false;	// disable alpha optimization
+bool                Global::alphaIter = 10;                 // alpha learning will happen in each alphaIter-th EMiteration
+bool                Global::TESTING = false;                // turn on when you want to have printouts for checking alpha learning
 bool                Global::noQOptimization = false;		// disable q optimization
 
 // FDR options
@@ -202,6 +204,7 @@ int Global::readArguments( int nargs, char* args[] ){
 //		std::cerr << "The order of background model should not exceed the order of motif model!\n";
 //		exit( -1 );
 //	}
+
 	if( opt >> GetOpt::OptionPresent( 'A', "Alpha" ) ){
 		bgModelAlpha.clear();
 		opt >> GetOpt::Option( 'A', "Alpha", bgModelAlpha );
@@ -231,6 +234,8 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::Option( "maxEMIterations", maxEMIterations );
 	opt >> GetOpt::Option( 'e', "epsilon", epsilon );
 	opt >> GetOpt::OptionPresent( "noAlphaOptimization", noAlphaOptimization );
+    opt >> GetOpt::OptionPresent( "TESTING", TESTING );
+	opt >> GetOpt::Option( "alphaIter", alphaIter );
 	opt >> GetOpt::OptionPresent( "noQOptimization", noQOptimization );
 
 	// FDR options

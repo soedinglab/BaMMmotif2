@@ -69,6 +69,8 @@ public:
 	static unsigned int	maxEMIterations;					// maximum number of iterations
 	static float		epsilon;							// threshold for likelihood convergence parameter
 	static bool			noAlphaOptimization;				// disable alpha optimization
+	static int          alphaIter;                          // howmany EM iterations before turing on AlphaLearning
+	static bool         TESTING;                            // used for massive write out during alpha testing
 	static bool			noQOptimization;					// disable q optimization
 
 	// FDR options
