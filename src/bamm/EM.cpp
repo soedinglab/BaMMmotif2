@@ -134,7 +134,7 @@ int EM::learnMotif(){
 	int y, y_bg, j;
 	float v_diff, llikelihood_prev, llikelihood_diff = 0.0f;
 	float** v_prev;											// hold the parameters of the highest-order before EM
-	float q_func_old, q_func_new, l_post_old, l_post_new, l_prior_new, l_likelihood_new;
+	float q_func_old, q_func_new, l_post_old, l_post_new, l_prior_new;
 
 	// allocate memory for parameters v[y][j] with the highest order
 	v_prev = ( float** )calloc( Y_[Global::modelOrder+1], sizeof( float* ) );
@@ -207,7 +207,6 @@ int EM::learnMotif(){
 		// check EM-criteria
 		q_func_new = calculateQfunc();
 		l_post_new = calculateLogPosterior();
-		l_likelihood_new = calculateLogLikelihood();
 		l_prior_new = calculateLogPriors();
 
 		// check parameter difference for convergence
@@ -250,7 +249,7 @@ int EM::learnMotif(){
 		    ofile_testing << std::scientific << q_func_new - q_func_old << ' ';
 		    ofile_testing << std::scientific << l_post_new << ' ';
 		    ofile_testing << std::scientific << l_prior_new << ' ';
-		    ofile_testing << std::scientific << l_likelihood_new << ' ';
+		    ofile_testing << std::scientific << llikelihood_ << ' ';
 
 		    for( int k = 0; k < Global::modelOrder+1; k++ ){
 		        ofile_testing << std::setprecision( 3 ) << alpha_[k][0] << ' ';
@@ -442,230 +441,72 @@ void EM::optimizeQ(){
 	// motif.updateV()
 }
 
-float EM::calculateLogLikelihood( int K ){
-    int L, LW1, i,j,k,y;
-    int W = motif_->getW();
-    float prior_i;
-    float prior_0 = 1-q_;
-    float llikelihood = 0.0f;
-    float normFactor = 0.0f;
-
-    float** r_local = ( float** )calloc( posSeqs_.size(), sizeof( float* ) );
-    for( size_t n = 0; n < posSeqs_.size(); n++ ){
-            L = posSeqs_[n]->getL();
-        r_local[n] = ( float* )calloc( L, sizeof( float ) );
-    }
-
-    for( size_t n = 0; n < posSeqs_.size(); n++ ){      // n runs over all sequences
-        L = posSeqs_[n]->getL();
-    LW1 = L - W + 1;
-    normFactor = 0.0f;                              // reset normalization factor
-
-    // reset r_[n][i]
-    for( i = 0; i < L; i++ ){
-            // calculation in linear space:
-            r_local[n][i] = 1.0f;
-    }
-
-    // when p(z_n > 0)
-    prior_i = q_ / static_cast<float>( LW1 );       // p(z_n = i), i > 0
-    for( i = 0; i < L; i++ ){                       // i runs over all nucleotides in sequence
-        k = std::min( i, K );
-        y = posSeqs_[n]->extractKmer( i, k );       // extract (k+1)-mer y from positions (i-k,...,i)
-        for( j = 0; j < std::min( W, i+1 ); j++ ){  // j runs over all motif positions
-            if( y != -1 ){                          // skip 'N' and other unknown alphabets
-                    // calculation in linear space:
-                    r_local[n][L-i+j-1] *= s_[y][j];
-            }
-            else {
-                r_local[n][L-i+j-1] = 0.0f;
-                break;
-            }
-        }
-    }
-    for( i = W-1; i < L; i++ ){
-        if( r_local[n][i] != 0.0f ){
-                // calculation in linear space:
-                r_local[n][i] = r_local[n][i] * prior_i;
-        }
-        normFactor += r_local[n][i];
-    }
-    // when p(z_n = 0)
-    normFactor += prior_0;
-
-    llikelihood += logf(normFactor);
-    }
-
-    return llikelihood;
-}
-
 float EM::calculateLogPriors( int K){
 
-    int j,y,y2;
-    float lPriors = 0.0f;
-    int A = Alphabet::getSize();
-    int W = motif_->getW();
-    float*** v_motif = motif_->getV();
-    float** v_bg = bg_->getV();
-
-
-    // the second and third parts of log Posterior Probability
-    for( j = 0; j < W; j++ ){
-        // the second part
-        lPriors += ( float )Y_[K] * lgammaf( alpha_[K][j] + ( float )A );
-        // the second and third terms
-        for( y = 0; y < Y_[K+1]; y++ ){
-            // the second term
-            y2 = y % Y_[K];                         // cut off the first nucleotide in (k+1)-mer y
-            if( K == 0 ){
-                lPriors -= lgammaf( alpha_[K][j] * v_bg[K][y] + 1.0f );
-                // the third term
-                lPriors += alpha_[K][j] * v_bg[K][y] * logf( v_motif[K][y][j] );
-            }
-            if( K > 0 ){
-                lPriors -= lgammaf( alpha_[K][j] * v_motif[K-1][y2][j] + 1.0f );
-                // the third term
-                lPriors += alpha_[K][j] * v_motif[K-1][y2][j] * logf( v_motif[K][y][j] );
-            }
-        }
-        // the forth part
-        lPriors += ( - 2.0f * logf( alpha_[K][j] ) - Global::modelBeta * powf( Global::modelGamma, ( float )K ) /
-                alpha_[K][j] + logf( Global::modelBeta * powf( Global::modelGamma, ( float )K ) ) );
-    }
-
-    return lPriors;
-}
-
-float EM::calculateLogPosterior( int K ){
-	int L, LW1, i,j,k,y,y2;
-	float prior_i;
-	float prior_0 = 1-q_;
-	float lPosterior = 0.0f;
-	float normFactor = 0.0f;
-    int A = Alphabet::getSize();
+	int j,y,y2;
+	float lPriors = 0.0f;
+	int A = Alphabet::getSize();
 	int W = motif_->getW();
 	float*** v_motif = motif_->getV();
 	float** v_bg = bg_->getV();
 
 
-	float** r_local = ( float** )calloc( posSeqs_.size(), sizeof( float* ) );
-	    for( size_t n = 0; n < posSeqs_.size(); n++ ){
-	        L = posSeqs_[n]->getL();
-	        r_local[n] = ( float* )calloc( L, sizeof( float ) );
-	    }
+	// the second and third parts of log Posterior Probability
+	for( j = 0; j < W; j++ ){
+		// the second part
+		lPriors += ( float )Y_[K] * lgammaf( alpha_[K][j] + ( float )A );
+		// the second and third terms
+		for( y = 0; y < Y_[K+1]; y++ ){
+			// the second term
+			y2 = y % Y_[K];                         // cut off the first nucleotide in (k+1)-mer y
+			if( K == 0 ){
+				lPriors -= lgammaf( alpha_[K][j] * v_bg[K][y] + 1.0f );
+				// the third term
+				lPriors += alpha_[K][j] * v_bg[K][y] * logf( v_motif[K][y][j] );
+			}
+			if( K > 0 ){
+				lPriors -= lgammaf( alpha_[K][j] * v_motif[K-1][y2][j] + 1.0f );
+				// the third term
+				lPriors += alpha_[K][j] * v_motif[K-1][y2][j] * logf( v_motif[K][y][j] );
+			}
+		}
+		// the forth part
+		lPriors += ( - 2.0f * logf( alpha_[K][j] ) - Global::modelBeta * powf( Global::modelGamma, ( float )K ) /
+				alpha_[K][j] + logf( Global::modelBeta * powf( Global::modelGamma, ( float )K ) ) );
+	}
 
-	    for( size_t n = 0; n < posSeqs_.size(); n++ ){      // n runs over all sequences
-	        L = posSeqs_[n]->getL();
-	        LW1 = L - W + 1;
-	        normFactor = 0.0f;                              // reset normalization factor
-	        // reset r_[n][i]
-	        for( i = 0; i < L; i++ ){
-	                // calculation in linear space:
-	                r_local[n][i] = 1.0f;
-	        }
-	        // when p(z_n > 0)
-	        prior_i = q_ / static_cast<float>( LW1 );       // p(z_n = i), i > 0
-	        for( i = 0; i < L; i++ ){                       // i runs over all nucleotides in sequence
-	            k = std::min( i, K );
-	            y = posSeqs_[n]->extractKmer( i, k );       // extract (k+1)-mer y from positions (i-k,...,i)
-	            for( j = 0; j < std::min( W, i+1 ); j++ ){  // j runs over all motif positions
-	                if( y != -1 ){                          // skip 'N' and other unknown alphabets
-	                    r_local[n][L-i+j-1] *= s_[y][j];
-	                }
-	                else {
-	                    r_local[n][L-i+j-1] = 0.0f;
-	                    break;
-	                }
-	            }
-	        }
-	        for( i = W-1; i < L; i++ ){
-	            if( r_local[n][i] != 0.0f ){
-	                r_local[n][i] = r_local[n][i] * prior_i;
-	            }
-	            normFactor += r_local[n][i];
-	        }
-	        // when p(z_n = 0)
-	        normFactor += prior_0;
+	return lPriors;
+}
 
-	        lPosterior += logf(normFactor);
-	    }
+float EM::calculateLogPosterior( int K ){
 
-	    // the second and third parts of log Posterior Probability
-	        for( j = 0; j < W; j++ ){
-	            // the second part
-	            lPosterior += ( float )Y_[K] * lgammaf( alpha_[K][j] + ( float )A );
-	            // the second and third terms
-	            for( y = 0; y < Y_[K+1]; y++ ){
-	                // the second term
-	                y2 = y % Y_[K];                         // cut off the first nucleotide in (k+1)-mer y
-	                if( K == 0 ){
-	                    lPosterior -= lgammaf( alpha_[K][j] * v_bg[K][y] + 1.0f );
-	                    // the third term
-	                    lPosterior += alpha_[K][j] * v_bg[K][y] * logf( v_motif[K][y][j] );
-	                }
-	                if( K > 0 ){
-	                    lPosterior -= lgammaf( alpha_[K][j] * v_motif[K-1][y2][j] + 1.0f );
-	                    // the third term
-	                    lPosterior += alpha_[K][j] * v_motif[K-1][y2][j] * logf( v_motif[K][y][j] );
-	                }
-	            }
-	            // the forth part
-	            lPosterior += ( - 2.0f * logf( alpha_[K][j] ) - Global::modelBeta * powf( Global::modelGamma, ( float )K ) /
-	                    alpha_[K][j] + logf( Global::modelBeta * powf( Global::modelGamma, ( float )K ) ) );
-	        }
-
-	return lPosterior;
+	return llikelihood_ + calculateLogPriors( K );
 }
 
 float EM::calculateQfunc( int K ){
 
-	int L, y, y2, j;
+	int L;
 	float prior_i, prior_0 = 1 - q_;
-
 	int W = motif_->getW();
-	int A = Alphabet::getSize();
 	float*** v_motif = motif_->getV();
-    float** v_bg = bg_->getV();
 	float Qfunc = 0.0f;
-    // the first part of Q function
-	for( y = 0; y < Y_[K+1]; y++ ){
-		for( j = 0; j < W; j++ ){
+
+    // the likelihood part of Q function
+	for( int y = 0; y < Y_[K+1]; y++ ){
+		for( int j = 0; j < W; j++ ){
 			Qfunc += n_[K][y][j] * logf( v_motif[K][y][j] );
 		}
 	}
 
-	// the second part of Q function
+	// the constant t of Q function
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 		L = posSeqs_[n]->getL();
 		prior_i = q_ / static_cast<float>( L - W + 1 );
 		Qfunc += ( prior_0 * logf( prior_0 ) + q_ * logf( prior_i ) );
 	}
 
-	// the third and forth parts of Q function
-	for( j = 0; j < W; j++ ){
-		// the third part of Q function
-		// the first term
-		Qfunc += ( float )Y_[K] * lgammaf( alpha_[K][j] + ( float )A );
-		// the second and third terms
-		for( y = 0; y < Y_[K+1]; y++ ){
-			// the second term
-		    y2 = y % Y_[K];							// cut off the first nucleotide in (k+1)-mer y
-		    if( K == 0 ){
-		        Qfunc -= lgammaf( alpha_[K][j] * v_bg[K][y] + 1.0f );
-		        // the third term
-		        Qfunc += alpha_[K][j] * v_bg[K][y] * logf( v_motif[K][y][j] );
-		    }
-		    if( K > 0 ){
-		        Qfunc -= lgammaf( alpha_[K][j] * v_motif[K-1][y2][j] + 1.0f );
-		        // the third term
-		        Qfunc += alpha_[K][j] * v_motif[K-1][y2][j] * logf( v_motif[K][y][j] );
-		    }
-		}
-
-		// the forth part of Q function
-		Qfunc += ( - 2.0f * logf( alpha_[K][j] ) - Global::modelBeta * powf( Global::modelGamma, ( float )K ) /
-				alpha_[K][j] + logf( Global::modelBeta * powf( Global::modelGamma, ( float )K ) ) );
-	}
+	// the priors of Q function
+	Qfunc += calculateLogPriors( K );
 
 	return Qfunc;
 }
