@@ -8,17 +8,17 @@ FDR::FDR( Motif* motif ){
 
 	trainsetFolds_.resize( Global::cvFold - 1 );
 
-	for( int k = 0; k < std::max( Global::modelOrder+2 , 4 ); k++ ){	// 4 is for cases when modelOrder < 2
+	for( int k = 0; k < std::max( Global::modelOrder+2 , Global::bgModelOrder+2 ); k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 
 	int posN = Global::posSequenceSet->getN();
-	int LW1 = Global::posSequenceSet->getMaxL()-motif_->getW()+1;		// TODO: using maxL can be a waste of memory
+	int LW1 = Global::posSequenceSet->getMaxL()-motif_->getW()+1;	// TODO: using maxL can be a waste of memory
 
 	FP_mops_ = new float[posN * ( Global::mFold+1 ) * LW1];
 	TFP_mops_= new float[posN * ( Global::mFold+1 ) * LW1];
 
-	testsetV_ = ( float** )calloc( Global::samplingOrder+1, sizeof( float* ) );				// fix to trimer frequencies
+	testsetV_ = ( float** )calloc( Global::samplingOrder+1, sizeof( float* ) );	// fix to trimer frequencies
 	testsetN_ = ( int** )calloc( Global::samplingOrder+1, sizeof( int* ) );
 	for( int k = 0; k < Global::samplingOrder+1; k++ ){
 		testsetV_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
@@ -30,8 +30,8 @@ FDR::FDR( Motif* motif ){
 
 
 	int negN;
-	if( Global::bgSeqSetGiven ){
-		negN = Global::bgSequenceSet->getN();
+	if( Global::negSeqGiven ){
+		negN = Global::negSequenceSet->getN();
 	} else {
 		negN = posN * Global::mFold;
 	}
@@ -56,6 +56,7 @@ FDR::~FDR(){
 void FDR::evaluateMotif(){
 
 	std::vector<Sequence*> posSeqs = Global::posSequenceSet->getSequences();
+	std::vector<Sequence*> negSeqs = Global::negSequenceSet->getSequences();
 	std::vector<std::vector<float>> scores;
 	for( int fold = 0; fold < Global::cvFold; fold++ ){
 
@@ -97,23 +98,16 @@ void FDR::evaluateMotif(){
 		posScoreAll_.insert( std::end( posScoreAll_ ), std::begin( scores[0] ), std::end( scores[0] ) );
 		posScoreMax_.insert( std::end( posScoreMax_ ), std::begin( scores[1] ), std::end( scores[1] ) );
 
-
-		if( !Global::bgSeqSetGiven ){
-			// generate negative sequences
-			std::vector<Sequence*> negTestSequenceSet = sampleSequenceSet( testSet );
-			// score negative sequences
-			scores = scoreSequenceSet( motif, bgModel, negTestSequenceSet );
-			negScoreAll_.insert( std::end( negScoreAll_ ), std::begin( scores[0] ), std::end( scores[0] ) );
-			negScoreMax_.insert( std::end( negScoreMax_ ), std::begin( scores[1] ), std::end( scores[1] ) );
+		std::vector<Sequence*> negSet;
+		if( !Global::negSeqGiven ){
+			// generate negative sequence set
+			negSet = sampleSequenceSet( testSet );
+		} else {
+			for( size_t i = 0; i < Global::negFoldIndices[fold].size(); i++ )
+				negSet.push_back( negSeqs[Global::negFoldIndices[fold][i]]);
 		}
-	}
-
-	if( Global::bgSeqSetGiven ){
-		Motif* motif = new Motif( *motif_ );
-		BackgroundModel* bgModel = new BackgroundModel( *Global::negSequenceSet,
-														Global::bgModelOrder,
-														Global::bgModelAlpha );
-		scores = scoreSequenceSet( motif, bgModel, Global::bgSequenceSet->getSequences() );
+		// score negative sequence set
+		scores = scoreSequenceSet( motif, bgModel, negSet );
 		negScoreAll_.insert( std::end( negScoreAll_ ), std::begin( scores[0] ), std::end( scores[0] ) );
 		negScoreMax_.insert( std::end( negScoreMax_ ), std::begin( scores[1] ), std::end( scores[1] ) );
 	}
@@ -227,8 +221,8 @@ void FDR::calculatePR(){
 	int LW1 = Global::posSequenceSet->getMaxL()-motif_->getW()+1;
 	int posN = Global::posSequenceSet->getN();
 	int negN;
-	if( Global::bgSeqSetGiven ){
-		negN = Global::bgSequenceSet->getN();
+	if( Global::negSeqGiven ){
+		negN = Global::negSequenceSet->getN();
 	} else {
 		negN = posN * Global::mFold;
 	}
@@ -397,8 +391,8 @@ void FDR::writeLogOdds(){
 	//ToDO: it will not work if sequences have different lengths
 	int posN = Global::posSequenceSet->getN();
 	int negN;
-	if( Global::bgSeqSetGiven ){
-		negN = Global::bgSequenceSet->getN();
+	if( Global::negSeqGiven ){
+		negN = Global::negSequenceSet->getN();
 	} else {
 		negN = posN * Global::mFold;
 	}

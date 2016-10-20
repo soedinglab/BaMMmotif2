@@ -87,14 +87,15 @@ int main( int nargs, char* args[] ){
 		          << "(" << Alphabet::getAlphabet()[i] << ")";
 	}
 	// for negative sequence set
-	std::cout << "\nGiven negative sequence set is " << Global::negSequenceBasename
-			<< "\n	"<< Global::negSequenceSet->getN() << " sequences. max.length: "
-			<< Global::negSequenceSet->getMaxL() << ", min.length: " <<
-			Global::negSequenceSet->getMinL() << "\n	base frequencies:";
-	for( int i = 0; i < Alphabet::getSize(); i++ )
-		std::cout << ' ' << Global::negSequenceSet->getBaseFrequencies()[i]
-				  << "(" << Alphabet::getAlphabet()[i] << ")";
-
+	if( Global::negSeqGiven ){
+		std::cout << "\nGiven negative sequence set is " << Global::negSequenceBasename
+				<< "\n	"<< Global::negSequenceSet->getN() << " sequences. max.length: "
+				<< Global::negSequenceSet->getMaxL() << ", min.length: " <<
+				Global::negSequenceSet->getMinL() << "\n	base frequencies:";
+		for( int i = 0; i < Alphabet::getSize(); i++ )
+			std::cout << ' ' << Global::negSequenceSet->getBaseFrequencies()[i]
+					  << "(" << Alphabet::getAlphabet()[i] << ")";
+	}
 	std::cout << "\nGiven initial model is " << Global::initialModelBasename;
 	if( Global::FDR ){
 		std::cout << "\nGiven folds for FDR estimation: " << Global::cvFold;

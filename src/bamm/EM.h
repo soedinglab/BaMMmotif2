@@ -40,7 +40,7 @@ private:
 	void 					MStep();			// M-step
 
 	void 					optimizeAlphas( float min = 0.1f, float max = 1e5, float tol = 0.001f);	// optimize alpha hyper-parameters
-	void                    testAlphaLearning( ); // printputs and writing values to file for testing (can be deleted later)
+	void                    testAlphaLearning( ); // printouts and writing values to file for testing (can be deleted later)
 	void 					optimizeQ();		// optimize hyper-parameter q
 	float 					calculateQfunc( int k = Global::modelOrder );	// calculate incomplete Q-function
 	float                   calculateLogPosterior( int k = Global::modelOrder ); // calculate log posterior likelihood

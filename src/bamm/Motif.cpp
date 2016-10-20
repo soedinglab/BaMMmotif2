@@ -4,7 +4,7 @@ Motif::Motif( int length ){
 
 	int k, y;
 
-	for( k = 0; k < std::max( Global::modelOrder+2, 4 ); k++ ){	// 4 is for cases when modelOrder < 2
+	for( k = 0; k < std::max( Global::modelOrder+2, Global::bgModelOrder+2 ); k++ ){	// 4 is for cases when modelOrder < 2
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 

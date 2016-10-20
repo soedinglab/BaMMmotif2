@@ -8,7 +8,7 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 	int y, k, j, LW1;
 	int W = motif_->getW();
 
-	for( k = 0; k < std::max( Global::modelOrder+2,  Global::bgModelOrder ); k++ ){	// 4 is for cases when modelOrder < 2
+	for( k = 0; k < std::max( Global::modelOrder+2,  Global::bgModelOrder+2 ); k++ ){	// 4 is for cases when modelOrder < 2
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 
@@ -193,7 +193,7 @@ int EM::learnMotif(){
 		llikelihood_diff = llikelihood_ - llikelihood_prev;
 
 		if( Global::verbose ){
-			std::cout << EMIterations_ << "th iteration:	";
+			std::cout << EMIterations_ << " iteration:	";
 			std::cout << "para_diff = " << v_diff << ",	";
 			std::cout << "log likelihood = " << llikelihood_ << " 	";
 			if( llikelihood_diff < 0 && EMIterations_ > 1) std::cout << " decreasing... ";
@@ -222,27 +222,27 @@ int EM::learnMotif(){
 
 void EM::EStep(){
 
-	float prior_i;											// positional preference prior state for p(z_n = i), motif present
-	float prior_0 = 1 - q_;									// positional preference prior state for p(z_n = 0), no motif present
+	float prior_i;												// positional preference prior state for p(z_n = i), motif present
+	float prior_0 = 1 - q_;										// positional preference prior state for p(z_n = 0), no motif present
 	int K_model = Global::modelOrder;
 	int W = motif_->getW();
-	llikelihood_ = 0.0f;									// reset log likelihood
+	llikelihood_ = 0.0f;										// reset log likelihood
 
 	// calculate responsibilities r_[n][i] at position i in sequence n
-	for( size_t n = 0; n < posSeqs_.size(); n++ ){			// n runs over all sequences
+	for( size_t n = 0; n < posSeqs_.size(); n++ ){				// n runs over all sequences
 		int L = posSeqs_[n]->getL();
 		int LW1 = L - W + 1;
-		float normFactor = 0.0f;							// reset normalization factor
+		float normFactor = 0.0f;								// reset normalization factor
 
 		// reset r_[n][i]
 		for( int i = 0; i < LW1; i++ )	r_[n][i] = 1.0f;
 
 		// when p(z_n > 0)
-		prior_i = q_ / static_cast<float>( LW1 );			// p(z_n = i), i > 0
-		for( int ij = 0; ij < L; ij++ ){					// ij = i+j runs over all positions in sequence
+		prior_i = q_ / static_cast<float>( LW1 );				// p(z_n = i), i > 0
+		for( int ij = 0; ij < L; ij++ ){						// ij = i+j runs over all positions in sequence
 			int y = posSeqs_[n]->extractKmer( ij, std::min( ij, K_model ) );	// extract (k+1)-mer y from positions (i-k,...,i)
 			for( int j = std::max( 0, ij-L+W ); j < std::min( W, ij+1 ); j++ ){	// j runs over all motif positions
-				if( y != -1 ){								// skip 'N' and other unknown alphabets
+				if( y != -1 ){									// skip 'N' and other unknown alphabets
 					r_[n][L-W-ij+j] *= s_[y][j];
 				} else {
 					r_[n][L-W-ij+j] = 0.0f;

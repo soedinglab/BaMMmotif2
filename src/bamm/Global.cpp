@@ -13,7 +13,7 @@ char*               Global::negSequenceFilename = NULL;		// filename of negative
 char*				Global::negSequenceBasename = NULL;		// basename of negative sequence FASTA file
 SequenceSet*        Global::negSequenceSet = NULL;			// negative Sequence Set
 std::vector< std::vector<int> >	Global::negFoldIndices;		// sequence indices for given negative sequence set
-
+bool				Global::negSeqGiven = false;			// a flag for the negative sequence given by users
 // weighting options
 char*               Global::intensityFilename = NULL;		// filename of intensity file (i.e. for HT-SELEX data)
 
@@ -54,10 +54,6 @@ bool                Global::noQOptimization = false;		// disable q optimization
 bool                Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
 int        			Global::mFold = 20;						// number of negative sequences as multiple of positive sequences
 int        			Global::cvFold = 5;						// size of cross-validation folds
-char*               Global::bgSequenceFilename = NULL;		// filename of negative sequence FASTA file
-char*				Global::bgSequenceBasename = NULL;		// basename of negative sequence FASTA file
-SequenceSet*        Global::bgSequenceSet = NULL;			// negative Sequence Set
-bool				Global::bgSeqSetGiven = false;			// a flag to show if bg sequence set is given
 int 				Global::samplingOrder = 2;				// the kmer order for sampling negative sequence set
 // further FDR options...
 
@@ -76,9 +72,7 @@ void Global::init( int nargs, char* args[] ){
 	// read in positive and negative sequence set
 	posSequenceSet = new SequenceSet( posSequenceFilename );
 	negSequenceSet = new SequenceSet( negSequenceFilename );
-	if( bgSeqSetGiven ){
-		bgSequenceSet = new SequenceSet( bgSequenceFilename );
-	}
+
 	// generate fold indices for positive and negative sequence set
 	Global::posFoldIndices = generateFoldIndices( posSequenceSet->getN(), cvFold );
 	Global::negFoldIndices = generateFoldIndices( negSequenceSet->getN(), cvFold );
@@ -119,6 +113,7 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	// read in negative sequence file
 	if( opt >> GetOpt::OptionPresent( "negSeqFile" ) ){
+		negSeqGiven = true;
 		opt >> GetOpt::Option( "negSeqFile", negSequenceFilename );
 	} else {
 	    negSequenceFilename = posSequenceFilename;
@@ -226,7 +221,6 @@ int Global::readArguments( int nargs, char* args[] ){
 		if( bgModelOrder > 0 ){
 			for( int k = 1; k < bgModelOrder + 1; k++ ){
 				bgModelAlpha[k] = 10.0f;
-//				bgModelAlpha[k] = modelBeta * powf( modelGamma, static_cast<float>( k ) - 1.0f );
 			}
 		}
 	}
@@ -243,9 +237,6 @@ int Global::readArguments( int nargs, char* args[] ){
 		opt >> GetOpt::OptionPresent( "FDR", FDR );
 		opt >> GetOpt::Option( 'm', "mFold", mFold  );
 		opt >> GetOpt::Option( 'n', "cvFold", cvFold );
-		if( opt >> GetOpt::Option( "bgSeqFile", bgSequenceFilename ) ){
-			bgSeqSetGiven = true;
-		}
 		opt >> GetOpt::Option( 's', "samplingOrder", samplingOrder );
 	}
 
@@ -326,7 +317,9 @@ void Global::printHelp(){
 			"				number of negative sequences as multiple of positive sequences."
 			"				The default is 20.\n\n");
 	printf("\n 			-n, --cvFold <INTEGER>\n"
-			"				number of cross-validation folds. The default is 5.\n\n");
+			"				number of cross-validation folds. The default is 5.\n\n"
+			"			-s, --samplingOrder <INTERGER>\n"
+			"				order of kmer for sampling negative set. The default is 2.\n\n");
 	printf("\n 		Options for output:	\n");
 	printf("\n 			--verbose \n"
 			"				verbose printouts. Defaults to false.\n\n");
@@ -346,7 +339,6 @@ void Global::destruct(){
     if( negSequenceBasename ) 	free( negSequenceBasename );
     if( posSequenceSet )	 	delete posSequenceSet;
     if( negSequenceSet ) 		delete negSequenceSet;
-    if( bgSequenceSet ) 		delete bgSequenceSet;
     if( initialModelBasename ) 	free( initialModelBasename );
 }
 
