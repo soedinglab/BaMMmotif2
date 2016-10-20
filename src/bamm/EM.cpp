@@ -134,7 +134,7 @@ int EM::learnMotif(){
 	int y, y_bg, j;
 	float v_diff, llikelihood_prev, llikelihood_diff = 0.0f;
 	float** v_prev;											// hold the parameters of the highest-order before EM
-	float q_func_old, q_func_new, l_post_old, l_post_new, l_prior_old, l_prior_new, l_likelihood_old, l_likelihood_new;
+	float q_func_old, q_func_new, l_post_old, l_post_new, l_prior_new, l_likelihood_new;
 
 	// allocate memory for parameters v[y][j] with the highest order
 	v_prev = ( float** )calloc( Y_[Global::modelOrder+1], sizeof( float* ) );
@@ -175,7 +175,12 @@ int EM::learnMotif(){
 		// check EM-criteria
 		q_func_old = calculateQfunc();
 
-		motif_->updateVbyK( n_, alpha_, K_model );
+		// update model parameters v[k][y][j]
+		if( Global::fixPseudos ){
+			motif_->updateVbyK( n_, alpha_, K_model );
+		}else{
+			motif_->updateV( n_, alpha_ );
+		}
 
 		// * optional: optimize parameter alpha
 		if( !Global::noAlphaOptimization ){
@@ -245,7 +250,6 @@ int EM::learnMotif(){
 		    ofile_testing << std::scientific << q_func_new - q_func_old << ' ';
 		    ofile_testing << std::scientific << l_post_new << ' ';
 		    ofile_testing << std::scientific << l_prior_new << ' ';
-		    ofile_testing << std::scientific << l_prior_new - l_prior_old << ' ';
 		    ofile_testing << std::scientific << l_likelihood_new << ' ';
 
 		    for( int k = 0; k < Global::modelOrder+1; k++ ){
@@ -356,7 +360,7 @@ void EM::MStep(){
 		}
 	}
 
-	// update model parameters v[k][y][j]
+	// update model parameters v[k][y][j] -> currently done outside MStep; needed for checking AlphaLearning
     //	motif_->updateV( n_, alpha_ );
 
 }
@@ -373,7 +377,12 @@ void EM::optimizeAlphas( float min_brent, float max_brent, float tolerance ){
             for( int j = 0; j < motif_->getW() ; j++ ){
                 alpha_[k][j] = optim_alpha;
             }
-            motif_->updateVbyK( n_, alpha_, k );
+            if( Global::fixPseudos ){
+            	motif_->updateVbyK( n_, alpha_, k );
+            }else{
+            	motif_->updateV( n_, alpha_ );
+            }
+
         }
     //}
 }
@@ -443,11 +452,7 @@ float EM::calculateLogLikelihood( int K ){
 
     float** r_local = ( float** )calloc( posSeqs_.size(), sizeof( float* ) );
     for( size_t n = 0; n < posSeqs_.size(); n++ ){
-        if( Global::setSlow ){
-            L = posSeqs_[n]->getL() - W + 1;
-        } else {
             L = posSeqs_[n]->getL();
-        }
         r_local[n] = ( float* )calloc( L, sizeof( float ) );
     }
 
@@ -458,10 +463,6 @@ float EM::calculateLogLikelihood( int K ){
 
     // reset r_[n][i]
     for( i = 0; i < L; i++ ){
-        if( Global::logEM )
-            // calculation in log space:
-            r_local[n][i] = 0.0f;
-        else
             // calculation in linear space:
             r_local[n][i] = 1.0f;
     }
@@ -473,10 +474,6 @@ float EM::calculateLogLikelihood( int K ){
         y = posSeqs_[n]->extractKmer( i, k );       // extract (k+1)-mer y from positions (i-k,...,i)
         for( j = 0; j < std::min( W, i+1 ); j++ ){  // j runs over all motif positions
             if( y != -1 ){                          // skip 'N' and other unknown alphabets
-                if( Global::logEM )
-                    // calculation in log space:
-                    r_local[n][L-i+j-1] += s_[y][j];
-                else
                     // calculation in linear space:
                     r_local[n][L-i+j-1] *= s_[y][j];
             }
@@ -488,10 +485,6 @@ float EM::calculateLogLikelihood( int K ){
     }
     for( i = W-1; i < L; i++ ){
         if( r_local[n][i] != 0.0f ){
-            if( Global::logEM )
-                // calculation in exponential space:
-                r_local[n][i] = expf( r_local[n][i] ) * prior_i;
-            else
                 // calculation in linear space:
                 r_local[n][i] = r_local[n][i] * prior_i;
         }
@@ -567,10 +560,6 @@ float EM::calculateLogPosterior( int K ){
 	        normFactor = 0.0f;                              // reset normalization factor
 	        // reset r_[n][i]
 	        for( i = 0; i < L; i++ ){
-	            if( Global::logEM )
-	                // calculation in log space:
-	                r_local[n][i] = 0.0f;
-	            else
 	                // calculation in linear space:
 	                r_local[n][i] = 1.0f;
 	        }

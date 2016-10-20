@@ -48,6 +48,7 @@ float               Global::epsilon = 0.001f;				// threshold for likelihood con
 bool                Global::noAlphaOptimization = false;	// disable alpha optimization
 int                 Global::alphaIter = 10;                 // alpha learning will happen in each alphaIter-th EMiteration
 bool                Global::TESTING = false;                // turn on when you want to have printouts for checking alpha learning
+bool				Global::fixPseudos = false;				// only update v[k_model] for simulating exact EM algorithm
 bool                Global::noQOptimization = false;		// disable q optimization
 
 // FDR options

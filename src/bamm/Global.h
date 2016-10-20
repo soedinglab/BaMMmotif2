@@ -71,6 +71,7 @@ public:
 	static bool			noAlphaOptimization;				// disable alpha optimization
 	static int          alphaIter;                          // howmany EM iterations before turing on AlphaLearning
 	static bool         TESTING;                            // used for massive write out during alpha testing
+	static bool			fixPseudos;							// only update v[k_model] for simulating exact EM algorithm
 	static bool			noQOptimization;					// disable q optimization
 
 	// FDR options
