@@ -47,7 +47,7 @@ std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.0f );	// background m
 unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();  // maximum number of iterations
 float               Global::epsilon = 0.001f;				// threshold for likelihood convergence parameter
 bool                Global::noAlphaOptimization = false;	// disable alpha optimization
-bool                Global::alphaIter = 10;                 // alpha learning will happen in each alphaIter-th EMiteration
+int                 Global::alphaIter = 10;                 // alpha learning will happen in each alphaIter-th EMiteration
 bool                Global::TESTING = false;                // turn on when you want to have printouts for checking alpha learning
 bool                Global::noQOptimization = false;		// disable q optimization
 bool				Global::setSlow = false;				// develop with the slow EM version

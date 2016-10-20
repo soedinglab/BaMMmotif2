@@ -141,7 +141,7 @@ int EM::learnMotif(){
 	int y, y_bg, j;
 	float v_diff, llikelihood_prev, llikelihood_diff = 0.0f;
 	float** v_prev;											// hold the parameters of the highest-order before EM
-	float q_func_old, q_func_new, l_post_old, l_post_new;
+	float q_func_old, q_func_new, l_post_old, l_post_new, l_prior_old, l_prior_new, l_likelihood_old, l_likelihood_new;
 
 	// allocate memory for parameters v[y][j] with the highest order
 	v_prev = ( float** )calloc( Y_[Global::modelOrder+1], sizeof( float* ) );
@@ -150,6 +150,7 @@ int EM::learnMotif(){
 	}
 
 
+    l_post_old = calculateLogPosterior();
 
 	// iterate over
 	while( iterate && ( EMIterations_ < Global::maxEMIterations ) ){
@@ -183,18 +184,40 @@ int EM::learnMotif(){
 		// M-step: update parameters
 		MStep();
 
+		// check EM-criteria
+		q_func_old = calculateQfunc();
+
+		motif_->updateVbyK( n_, alpha_, K_model );
+
 		// * optional: optimize parameter alpha
 		if( !Global::noAlphaOptimization ){
 		    // only run alpha optimization every xth em-iteration.
-		    if( EMIterations_ % Global::alphaIter == 0 && EMIterations_ > 10){
-		        optimizeAlphas();
-		    }
+            if( EMIterations_ % Global::alphaIter == 0 && EMIterations_ > 10){
+                optimizeAlphas();
+//                std::cout << "optimAlpha = " << alpha_[Global::modelOrder][0] << "\n ";
+
+            }
+//		    if( EMIterations_ == 18 ){
+//                optimizeAlphas();
+//                std::cout << "LastoptimAlpha = " << alpha_[Global::modelOrder][0] << "\n ";
+//                //testAlphaLearning();
+//		        //std::cout << "LastoptimAlpha = " << alpha_[Global::modelOrder][0] << "\n ";
+//
+//		        exit(0);
+//
+//		    }
 		}
 
 		// * optional: optimize parameter q
 		if( !Global::noQOptimization )		optimizeQ();
 
-				// check parameter difference for convergence
+		// check EM-criteria
+		q_func_new = calculateQfunc();
+		l_post_new = calculateLogPosterior();
+		l_likelihood_new = calculateLogLikelihood();
+		l_prior_new = calculateLogPriors();
+
+		// check parameter difference for convergence
 		v_diff = 0.0f;
 
 		for( y = 0; y < Y_[Global::modelOrder+1]; y++ ){
@@ -209,14 +232,39 @@ int EM::learnMotif(){
 			std::cout << EMIterations_ << "th iteration:	";
 			std::cout << "para_diff = " << v_diff << ",	";
 			std::cout << "log likelihood = " << llikelihood_ << " 	";
+			std::cout << "logPosterior " << l_post_new << "     ";
 			if( llikelihood_diff < 0 && EMIterations_ > 1) std::cout << " decreasing... ";
+			if( ( q_func_new - q_func_old ) < 0 ) std::cout << " ! qfunc decr.. !  ";
+			if( ( l_post_new - l_post_old ) < 0 ) std::cout << " ! lPost decr.. !  ";
 			std::cout << std::endl;
 		}
+		l_post_old = l_post_new;
 
 		if( v_diff < Global::epsilon )					iterate = false;
 		//if( llikelihood_diff < 0 && EMIterations_ > 1 )	iterate = false;
 
 		// * testing: write out alpha, qfunc, gradient and posterior value for current EM iterations
+		if( Global::TESTING ){
+		    std::stringstream alphaIter;
+		    alphaIter << Global::alphaIter;
+
+		    std::string opath = std::string( Global::outputDirectory ) + '/'
+		            + std::string( Global::posSequenceBasename );
+		    std::string opath_testing = opath + "emIter" + alphaIter.str() + ".TESTING";
+		    std::ofstream ofile_testing;
+		    ofile_testing.open( opath_testing.c_str() , std::ios_base::app);
+		    ofile_testing << std::scientific << calculateQfunc_gradient(alpha_[Global::modelOrder][0],Global::modelOrder) << ' ';
+		    ofile_testing << std::scientific << q_func_new - q_func_old << ' ';
+		    ofile_testing << std::scientific << l_post_new << ' ';
+		    ofile_testing << std::scientific << l_prior_new << ' ';
+		    ofile_testing << std::scientific << l_prior_new - l_prior_old << ' ';
+		    ofile_testing << std::scientific << l_likelihood_new << ' ';
+
+		    for( int k = 0; k < Global::modelOrder+1; k++ ){
+		        ofile_testing << std::setprecision( 3 ) << alpha_[k][0] << ' ';
+		    }
+		    ofile_testing << std::endl;
+		}
 	}
 
 	// calculate probabilities
@@ -435,14 +483,15 @@ void EM::MStep(){
 	}
 
 	// update model parameters v[k][y][j]
-	motif_->updateV( n_, alpha_ );
+    //	motif_->updateV( n_, alpha_ );
 
 }
 
 //typedef int( EM::*EMMemFn)(double a);
 
 void EM::optimizeAlphas( float min_brent, float max_brent, float tolerance ){
-       for( int k = 1; k < Global::modelOrder+1; k++ ){
+       //for( int k = 1; k < Global::modelOrder+1; k++ ){
+        int k = Global::modelOrder;
         float optim_alpha = zbrent( *this, &EM::calculateQfunc_gradient, min_brent, max_brent, tolerance, k );
 
         // only update in case a root is bracketed
@@ -450,12 +499,58 @@ void EM::optimizeAlphas( float min_brent, float max_brent, float tolerance ){
             for( int j = 0; j < motif_->getW() ; j++ ){
                 alpha_[k][j] = optim_alpha;
             }
-            motif_->updateV( n_, alpha_ );
+            motif_->updateVbyK( n_, alpha_, k );
         }
-    }
+    //}
 }
 
 void EM::testAlphaLearning( ){
+    std::cout << "Starting AlphaLearningtesting...  ";
+    std::cout << std::endl;
+    float alpha, alpha_min = 1, alpha_max = 2e4;
+
+    //for(int k = 0; k <= Global::modelOrder; k++ ){
+    int k = Global::modelOrder;
+        std::cout << k << " th Order " << ' ';
+        std::cout << std::endl;
+        std::string opath = std::string( Global::outputDirectory ) + '/'
+                + std::string( Global::posSequenceBasename );
+        std::stringstream alphaIter;
+        alphaIter << Global::alphaIter;
+        std::stringstream kstring;
+        kstring << k;
+        std::string opath_n = opath + "_emIter_" + alphaIter.str() + "_Order_" + kstring.str() + ".AlphaTesting";
+        std::ofstream ofile_n( opath_n.c_str() );
+
+        for( alpha = alpha_min; alpha < alpha_max; alpha++ ){
+            std::cout << "  alpha= " << alpha << ' ';
+            // update alpha
+            for( int j = 0; j < motif_->getW(); j++ ){
+                alpha_[k][j] = alpha;
+            }
+            // adjust v_s to new alpha
+            motif_->updateVbyK( n_, alpha_ ,k );
+            // calculate and store Alpha_Gradient_Qfunc_LogPosterior
+            ofile_n << std::scientific << alpha << ' ';
+            ofile_n << std::scientific << calculateQfunc_gradient( alpha, k ) << ' ';
+            std::cout << "  gradient= " << calculateQfunc_gradient( alpha, k ) << ' ';
+            ofile_n << std::scientific << calculateQfunc( k ) << ' ';
+            std::cout << "  Qfunction= " << calculateQfunc( k ) ;
+            ofile_n << std::scientific << calculateLogPosterior( k ) << ' ';
+            ofile_n << std::endl;
+            std::cout << std::endl;
+            //         for(int turn = 0; turn < 10; turn++ ){
+            //                         alpha++;
+            //         }
+        }
+        std::cout << "              Resetting v's " ;
+        std::cout << std::endl << std::flush;
+        // reset v's for initial alpha
+        for( int j = 0; j < motif_->getW(); j++ ){
+            alpha_[k][j] = Global::modelAlpha[k];
+        }
+        motif_->updateVbyK( n_, alpha_ ,k );
+    //}
 }
 
 void EM::optimizeQ(){
@@ -463,6 +558,116 @@ void EM::optimizeQ(){
 	// optimize hyper-parameter q
 	// motif.updateV()
 }
+float EM::calculateLogLikelihood( int K ){
+    int L, LW1, i,j,k,y;
+    int W = motif_->getW();
+    float prior_i;
+    float prior_0 = 1-q_;
+    float llikelihood = 0.0f;
+    float normFactor = 0.0f;
+
+    float** r_local = ( float** )calloc( posSeqs_.size(), sizeof( float* ) );
+    for( size_t n = 0; n < posSeqs_.size(); n++ ){
+        if( Global::setSlow ){
+            L = posSeqs_[n]->getL() - W + 1;
+        } else {
+            L = posSeqs_[n]->getL();
+        }
+        r_local[n] = ( float* )calloc( L, sizeof( float ) );
+    }
+
+    for( size_t n = 0; n < posSeqs_.size(); n++ ){      // n runs over all sequences
+        L = posSeqs_[n]->getL();
+    LW1 = L - W + 1;
+    normFactor = 0.0f;                              // reset normalization factor
+
+    // reset r_[n][i]
+    for( i = 0; i < L; i++ ){
+        if( Global::logEM )
+            // calculation in log space:
+            r_local[n][i] = 0.0f;
+        else
+            // calculation in linear space:
+            r_local[n][i] = 1.0f;
+    }
+
+    // when p(z_n > 0)
+    prior_i = q_ / static_cast<float>( LW1 );       // p(z_n = i), i > 0
+    for( i = 0; i < L; i++ ){                       // i runs over all nucleotides in sequence
+        k = std::min( i, K );
+        y = posSeqs_[n]->extractKmer( i, k );       // extract (k+1)-mer y from positions (i-k,...,i)
+        for( j = 0; j < std::min( W, i+1 ); j++ ){  // j runs over all motif positions
+            if( y != -1 ){                          // skip 'N' and other unknown alphabets
+                if( Global::logEM )
+                    // calculation in log space:
+                    r_local[n][L-i+j-1] += s_[y][j];
+                else
+                    // calculation in linear space:
+                    r_local[n][L-i+j-1] *= s_[y][j];
+            }
+            else {
+                r_local[n][L-i+j-1] = 0.0f;
+                break;
+            }
+        }
+    }
+    for( i = W-1; i < L; i++ ){
+        if( r_local[n][i] != 0.0f ){
+            if( Global::logEM )
+                // calculation in exponential space:
+                r_local[n][i] = expf( r_local[n][i] ) * prior_i;
+            else
+                // calculation in linear space:
+                r_local[n][i] = r_local[n][i] * prior_i;
+        }
+        normFactor += r_local[n][i];
+    }
+    // when p(z_n = 0)
+    normFactor += prior_0;
+
+    llikelihood += logf(normFactor);
+    }
+
+    return llikelihood;
+}
+
+float EM::calculateLogPriors( int K){
+
+    int j,y,y2;
+    float lPriors = 0.0f;
+    int A = Alphabet::getSize();
+    int W = motif_->getW();
+    float*** v_motif = motif_->getV();
+    float** v_bg = bg_->getV();
+
+
+    // the second and third parts of log Posterior Probability
+    for( j = 0; j < W; j++ ){
+        // the second part
+        lPriors += ( float )Y_[K] * lgammaf( alpha_[K][j] + ( float )A );
+        // the second and third terms
+        for( y = 0; y < Y_[K+1]; y++ ){
+            // the second term
+            y2 = y % Y_[K];                         // cut off the first nucleotide in (k+1)-mer y
+            if( K == 0 ){
+                lPriors -= lgammaf( alpha_[K][j] * v_bg[K][y] + 1.0f );
+                // the third term
+                lPriors += alpha_[K][j] * v_bg[K][y] * logf( v_motif[K][y][j] );
+            }
+            if( K > 0 ){
+                lPriors -= lgammaf( alpha_[K][j] * v_motif[K-1][y2][j] + 1.0f );
+                // the third term
+                lPriors += alpha_[K][j] * v_motif[K-1][y2][j] * logf( v_motif[K][y][j] );
+            }
+        }
+        // the forth part
+        lPriors += ( - 2.0f * logf( alpha_[K][j] ) - Global::modelBeta * powf( Global::modelGamma, ( float )K ) /
+                alpha_[K][j] + logf( Global::modelBeta * powf( Global::modelGamma, ( float )K ) ) );
+    }
+
+    return lPriors;
+}
+
 float EM::calculateLogPosterior( int K ){
 
 	int L, LW1, i,j,k,y,y2;
@@ -490,7 +695,15 @@ float EM::calculateLogPosterior( int K ){
 	        L = posSeqs_[n]->getL();
 	        LW1 = L - W + 1;
 	        normFactor = 0.0f;                              // reset normalization factor
-
+	        // reset r_[n][i]
+	        for( i = 0; i < L; i++ ){
+	            if( Global::logEM )
+	                // calculation in log space:
+	                r_local[n][i] = 0.0f;
+	            else
+	                // calculation in linear space:
+	                r_local[n][i] = 1.0f;
+	        }
 	        // when p(z_n > 0)
 	        prior_i = q_ / static_cast<float>( LW1 );       // p(z_n = i), i > 0
 	        for( i = 0; i < L; i++ ){                       // i runs over all nucleotides in sequence
