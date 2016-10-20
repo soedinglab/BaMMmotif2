@@ -1,4 +1,4 @@
-#include <time.h>		// time()
+#include <time.h>		// time(), clock_t, clock, CLOCKS_PER_SEC
 #include <stdio.h>
 
 #include "Global.h"
@@ -10,7 +10,7 @@
 
 int main( int nargs, char* args[] ){
 
-	long timestamp = time( NULL );
+	clock_t t0 = clock();
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "======================================\n" );
@@ -32,11 +32,10 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "************************\n" );
 	fprintf( stderr, "*   Background Model   *\n" );
 	fprintf( stderr, "************************\n" );
-	long timestampBg = time( NULL );
 	BackgroundModel* bgModel = new BackgroundModel( *Global::negSequenceSet,
 													Global::bgModelOrder,
-													Global::bgModelAlpha );
-	fprintf( stdout, "\n--- Runtime for Background initialization: %ld seconds ---\n", time( NULL )-timestampBg );
+													Global::bgModelAlpha,
+													Global::interpolateBG );
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "*********************\n" );
@@ -50,7 +49,8 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*   Learn Motif by EM   *\n" );
 	fprintf( stderr, "*************************\n" );
 	for( int N = 0; N < motifs.getN(); N++ ){
-		EM em( motifs.getMotifs()[N], bgModel );
+		Motif* motif = new Motif( *motifs.getMotifs()[N] );
+		EM em( motif, bgModel );
 		em.learnMotif();
         em.write();
 	}
@@ -65,7 +65,8 @@ int main( int nargs, char* args[] ){
 		fprintf( stderr, "*   FDR   *\n" );
 		fprintf( stderr, "***********\n" );
 		for( int N = 0; N < motifs.getN(); N++ ){
-			FDR fdr( motifs.getMotifs()[N] );
+			Motif* motif = new Motif( *motifs.getMotifs()[N] );
+			FDR fdr( motif );
 			fdr.evaluateMotif();
 			fdr.write();
 		}
@@ -76,42 +77,31 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*   Statistics   *\n" );
 	fprintf( stderr, "******************\n" );
 	std::cout << "Given alphabet type is " << Alphabet::getAlphabet();
+	// for positive sequence set
 	std::cout << "\nGiven positive sequence set is " << Global::posSequenceBasename
 			<< "\n	"<< Global::posSequenceSet->getN() << " sequences. max.length: " <<
 			Global::posSequenceSet->getMaxL() << ", min.length: " <<
 			Global::posSequenceSet->getMinL() << "\n	base frequencies:";
 	for( int i = 0; i < Alphabet::getSize(); i++ ){
-		std::cout << ' ' << Global::posSequenceSet->getKmerFrequencies()[0][i]
+		std::cout << ' ' << Global::posSequenceSet->getBaseFrequencies()[i]
 		          << "(" << Alphabet::getAlphabet()[i] << ")";
 	}
-	if( Global::negSequenceFilename ){
-		std::cout << "\nGiven negative sequence set is " << Global::negSequenceBasename
-				<< "\n	"<< Global::negSequenceSet->getN() << " sequences. max.length: "
-				<< Global::negSequenceSet->getMaxL() << ", min.length: " <<
-				Global::negSequenceSet->getMinL() << "\n	base frequencies:";
-		for( int i = 0; i < Alphabet::getSize(); i++ )
-			std::cout << ' ' << Global::negSequenceSet->getKmerFrequencies()[0][i]
-			          << "(" << Alphabet::getAlphabet()[i] << ")";
-	} else {
-		std::cout << "\nNone negative sequence set is given";
-	}
+	// for negative sequence set
+	std::cout << "\nGiven negative sequence set is " << Global::negSequenceBasename
+			<< "\n	"<< Global::negSequenceSet->getN() << " sequences. max.length: "
+			<< Global::negSequenceSet->getMaxL() << ", min.length: " <<
+			Global::negSequenceSet->getMinL() << "\n	base frequencies:";
+	for( int i = 0; i < Alphabet::getSize(); i++ )
+		std::cout << ' ' << Global::negSequenceSet->getBaseFrequencies()[i]
+				  << "(" << Alphabet::getAlphabet()[i] << ")";
+
 	std::cout << "\nGiven initial model is " << Global::initialModelBasename;
 	if( Global::FDR ){
 		std::cout << "\nGiven folds for FDR estimation: " << Global::cvFold;
 	}
-	if( Global::setSlow ){
-		std::cout << "\n***** This is a slow EM version. *****";
-	} else {
-		std::cout << "\n***** This is a fast EM version. *****";
-	}
-	if( Global::logEM ){
-		std::cout << "\n***** All EM steps are calculated in log space. *****";
-	} else {
-		std::cout << "\n***** All EM steps are calculated in linear space. *****";
-	}
 
-	fprintf( stdout, "\n-------------- Runtime: %ld seconds (%0.2f minutes) --------------\n",
-			time( NULL )-timestamp, ( float )( time( NULL )-timestamp )/60.0f );
+	fprintf( stdout, "\n-------------- Runtime: %.2f seconds (%0.2f minutes) --------------\n",
+			( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC, ( ( float )( clock() - t0 ) ) / ( CLOCKS_PER_SEC * 60.0f ) );
 
 	// free memory
 	if( bgModel ) delete bgModel;

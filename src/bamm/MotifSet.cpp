@@ -4,8 +4,6 @@
 
 MotifSet::MotifSet(){
 
-	long timestamp = time( NULL );
-
 	if( Global::BaMMpatternFilename != NULL ){
 
 	    // scan file and conduct for IUPAC pattern p
@@ -26,14 +24,17 @@ MotifSet::MotifSet(){
 			exit( -1 );
 		} else {
 			getline( file, seq );					// get length of the first sequence
-			length = (int) seq.length();
+			length = ( int ) seq.length();
 		}
 
-		length += Global::addColumns.at(0) + Global::addColumns.at(1);
+		length += Global::addColumns.at( 0 ) + Global::addColumns.at( 1 );
 
 		Motif* motif = new Motif( length );
+
 		motif->initFromBindingSites( Global::bindingSiteFilename );
+
 		motifs_.push_back( motif );
+
 		N_ = 1;
 
 	} else if( Global::PWMFilename != NULL ){
@@ -50,8 +51,6 @@ MotifSet::MotifSet(){
 		// motif.initFromBMM( file )
 		// motifs.push_back( motif )
 	}
-
-	fprintf( stdout, "\n--- Runtime for MotifSet initialization: %ld seconds ---\n", time( NULL )-timestamp );
 
 //	if( Global::verbose ) print();
 }
@@ -88,8 +87,8 @@ void MotifSet::write(){
 
 	/**
 	 * save all the motifs learned by BaMM in two flat files:
-	 * (1) posSequenceBasename.conds: 		conditional probabilities after EM
-	 * (2) posSequenceBasename.probs: 		probabilities of PWM after EM
+	 * (1) posSequenceBasename.ihbcp: 		conditional probabilities after EM
+	 * (2) posSequenceBasename.ihbp: 		probabilities of PWM after EM
 	 */
 
 	std::string opath = std::string( Global::outputDirectory )  + '/'

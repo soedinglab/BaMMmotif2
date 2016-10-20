@@ -4,7 +4,7 @@ Motif::Motif( int length ){
 
 	int k, y;
 
-	for( k = 0; k < Global::modelOrder+2; k++ ){
+	for( k = 0; k < std::max( Global::modelOrder+2, 4 ); k++ ){	// 4 is for cases when modelOrder < 2
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 
@@ -23,34 +23,26 @@ Motif::Motif( int length ){
 			p_[k][y] = ( float* )calloc( W_, sizeof( float ) );
 		}
 	}
-
-	v_bg_ = ( float* )calloc( Y_[1], sizeof( float ) );
-
-	BackgroundModel bg( *Global::negSequenceSet,
-						 Global::bgModelOrder,
-						 Global::bgModelAlpha,
-						 Global::interpolateBG );
-
-	for( y = 0; y < Y_[1]; y++ ){
-		v_bg_[y] = bg.getV()[0][y];
-	}
-
 }
 
-Motif::Motif( const Motif& other ){ 		// deep copy
+Motif::Motif( const Motif& other ){ 		// copy constructor
 
 	int k, y, j;
 
+	for( k = 0; k < std::max( Global::modelOrder+2, 4 ); k++ ){
+		Y_.push_back( ipow( Alphabet::getSize(), k ) );
+	}
+
 	W_ = other.W_;
 
-	v_ = ( float*** )malloc( ( Global::modelOrder+1 )* sizeof( float** ) );
+	v_ = ( float*** )malloc( ( Global::modelOrder+1 ) * sizeof( float** ) );
 	n_ = ( int*** )malloc( ( Global::modelOrder+1 ) * sizeof( int** ) );
 	p_ = ( float*** )malloc( ( Global::modelOrder+1 )* sizeof( float** ) );
 	for( k = 0; k < Global::modelOrder+1; k++ ){
 		v_[k] = ( float** )malloc( Y_[k+1] * sizeof( float* ) );
 		n_[k] = ( int** )malloc( Y_[k+1] * sizeof( int* ) );
 		p_[k] = ( float** )malloc( Y_[k+1] * sizeof( float* ) );
-		for( y = 0; y <Y_[k+1]; y++ ){
+		for( y = 0; y < Y_[k+1]; y++ ){
 			v_[k][y] = ( float* )malloc( W_ * sizeof( float ) );
 			n_[k][y] = ( int* )malloc( W_ * sizeof( int ) );
 			p_[k][y] = ( float* )malloc( W_ * sizeof( float ) );
@@ -63,11 +55,6 @@ Motif::Motif( const Motif& other ){ 		// deep copy
 	}
 
 	isInitialized_ = true;
-
-	v_bg_ = ( float* )calloc( Y_[1], sizeof( float ) );
-	for( y = 0; y < Y_[1]; y++ )
-		v_bg_[y] = other.v_bg_[y];
-
 }
 
 Motif::~Motif(){
@@ -85,8 +72,6 @@ Motif::~Motif(){
 	free( v_ );
 	free( n_ );
 	free( p_ );
-
-	free( v_bg_ );
 
 }
 
@@ -190,103 +175,66 @@ void Motif::calculateV(){
 	int y, j, k, y2, yk;
 
 	// for k = 0, v_ = freqs:
-	for( y = 0; y < Y_[1]; y++ )
-		for( j = 0; j < W_; j++ )
-			v_[0][y][j] = ( static_cast<float>( n_[0][y][j] ) + Global::modelAlpha.at(0) * v_bg_[y] )
+	for( y = 0; y < Y_[1]; y++ ){
+		for( j = 0; j < W_; j++ ){
+			v_[0][y][j] = ( static_cast<float>( n_[0][y][j] ) + Global::modelAlpha.at(0) * Global::negSequenceSet->getBaseFrequencies()[y] )
 						/ ( static_cast<float>( N_ ) + Global::modelAlpha.at(0) );
+		}
+	}
 
 	// for k > 0:
 	for( k = 1; k < Global::modelOrder+1; k++ ){
 		for( y = 0; y < Y_[k+1]; y++ ){
 			y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer y
 			yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer y
-			for( j = 0; j < k; j++ )						// when j < k, i.e. p(A|CG) = p(A|C)
+			for( j = 0; j < k; j++ ){						// when j < k, i.e. p(A|CG) = p(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
-			for( j = k; j < W_; j++ )
+			}
+			for( j = k; j < W_; j++ ){
 				v_[k][y][j] = ( static_cast<float>( n_[k][y][j] ) + Global::modelAlpha.at(k) * v_[k-1][y2][j] )
 							/ ( static_cast<float>( n_[k-1][yk][j-1] ) + Global::modelAlpha.at(k) );
+			}
 		}
 	}
 }
 // update v from fractional k-mer counts n and current alphas
 void Motif::updateV( float*** n, float** alpha ){
-    assert( isInitialized_ );
+	assert( isInitialized_ );
 
-    int y, j, k, y2, yk;
+	int y, j, k, y2, yk;
 
-    // sum up the n over (k+1)-mers at different position of motif
-    float* sumN = ( float* )calloc( W_, sizeof( float ) );
-    for( j = 0; j < W_; j++ ){
-        for( y = 0; y < Y_[1]; y++ ){
-            sumN[j] += n[0][y][j];
-        }
-    }
+	// sum up the n over (k+1)-mers at different position of motif
+	float* sumN = ( float* )calloc( W_, sizeof( float ) );
+	for( j = 0; j < W_; j++ ){
+		for( y = 0; y < Y_[1]; y++ ){
+			sumN[j] += n[0][y][j];
+		}
+	}
 
-    // for k = 0, v_ = freqs:
-    for( y = 0; y < Y_[1]; y++ ){
-        for( j = 0; j < W_; j++ ){
-            v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * v_bg_[y] )
-                        / ( sumN[j] + alpha[0][j] );
-        }
-    }
+	// for k = 0, v_ = freqs:
+	for( y = 0; y < Y_[1]; y++ ){
+		for( j = 0; j < W_; j++ ){
+			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * Global::negSequenceSet->getBaseFrequencies()[y] )
+						/ ( sumN[j] + alpha[0][j] );
+		}
+	}
 
-    free( sumN );
+	free( sumN );
 
-    // for k > 0:
-    for( k = 1; k < Global::modelOrder+1; k++ ){
-        for( y = 0; y < Y_[k+1]; y++ ){
-            y2 = y % Y_[k];                                 // cut off the first nucleotide in (k+1)-mer
-            yk = y / Y_[1];                                 // cut off the last nucleotide in (k+1)-mer
-            for( j = 0; j < k; j++ ){                       // when j < k, i.e. p(A|CG) = p(A|C)
-                v_[k][y][j] = v_[k-1][y2][j];
-            }
-            for( j = k; j < W_; j++ ){
-                v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
-                            / ( n[k-1][yk][j-1] + alpha[k][j] );
-            }
-        }
-    }
-}
-
-// update v from fractional k-mer counts n and current alphas
-void Motif::updateVbyK( float*** n, float** alpha, int k ){
-
-    assert( isInitialized_ );
-
-    int y, j, y2, yk;
-
-    // sum up the n over (k+1)-mers at different position of motif
-    float* sumN = ( float* )calloc( W_, sizeof( float ) );
-    for( j = 0; j < W_; j++ ){
-        for( y = 0; y < Y_[1]; y++ ){
-            sumN[j] += n[0][y][j];
-        }
-    }
-    if( k == 0 ){
-        // for k = 0, v_ = freqs:
-        for( y = 0; y < Y_[1]; y++ ){
-            for( j = 0; j < W_; j++ ){
-                v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * v_bg_[y] )
-						        / ( sumN[j] + alpha[0][j] );
-            }
-        }
-    }
-    free( sumN );
-
-    // for k > 0:
-    if(k > 0 ){
-        for( y = 0; y < Y_[k+1]; y++ ){
-            y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
-            yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer
-            for( j = 0; j < k; j++ ){						// when j < k, i.e. p(A|CG) = p(A|C)
-                v_[k][y][j] = v_[k-1][y2][j];
-            }
-            for( j = k; j < W_; j++ ){
-                            v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
-							        / ( n[k-1][yk][j-1] + alpha[k][j] );
-            }
-        }
-    }
+	// for k > 0:
+	for( k = 1; k < Global::modelOrder+1; k++ ){
+		for( y = 0; y < Y_[k+1]; y++ ){
+			y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
+			yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer
+			for( j = 0; j < k; j++ ){						// when j < k, i.e. p(A|CG) = p(A|C)
+				v_[k][y][j] = v_[k-1][y2][j];
+			}
+			for( j = k; j < W_; j++ ){
+				v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
+							/ ( n[k-1][yk][j-1] + alpha[k][j] );
+			}
+		}
+	}
 }
 
 void Motif::calculateP(){

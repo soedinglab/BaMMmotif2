@@ -5,7 +5,7 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 	motif_ = motif;
 	bg_ = bg;
 
-	int y, k, j, L;
+	int y, k, j, LW1;
 	int W = motif_->getW();
 
 	for( k = 0; k < std::max( Global::modelOrder+2,  Global::bgModelOrder ); k++ ){	// 4 is for cases when modelOrder < 2
@@ -36,12 +36,8 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 	// allocate memory for r_[n][i] and initialize it
 	r_ = ( float** )calloc( posSeqs_.size(), sizeof( float* ) );
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
-		if( Global::setSlow ){
-			L = posSeqs_[n]->getL() - W + 1;
-		} else {
-			L = posSeqs_[n]->getL();
-		}
-		r_[n] = ( float* )calloc( L, sizeof( float ) );
+		LW1 = posSeqs_[n]->getL() - W + 1;
+		r_[n] = ( float* )calloc( LW1, sizeof( float ) );
 	}
 
 	// allocate memory for n_[k][y][j] and probs_[k][y][j] and initialize them
@@ -61,8 +57,6 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 			alpha_[k][j] = Global::modelAlpha[k];
 		}
 	}
-
-
 }
 
 EM::~EM(){
@@ -131,8 +125,7 @@ int EM::learnMotif(){
 			"|  EM  |\n"
 			"|______|\n\n" );
 
-	long timestamp = time( NULL );
-
+	clock_t t0 = clock();
 	bool iterate = true;									// flag for iterating before convergence
 	int W = motif_->getW();
 	int K_model = Global::modelOrder;
@@ -141,7 +134,6 @@ int EM::learnMotif(){
 	int y, y_bg, j;
 	float v_diff, llikelihood_prev, llikelihood_diff = 0.0f;
 	float** v_prev;											// hold the parameters of the highest-order before EM
-	float q_func_old, q_func_new, l_post_old, l_post_new;
 
 	// allocate memory for parameters v[y][j] with the highest order
 	v_prev = ( float** )calloc( Y_[Global::modelOrder+1], sizeof( float* ) );
@@ -168,12 +160,7 @@ int EM::learnMotif(){
 		for( y = 0; y < Y_[K_model+1]; y++ ){
 			for( j = 0; j < W; j++ ){
 				y_bg = y % Y_[K_bg+1];
-				if( Global::logEM )
-					// calculate s in log space:
-					s_[y][j] = logf( motif_->getV()[K_model][y][j] ) - logf( bg_->getV()[std::min( K_model, K_bg )][y_bg] );
-				else
-					// calculate s in linear space:
-					s_[y][j] = motif_->getV()[K_model][y][j] / bg_->getV()[std::min( K_model, K_bg )][y_bg];
+				s_[y][j] = motif_->getV()[K_model][y][j] / bg_->getV()[std::min( K_model, K_bg )][y_bg];
 			}
 		}
 
@@ -214,7 +201,7 @@ int EM::learnMotif(){
 		}
 
 		if( v_diff < Global::epsilon )					iterate = false;
-		//if( llikelihood_diff < 0 && EMIterations_ > 1 )	iterate = false;
+		if( llikelihood_diff < 0 && EMIterations_ > 1 )	iterate = false;
 
 		// * testing: write out alpha, qfunc, gradient and posterior value for current EM iterations
 	}
@@ -228,207 +215,93 @@ int EM::learnMotif(){
 	}
 	free( v_prev );
 
-	fprintf( stdout, "\n--- Runtime for EM: %ld seconds ---\n", time( NULL )-timestamp );
+	fprintf( stdout, "\n--- Runtime for EM: %.4f seconds ---\n", ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );
 
     return 0;
 }
 
 void EM::EStep(){
 
-	int L, LW1, k, y, j, i;
 	float prior_i;											// positional preference prior state for p(z_n = i), motif present
 	float prior_0 = 1 - q_;									// positional preference prior state for p(z_n = 0), no motif present
-	float normFactor;										// normalize responsibilities r[n][i]
 	int K_model = Global::modelOrder;
 	int W = motif_->getW();
 	llikelihood_ = 0.0f;									// reset log likelihood
 
 	// calculate responsibilities r_[n][i] at position i in sequence n
-	if( Global::setSlow ){
-		// slow code:
-		for( size_t n = 0; n < posSeqs_.size(); n++ ){		// n runs over all sequences
-			L = posSeqs_[n]->getL();
-			LW1 = L - W + 1;
-			normFactor = 0.0f;								// reset normalization factor
+	for( size_t n = 0; n < posSeqs_.size(); n++ ){			// n runs over all sequences
+		int L = posSeqs_[n]->getL();
+		int LW1 = L - W + 1;
+		float normFactor = 0.0f;							// reset normalization factor
 
-			// reset r_[n][i]
-			for( i = 0; i < LW1; i++ ){
-				if( Global::logEM )
-					// calculation in log space:
-					r_[n][i] = 0.0f;
-				else
-					// calculation in linear space:
-					r_[n][i] = 1.0f;
-			}
+		// reset r_[n][i]
+		for( int i = 0; i < LW1; i++ )	r_[n][i] = 1.0f;
 
-			// when p(z_n > 0)
-			prior_i = q_ / static_cast<float>( LW1 );		// p(z_n = i), i > 0
-			for( i = 0; i < LW1; i++ ){
-				for( j = 0; j < W; j++ ){
-					k = std::min( i+j, K_model );
-					y = posSeqs_[n]->extractKmer( i+j, k );
-					if( y != -1 ){							// skip 'N' and other unknown alphabets
-						if( Global::logEM )
-							// calculation in log space:
-							r_[n][i] += s_[y][j];
-						else
-							// calculation in linear space:
-							r_[n][i] *= s_[y][j];
-					} /*else if ( j < K_model ){			// for N exists and j < K occasions
-						y = posSeqs_[n]->extractKmer( i+j, j );
-						if( y != -1 ){
-							r_[n][i] += s_[y][j];
-						} else {
-							r_[n][i] = 0.0f;
-							break;
-						}
-					}*/ else {
-						r_[n][i] = 0.0f;
-						break;
-					}
+		// when p(z_n > 0)
+		prior_i = q_ / static_cast<float>( LW1 );			// p(z_n = i), i > 0
+		for( int ij = 0; ij < L; ij++ ){					// ij = i+j runs over all positions in sequence
+			int y = posSeqs_[n]->extractKmer( ij, std::min( ij, K_model ) );	// extract (k+1)-mer y from positions (i-k,...,i)
+			for( int j = std::max( 0, ij-L+W ); j < std::min( W, ij+1 ); j++ ){	// j runs over all motif positions
+				if( y != -1 ){								// skip 'N' and other unknown alphabets
+					r_[n][L-W-ij+j] *= s_[y][j];
+				} else {
+					r_[n][L-W-ij+j] = 0.0f;
+					break;
 				}
-				if( r_[n][i] != 0.0f ){
-					if( Global::logEM )
-						// calculation in exponential space:
-						r_[n][i] = expf( r_[n][i] ) * prior_i;
-					else
-						// calculation in linear space:
-						r_[n][i] = r_[n][i] * prior_i;
-				}
-				normFactor += r_[n][i];
 			}
-
-			// when p(z_n = 0)
-			normFactor += prior_0;
-
-			for( i = 0; i < LW1; i++ ){						// responsibility normalization
-				r_[n][i] /= normFactor;
-			}
-
-			llikelihood_ += logf( normFactor );
-
 		}
-	} else {
-		// fast code:
-		for( size_t n = 0; n < posSeqs_.size(); n++ ){		// n runs over all sequences
-			L = posSeqs_[n]->getL();
-			LW1 = L - W + 1;
-			normFactor = 0.0f;								// reset normalization factor
 
-			// reset r_[n][i]
-			for( i = 0; i < L; i++ ){
-				if( Global::logEM )
-					// calculation in log space:
-					r_[n][i] = 0.0f;
-				else
-					// calculation in linear space:
-					r_[n][i] = 1.0f;
+		for( int i = 0; i < LW1; i++ ){
+			if( r_[n][i] != 0.0f ){
+				r_[n][i] *= prior_i;
 			}
-
-			// when p(z_n > 0)
-			prior_i = q_ / static_cast<float>( LW1 );		// p(z_n = i), i > 0
-			for( i = 0; i < L; i++ ){						// i runs over all nucleotides in sequence
-				k = std::min( i, K_model );
-				y = posSeqs_[n]->extractKmer( i, k );		// extract (k+1)-mer y from positions (i-k,...,i)
-				for( j = 0; j < std::min( W, i+1 ); j++ ){	// j runs over all motif positions
-					if( y != -1 ){							// skip 'N' and other unknown alphabets
-						if( Global::logEM )
-							// calculation in log space:
-							r_[n][L-i+j-1] += s_[y][j];
-						else
-							// calculation in linear space:
-							r_[n][L-i+j-1] *= s_[y][j];
-					}/* else if( j < K_model ){
-						y = posSeqs_[n]->extractKmer( i, K_model-j );
-						if( y != -1 ){
-							r_[n][L-i+j-1] += s_[y][j];
-						} else {
-							r_[n][L-i+j-1] = 0.0f;
-							break;
-						}
-					}*/ else {
-						r_[n][L-i+j-1] = 0.0f;
-						break;
-					}
-				}
-			}
-			for( i = W-1; i < L; i++ ){
-				if( r_[n][i] != 0.0f ){
-					if( Global::logEM )
-						// calculation in exponential space:
-						r_[n][i] = expf( r_[n][i] ) * prior_i;
-					else
-						// calculation in linear space:
-						r_[n][i] = r_[n][i] * prior_i;
-				}
-				normFactor += r_[n][i];
-			}
-
-			// when p(z_n = 0)
-			normFactor += prior_0;
-
-			// normalize responsibilities
-			for( i = W-1; i < L; i++ ){
-				r_[n][i] /= normFactor;
-			}
-
-			llikelihood_ += logf( normFactor );
+			normFactor += r_[n][i];
 		}
+
+		// when p(z_n = 0), r = 1 - q_
+		normFactor += prior_0;
+
+		// normalize responsibilities
+		for( int i = 0; i < LW1; i++ ){
+			r_[n][i] /= normFactor;
+		}
+
+		llikelihood_ += logf( normFactor );
 	}
 }
 
 void EM::MStep(){
 
-	int L, LW1, k, y, y2, j, i;
 	int W = motif_->getW();
 
 	// reset the fractional counts n
-	for( k = 0; k < Global::modelOrder+1; k++ ){
-		for( y = 0; y < Y_[k+1]; y++ ){
-			for( j = 0; j < W; j++ ){
+	for( int k = 0; k < Global::modelOrder+1; k++ ){
+		for( int y = 0; y < Y_[k+1]; y++ ){
+			for( int j = 0; j < W; j++ ){
 				n_[k][y][j] = 0.0f;
 			}
 		}
 	}
 
 	// compute fractional occurrence counts for the highest order K
-	if( Global::setSlow ){
-		// slow code:
-		for( size_t n = 0; n < posSeqs_.size(); n++ ){		// n runs over all sequences
-			L = posSeqs_[n]->getL();
-			LW1 = L - W + 1;
-			for( i = 0; i < LW1; i++ ){						// i runs over all nucleotides in sequence
-				for( j = 0; j < W; j++ ){					// j runs over all motif positions
-					k = std::min( i+j, Global::modelOrder );
-					y = posSeqs_[n]->extractKmer( i+j, k );
-					if( y != -1 ){							// skip 'N' and other unknown alphabets
-						n_[Global::modelOrder][y][j] += r_[n][i];
-					}
-				}
-			}
-		}
-	} else {
-		// fast code:
-		for( size_t n = 0; n < posSeqs_.size(); n++ ){		// n runs over all sequences
-			L = posSeqs_[n]->getL();
-			LW1 = L - W + 1;
-			for( i = 0; i < L; i++ ){
-				k =  std::min( i, Global::modelOrder );
-				y = posSeqs_[n]->extractKmer( i, k );
-				for( j = 0; j < std::min( W, i+1 ); j++ ){
-					if( y != -1 && ( i-j ) < LW1 ){			// skip 'N' and other unknown alphabets
-						n_[Global::modelOrder][y][j] += r_[n][L-i+j-1];
-					}
+	for( size_t n = 0; n < posSeqs_.size(); n++ ){				// n runs over all sequences
+		int L = posSeqs_[n]->getL();
+		int LW1 = L - W + 1;
+		for( int ij = 0; ij < L; ij++ ){						// ij = i+j runs over all positions in x
+			int y = posSeqs_[n]->extractKmer( ij, std::min( ij, Global::modelOrder ) );
+			for( int j = std::max( 0, ij-L+W ); j < std::min( W, ij+1 ); j++ ){
+				if( y != -1 && ( ij-j ) < LW1 ){				// skip 'N' and other unknown alphabets
+					n_[Global::modelOrder][y][j] += r_[n][L-W-ij+j];
 				}
 			}
 		}
 	}
 
 	// compute fractional occurrence counts from higher to lower order
-	for( k = Global::modelOrder; k > 0; k-- ){				// k runs over all orders
-		for( y = 0; y < Y_[k+1]; y++ ){
-			y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
-			for( j = 0; j < W; j++ ){
+	for( int k = Global::modelOrder; k > 0; k-- ){				// k runs over all orders
+		for( int y = 0; y < Y_[k+1]; y++ ){
+			int y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
+			for( int j = 0; j < W; j++ ){
 				n_[k-1][y2][j] += n_[k][y][j];
 			}
 		}
@@ -463,8 +336,8 @@ void EM::optimizeQ(){
 	// optimize hyper-parameter q
 	// motif.updateV()
 }
-float EM::calculateLogPosterior( int K ){
 
+float EM::calculateLogPosterior( int K ){
 	int L, LW1, i,j,k,y,y2;
 	float prior_i;
 	float prior_0 = 1-q_;
@@ -478,11 +351,7 @@ float EM::calculateLogPosterior( int K ){
 
 	float** r_local = ( float** )calloc( posSeqs_.size(), sizeof( float* ) );
 	    for( size_t n = 0; n < posSeqs_.size(); n++ ){
-	        if( Global::setSlow ){
-	            L = posSeqs_[n]->getL() - W + 1;
-	        } else {
-	            L = posSeqs_[n]->getL();
-	        }
+	        L = posSeqs_[n]->getL();
 	        r_local[n] = ( float* )calloc( L, sizeof( float ) );
 	    }
 
@@ -498,12 +367,7 @@ float EM::calculateLogPosterior( int K ){
 	            y = posSeqs_[n]->extractKmer( i, k );       // extract (k+1)-mer y from positions (i-k,...,i)
 	            for( j = 0; j < std::min( W, i+1 ); j++ ){  // j runs over all motif positions
 	                if( y != -1 ){                          // skip 'N' and other unknown alphabets
-	                    if( Global::logEM )
-	                        // calculation in log space:
-	                        r_local[n][L-i+j-1] += s_[y][j];
-	                    else
-	                        // calculation in linear space:
-	                        r_local[n][L-i+j-1] *= s_[y][j];
+	                    r_local[n][L-i+j-1] *= s_[y][j];
 	                }
 	                else {
 	                    r_local[n][L-i+j-1] = 0.0f;
@@ -513,12 +377,7 @@ float EM::calculateLogPosterior( int K ){
 	        }
 	        for( i = W-1; i < L; i++ ){
 	            if( r_local[n][i] != 0.0f ){
-	                if( Global::logEM )
-	                    // calculation in exponential space:
-	                    r_local[n][i] = expf( r_local[n][i] ) * prior_i;
-	                else
-	                    // calculation in linear space:
-	                    r_local[n][i] = r_local[n][i] * prior_i;
+	                r_local[n][i] = r_local[n][i] * prior_i;
 	            }
 	            normFactor += r_local[n][i];
 	        }
@@ -558,15 +417,14 @@ float EM::calculateLogPosterior( int K ){
 float EM::calculateQfunc( int K ){
 
 	int L, y, y2, j;
-	float Qfunc = 0.0f;
 	float prior_i, prior_0 = 1 - q_;
 
 	int W = motif_->getW();
 	int A = Alphabet::getSize();
 	float*** v_motif = motif_->getV();
     float** v_bg = bg_->getV();
-
-	// the first part of Q function
+	float Qfunc = 0.0f;
+    // the first part of Q function
 	for( y = 0; y < Y_[K+1]; y++ ){
 		for( j = 0; j < W; j++ ){
 			Qfunc += n_[K][y][j] * logf( v_motif[K][y][j] );
@@ -600,6 +458,7 @@ float EM::calculateQfunc( int K ){
 		        Qfunc += alpha_[K][j] * v_motif[K-1][y2][j] * logf( v_motif[K][y][j] );
 		    }
 		}
+
 		// the forth part of Q function
 		Qfunc += ( - 2.0f * logf( alpha_[K][j] ) - Global::modelBeta * powf( Global::modelGamma, ( float )K ) /
 				alpha_[K][j] + logf( Global::modelBeta * powf( Global::modelGamma, ( float )K ) ) );
@@ -664,9 +523,6 @@ void EM::print(){
 	}
 }
 
-
-
-
 void EM::write(){
 
 	/**
@@ -677,7 +533,7 @@ void EM::write(){
 	 * (4) posSequenceBasename.EMlogScores:	log scores
 	 */
 
-	int k, y, j, i, L;
+	int k, y, j;
 	int W = motif_->getW();
 
 	std::stringstream alphaIter;
@@ -699,8 +555,10 @@ void EM::write(){
 		ofile_n << std::endl;
 	}
 
+/*	TODO: this file is too large for benchmarking
 	// output responsibilities r[n][i]
-	std::string opath_r = opath + "_emIter_" + alphaIter.str() + ".EMposterior";
+	int i, L;
+	std::string opath_r = opath + ".EMposterior";
 	std::ofstream ofile_r( opath_r.c_str() );
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 		L = posSeqs_[n]->getL();
@@ -715,6 +573,7 @@ void EM::write(){
 		}
 		ofile_r << std::endl;
 	}
+*/
 
 	// output parameter alphas alpha[k][j]
 	std::string opath_alpha = opath + "_emIter_" + alphaIter.str() + ".EMalpha";
