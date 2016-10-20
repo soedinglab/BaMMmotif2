@@ -134,7 +134,6 @@ int EM::learnMotif(){
 	int y, y_bg, j;
 	float v_diff, llikelihood_prev, llikelihood_diff = 0.0f;
 	float** v_prev;											// hold the parameters of the highest-order before EM
-	float q_func_old, q_func_new, l_post_old, l_post_new;
 
 	// allocate memory for parameters v[y][j] with the highest order
 	v_prev = ( float** )calloc( Y_[Global::modelOrder+1], sizeof( float* ) );
@@ -202,7 +201,7 @@ int EM::learnMotif(){
 		}
 
 		if( v_diff < Global::epsilon )					iterate = false;
-		//if( llikelihood_diff < 0 && EMIterations_ > 1 )	iterate = false;
+		if( llikelihood_diff < 0 && EMIterations_ > 1 )	iterate = false;
 
 		// * testing: write out alpha, qfunc, gradient and posterior value for current EM iterations
 	}
