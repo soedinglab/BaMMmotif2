@@ -8,7 +8,7 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 	int y, k, j, LW1;
 	int W = motif_->getW();
 
-	for( k = 0; k < std::max( Global::modelOrder+2,  Global::bgModelOrder ); k++ ){	// 4 is for cases when modelOrder < 2
+	for( k = 0; k < std::max( Global::modelOrder+2,  Global::bgModelOrder+2 ); k++ ){	// 4 is for cases when modelOrder < 2
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 
@@ -134,7 +134,7 @@ int EM::learnMotif(){
 	int y, y_bg, j;
 	float v_diff, llikelihood_prev, llikelihood_diff = 0.0f;
 	float** v_prev;											// hold the parameters of the highest-order before EM
-	float q_func_old, q_func_new, l_post_old, l_post_new, l_prior_new;
+	float q_func_old, q_func_new, l_post_old, l_post_new, l_prior_new, prev_alpha;
 
 	// allocate memory for parameters v[y][j] with the highest order
 	v_prev = ( float** )calloc( Y_[Global::modelOrder+1], sizeof( float* ) );
@@ -183,6 +183,7 @@ int EM::learnMotif(){
 		}
 
 		// * optional: optimize parameter alpha
+    	prev_alpha = alpha_[Global::modelOrder][0];
 		if( !Global::noAlphaOptimization ){
 		    // only run alpha optimization every xth em-iteration.
             if( EMIterations_ % Global::alphaIter == 0 && EMIterations_ > 10){
@@ -209,6 +210,16 @@ int EM::learnMotif(){
 		l_post_new = calculateLogPosterior();
 		l_prior_new = calculateLogPriors();
 
+		// check Qfunc increase
+		if( (q_func_new - q_func_old) < 0 ){
+			// reset alpha:
+			alpha_[Global::modelOrder][0] = prev_alpha;
+			//reset V's:
+			motif_->updateVbyK( n_, alpha_, K_model );
+			// writeOut Qfunction Values
+			testAlphaLearning();
+		}
+
 		// check parameter difference for convergence
 		v_diff = 0.0f;
 
@@ -233,7 +244,7 @@ int EM::learnMotif(){
 		l_post_old = l_post_new;
 
 		if( v_diff < Global::epsilon )					iterate = false;
-		if( llikelihood_diff < 0 && EMIterations_ > 1 )	iterate = false;
+//		if( llikelihood_diff < 0 && EMIterations_ > 1 )	iterate = false;
 
 		// * testing: write out alpha, qfunc, gradient and posterior value for current EM iterations
 		if( Global::TESTING ){
@@ -312,12 +323,10 @@ void EM::EStep(){
 
 		// when p(z_n = 0), r = 1 - q_
 		normFactor += prior_0;
-
 		// normalize responsibilities
 		for( int i = 0; i < LW1; i++ ){
 			r_[n][i] /= normFactor;
 		}
-
 		llikelihood_ += logf( normFactor );
 	}
 }
@@ -391,17 +400,16 @@ void EM::testAlphaLearning( ){
     std::cout << std::endl;
     float alpha, alpha_min = 1, alpha_max = 2e4;
 
-    //for(int k = 0; k <= Global::modelOrder; k++ ){
     int k = Global::modelOrder;
         std::cout << k << " th Order " << ' ';
         std::cout << std::endl;
         std::string opath = std::string( Global::outputDirectory ) + '/'
                 + std::string( Global::posSequenceBasename );
-        std::stringstream alphaIter;
-        alphaIter << Global::alphaIter;
+        std::stringstream emIter;
+        emIter << EMIterations_;
         std::stringstream kstring;
         kstring << k;
-        std::string opath_n = opath + "_emIter_" + alphaIter.str() + "_Order_" + kstring.str() + ".AlphaTesting";
+        std::string opath_n = opath + "_emIter_" + emIter.str() + "_Order_" + kstring.str() + ".AlphaTesting";
         std::ofstream ofile_n( opath_n.c_str() );
 
         for( alpha = alpha_min; alpha < alpha_max; alpha++ ){
@@ -421,9 +429,6 @@ void EM::testAlphaLearning( ){
             ofile_n << std::scientific << calculateLogPosterior( k ) << ' ';
             ofile_n << std::endl;
             std::cout << std::endl;
-            //         for(int turn = 0; turn < 10; turn++ ){
-            //                         alpha++;
-            //         }
         }
         std::cout << "              Resetting v's " ;
         std::cout << std::endl << std::flush;
@@ -432,7 +437,6 @@ void EM::testAlphaLearning( ){
             alpha_[k][j] = Global::modelAlpha[k];
         }
         motif_->updateVbyK( n_, alpha_ ,k );
-    //}
 }
 
 void EM::optimizeQ(){
@@ -606,15 +610,9 @@ void EM::write(){
 	std::ofstream ofile_r( opath_r.c_str() );
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 		L = posSeqs_[n]->getL();
-		if( Global::setSlow ){
-			for( i = 0; i < L-W+1; i++ ){
-				ofile_r << std::scientific << r_[n][i] << ' ';
-			}
-		} else {
 			for( i = L-1; i > W-2; i-- ){
 				ofile_r << std::scientific << r_[n][i] << ' ';
 			}
-		}
 		ofile_r << std::endl;
 	}
 */

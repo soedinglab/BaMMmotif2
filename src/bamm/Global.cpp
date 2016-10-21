@@ -46,7 +46,7 @@ std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.0f );	// background m
 unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();  // maximum number of iterations
 float               Global::epsilon = 0.001f;				// threshold for likelihood convergence parameter
 bool                Global::noAlphaOptimization = false;	// disable alpha optimization
-int                 Global::alphaIter = 10;                 // alpha learning will happen in each alphaIter-th EMiteration
+int                 Global::alphaIter = 1;                 // alpha learning will happen in each alphaIter-th EMiteration
 bool                Global::TESTING = false;                // turn on when you want to have printouts for checking alpha learning
 bool				Global::fixPseudos = false;				// only update v[k_model] for simulating exact EM algorithm
 bool                Global::noQOptimization = false;		// disable q optimization
@@ -237,6 +237,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "noAlphaOptimization", noAlphaOptimization );
     opt >> GetOpt::OptionPresent( "TESTING", TESTING );
 	opt >> GetOpt::Option( "alphaIter", alphaIter );
+    opt >> GetOpt::OptionPresent( "fixPseudos", fixPseudos );
 	opt >> GetOpt::OptionPresent( "noQOptimization", noQOptimization );
 
 	// FDR options
@@ -255,6 +256,15 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "debug", debugMode );
 	opt >> GetOpt::OptionPresent( "saveInitBaMMs", saveInitBaMMs );
 	opt >> GetOpt::OptionPresent( "saveBaMMs", saveBaMMs );
+
+	// -- Check -- //
+	//    if( opt.options_remain() ) {
+	//        perror("Some arguments are not used! This could be due to misspelled options.\n");        std::vector<std::string> args;
+	//        opt >> GetOpt::GlobalOption(args);
+	//        for(int i = 0; i < (int)args.size(); i++) {
+	//            printf("Not used argument:\t%s\n",args[i].c_str());
+	//        }
+	//    }
 
 	return 0;
 }
