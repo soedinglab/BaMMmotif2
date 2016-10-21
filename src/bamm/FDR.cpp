@@ -142,7 +142,9 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 			for( int j = 0; j < W; j++ ){
 				int y = seqSet[n]->extractKmer( i+j, std::min(i+j, K_motif ) );
 				int y_bg = y % Y_[K_bg+1];
-				logOdds[i] += ( logf( motif->getV()[K_motif][y][j] ) - logf( bg->getV()[std::min( K_motif, K_bg )][y_bg] ) );
+				if( y >= 0 ){
+					logOdds[i] += ( logf( motif->getV()[K_motif][y][j] ) - logf( bg->getV()[std::min( K_motif, K_bg )][y_bg] ) );
+				}
 			}
 
 			// take all the log odds scores for MOPS model:
