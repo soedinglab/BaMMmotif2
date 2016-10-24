@@ -36,6 +36,7 @@ private:
 	std::vector<float>	R_mops_;			// recall for MOPS model
 	float*				FP_mops_;			// false positive values for MOPS model
 	float*				TFP_mops_;			// true and false positive values for MOPS model
+	size_t 				idx_max_;			// maximal number of precision and recall scores to be written into file
 
 	std::vector<int>	Y_;					// contains 1 at position 0
 											// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
