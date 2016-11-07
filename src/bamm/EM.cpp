@@ -8,7 +8,7 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 	int y, k, j, LW1;
 	int W = motif_->getW();
 
-	for( k = 0; k < std::max( Global::modelOrder+2,  Global::bgModelOrder+2 ); k++ ){	// 4 is for cases when modelOrder < 2
+	for( k = 0; k < std::max( Global::modelOrder+2,  Global::bgModelOrder+2 ); k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 
@@ -85,6 +85,7 @@ EM::~EM(){
 	free( alpha_ );
 
 }
+
 void EM::testFunctions(){
 
     // test if Qfunction fits to its gradient
@@ -133,25 +134,23 @@ int EM::learnMotif(){
 
 	int y, y_bg, j;
 	float v_diff, llikelihood_prev, llikelihood_diff = 0.0f;
-	float** v_prev;											// hold the parameters of the highest-order before EM
+	float** v_before;										// hold the parameters of the highest-order before EM
 
 	// allocate memory for parameters v[y][j] with the highest order
-	v_prev = ( float** )calloc( Y_[Global::modelOrder+1], sizeof( float* ) );
+	v_before = ( float** )calloc( Y_[Global::modelOrder+1], sizeof( float* ) );
 	for( y = 0; y < Y_[Global::modelOrder+1]; y++ ){
-		v_prev[y] = ( float* )calloc( W, sizeof( float ) );
+		v_before[y] = ( float* )calloc( W, sizeof( float ) );
 	}
-
-
 
 	// iterate over
 	while( iterate && ( EMIterations_ < Global::maxEMIterations ) ){
 
 		EMIterations_++;
 
-		// before EM, get parameter variables before EM
+		// get parameter variables with highest order before EM
 		for( y = 0; y < Y_[Global::modelOrder+1]; y++ ){
 			for( j = 0; j < W; j++ ){
-				v_prev[y][j] = motif_->getV()[Global::modelOrder][y][j];
+				v_before[y][j] = motif_->getV()[Global::modelOrder][y][j];
 			}
 		}
 		llikelihood_prev = llikelihood_;
@@ -167,7 +166,7 @@ int EM::learnMotif(){
 		// E-step: calculate posterior
 		EStep();
 
-		// M-step: update parameters
+		// M-step: update model parameters
 		MStep();
 
 		// * optional: optimize parameter alpha
@@ -181,12 +180,11 @@ int EM::learnMotif(){
 		// * optional: optimize parameter q
 		if( !Global::noQOptimization )		optimizeQ();
 
-				// check parameter difference for convergence
+		// check parameter difference for convergence
 		v_diff = 0.0f;
-
 		for( y = 0; y < Y_[Global::modelOrder+1]; y++ ){
 			for( j = 0; j < W; j++ ){
-				v_diff += fabsf( motif_->getV()[Global::modelOrder][y][j] - v_prev[y][j] );
+				v_diff += fabsf( motif_->getV()[Global::modelOrder][y][j] - v_before[y][j] );
 			}
 		}
 		// check likelihood for convergence
@@ -211,9 +209,9 @@ int EM::learnMotif(){
 
 	// free memory
 	for( y = 0; y < Y_[Global::modelOrder+1]; y++ ){
-		free( v_prev[y] );
+		free( v_before[y] );
 	}
-	free( v_prev );
+	free( v_before );
 
 	fprintf( stdout, "\n--- Runtime for EM: %.4f seconds ---\n", ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );
 
@@ -555,25 +553,18 @@ void EM::write(){
 		ofile_n << std::endl;
 	}
 
-/*	TODO: this file is too large for benchmarking
+	//TODO: this file is too large for benchmarking
 	// output responsibilities r[n][i]
-	int i, L;
 	std::string opath_r = opath + ".EMposterior";
 	std::ofstream ofile_r( opath_r.c_str() );
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
-		L = posSeqs_[n]->getL();
-		if( Global::setSlow ){
-			for( i = 0; i < L-W+1; i++ ){
-				ofile_r << std::scientific << r_[n][i] << ' ';
-			}
-		} else {
-			for( i = L-1; i > W-2; i-- ){
-				ofile_r << std::scientific << r_[n][i] << ' ';
-			}
+		int L = posSeqs_[n]->getL();
+		for( int i = L-1; i > W-2; i-- ){
+			ofile_r << std::scientific << r_[n][i] << ' ';
 		}
 		ofile_r << std::endl;
 	}
-*/
+
 
 	// output parameter alphas alpha[k][j]
 	std::string opath_alpha = opath + "_emIter_" + alphaIter.str() + ".EMalpha";

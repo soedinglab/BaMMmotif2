@@ -93,7 +93,7 @@ void Motif::initFromBindingSites( char* filename ){
 
 	while( getline( file, bindingsite ).good() ){
 
-		N_++;											// count the number of binding sites
+		C_++;											// count the number of binding sites
 
 		// add alphabets randomly at the beginning of each binding site
 		for( i = 0; i < Global::addColumns.at(0); i++ )
@@ -107,7 +107,7 @@ void Motif::initFromBindingSites( char* filename ){
 
 		if( bindingSiteWidth != W_ ){					// all the binding sites should have the same length
 			fprintf( stderr, "Error: Length of binding site on line %d differs.\n"
-					"Binding sites should have the same length.\n", N_ );
+					"Binding sites should have the same length.\n", C_ );
 			exit( -1 );
 		}
 		if( bindingSiteWidth < Global::modelOrder+1 ){	// binding sites should be longer than the order of model
@@ -136,7 +136,9 @@ void Motif::initFromBindingSites( char* filename ){
 	calculateV();
 
 	// print out initial model
-	write();
+	if( Global::saveInitBaMMs ){
+		write();
+	}
 
 	// set isInitialized
 	isInitialized_ = true;
@@ -154,8 +156,8 @@ void Motif::initFromBayesianMarkovModel( char* filename ){
 
 }
 
-int Motif::getN(){
-	return N_;
+int Motif::getC(){
+	return C_;
 }
 
 int Motif::getW(){
@@ -170,6 +172,10 @@ float*** Motif::getP(){
 	return p_;
 }
 
+int*** Motif::getN(){
+	return n_;
+}
+
 void Motif::calculateV(){
 
 	int y, j, k, y2, yk;
@@ -178,7 +184,7 @@ void Motif::calculateV(){
 	for( y = 0; y < Y_[1]; y++ ){
 		for( j = 0; j < W_; j++ ){
 			v_[0][y][j] = ( static_cast<float>( n_[0][y][j] ) + Global::modelAlpha.at(0) * Global::negSequenceSet->getBaseFrequencies()[y] )
-						/ ( static_cast<float>( N_ ) + Global::modelAlpha.at(0) );
+						/ ( static_cast<float>( C_ ) + Global::modelAlpha.at(0) );
 		}
 	}
 
@@ -197,7 +203,7 @@ void Motif::calculateV(){
 		}
 	}
 }
-// update v from fractional k-mer counts n and current alphas
+// update v from fractional k-mer counts n and current alphas (e.g for EM)
 void Motif::updateV( float*** n, float** alpha ){
 	assert( isInitialized_ );
 
@@ -232,6 +238,46 @@ void Motif::updateV( float*** n, float** alpha ){
 			for( j = k; j < W_; j++ ){
 				v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
 							/ ( n[k-1][yk][j-1] + alpha[k][j] );
+			}
+		}
+	}
+}
+
+// update v from integral k-mer counts n and current alphas (e.g for CGS)
+void Motif::updateV( int*** n, float** alpha ){
+	assert( isInitialized_ );
+
+	int y, j, k, y2, yk;
+
+	// sum up the n over (k+1)-mers at different position of motif
+	int* sumN = ( int* )calloc( W_, sizeof( int ) );
+	for( j = 0; j < W_; j++ ){
+		for( y = 0; y < Y_[1]; y++ ){
+			sumN[j] += n[0][y][j];
+		}
+	}
+
+	// for k = 0, v_ = freqs:
+	for( y = 0; y < Y_[1]; y++ ){
+		for( j = 0; j < W_; j++ ){
+			v_[0][y][j] = ( ( float )n[0][y][j] + alpha[0][j] * Global::negSequenceSet->getBaseFrequencies()[y] )
+						/ ( ( float )sumN[j] + alpha[0][j] );
+		}
+	}
+
+	free( sumN );
+
+	// for k > 0:
+	for( k = 1; k < Global::modelOrder+1; k++ ){
+		for( y = 0; y < Y_[k+1]; y++ ){
+			y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
+			yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer
+			for( j = 0; j < k; j++ ){						// when j < k, i.e. p(A|CG) = p(A|C)
+				v_[k][y][j] = v_[k-1][y2][j];
+			}
+			for( j = k; j < W_; j++ ){
+				v_[k][y][j] = ( ( float )n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
+							/ ( ( float )n[k-1][yk][j-1] + alpha[k][j] );
 			}
 		}
 	}
@@ -297,7 +343,7 @@ void Motif::write(){
 		for( int k = 0; k < Global::modelOrder+1; k++ ){
 			for( int y = 0; y < Y_[k+1]; y++ ){
 				ofile_v << std::scientific << v_[k][y][j] << '\t';
-				ofile_n << std::scientific << n_[k][y][j] << '\t';
+				ofile_n << n_[k][y][j] << '\t';
 			}
 			ofile_v << std::endl;
 			ofile_n << std::endl;

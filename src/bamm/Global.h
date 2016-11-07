@@ -61,26 +61,34 @@ public:
                                                             // instead of background frequencies of mono-nucleotides
     static bool        interpolateBG;                       // calculate prior probabilities from lower-order probabilities
                                                             // instead of background frequencies of mono-nucleotides
-
 	// background model options
 	static int			bgModelOrder;						// background model order, defaults to 2
 	static std::vector<float> bgModelAlpha;					// background model alpha
 
 	// EM options
-	static unsigned int	maxEMIterations;					// maximum number of iterations
+	static bool			EM;									// flag to trigger EM learning
+	static unsigned int	maxEMIterations;					// maximum number of iterations for EM
 	static float		epsilon;							// threshold for likelihood convergence parameter
 	static bool			noAlphaOptimization;				// disable alpha optimization
 	static int          alphaIter;                          // how many EM iterations before turning on AlphaLearning
 	static bool         TESTING;                            // used for massive write out during alpha testing
 	static bool			noQOptimization;					// disable q optimization
 
+	// CGS (Collapsed Gibbs sampling) options
+	static bool			CGS;								// flag to trigger Collapsed Gibbs sampling
+	static int 			maxCGSIterations;					// maximum number of iterations for CGS
+	static bool			noAlphaSampling;					// disable alpha sampling in CGS
+	static bool			noQSampling;						// disable q sampling in CGS
+
 	// FDR options
 	static bool			FDR;								// triggers False-Discovery-Rate (FDR) estimation
 	static int			mFold;								// number of negative sequences as multiple of positive sequences
 	static int			cvFold;								// number of cross-validation (cv) folds
-	static int 			samplingOrder;						// the kmer order for sampling negative sequence set
+	static int 			sOrder;								// the kmer order for sampling negative sequence set
+	static bool			saveLogOdds;						// a flag for writing log odds scores to disk.
 	// further FDR options...
 
+	// other options
 	static bool			verbose;							// verbose printouts, defaults to false
 	static bool         debugMode;                          // verbose printouts for debugging, defaults to false
 	static bool			saveInitBaMMs;						// Write initialized BaMM(s) to disk.

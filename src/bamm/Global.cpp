@@ -37,12 +37,12 @@ bool                Global::interpolate = true;             // calculate prior p
                                                             // instead of background frequencies of mononucleotides
 bool                Global::interpolateBG = true;           // calculate prior probabilities from lower-order probabilities
                                                             // instead of background frequencies of mononucleotides
-
 // background model options
 int        			Global::bgModelOrder = 2;				// background model order, defaults to 2
 std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.0f );	// background model alpha
 
 // EM options
+bool				Global::EM = false;						// flag to trigger EM learning
 unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();  // maximum number of iterations
 float               Global::epsilon = 0.001f;				// threshold for likelihood convergence parameter
 bool                Global::noAlphaOptimization = false;	// disable alpha optimization
@@ -50,11 +50,18 @@ int                	Global::alphaIter = 10;                 // alpha learning wi
 bool                Global::TESTING = false;                // turn on when you want to have printouts for checking alpha learning
 bool                Global::noQOptimization = false;		// disable q optimization
 
+// CGS (Collapsed Gibbs sampling) options
+bool				Global::CGS = false;					// flag to trigger Collapsed Gibbs sampling
+int 				Global::maxCGSIterations = 100;			// maximum number of iterations for CGS
+bool				Global::noAlphaSampling = false;		// disable alpha sampling in CGS
+bool				Global::noQSampling = false;			// disable q sampling in CGS
+
 // FDR options
 bool                Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
 int        			Global::mFold = 20;						// number of negative sequences as multiple of positive sequences
 int        			Global::cvFold = 5;						// size of cross-validation folds
-int 				Global::samplingOrder = 2;				// the kmer order for sampling negative sequence set
+int 				Global::sOrder = 2;						// the kmer order for sampling negative sequence set
+bool				Global::saveLogOdds = false;			// a flag for writing log odds scores to disk.
 // further FDR options...
 
 // printout options
@@ -90,8 +97,8 @@ int Global::readArguments( int nargs, char* args[] ){
 	 * process flags from user
 	 */
 
-	if( nargs < 3 ) {										// At least 2 parameters are required, TODO:but this is not precise, needed to be specified!!
-		fprintf( stderr, "Error: Arguments are missing! \n" );
+	if( nargs < 3 ) {
+		std::cerr << "Error: Arguments are missing! \n" << std::endl;
 		printHelp();
 		exit( -1 );
 	}
@@ -104,7 +111,8 @@ int Global::readArguments( int nargs, char* args[] ){
 	posSequenceFilename = args[2];
 	posSequenceBasename = baseName( posSequenceFilename );
 
-	GetOpt::GetOpt_pp opt( nargs, args );
+	// read in options from the third argument on
+	GetOpt::GetOpt_pp opt( nargs-2, args+2 );
 
 	if( opt >> GetOpt::OptionPresent( 'h', "help" ) ){
 		printHelp();
@@ -224,20 +232,31 @@ int Global::readArguments( int nargs, char* args[] ){
 			}
 		}
 	}
-	// em options
-	opt >> GetOpt::Option( "maxEMIterations", maxEMIterations );
-	opt >> GetOpt::Option( 'e', "epsilon", epsilon );
-	opt >> GetOpt::OptionPresent( "noAlphaOptimization", noAlphaOptimization );
-    opt >> GetOpt::OptionPresent( "TESTING", TESTING );
-	opt >> GetOpt::Option( "alphaIter", alphaIter );
-	opt >> GetOpt::OptionPresent( "noQOptimization", noQOptimization );
+
+	// EM options
+	if( opt >> GetOpt::OptionPresent( "EM", EM ) ){
+		opt >> GetOpt::Option( "EM", EM );
+		opt >> GetOpt::Option( "maxEMIterations", maxEMIterations );
+		opt >> GetOpt::Option( 'e', "epsilon", epsilon );
+		opt >> GetOpt::OptionPresent( "noAlphaOptimization", noAlphaOptimization );
+		opt >> GetOpt::OptionPresent( "TESTING", TESTING );
+		opt >> GetOpt::Option( "alphaIter", alphaIter );
+		opt >> GetOpt::OptionPresent( "noQOptimization", noQOptimization );
+	}
+
+	// CGS options
+	if( opt >> GetOpt::OptionPresent( "CGS", CGS ) ){
+		opt >> GetOpt::Option( "maxCGSIterations", maxCGSIterations );
+		opt >> GetOpt::OptionPresent( "noAlphaSampling", noAlphaSampling );
+		opt >> GetOpt::OptionPresent( "noQSampling", noQSampling );
+	}
 
 	// FDR options
 	if( opt >> GetOpt::OptionPresent( "FDR", FDR ) ){
-		opt >> GetOpt::OptionPresent( "FDR", FDR );
 		opt >> GetOpt::Option( 'm', "mFold", mFold  );
 		opt >> GetOpt::Option( 'n', "cvFold", cvFold );
-		opt >> GetOpt::Option( 's', "samplingOrder", samplingOrder );
+		opt >> GetOpt::Option( 's', "samplingOrder", sOrder );
+		opt >> GetOpt::Option( "saveLogOdds", saveLogOdds );
 	}
 
 	// printout options
@@ -246,11 +265,18 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "saveInitBaMMs", saveInitBaMMs );
 	opt >> GetOpt::OptionPresent( "saveBaMMs", saveBaMMs );
 
+	// for remaining unknown options
+	if( opt.options_remain() ){
+		printHelp();
+		std::cerr << "Oops! Unknown option(s) remaining... \n\n";
+		exit( -1 );
+	}
+
 	return 0;
 }
 
 void Global::printHelp(){
-	printf("\n===============================================================================\n");
+	printf("\n============================================================================================\n");
 	printf("\n SYNOPSIS:	BaMMmotif OUTDIR SEQFILE [options] \n\n");
 	printf("\t DESCRIPTION \n");
 	printf("\t 		Learn Bayesian inhomogeneous Markov models (BaMM) from sequence Data.\n"
@@ -271,13 +297,15 @@ void Global::printHelp(){
 			"				intensity file name. \n\n");
 	printf("\n		Options for initial model: \n");
 	printf("\n 			--BaMMpatternFile <STRING> \n"
-			"				file that contains patterns. \n\n");
+			"				file that contains patterns.\n\n");
 	printf("\n 			--bindingSitesFile <STRING> \n"
-			"				file that contains binding sites. \n\n");
+			"				file that contains binding sites.\n\n");
 	printf("\n 			--PWMFile <STRING> \n"
-			"				file that contains PWM data. \n");
+			"				file that contains PWM data.\n");
 	printf("\n 			--BaMMFile <STRING> \n"
-			"				file that contains BaMM data. \n\n");
+			"				file that contains BaMM data.\n\n");
+	printf("\n 			--saveInitialModel \n"
+			"				save initial model.\n\n");
 	printf("\n 		Options for inhomogeneous BaMM: \n");
 	printf("\n 			-k, --order <INTEGER> \n"
 			"				model Order. The default is 2. \n\n");
@@ -297,9 +325,11 @@ void Global::printHelp(){
 	printf("\n 			-A, --Alpha <FLOAT> \n"
 			"				Prior strength. The default is 10.0.\n\n");
 	printf("\n 		Options for EM: \n");
+	printf("\n 			--EM  \n"
+			"				trigger Expectation Maximization (EM) algorithm.\n\n");
 	printf("\n 			-q <FLOAT> \n"
-			"				Prior probability for a positive sequence to contain a motif. The"
-			"				default is 0.9.\n\n");
+			"				Prior probability for a positive sequence to contain a motif.\n"
+			"				The default is 0.9.\n\n");
 	printf("\n 			-e, --epsilon <FLOAT> \n"
 			"				The EM algorithm is deemed to be converged when the sum over the\n"
 			"				absolute differences in BaMM probabilities from successive EM rounds\n"
@@ -310,16 +340,25 @@ void Global::printHelp(){
 			"				disable alpha optimization. Defaults to false. *For developers.\n\n");
 	printf("\n 			--noQOptimization (*) \n"
 			"				disable q optimization. Defaults to false. *For developers.\n\n");
+	printf("\n 		Options for CGS: \n");
+	printf("\n 			--CGS  \n"
+			"				trigger Collapsed Gibbs Sampling (CGS) algorithm.\n\n");
+	printf("\n 			--noAlphaSampling (*) \n"
+			"				disable alpha sampling. Defaults to false. *For developers.\n\n");
+	printf("\n 			--noQSampling (*) \n"
+			"				disable q sampling. Defaults to false. *For developers.\n\n");
 	printf("\n 		Options for FDR: \n");
 	printf("\n 			--FDR \n"
 			"				triggers False-Discovery-Rate (FDR) estimation.\n\n");
 	printf("\n 			-m, --mFold <INTEGER>\n"
-			"				number of negative sequences as multiple of positive sequences."
+			"				number of negative sequences as multiple of positive sequences.\n"
 			"				The default is 20.\n\n");
 	printf("\n 			-n, --cvFold <INTEGER>\n"
 			"				number of cross-validation folds. The default is 5.\n\n"
 			"			-s, --samplingOrder <INTERGER>\n"
 			"				order of kmer for sampling negative set. The default is 2.\n\n");
+	printf("\n 			--saveLogOdds\n"
+			"				save log odds scores for positive and negative sequence sets.\n\n");
 	printf("\n 		Options for output:	\n");
 	printf("\n 			--verbose \n"
 			"				verbose printouts. Defaults to false.\n\n");
@@ -329,7 +368,7 @@ void Global::printHelp(){
 			"				Write optimized BaMM(s) to disk.\n\n");
 	printf("\n 			-h, --help\n"
 			"				 Printout this help function.\n\n");
-	printf("\n===============================================================================\n");
+	printf("\n============================================================================================\n");
 }
 
 void Global::destruct(){
@@ -343,7 +382,7 @@ void Global::destruct(){
 }
 
 void Global::debug(){
-
+	/*
     // check Global Parameter settings:
     fprintf( stdout, "outputDirectory        = %s \n", outputDirectory);
     fprintf( stdout, "posSequenceFilename    = %s \n", posSequenceFilename);
@@ -412,5 +451,5 @@ void Global::debug(){
             fprintf( stdout, "%d ", posFoldIndices[fold][n] );
         }
         fprintf( stdout, " ..... ( L = %d )\n", static_cast<int>( posFoldIndices[fold].size() ));
-    }
+    }*/
 }

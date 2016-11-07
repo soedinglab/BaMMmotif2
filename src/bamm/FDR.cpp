@@ -23,11 +23,10 @@ FDR::FDR( Motif* motif ){
 
 	FP_mops_ = new float[( posN + negN ) * LW1];
 	TFP_mops_= new float[( posN + negN ) * LW1];
-	idx_max_ = 0;													// index when the difference between TFP and FP reaches maximum
 
-	testsetV_ = ( float** )calloc( Global::samplingOrder+1, sizeof( float* ) );	// fix to trimer frequencies
-	testsetN_ = ( int** )calloc( Global::samplingOrder+1, sizeof( int* ) );
-	for( int k = 0; k < Global::samplingOrder+1; k++ ){
+	testsetV_ = ( float** )calloc( Global::sOrder+1, sizeof( float* ) );	// fix to trimer frequencies
+	testsetN_ = ( int** )calloc( Global::sOrder+1, sizeof( int* ) );
+	for( int k = 0; k < Global::sOrder+1; k++ ){
 		testsetV_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
 		testsetN_[k] = ( int* )calloc( Y_[k+1], sizeof( int ) );
 	}
@@ -44,7 +43,7 @@ FDR::~FDR(){
 	delete[] FP_mops_;
 	delete[] TFP_mops_;
 
-	for( int k = 0; k < Global::samplingOrder+1; k++ ){
+	for( int k = 0; k < Global::sOrder+1; k++ ){
 		free( testsetV_[k] );
 		free( testsetN_[k] );
 	}
@@ -112,7 +111,9 @@ void FDR::evaluateMotif(){
 	}
 
 	// write log odds scores into files before sorting
-	writeLogOdds();
+	if( Global::saveLogOdds ){
+		writeLogOdds();
+	}
 
 	printf( " __________________________________\n"
 			"|                                  |\n"
@@ -198,14 +199,14 @@ Sequence* FDR::sampleSequence( int L, float** v ){
 		random = ( double )rand() / ( double )RAND_MAX;	// get another random double number
 		// calculate y of K-mer
 		int yk = 0;
-		for( int k = std::min( i, Global::samplingOrder ); k > 0; k-- ){
+		for( int k = std::min( i, Global::sOrder ); k > 0; k-- ){
 			yk += ( sequence[i-k] - 1 ) * Y_[k];
 		}
 
 		// assign a nucleotide based on K-mer frequency
 		f = 0.0f;
 		for( uint8_t a = 1; a <= Y_[1]; a++ ){
-			f += v[std::min( i, Global::samplingOrder )][yk+a-1];
+			f += v[std::min( i, Global::sOrder )][yk+a-1];
 			if( random <= f ){
 				sequence[i] = a;
 				break;
@@ -235,6 +236,7 @@ void FDR::calculatePR(){
 	// Rank and score these log odds score values
 	int idx_posAll = 0, idx_negAll = 0;					// index for arrays storing the complete log odds scores
 	float max_diff = 0.0f;								// maximal difference between TFP and FP
+	int idx_max = 0;									// index when the difference between TFP and FP reaches maximum
 	for( int i = 0; i < ( posN + negN ) * LW1; i++ ){
 		if( posScoreAll_[idx_posAll] > negScoreAll_[idx_negAll] ||
 		idx_posAll == 0 || idx_negAll == negN * LW1 ){
@@ -244,22 +246,22 @@ void FDR::calculatePR(){
 		}
 
 		TFP_mops_[i] = ( float )idx_posAll;
-		FP_mops_[i] = ( float )idx_negAll * ( float )posN  / ( float ) negN;
+		FP_mops_[i] = ( float )idx_negAll * ( float )posN / ( float ) negN;
 
 		if( max_diff == TFP_mops_[i] - FP_mops_[i] ){	// stop when recall reaches 1
-			idx_max_ = i;
+			idx_max = i;
 			break;
 		}
 		if( max_diff < TFP_mops_[i] - FP_mops_[i] ){
 			max_diff = TFP_mops_[i] - FP_mops_[i];
 		}
-		if( idx_max_ > ( size_t )negN ){
-			idx_max_ = negN;
+		if( idx_max > negN ){
+			idx_max = negN;
 			break;
 		}
 	}
 
-	for( size_t i = 0; i < idx_max_; i++ ){
+	for( int i = 0; i < idx_max; i++ ){
 		P_mops_.push_back( 1 - FP_mops_[i] / TFP_mops_[i] );
 		R_mops_.push_back( ( TFP_mops_[i] - FP_mops_[i] ) / max_diff );
 	}
@@ -270,7 +272,7 @@ void FDR::calculatePR(){
 	std::sort( negScoreMax_.begin(), negScoreMax_.end(), std::greater<float>() );
 
 	// Rank and score these log odds score values
-	int idx_posMax = 0, idx_negMax = 0;				// index for arrays storing the max log odds scores
+	int idx_posMax = 0, idx_negMax = 0;					// index for arrays storing the max log odds scores
 
 	for( int i = 0; i < posN + negN; i++ ){
 		if( posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] ||
@@ -289,7 +291,7 @@ void FDR::calculatePR(){
 void FDR::calculateKmerV( std::vector<Sequence*> seqs ){
 
 	// reset counts for kmers
-	for( int k = 0; k < Global::samplingOrder+1; k++ ){
+	for( int k = 0; k < Global::sOrder+1; k++ ){
 		for( int y = 0; y < Y_[k+1]; y++ ){
 			testsetN_[k][y] = 0;
 		}
@@ -298,7 +300,7 @@ void FDR::calculateKmerV( std::vector<Sequence*> seqs ){
 	// count kmers
 	for( size_t i = 0; i < seqs.size(); i++ ){
 		int L = seqs[i]->getL();
-		for( int k = 0; k < Global::samplingOrder+1; k++ ){
+		for( int k = 0; k < Global::sOrder+1; k++ ){
 			// loop over sequence positions
 			for( int j = k; j < L; j++ ){
 				// extract (k+1)-mer
@@ -316,7 +318,7 @@ void FDR::calculateKmerV( std::vector<Sequence*> seqs ){
 	int normFactor = 0;
 	for( int y = 0; y < Y_[1]; y++ )	normFactor += testsetN_[0][y];
 	for( int y = 0; y < Y_[1]; y++ )	testsetV_[0][y] = ( float )testsetN_[0][y] / ( float )normFactor;
-	for( int k = 1; k < Global::samplingOrder+1; k++ ){
+	for( int k = 1; k < Global::sOrder+1; k++ ){
 		for( int y = 0; y < Y_[k+1]; y++ ){
 			int yk = y / Y_[1];
 			testsetV_[k][y] = ( float )testsetN_[k][y] / ( float )testsetN_[k-1][yk];
@@ -363,12 +365,9 @@ void FDR::write(){
 		ofile_zoops_r << R_zoops_[i] << std::endl;
 	}
 
-	for( i = 0; i < idx_max_; i++ ){
+	for( i = 0; i < P_mops_.size(); i++ ){
 		ofile_mops_p << P_mops_[i] << std::endl;
 		ofile_mops_r << R_mops_[i] << std::endl;
-	}
-
-	for( i = 0; i < idx_max_; i++ ){
 		ofile_mops_fp << FP_mops_[i] << std::endl;
 		ofile_mops_tfp << TFP_mops_[i] << std::endl;
 	}

@@ -6,6 +6,7 @@
 #include "../shared/utils.h"
 #include "MotifSet.h"
 #include "EM.h"
+#include "CGS.h"
 #include "FDR.h"
 
 int main( int nargs, char* args[] ){
@@ -43,16 +44,32 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*********************\n" );
 	MotifSet motifs;
 
-	// learn motifs
-	fprintf( stderr, "\n" );
-	fprintf( stderr, "*************************\n" );
-	fprintf( stderr, "*   Learn Motif by EM   *\n" );
-	fprintf( stderr, "*************************\n" );
-	for( int N = 0; N < motifs.getN(); N++ ){
-		Motif* motif = new Motif( *motifs.getMotifs()[N] );
-		EM em( motif, bgModel );
-		em.learnMotif();
-        em.write();
+	// learn motifs by EM
+	if( Global::EM ){
+		fprintf( stderr, "\n" );
+		fprintf( stderr, "*************************\n" );
+		fprintf( stderr, "*   Learn Motif by EM   *\n" );
+		fprintf( stderr, "*************************\n" );
+		for( int N = 0; N < motifs.getN(); N++ ){
+			Motif* motif = new Motif( *motifs.getMotifs()[N] );
+			EM em( motif, bgModel );
+			em.learnMotif();
+			em.write();
+		}
+	}
+
+	// learn motifs by CGS
+	else if( Global::CGS ){
+		fprintf( stderr, "\n" );
+		fprintf( stderr, "***********************************************\n" );
+		fprintf( stderr, "*   Learn Motif by Collapsed Gibbs Sampling   *\n" );
+		fprintf( stderr, "***********************************************\n" );
+		for( int N = 0; N < motifs.getN(); N++ ){
+			Motif* motif = new Motif( *motifs.getMotifs()[N] );
+			CGS GSampler( motif, bgModel );
+			GSampler.GibbsSampling();
+			GSampler.write();
+		}
 	}
 
 	// write motifs
@@ -103,6 +120,26 @@ int main( int nargs, char* args[] ){
 
 	fprintf( stdout, "\n-------------- Runtime: %.2f seconds (%0.2f minutes) --------------\n",
 			( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC, ( ( float )( clock() - t0 ) ) / ( CLOCKS_PER_SEC * 60.0f ) );
+
+	// for writing statistics to disk
+	std::string opath = std::string( Global::outputDirectory )  + ".statistics";
+	std::ofstream ofile( opath.c_str() );
+	ofile << "Given alphabet type is " << Alphabet::getAlphabet();
+	ofile << "\nGiven positive sequence set is " << Global::posSequenceBasename
+			<< "\n	"<< Global::posSequenceSet->getN() << " sequences. max.length: " <<
+			Global::posSequenceSet->getMaxL() << ", min.length: " <<
+			Global::posSequenceSet->getMinL() << "\n	base frequencies:";
+	for( int i = 0; i < Alphabet::getSize(); i++ ){
+		ofile << ' ' << Global::posSequenceSet->getBaseFrequencies()[i]
+		      << "(" << Alphabet::getAlphabet()[i] << ")";
+	}
+	ofile << "\nGiven initial model is " << Global::initialModelBasename;
+	if( Global::FDR ){
+		ofile << "\nGiven folds for FDR estimation: " << Global::cvFold;
+	}
+
+	ofile << "\n-------------- Runtime: " << ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC
+			<< " seconds (" <<( ( float )( clock() - t0 ) ) / ( CLOCKS_PER_SEC * 60.0f ) << " minutes) --------------\n" ;
 
 	// free memory
 	if( bgModel ) delete bgModel;

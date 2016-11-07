@@ -24,11 +24,13 @@ public:
 
 	void initFromBayesianMarkovModel( char* filename );	// initialize v from Bayesian Markov model file and set isInitialized
 
-	int			getN();									// get the number of motifs N
+	int			getC();									// get the count of motifs N
 	int         getW(); 								// get motif length w
 	float***    getV();									// get conditional probabilities v
 	float***	getP();									// get probabilities p
-	void        updateV( float*** n, float** alpha );
+	int***		getN();									// get the counts of (k+1)-mer for all y at motif position j
+	void        updateV( float*** n, float** alpha );	// update v for EM
+	void        updateV( int*** n, float** alpha );		// update v for Collapsed Gibbs sampling
     void        updateVbyK( float*** n, float** alpha, int k ); // only update V's of order k (needed for testing alpha)
 	void		calculateP();							// calculate probabilities p
 
@@ -39,7 +41,7 @@ private:
 
 	bool		isInitialized_ = false;		    		// assert in all public methods
 
-	int			N_ = 0;									// number of binding sites
+	int			C_ = 0;									// count the number of binding sites
 	int 		W_;					    				// motif length
 	float***    v_;				                		// conditional probabilities for (k+1)-mers y at motif position j
 	float***	p_;										// probabilities for (k+1)-mers y at motif position j
