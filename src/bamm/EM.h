@@ -44,6 +44,8 @@ private:
 	void 					optimizeQ();		// optimize hyper-parameter q
 	float 					calculateQfunc( int k = Global::modelOrder );	// calculate incomplete Q-function
 	float                   calculateLogPosterior( int k = Global::modelOrder ); // calculate log posterior likelihood
+    float                   calculateLogPriors( int k = Global::modelOrder ); // calculate log prior part of log posterior
+
 
 
 	std::vector<int>		Y_;					// contains 1 at position 0

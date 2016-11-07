@@ -209,13 +209,14 @@ template <class T> inline float zbrent(T &obj, float ( T::*func )( float , int )
             printf("\n fa = %f ; fb = %f ", fa,fb);
             // find out which border ( min = x1 or max = x2 ) results in a higher likelihood.
             // do this in EM an here just return a flag
-            if( fabsf(fa) < fabsf(fb)){
-                printf(" --> choose %f ", a);
-                return a;
-            }else{
-                printf(" --> choose %f ", b);
-                return b;
-            }
+//            if( fabsf(fa) < fabsf(fb)){
+//                printf(" --> choose %f ", a);
+//                return a;
+//            }else{
+//                printf(" --> choose %f ", b);
+//                return b;
+//            }
+            return -1;
         }
 
         fc = fb;

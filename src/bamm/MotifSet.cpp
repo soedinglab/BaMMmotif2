@@ -102,7 +102,7 @@ void MotifSet::write(){
 	int i, j, k, y;
 
 	std::vector<int> Y;
-	for( k = 0; k < Global::modelOrder+2; k++ ){
+	for( k = 0; k < std::max( Global::modelOrder+2, Global::bgModelOrder+2 ); k++ ){
 		Y.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 

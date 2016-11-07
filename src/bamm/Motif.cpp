@@ -29,7 +29,7 @@ Motif::Motif( const Motif& other ){ 		// copy constructor
 
 	int k, y, j;
 
-	for( k = 0; k < std::max( Global::modelOrder+2, 4 ); k++ ){
+	for( k = 0; k < std::max( Global::modelOrder+2, Global::bgModelOrder+2 ); k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 
@@ -243,6 +243,7 @@ void Motif::updateV( float*** n, float** alpha ){
 	}
 }
 
+
 // update v from integral k-mer counts n and current alphas (e.g for CGS)
 void Motif::updateV( int*** n, float** alpha ){
 	assert( isInitialized_ );
@@ -269,6 +270,37 @@ void Motif::updateV( int*** n, float** alpha ){
 
 	// for k > 0:
 	for( k = 1; k < Global::modelOrder+1; k++ ){
+		v_[k][y][j] = ( ( float )n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
+					/ ( ( float )n[k-1][yk][j-1] + alpha[k][j] );
+	}
+}
+
+
+// update v from fractional k-mer counts n and current alphas
+void Motif::updateVbyK( float*** n, float** alpha, int k ){
+	assert( isInitialized_ );
+
+	int y, j, y2, yk;
+
+	if( k == 0 ){
+		// sum up the n over (k+1)-mers at different position of motif
+		float* sumN = ( float* )calloc( W_, sizeof( float ) );
+		for( j = 0; j < W_; j++ ){
+			for( y = 0; y < Y_[1]; y++ ){
+				sumN[j] += n[0][y][j];
+			}
+		}
+		for( y = 0; y < Y_[1]; y++ ){
+			for( j = 0; j < W_; j++ ){
+				v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * Global::negSequenceSet->getBaseFrequencies()[y] )
+										/ ( sumN[j] + alpha[0][j] );
+			}
+		}
+		free( sumN );
+	}
+
+	if( k > 0 ){
+		// for k > 0:
 		for( y = 0; y < Y_[k+1]; y++ ){
 			y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
 			yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer
@@ -276,12 +308,14 @@ void Motif::updateV( int*** n, float** alpha ){
 				v_[k][y][j] = v_[k-1][y2][j];
 			}
 			for( j = k; j < W_; j++ ){
-				v_[k][y][j] = ( ( float )n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
-							/ ( ( float )n[k-1][yk][j-1] + alpha[k][j] );
+
+				v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
+													/ ( n[k-1][yk][j-1] + alpha[k][j] );
 			}
 		}
 	}
 }
+
 
 void Motif::calculateP(){
 	// calculate probabilities, i.e. p(ACG) = p(G|AC) * p(AC)

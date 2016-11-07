@@ -46,8 +46,9 @@ bool				Global::EM = false;						// flag to trigger EM learning
 unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();  // maximum number of iterations
 float               Global::epsilon = 0.001f;				// threshold for likelihood convergence parameter
 bool                Global::noAlphaOptimization = false;	// disable alpha optimization
-int                	Global::alphaIter = 10;                 // alpha learning will happen in each alphaIter-th EMiteration
+int                 Global::alphaIter = 1;                 // alpha learning will happen in each alphaIter-th EMiteration
 bool                Global::TESTING = false;                // turn on when you want to have printouts for checking alpha learning
+bool				Global::fixPseudos = false;				// only update v[k_model] for simulating exact EM algorithm
 bool                Global::noQOptimization = false;		// disable q optimization
 
 // CGS (Collapsed Gibbs sampling) options
@@ -241,6 +242,7 @@ int Global::readArguments( int nargs, char* args[] ){
 		opt >> GetOpt::OptionPresent( "noAlphaOptimization", noAlphaOptimization );
 		opt >> GetOpt::OptionPresent( "TESTING", TESTING );
 		opt >> GetOpt::Option( "alphaIter", alphaIter );
+	    opt >> GetOpt::OptionPresent( "fixPseudos", fixPseudos );
 		opt >> GetOpt::OptionPresent( "noQOptimization", noQOptimization );
 	}
 
