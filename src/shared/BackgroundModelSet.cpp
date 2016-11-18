@@ -102,9 +102,9 @@ void BackgroundModelSet::calculatePosLikelihoods( SequenceSet& sequenceSet, char
 
 void BackgroundModelSet::print(){
 
-	for( size_t i = 0; i < backgroundModels_.size(); i++ ){
+/*	for( size_t i = 0; i < backgroundModels_.size(); i++ ){
 		backgroundModels_[i]->print();
-	}
+	}*/
 }
 
 void BackgroundModelSet::write( char* dir ){

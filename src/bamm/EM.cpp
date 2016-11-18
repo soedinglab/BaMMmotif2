@@ -177,9 +177,10 @@ int EM::learnMotif(){
 		q_func_old = calculateQfunc();
 
 		// update model parameters v[k][y][j]
+		// TODO: this should be done after optimizing alpha and q, so that it the aptimizeAlphas() function, there is no need to undateV again
 		if( Global::fixPseudos ){
 			motif_->updateVbyK( n_, alpha_, K_model );
-		}else{
+		} else {
 			motif_->updateV( n_, alpha_ );
 		}
 
@@ -244,7 +245,7 @@ int EM::learnMotif(){
 		l_post_old = l_post_new;
 
 		if( v_diff < Global::epsilon )					iterate = false;
-//		if( llikelihood_diff < 0 && EMIterations_ > 1 )	iterate = false;
+		if( llikelihood_diff < 0 && EMIterations_ > 1 )	iterate = false;
 
 		// * testing: write out alpha, qfunc, gradient and posterior value for current EM iterations
 		if( Global::TESTING ){
@@ -367,10 +368,6 @@ void EM::MStep(){
 			}
 		}
 	}
-
-	// update model parameters v[k][y][j] -> currently done outside MStep; needed for checking AlphaLearning
-    //	motif_->updateV( n_, alpha_ );
-
 }
 
 //typedef int( EM::*EMMemFn)(double a);
@@ -387,10 +384,9 @@ void EM::optimizeAlphas( float min_brent, float max_brent, float tolerance ){
             }
             if( Global::fixPseudos ){
             	motif_->updateVbyK( n_, alpha_, k );
-            }else{
+            } else {
             	motif_->updateV( n_, alpha_ );
             }
-
         }
     //}
 }
@@ -445,7 +441,7 @@ void EM::optimizeQ(){
 	// motif.updateV()
 }
 
-float EM::calculateLogPriors( int K){
+float EM::calculateLogPriors( int K ){
 
 	int j,y,y2;
 	float lPriors = 0.0f;
@@ -603,6 +599,7 @@ void EM::write(){
 		ofile_n << std::endl;
 	}
 
+/*
 	//TODO: this file is too large for benchmarking
 	// output responsibilities r[n][i]
 	std::string opath_r = opath + ".EMposterior";
@@ -615,7 +612,7 @@ void EM::write(){
 
 		ofile_r << std::endl;
 	}
-
+*/
 
 	// output parameter alphas alpha[k][j]
 	std::string opath_alpha = opath + "_emIter_" + alphaIter.str() + ".EMalpha";

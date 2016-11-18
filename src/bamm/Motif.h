@@ -35,7 +35,7 @@ public:
 	void		calculateP();							// calculate probabilities p
 
 	void 		print();					   			// print v to console
-	void 		write();					    		// write v (basename.bmm). Include header with alphabetType
+	void 		write( int N );					   		// write v (basename.bmm). Include header with alphabetType
 
 private:
 

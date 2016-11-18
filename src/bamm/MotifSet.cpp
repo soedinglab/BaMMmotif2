@@ -85,43 +85,4 @@ void MotifSet::print(){
 }
 void MotifSet::write(){
 
-	/**
-	 * save all the motifs learned by BaMM in two flat files:
-	 * (1) posSequenceBasename.ihbcp: 		conditional probabilities after EM
-	 * (2) posSequenceBasename.ihbp: 		probabilities of PWM after EM
-	 */
-
-	std::string opath = std::string( Global::outputDirectory )  + '/'
-			+ std::string( Global::posSequenceBasename );
-
-	// output conditional probabilities v[k][y][j] and probabilities prob[k][y][j]
-	std::string opath_v = opath + ".ihbcp"; 	// inhomogeneous bamm conditional probabilities
-	std::string opath_p = opath + ".ihbp";		// inhomogeneous bamm probabilities
-	std::ofstream ofile_v( opath_v.c_str() );
-	std::ofstream ofile_p( opath_p.c_str() );
-	int i, j, k, y;
-
-	std::vector<int> Y;
-	for( k = 0; k < std::max( Global::modelOrder+2, Global::bgModelOrder+2 ); k++ ){
-		Y.push_back( ipow( Alphabet::getSize(), k ) );
-	}
-
-	for( i = 0; i < N_; i++ ){
-
-//		ofile_v << "> motif " << i+1 <<":" << std::endl;
-//		ofile_p << "> motif " << i+1 <<":" << std::endl;
-
-		for( j = 0; j < motifs_[i]->getW(); j++ ){
-			for( k = 0; k < Global::modelOrder+1; k++ ){
-				for( y = 0; y < Y[k+1]; y++ ){
-					ofile_v << std::scientific << std::setprecision(8) << motifs_[i]->getV()[k][y][j] << ' ';
-					ofile_p << std::scientific << std::setprecision(8) << motifs_[i]->getP()[k][y][j] << ' ';
-				}
-				ofile_v << std::endl;
-				ofile_p << std::endl;
-			}
-			ofile_v << std::endl;
-			ofile_p << std::endl;
-		}
-	}
 }

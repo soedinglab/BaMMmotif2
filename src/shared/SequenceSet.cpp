@@ -64,9 +64,9 @@ float* SequenceSet::getBaseFrequencies(){
 
 void SequenceSet::print(){
 
-	for( int i = 0; i < N_; i++ ){
+/*	for( int i = 0; i < N_; i++ ){
 		sequences_[i]->print();
-	}
+	}*/
 
 }
 

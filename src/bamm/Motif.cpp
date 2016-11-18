@@ -135,11 +135,6 @@ void Motif::initFromBindingSites( char* filename ){
 	// calculate v from k-mer counts n
 	calculateV();
 
-	// print out initial model
-	if( Global::saveInitBaMMs ){
-		write();
-	}
-
 	// set isInitialized
 	isInitialized_ = true;
 }
@@ -270,8 +265,17 @@ void Motif::updateV( int*** n, float** alpha ){
 
 	// for k > 0:
 	for( k = 1; k < Global::modelOrder+1; k++ ){
-		v_[k][y][j] = ( ( float )n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
-					/ ( ( float )n[k-1][yk][j-1] + alpha[k][j] );
+		for( y = 0; y < Y_[k+1]; y++ ){
+			y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
+			yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer
+			for( j = 0; j < k; j++ ){						// when j < k, i.e. p(A|CG) = p(A|C)
+				v_[k][y][j] = v_[k-1][y2][j];
+			}
+			for( j = k; j < W_; j++ ){
+				v_[k][y][j] = ( ( float )n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
+							/ ( ( float )n[k-1][yk][j-1] + alpha[k][j] );
+			}
+		}
 	}
 }
 
@@ -358,31 +362,37 @@ void Motif::print(){
 	}
 }
 
-void Motif::write(){
+void Motif::write( int N ){
 
-	/*
-	 * save initial model in two flat files:
-	 * (1) initialModelBasename.conds: 	conditional probabilities from initial model
-	 * (2) initialModelBasename.counts:	counts of (k+1)-mers from initial model
+	/**
+	 * save motif learned by BaMM in two flat files:
+	 * (1) posSequenceBasename.ihbcp: 		conditional probabilities after EM
+	 * (2) posSequenceBasename.ihbp: 		probabilities of PWM after EM
 	 */
 
-	std::string opath = std::string( Global::outputDirectory )  + '/'
-						+ std::string( Global::initialModelBasename );
-	std::string opath_v = opath + ".conds";
-	std::string opath_n = opath + ".counts";
-	std::ofstream ofile_v( opath_v.c_str() );
-	std::ofstream ofile_n( opath_n.c_str() );
+	std::string opath = std::string( Global::outputDirectory )  + "/motif_" + std::to_string( N );
 
-	for( int j = 0; j < W_; j++ ){
-		for( int k = 0; k < Global::modelOrder+1; k++ ){
-			for( int y = 0; y < Y_[k+1]; y++ ){
-				ofile_v << std::scientific << v_[k][y][j] << '\t';
-				ofile_n << n_[k][y][j] << '\t';
+	// output conditional probabilities v[k][y][j] and probabilities prob[k][y][j]
+	std::string opath_v = opath + ".ihbcp"; 	// inhomogeneous bamm conditional probabilities
+	std::string opath_p = opath + ".ihbp";		// inhomogeneous bamm probabilities
+	std::ofstream ofile_v( opath_v.c_str() );
+	std::ofstream ofile_p( opath_p.c_str() );
+	int j, k, y;
+
+	std::vector<int> Y;
+	for( k = 0; k < std::max( Global::modelOrder+2, Global::bgModelOrder+2 ); k++ ){
+		Y.push_back( ipow( Alphabet::getSize(), k ) );
+	}
+	for( j = 0; j < W_; j++ ){
+		for( k = 0; k < Global::modelOrder+1; k++ ){
+			for( y = 0; y < Y[k+1]; y++ ){
+				ofile_v << std::scientific << std::setprecision(8) << v_[k][y][j] << ' ';
+				ofile_p << std::scientific << std::setprecision(8) << p_[k][y][j] << ' ';
 			}
 			ofile_v << std::endl;
-			ofile_n << std::endl;
+			ofile_p << std::endl;
 		}
 		ofile_v << std::endl;
-		ofile_n << std::endl;
+		ofile_p << std::endl;
 	}
 }

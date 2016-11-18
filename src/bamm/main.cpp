@@ -44,8 +44,8 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*********************\n" );
 	MotifSet motifs;
 
-	// learn motifs by EM
 	if( Global::EM ){
+		// learn motifs by EM
 		fprintf( stderr, "\n" );
 		fprintf( stderr, "*************************\n" );
 		fprintf( stderr, "*   Learn Motif by EM   *\n" );
@@ -55,11 +55,11 @@ int main( int nargs, char* args[] ){
 			EM em( motif, bgModel );
 			em.learnMotif();
 			em.write();
+			// write each optimized motif
+			motif->write( N );
 		}
-	}
-
-	// learn motifs by CGS
-	else if( Global::CGS ){
+	} else if( Global::CGS ){
+		// learn motifs by CGS
 		fprintf( stderr, "\n" );
 		fprintf( stderr, "***********************************************\n" );
 		fprintf( stderr, "*   Learn Motif by Collapsed Gibbs Sampling   *\n" );
@@ -69,11 +69,10 @@ int main( int nargs, char* args[] ){
 			CGS GSampler( motif, bgModel );
 			GSampler.GibbsSampling();
 			GSampler.write();
+			// write each optimized motif
+			motif->write( N );
 		}
 	}
-
-	// write motifs
-	motifs.write();
 
 	// evaluate motifs
 	if( Global::FDR ){

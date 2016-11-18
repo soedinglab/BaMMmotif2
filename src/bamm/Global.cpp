@@ -46,7 +46,7 @@ bool				Global::EM = false;						// flag to trigger EM learning
 unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();  // maximum number of iterations
 float               Global::epsilon = 0.001f;				// threshold for likelihood convergence parameter
 bool                Global::noAlphaOptimization = false;	// disable alpha optimization
-int                 Global::alphaIter = 1;                 // alpha learning will happen in each alphaIter-th EMiteration
+int                 Global::alphaIter = 1;					// alpha learning will happen in each alphaIter-th EMiteration
 bool                Global::TESTING = false;                // turn on when you want to have printouts for checking alpha learning
 bool				Global::fixPseudos = false;				// only update v[k_model] for simulating exact EM algorithm
 bool                Global::noQOptimization = false;		// disable q optimization
@@ -68,7 +68,6 @@ bool				Global::saveLogOdds = false;			// a flag for writing log odds scores to 
 // printout options
 bool                Global::verbose = false;
 bool                Global::debugMode = false;              // debug-mode: prints out everything.
-bool                Global::saveInitBaMMs = false;
 bool				Global::saveBaMMs = true;
 
 void Global::init( int nargs, char* args[] ){
@@ -78,8 +77,8 @@ void Global::init( int nargs, char* args[] ){
 	Alphabet::init( alphabetType );
 
 	// read in positive and negative sequence set
-	posSequenceSet = new SequenceSet( posSequenceFilename );
-	negSequenceSet = new SequenceSet( negSequenceFilename );
+	posSequenceSet = new SequenceSet( posSequenceFilename, revcomp );
+	negSequenceSet = new SequenceSet( negSequenceFilename, true );
 
 	// generate fold indices for positive and negative sequence set
 	Global::posFoldIndices = generateFoldIndices( posSequenceSet->getN(), cvFold );
@@ -204,10 +203,6 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	// background model options
 	opt >> GetOpt::Option( 'K', "Order", bgModelOrder );
-//	if( bgModelOrder > modelOrder ){
-//		std::cerr << "The order of background model should not exceed the order of motif model!\n";
-//		exit( -1 );
-//	}
 
 	if( opt >> GetOpt::OptionPresent( 'A', "Alpha" ) ){
 		bgModelAlpha.clear();
@@ -236,7 +231,6 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	// EM options
 	if( opt >> GetOpt::OptionPresent( "EM", EM ) ){
-		opt >> GetOpt::Option( "EM", EM );
 		opt >> GetOpt::Option( "maxEMIterations", maxEMIterations );
 		opt >> GetOpt::Option( 'e', "epsilon", epsilon );
 		opt >> GetOpt::OptionPresent( "noAlphaOptimization", noAlphaOptimization );
@@ -264,7 +258,6 @@ int Global::readArguments( int nargs, char* args[] ){
 	// printout options
 	opt >> GetOpt::OptionPresent( "verbose", verbose );
 	opt >> GetOpt::OptionPresent( "debug", debugMode );
-	opt >> GetOpt::OptionPresent( "saveInitBaMMs", saveInitBaMMs );
 	opt >> GetOpt::OptionPresent( "saveBaMMs", saveBaMMs );
 
 	// for remaining unknown options
@@ -351,7 +344,7 @@ void Global::printHelp(){
 			"				disable q sampling. Defaults to false. *For developers.\n\n");
 	printf("\n 		Options for FDR: \n");
 	printf("\n 			--FDR \n"
-			"				triggers False-Discovery-Rate (FDR) estimation.\n\n");
+			"				triggers False-Discovery-Rate (FDR) estimation. The default is false.\n\n");
 	printf("\n 			-m, --mFold <INTEGER>\n"
 			"				number of negative sequences as multiple of positive sequences.\n"
 			"				The default is 20.\n\n");
@@ -364,8 +357,6 @@ void Global::printHelp(){
 	printf("\n 		Options for output:	\n");
 	printf("\n 			--verbose \n"
 			"				verbose printouts. Defaults to false.\n\n");
-	printf("\n 			--saveInitBaMMs \n"
-			"				Write initialized BaMM(s) to disk.\n\n");
 	printf("\n 			--saveBaMMs\n"
 			"				Write optimized BaMM(s) to disk.\n\n");
 	printf("\n 			-h, --help\n"
