@@ -177,7 +177,6 @@ int EM::learnMotif(){
 		q_func_old = calculateQfunc();
 
 		// update model parameters v[k][y][j]
-		// TODO: this should be done after optimizing alpha and q, so that it the aptimizeAlphas() function, there is no need to undateV again
 		if( Global::fixPseudos ){
 			motif_->updateVbyK( n_, alpha_, K_model );
 		} else {
@@ -185,7 +184,7 @@ int EM::learnMotif(){
 		}
 
 		// * optional: optimize parameter alpha
-    	prev_alpha = alpha_[Global::modelOrder][0];
+    	prev_alpha = alpha_[K_model][0];
 		if( !Global::noAlphaOptimization ){
 		    // only run alpha optimization every xth em-iteration.
             if( EMIterations_ % Global::alphaIter == 0 && EMIterations_ > 10){
@@ -215,7 +214,7 @@ int EM::learnMotif(){
 		// check Qfunc increase
 		if( (q_func_new - q_func_old) < 0 ){
 			// reset alpha:
-			alpha_[Global::modelOrder][0] = prev_alpha;
+			alpha_[K_model][0] = prev_alpha;
 			//reset V's:
 			motif_->updateVbyK( n_, alpha_, K_model );
 			// writeOut Qfunction Values
@@ -224,9 +223,9 @@ int EM::learnMotif(){
 
 		// check parameter difference for convergence
 		v_diff = 0.0f;
-		for( y = 0; y < Y_[Global::modelOrder+1]; y++ ){
+		for( y = 0; y < Y_[K_model+1]; y++ ){
 			for( j = 0; j < W; j++ ){
-				v_diff += fabsf( motif_->getV()[Global::modelOrder][y][j] - v_before[y][j] );
+				v_diff += fabsf( motif_->getV()[K_model][y][j] - v_before[y][j] );
 			}
 		}
 		// check likelihood for convergence
@@ -370,25 +369,22 @@ void EM::MStep(){
 	}
 }
 
-//typedef int( EM::*EMMemFn)(double a);
-
 void EM::optimizeAlphas( float min_brent, float max_brent, float tolerance ){
-       //for( int k = 1; k < Global::modelOrder+1; k++ ){
-        int k = Global::modelOrder;
-        float optim_alpha = zbrent( *this, &EM::calculateQfunc_gradient, min_brent, max_brent, tolerance, k );
+   //for( int k = 1; k < Global::modelOrder+1; k++ ){
+	int k = Global::modelOrder;
+	float optim_alpha = zbrent( *this, &EM::calculateQfunc_gradient, min_brent, max_brent, tolerance, k );
 
-        // only update in case a root is bracketed
-        if( optim_alpha > 0 ){
-            for( int j = 0; j < motif_->getW() ; j++ ){
-                alpha_[k][j] = optim_alpha;
-            }
-            if( Global::fixPseudos ){
-            	motif_->updateVbyK( n_, alpha_, k );
-            } else {
-            	motif_->updateV( n_, alpha_ );
-            }
-        }
-    //}
+	// only update in case a root is bracketed
+	if( optim_alpha > 0 ){
+		for( int j = 0; j < motif_->getW() ; j++ ){
+			alpha_[k][j] = optim_alpha;
+		}
+		if( Global::fixPseudos ){
+			motif_->updateVbyK( n_, alpha_, k );
+		} else {
+			motif_->updateV( n_, alpha_ );
+		}
+	}
 }
 
 void EM::testAlphaLearning( ){

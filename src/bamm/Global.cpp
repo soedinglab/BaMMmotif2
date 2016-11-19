@@ -53,7 +53,7 @@ bool                Global::noQOptimization = false;		// disable q optimization
 
 // CGS (Collapsed Gibbs sampling) options
 bool				Global::CGS = false;					// flag to trigger Collapsed Gibbs sampling
-int 				Global::maxCGSIterations = 100;			// maximum number of iterations for CGS
+int 				Global::maxCGSIterations = 200;			// maximum number of iterations for CGS
 bool				Global::noAlphaSampling = false;		// disable alpha sampling in CGS
 bool				Global::noQSampling = false;			// disable q sampling in CGS
 
