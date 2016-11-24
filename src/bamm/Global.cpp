@@ -54,7 +54,7 @@ bool                Global::noQOptimization = false;		// disable q optimization
 // CGS (Collapsed Gibbs sampling) options
 bool				Global::CGS = false;					// flag to trigger Collapsed Gibbs sampling
 int 				Global::maxCGSIterations = 200;			// maximum number of iterations for CGS
-bool				Global::noAlphaSampling = false;		// disable alpha sampling in CGS
+bool				Global::noAlphaUpdating = false;		// disable alpha sampling in CGS
 bool				Global::noQSampling = false;			// disable q sampling in CGS
 
 // FDR options
@@ -243,7 +243,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	// CGS options
 	if( opt >> GetOpt::OptionPresent( "CGS", CGS ) ){
 		opt >> GetOpt::Option( "maxCGSIterations", maxCGSIterations );
-		opt >> GetOpt::OptionPresent( "noAlphaSampling", noAlphaSampling );
+		opt >> GetOpt::OptionPresent( "noAlphaSampling", noAlphaUpdating );
 		opt >> GetOpt::OptionPresent( "noQSampling", noQSampling );
 	}
 

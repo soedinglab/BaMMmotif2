@@ -71,6 +71,7 @@ int main( int nargs, char* args[] ){
 			GSampler.write();
 			// write each optimized motif
 			motif->write( N );
+			delete motif;
 		}
 	}
 
@@ -85,6 +86,7 @@ int main( int nargs, char* args[] ){
 			FDR fdr( motif );
 			fdr.evaluateMotif();
 			fdr.write();
+			delete motif;
 		}
 	}
 
@@ -120,25 +122,6 @@ int main( int nargs, char* args[] ){
 	fprintf( stdout, "\n-------------- Runtime: %.2f seconds (%0.2f minutes) --------------\n",
 			( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC, ( ( float )( clock() - t0 ) ) / ( CLOCKS_PER_SEC * 60.0f ) );
 
-	// for writing statistics to disk
-	std::string opath = std::string( Global::outputDirectory )  + ".statistics";
-	std::ofstream ofile( opath.c_str() );
-	ofile << "Given alphabet type is " << Alphabet::getAlphabet();
-	ofile << "\nGiven positive sequence set is " << Global::posSequenceBasename
-			<< "\n	"<< Global::posSequenceSet->getN() << " sequences. max.length: " <<
-			Global::posSequenceSet->getMaxL() << ", min.length: " <<
-			Global::posSequenceSet->getMinL() << "\n	base frequencies:";
-	for( int i = 0; i < Alphabet::getSize(); i++ ){
-		ofile << ' ' << Global::posSequenceSet->getBaseFrequencies()[i]
-		      << "(" << Alphabet::getAlphabet()[i] << ")";
-	}
-	ofile << "\nGiven initial model is " << Global::initialModelBasename;
-	if( Global::FDR ){
-		ofile << "\nGiven folds for FDR estimation: " << Global::cvFold;
-	}
-
-	ofile << "\n-------------- Runtime: " << ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC
-			<< " seconds (" <<( ( float )( clock() - t0 ) ) / ( CLOCKS_PER_SEC * 60.0f ) << " minutes) --------------\n" ;
 
 	// free memory
 	if( bgModel ) delete bgModel;

@@ -263,7 +263,7 @@ void Motif::updateV( int*** n, float** alpha ){
 
 	free( sumN );
 
-	// for k > 0:
+	// for 1 <= k <= K:
 	for( k = 1; k < Global::modelOrder+1; k++ ){
 		for( y = 0; y < Y_[k+1]; y++ ){
 			y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
@@ -362,7 +362,7 @@ void Motif::print(){
 	}
 }
 
-void Motif::write( int N ){
+void Motif::write( int N ){						// write each motif with a number
 
 	/**
 	 * save motif learned by BaMM in two flat files:

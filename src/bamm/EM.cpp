@@ -21,11 +21,12 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 
 	// copy selected positive sequences due to folds
 	posSeqs_.clear();
-	for( size_t f_idx = 0; f_idx < folds_.size(); f_idx++ ){
+/*	for( size_t f_idx = 0; f_idx < folds_.size(); f_idx++ ){
 		for( size_t s_idx = 0; s_idx < Global::posFoldIndices[folds_[f_idx]].size(); s_idx++ ){
 			posSeqs_.push_back( Global::posSequenceSet->getSequences()[Global::posFoldIndices[folds_[f_idx]][s_idx]] );
 		}
-	}
+	}*/
+	posSeqs_ = Global::posSequenceSet->getSequences();
 
 	// allocate memory for s_[y][j] and initialize it
 	s_ = ( float** )calloc( Y_[Global::modelOrder+1], sizeof( float* ) );
@@ -57,6 +58,9 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 			alpha_[k][j] = Global::modelAlpha[k];
 		}
 	}
+
+	// allocate memory for motif position z_[n]
+	z_ = ( int* )calloc( posSeqs_.size(), sizeof( int ) );
 }
 
 EM::~EM(){
@@ -83,6 +87,8 @@ EM::~EM(){
 		free( alpha_[k] );
 	}
 	free( alpha_ );
+
+	free( z_ );
 
 }
 
@@ -201,25 +207,24 @@ int EM::learnMotif(){
 //		        exit(0);
 //
 //		    }
+    		// check EM-criteria
+    		q_func_new = calculateQfunc();
+    		l_post_new = calculateLogPosterior();
+    		l_prior_new = calculateLogPriors();
+
+    		// check Qfunc increase
+    		if( (q_func_new - q_func_old) < 0 ){
+    			// reset alpha:
+    			alpha_[K_model][0] = prev_alpha;
+    			//reset V's:
+    			motif_->updateVbyK( n_, alpha_, K_model );
+    			// writeOut Qfunction Values
+    			testAlphaLearning();
+    		}
 		}
 
 		// * optional: optimize parameter q
 		if( !Global::noQOptimization )		optimizeQ();
-
-		// check EM-criteria
-		q_func_new = calculateQfunc();
-		l_post_new = calculateLogPosterior();
-		l_prior_new = calculateLogPriors();
-
-		// check Qfunc increase
-		if( (q_func_new - q_func_old) < 0 ){
-			// reset alpha:
-			alpha_[K_model][0] = prev_alpha;
-			//reset V's:
-			motif_->updateVbyK( n_, alpha_, K_model );
-			// writeOut Qfunction Values
-			testAlphaLearning();
-		}
 
 		// check parameter difference for convergence
 		v_diff = 0.0f;
@@ -268,6 +273,63 @@ int EM::learnMotif(){
 		    ofile_testing << std::endl;
 		}
 	}
+
+	// calculate z[n]
+	for( size_t n = 0; n < posSeqs_.size(); n++ ){
+		int LW1 = posSeqs_[n]->getL() - W + 1;
+		float max = 0;
+		for( int i = 0; i < LW1; i++ ){
+			if( r_[n][i] > max ){
+				max = r_[n][i];
+				z_[n] = LW1-i-1;
+			}
+		}
+	}
+
+	// reset n_z_[k][y][j]
+	for( int k = 0; k < K_model+1; k++ ){
+		for( y = 0; y < Y_[k+1]; y++ ){
+			for( j = 0; j < W; j++ ){
+				n_[k][y][j] = 0;
+			}
+		}
+	}
+	for( int i = 0; i < posSeqs_.size(); i++ ){
+		for( j = 0; j < W; j++ ){
+			y = posSeqs_[i]->extractKmer( z_[i]+j, std::min( z_[i]+j, K_model ) );
+			n_[K_model][y][j]++;
+		}
+	}
+	// calculate nz for lower order k
+	for( int k = K_model; k > 0; k-- ){				// k runs over all lower orders
+		for( y = 0; y < Y_[k+1]; y++ ){
+			int y2 = y % Y_[k];					// cut off the first nucleotide in (k+1)-mer
+			for( j = 0; j < W; j++ ){
+				n_[k-1][y2][j] += n_[k][y][j];
+			}
+		}
+	}
+	// print kmer counts out
+	std::cout << std::endl;
+	for( j = 0; j < W; j++ ){
+	for( int k = 0; k < K_model+1; k++ ){
+		for( y = 0; y < Y_[k+1]; y++ ){
+
+				std::cout << n_[k][y][j] << '\t';
+			}
+			std::cout << std::endl;
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
+
+
+	// only for testing:
+	std::cout << std::endl;
+	for( size_t n = 0; n < 50/*posSeqs_.size()*/; n++ ){
+		std::cout << z_[n] << '\t';
+	}
+	std::cout << std::endl;
 
 	// calculate probabilities
 	motif_->calculateP();
@@ -545,6 +607,10 @@ float EM::calculateQfunc_gradient( float alpha ,int K ){
 	return Qfunc_grad;
 }
 
+// only for obtaining z for CGS testing
+int* EM::getZ(){
+	return z_;
+}
 void EM::print(){
 
 	std::cout << " ____________________________________" << std::endl;
@@ -588,7 +654,7 @@ void EM::write(){
 	for( j = 0; j < W; j++ ){
 		for( k = 0; k < Global::modelOrder+1; k++ ){
 			for( y = 0; y < Y_[k+1]; y++ ){
-				ofile_n << std::scientific << n_[k][y][j] << ' ';
+				ofile_n << ( int )n_[k][y][j] << ' ';
 			}
 			ofile_n << std::endl;
 		}

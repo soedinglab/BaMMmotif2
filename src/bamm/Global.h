@@ -78,7 +78,7 @@ public:
 	// CGS (Collapsed Gibbs sampling) options
 	static bool			CGS;								// flag to trigger Collapsed Gibbs sampling
 	static int 			maxCGSIterations;					// maximum number of iterations for CGS
-	static bool			noAlphaSampling;					// disable alpha sampling in CGS
+	static bool			noAlphaUpdating;					// disable alpha sampling in CGS
 	static bool			noQSampling;						// disable q sampling in CGS
 
 	// FDR options

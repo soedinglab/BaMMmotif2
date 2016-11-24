@@ -1,4 +1,5 @@
 #include "CGS.h"
+#include "EM.h"
 
 #include <random>			// std::discrete_distribution
 
@@ -27,7 +28,13 @@ CGS::CGS( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 	// allocate memory and initialize responsibility r_[n][i]
 	r_ = ( float** )calloc( N, sizeof( float* ) );
 	for( int n = 0; n < N; n++ ){
-		r_[n] = ( float* )calloc( LW1, sizeof( float ) );
+		r_[n] = ( float* )calloc( LW1+1, sizeof( float ) );
+	}
+
+	// allocate memory for s_[y][j] and initialize it
+	s_ = ( float** )calloc( Y_[Global::modelOrder+1], sizeof( float* ) );
+	for( int y = 0; y < Y_[Global::modelOrder+1]; y++ ){
+		s_[y] = ( float* )calloc( W, sizeof( float ) );
 	}
 
 	// allocate memory and initialize alpha_[k][j]
@@ -40,7 +47,7 @@ CGS::CGS( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 	}
 
 	// allocate memory for positional prior pos_[i]
-	pos_ = ( float* )calloc( LW1, sizeof( float ) );
+	pos_ = ( float* )calloc( LW1+1, sizeof( float ) );
 
 	// allocate memory for motif position z_[n]
 	z_ = ( int* )calloc( N, sizeof( int ) );
@@ -63,6 +70,10 @@ CGS::~CGS(){
 		free( r_[n] );
 	}
 	free( r_ );
+	for( int y = 0; y < Y_[Global::modelOrder+1]; y++ ){
+		free( s_[y] );
+	}
+	free( s_ );
 
 	free( pos_ );
 	free( z_ );
@@ -78,57 +89,34 @@ void CGS::GibbsSampling(){
 
 	clock_t t0 = clock();
 	bool iterate = true;								// flag for iterating before convergence
-	int W = motif_->getW();
-	int K = Global::modelOrder;
-	float v_diff;										// model parameter difference before and after iteration
-	float** v_before;									// model parameter with highest order before iteration
-	int y, j;
 
-	// allocate memory for parameters v[y][j] with the highest order
-	v_before = ( float** )calloc( Y_[K+1], sizeof( float* ) );
-	for( y = 0; y < Y_[K+1]; y++ ){
-		v_before[y] = ( float* )calloc( W, sizeof( float ) );
+	EM em( motif_, bg_ );
+	em.learnMotif();
+	for( int n = 0; n < Global::posSequenceSet->getN(); n++ ){
+//		z_[n] = 30;
+		z_[n] = em.getZ()[n]+1;
+
 	}
 
 	// iterate over
-	while( iterate && ( CGSIterations_ < Global::maxCGSIterations ) ){
+	while( iterate && CGSIterations_ < Global::maxCGSIterations ){
 
 		CGSIterations_++;
 
-		if( Global::verbose ){
-			std::cout << CGSIterations_ << " iteration:\t";
-		}
-
-		// update model parameter with the highest order before each iteration
-		for( y = 0; y < Y_[K+1]; y++ ){
-			for( j = 0; j < W; j++ ){
-				v_before[y][j] = motif_->getV()[K][y][j];
-			}
+		if( Global::verbose /* && CGSIterations_ % 10 == 0*/ ){
+			std::cout << std::endl << CGSIterations_ << " iteration:\t";
 		}
 
 		// sampling z and q
-		sampling_z_q();
+		sampling_z_q( CGSIterations_ );
 
-		// update kmers counts n for the complete sequence set
-		n_z_ = Global::posSequenceSet->countKmers( K, W, z_ );
-		// update v_prior
-		motif_->updateV( n_z_, alpha_ );
+		// only for writing out model after each iteration:
+//		motif_->calculateP();
+//		motif_->write( CGSIterations_ );
 
 		// * optional: optimize hyper-parameter alpha
-		if( !Global::noAlphaSampling )	alphaSampling();
+		if( !Global::noAlphaUpdating )	updateAlphas();
 
-		// check model parameter difference for convergence
-		v_diff = 0.0f;
-		for( y = 0; y < Y_[K+1]; y++ ){
-			for( j = 0; j < W; j++ ){
-				v_diff += fabsf( motif_->getV()[K][y][j] - v_before[y][j] );
-			}
-		}
-		if( Global::verbose ){
-			std::cout << "para_diff = " << v_diff << std::endl;
-		}
-
-		if( v_diff < Global::epsilon )		iterate = false;
 	}
 
 	// calculate probabilities
@@ -137,50 +125,154 @@ void CGS::GibbsSampling(){
 	fprintf( stdout, "\n--- Runtime for Collapsed Gibbs sampling: %.4f seconds ---\n", ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );
 }
 
-void CGS::sampling_z_q(){
+void CGS::sampling_z_q( int iteration ){
 
 	int N = Global::posSequenceSet->getN();
 	std::vector<Sequence*> posSeqs = Global::posSequenceSet->getSequences();
 	int W = motif_->getW();
 	int K = Global::modelOrder;
 	int K_bg = Global::bgModelOrder;
-	int n, y, i, j;
-	int N_0 = 0;							// counts of sequences which do not contain motifs.
+	int n, k, y, y_prev, y2, y_bg, i, j, LW1;
+	int N_0 = 0;								// counts of sequences which do not contain motifs.
+
+
+/*	// reset n_z_[k][y][j]
+	for( k = 0; k < K+1; k++ ){
+		for( y = 0; y < Y_[k+1]; y++ ){
+			for( j = 0; j < W; j++ ){
+				n_z_[k][y][j] = 0;
+			}
+		}
+	}
+	for( i = 0; i < N; i++ ){
+		for( j = 0; j < W; j++ ){
+			y = posSeqs[i]->extractKmer( z_[i]+j, std::min( z_[i]+j, K ) );
+			n_z_[K][y][j]++;
+		}
+	}
+	// calculate nz for lower order k
+	for( k = K; k > 0; k-- ){				// k runs over all lower orders
+		for( y = 0; y < Y_[k+1]; y++ ){
+			y2 = y % Y_[k];					// cut off the first nucleotide in (k+1)-mer
+			for( j = 0; j < W; j++ ){
+				n_z_[k-1][y2][j] += n_z_[k][y][j];
+			}
+		}
+	}
+	// print kmer counts out
+	std::cout << std::endl;
+	for( j = 0; j < W; j++ ){
+	for( k = 0; k < K+1; k++ ){
+		for( y = 0; y < Y_[k+1]; y++ ){
+
+				std::cout << n_z_[k][y][j] << '\t';
+			}
+			std::cout << std::endl;
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;*/
+
+	// sampling z:
 	// loop over all sequences and drop one sequence each time and update r
 	for( n = 0; n < N; n++ ){
-		int LW1 = posSeqs[n]->getL() - W + 1;
+		LW1 = posSeqs[n]->getL() - W + 1;
 
-		// count k-mers occurring at the motif at position i except the n'th sequence
-		n_z_ = Global::posSequenceSet->countKmers( K, W, z_, n );
+		// calculate positional prior:
+		pos_[0] =  ( float )( 1.0f - q_ );
+		for( i = 1; i <= LW1; i++ ){
+			pos_[i] = ( float )q_ / ( float )LW1;
+		}
+		// count K-mers at position z[i]+j except the n'th sequence
+		if( n == 0 ){							// for the first sequence
+			// reset n_z_[k][y][j] when K = 0
+			for( y = 0; y < Y_[K+1]; y++ ){
+				for( j = 0; j < W; j++ ){
+					n_z_[K][y][j] = 0;
+				}
+			}
+			for( i = 1; i < N; i++ ){
+				for( j = 0; j < W; j++ ){
+					y = posSeqs[i]->extractKmer( z_[i]-1+j, std::min( z_[i]-1+j, K ) );
+					n_z_[K][y][j]++;
+				}
+			}
+		} else {								// for the rest sequences
+			for( j = 0; j < W; j++ ){
+				if( z_[n-1] != 0 ){
+					// add the kmer counts for the previous sequence with updated z
+					y_prev = posSeqs[n-1]->extractKmer( z_[n-1]-1+j, std::min( z_[n-1]-1+j, K ) );
+					n_z_[K][y_prev][j]++;
+				}
+				if( z_[n] != 0 ){
+					// remove the kmer counts for the current sequence with old z
+					y = posSeqs[n]->extractKmer( z_[n]-1+j, std::min( z_[n]-1+j, K ) );
+					n_z_[K][y][j]--;
+				}
+			}
+		}
+
+		// reset n_z_[k][y][j] when k < K
+		for( k = 0; k < K; k++ ){
+			for( y = 0; y < Y_[k+1]; y++ ){
+				for( j = 0; j < W; j++ ){
+					n_z_[k][y][j] = 0;
+				}
+			}
+		}
+		// calculate nz for lower order k
+		for( k = K; k > 0; k-- ){				// k runs over all lower orders
+			for( y = 0; y < Y_[k+1]; y++ ){
+				y2 = y % Y_[k];					// cut off the first nucleotide in (k+1)-mer
+				for( j = 0; j < W; j++ ){
+					n_z_[k-1][y2][j] += n_z_[k][y][j];
+				}
+			}
+		}
 
 		// updated model parameters v excluding the n'th sequence
 		motif_->updateV( n_z_, alpha_ );
 
+		// compute log odd scores s[y][j], log likelihoods of the highest order K
+		for( y = 0; y < Y_[K+1]; y++ ){
+			for( j = 0; j < W; j++ ){
+				y_bg = y % Y_[K_bg+1];
+				s_[y][j] = motif_->getV()[K][y][j] / bg_->getV()[std::min( K, K_bg )][y_bg];
+			}
+		}
+
 		// sampling equation: calculate responsibilities over all LW1 positions on n'th sequence
 		std::vector<float> posterior_array;
-		for( i = 0; i < LW1; i++ ){
-			float posterior = 1.0f;
+		float normFactor = 0.0f;
+		for( i = 1; i <= LW1; i++ ){
+			r_[n][i] = 1.0f;
 			for( j = 0; j < W; j++ ){
 				// extract k-mers on the motif at position i over W of the n'th sequence
-				y = posSeqs[n]->extractKmer( i+j, std::min( i+j, K ) );
-				posterior *= ( motif_->getV()[K][y][j] / bg_->getV()[std::min( K, K_bg )][y] );
+				y = posSeqs[n]->extractKmer( i-1+j, std::min( i-1+j, K ) );
+				r_[n][i] *= s_[y][j];
 			}
-			posterior_array.push_back( posterior );
+			r_[n][i] *= pos_[i];
+			normFactor += r_[n][i];
+		}
+
+		// for sequences that do not contain motif
+		r_[n][0] = pos_[0];
+		normFactor += r_[n][0];
+
+		for( i = 0; i <= LW1; i++ ){
+			r_[n][i] /= normFactor;
+			posterior_array.push_back( r_[n][i] );
 		}
 
 		// draw a new position z from discrete posterior distribution
 		std::discrete_distribution<> posterior_dist( posterior_array.begin(), posterior_array.end() );
 		std::default_random_engine rand;		// pick a random number
-		z_[n] = posterior_dist( rand );			// draw the sample
-
-		// checking z values from the first 10 sequences
-		if( Global::verbose ){
-			if( n < 10 ) std::cout << z_[n] << '\t';
-		}
+		z_[n] = posterior_dist( rand );			// draw a sample z
 
 		if( z_[n] == 0 ) N_0++;
 	}
-	// sampling q_:
+
+	// sampling q:
 	// draw two random numbers Q and P from Gamma distribution
 	std::gamma_distribution<> P_Gamma_dist( N_0 + 1, 1 );
 	std::gamma_distribution<> Q_Gamma_dist( N - N_0 + 1, 1 );
@@ -192,13 +284,37 @@ void CGS::sampling_z_q(){
 	q_ = Q / ( Q + P );						// calculate q_
 
 	if( Global::verbose ){
-		// checking z values from the first 10 sequences
-		if( n < 10 ) std::cout << z_[n] << '\t';
+		// checking z values from the first 20 sequences
+		for( n = 0; n < 20; n++ ) std::cout << z_[n] << '\t';
 		std::cout << N_0 << " sequences do not have motif. q = " << q_  << "\t";
+		// only for testing:
+/*		std::cout << std::endl << "nz[2][TGA][j] = ";
+		for( j = 0; j < W; j++ ){
+			std::cout << n_z_[K][56][j] << '\t';
+		}*/
+
+/*		std::cout << "\n After:";
+		for( n = 0; n < N; n++ ){
+			std::cout << "\n z[" << n << "] = " << z_[n] <<'\t';
+			for( i = 0; i < LW1; i++ ){
+				std::cout << "r["<<n<<"]["<<i <<"] = " << r_[n][i] <<'\t';
+			}
+			std::cout << '\n';
+		}
+
+		for( j = 0; j < W; j++ ){
+			for( y = 0; y < Y_[K+1]; y++ ){
+
+				std::cout << n_z_[K][y][j] << '\t';
+			}
+			std::cout << '\n';
+		}
+		std::cout << '\n';*/
+
 	}
 }
 
-void CGS::alphaSampling(){
+void CGS::updateAlphas(){
 	// update alphas due to the learning rate eta and gradient of the log posterior of alphas
 
 //	int K = Global::modelOrder;
@@ -208,10 +324,9 @@ void CGS::alphaSampling(){
 
 }
 
-float CGS::calcGrad_logPostAlphas( float alpha, int k ){
+float CGS::calcGrad_logPostAlphas( float alpha, int k, int j ){
 	// calculate gradient of the log posterior of alphas
 	float gradient_logPostAlphas;
-	int W = motif_->getW();
 	float*** v = motif_->getV();
 
 	// the first term
@@ -219,30 +334,29 @@ float CGS::calcGrad_logPostAlphas( float alpha, int k ){
 	// the second term
 	gradient_logPostAlphas += Global::modelBeta * powf( Global::modelGamma, ( float )k ) / powf( alpha, 2.0f );
 	// the third term
-	gradient_logPostAlphas += ( float )Y_[k] * ( float )W * digammaf( alpha );
+	gradient_logPostAlphas += ( float )Y_[k] * digammaf( alpha );
 	// the forth term
-	for( int j = 0; j < W; j++){
-		if( k == 0 ){
-			;
-		} else{
-			for( int y = 0; y < Y_[k+1]; y++ ){
-				int y2 = y % Y_[k];
-				// the first term of the inner part
-				gradient_logPostAlphas += v[k-1][y2][j] * ( digammaf( ( float )n_z_[k][y][j] + alpha * v[k-1][y2][j] ) - digammaf( alpha * v[k-1][y2][j] ) );
-			}
-			// the second term of the inner part
-			for( int y = 0; y < Y_[k]; y++ ){
-				if( j == 0){
-					gradient_logPostAlphas -= digammaf( alpha );
-				} else {
-					gradient_logPostAlphas -= digammaf( ( float )n_z_[k][y][j-1] + alpha );
-				}
+	if( k == 0 ){
+		;
+	} else{
+		for( int y = 0; y < Y_[k+1]; y++ ){
+			int y2 = y % Y_[k];
+			// the first term of the inner part
+			gradient_logPostAlphas += v[k-1][y2][j] * ( digammaf( ( float )n_z_[k][y][j] + alpha * v[k-1][y2][j] ) - digammaf( alpha * v[k-1][y2][j] ) );
+		}
+		// the second term of the inner part
+		for( int y = 0; y < Y_[k]; y++ ){
+			if( j == 0){
+				gradient_logPostAlphas -= digammaf( alpha );
+			} else {
+				gradient_logPostAlphas -= digammaf( ( float )n_z_[k][y][j-1] + alpha );
 			}
 		}
 	}
 
 	return gradient_logPostAlphas;
 }
+
 void CGS::print(){
 
 }
@@ -275,7 +389,6 @@ void CGS::write(){
 		ofile_n << std::endl;
 	}
 
-/*
 	// output responsibilities r[n][i]
 	std::string opath_r = opath + ".CGSposterior";
 	std::ofstream ofile_r( opath_r.c_str() );
@@ -285,7 +398,6 @@ void CGS::write(){
 		}
 		ofile_r << std::endl;
 	}
-*/
 
 	// output parameter alphas alpha[k][j]
 	std::string opath_alpha = opath + ".CGSalpha";

@@ -19,6 +19,8 @@ SequenceSet::SequenceSet( std::string sequenceFilepath, bool revcomp, std::strin
 		Y_.push_back( ipow( Alphabet::getSize(), i ) );
 	}
 
+	baseFrequencies_ = new float[Y_[1]];
+
 	readFASTA( revcomp );
 
 	if( !( intensityFilepath.empty() ) ){
@@ -32,6 +34,7 @@ SequenceSet::~SequenceSet(){
     for( size_t i = 0; i < sequences_.size(); i++ ){
 		delete sequences_[i];
 	}
+    if( !baseFrequencies_ ) delete[] baseFrequencies_;
 }
 
 std::string SequenceSet::getSequenceFilepath(){
@@ -433,13 +436,12 @@ int SequenceSet::readFASTA( bool revcomp ){
 
 	 // calculate the sum of bases
 	unsigned int sumCounts = 0;
-	for( int i = 0; i < Alphabet::getSize(); i++ ){
+	for( int i = 0; i < Y_[1]; i++ ){
 		sumCounts += baseCounts[i];
 	}
 
 	// calculate base frequencies
-	baseFrequencies_ = new float[Alphabet::getSize()];
-	for( int i = 0; i < Alphabet::getSize(); i++ ){
+	for( int i = 0; i < Y_[1]; i++ ){
 		baseFrequencies_[i] = static_cast<float>( baseCounts[i] ) /
 		                      static_cast<float>( sumCounts );
 	}
@@ -462,16 +464,20 @@ int*** SequenceSet::countKmers( int K, int W, int* z, int s ){
 
 	// counts K-mers at position i except the n'th sequence
 	for( int i = 0; i < N_; i++ ){
+//		std::cout << "z[" << i << "]=" << z[i] << ":\t";
 		if( i == s ){
+//			std::cout << std::endl;
 			continue;						// skip the s'th sequence
 		} else {
 			for( j = 0; j < W; j++ ){
 				y = sequences_[i]->extractKmer( z[i]+j, std::min( z[i]+j, K ) );
-				if( y > 0 ){
-					n[K][y][j]++;
-				}
+//				if( y >= 0 )				// skip unknown alphabets
+				n[K][y][j]++;
+//				std::cout << y << '\t';
 			}
+//			std::cout << std::endl;
 		}
+
 	}
 
 	// calculate nz for lower order k
