@@ -21,12 +21,12 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 
 	// copy selected positive sequences due to folds
 	posSeqs_.clear();
-/*	for( size_t f_idx = 0; f_idx < folds_.size(); f_idx++ ){
+	for( size_t f_idx = 0; f_idx < folds_.size(); f_idx++ ){
 		for( size_t s_idx = 0; s_idx < Global::posFoldIndices[folds_[f_idx]].size(); s_idx++ ){
 			posSeqs_.push_back( Global::posSequenceSet->getSequences()[Global::posFoldIndices[folds_[f_idx]][s_idx]] );
 		}
-	}*/
-	posSeqs_ = Global::posSequenceSet->getSequences();
+	}
+//	posSeqs_ = Global::posSequenceSet->getSequences();
 
 	// allocate memory for s_[y][j] and initialize it
 	s_ = ( float** )calloc( Y_[Global::modelOrder+1], sizeof( float* ) );
@@ -309,27 +309,6 @@ int EM::learnMotif(){
 			}
 		}
 	}
-	// print kmer counts out
-	std::cout << std::endl;
-	for( j = 0; j < W; j++ ){
-	for( int k = 0; k < K_model+1; k++ ){
-		for( y = 0; y < Y_[k+1]; y++ ){
-
-				std::cout << n_[k][y][j] << '\t';
-			}
-			std::cout << std::endl;
-		}
-		std::cout << std::endl;
-	}
-	std::cout << std::endl;
-
-
-	// only for testing:
-	std::cout << std::endl;
-	for( size_t n = 0; n < 50/*posSeqs_.size()*/; n++ ){
-		std::cout << z_[n] << '\t';
-	}
-	std::cout << std::endl;
 
 	// calculate probabilities
 	motif_->calculateP();
@@ -661,7 +640,7 @@ void EM::write(){
 		ofile_n << std::endl;
 	}
 
-/*
+
 	//TODO: this file is too large for benchmarking
 	// output responsibilities r[n][i]
 	std::string opath_r = opath + ".EMposterior";
@@ -674,7 +653,7 @@ void EM::write(){
 
 		ofile_r << std::endl;
 	}
-*/
+
 
 	// output parameter alphas alpha[k][j]
 	std::string opath_alpha = opath + "_emIter_" + alphaIter.str() + ".EMalpha";

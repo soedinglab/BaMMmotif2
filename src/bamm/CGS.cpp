@@ -51,6 +51,9 @@ CGS::CGS( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 
 	// allocate memory for motif position z_[n]
 	z_ = ( int* )calloc( N, sizeof( int ) );
+	for( int n = 0; n < Global::posSequenceSet->getN(); n++ ){
+		z_[n] = rand() % ( Global::posSequenceSet->getMinL() - W + 2 );
+	}
 
 }
 
@@ -90,14 +93,6 @@ void CGS::GibbsSampling(){
 	clock_t t0 = clock();
 	bool iterate = true;								// flag for iterating before convergence
 
-	EM em( motif_, bg_ );
-	em.learnMotif();
-	for( int n = 0; n < Global::posSequenceSet->getN(); n++ ){
-//		z_[n] = 30;
-		z_[n] = em.getZ()[n]+1;
-
-	}
-
 	// iterate over
 	while( iterate && CGSIterations_ < Global::maxCGSIterations ){
 
@@ -132,11 +127,10 @@ void CGS::sampling_z_q( int iteration ){
 	int W = motif_->getW();
 	int K = Global::modelOrder;
 	int K_bg = Global::bgModelOrder;
-	int n, k, y, y_prev, y2, y_bg, i, j, LW1;
+	int n, n_prev, k, y, y_prev, y2, y_bg, i, j, LW1;
 	int N_0 = 0;								// counts of sequences which do not contain motifs.
 
-
-/*	// reset n_z_[k][y][j]
+	// reset n_z_[k][y][j]
 	for( k = 0; k < K+1; k++ ){
 		for( y = 0; y < Y_[k+1]; y++ ){
 			for( j = 0; j < W; j++ ){
@@ -144,34 +138,22 @@ void CGS::sampling_z_q( int iteration ){
 			}
 		}
 	}
+	// count kmers for the highest order K
 	for( i = 0; i < N; i++ ){
 		for( j = 0; j < W; j++ ){
-			y = posSeqs[i]->extractKmer( z_[i]+j, std::min( z_[i]+j, K ) );
+			y = posSeqs[i]->extractKmer( z_[i]-1+j, std::min( z_[i]-1+j, K ) );
 			n_z_[K][y][j]++;
 		}
 	}
 	// calculate nz for lower order k
-	for( k = K; k > 0; k-- ){				// k runs over all lower orders
+	for( k = K; k > 0; k-- ){					// k runs over all lower orders
 		for( y = 0; y < Y_[k+1]; y++ ){
-			y2 = y % Y_[k];					// cut off the first nucleotide in (k+1)-mer
+			y2 = y % Y_[k];						// cut off the first nucleotide in (k+1)-mer
 			for( j = 0; j < W; j++ ){
 				n_z_[k-1][y2][j] += n_z_[k][y][j];
 			}
 		}
 	}
-	// print kmer counts out
-	std::cout << std::endl;
-	for( j = 0; j < W; j++ ){
-	for( k = 0; k < K+1; k++ ){
-		for( y = 0; y < Y_[k+1]; y++ ){
-
-				std::cout << n_z_[k][y][j] << '\t';
-			}
-			std::cout << std::endl;
-		}
-		std::cout << std::endl;
-	}
-	std::cout << std::endl;*/
 
 	// sampling z:
 	// loop over all sequences and drop one sequence each time and update r
@@ -183,49 +165,22 @@ void CGS::sampling_z_q( int iteration ){
 		for( i = 1; i <= LW1; i++ ){
 			pos_[i] = ( float )q_ / ( float )LW1;
 		}
+
 		// count K-mers at position z[i]+j except the n'th sequence
-		if( n == 0 ){							// for the first sequence
-			// reset n_z_[k][y][j] when K = 0
-			for( y = 0; y < Y_[K+1]; y++ ){
-				for( j = 0; j < W; j++ ){
-					n_z_[K][y][j] = 0;
-				}
-			}
-			for( i = 1; i < N; i++ ){
-				for( j = 0; j < W; j++ ){
-					y = posSeqs[i]->extractKmer( z_[i]-1+j, std::min( z_[i]-1+j, K ) );
-					n_z_[K][y][j]++;
-				}
-			}
-		} else {								// for the rest sequences
+		for( k = 0; k < K+1; k++ ){
 			for( j = 0; j < W; j++ ){
-				if( z_[n-1] != 0 ){
-					// add the kmer counts for the previous sequence with updated z
-					y_prev = posSeqs[n-1]->extractKmer( z_[n-1]-1+j, std::min( z_[n-1]-1+j, K ) );
-					n_z_[K][y_prev][j]++;
-				}
 				if( z_[n] != 0 ){
 					// remove the kmer counts for the current sequence with old z
-					y = posSeqs[n]->extractKmer( z_[n]-1+j, std::min( z_[n]-1+j, K ) );
-					n_z_[K][y][j]--;
+					y = posSeqs[n]->extractKmer( z_[n]-1+j, std::min( z_[n]-1+j, k ) );
+					n_z_[k][y][j]--;
 				}
-			}
-		}
-
-		// reset n_z_[k][y][j] when k < K
-		for( k = 0; k < K; k++ ){
-			for( y = 0; y < Y_[k+1]; y++ ){
-				for( j = 0; j < W; j++ ){
-					n_z_[k][y][j] = 0;
-				}
-			}
-		}
-		// calculate nz for lower order k
-		for( k = K; k > 0; k-- ){				// k runs over all lower orders
-			for( y = 0; y < Y_[k+1]; y++ ){
-				y2 = y % Y_[k];					// cut off the first nucleotide in (k+1)-mer
-				for( j = 0; j < W; j++ ){
-					n_z_[k-1][y2][j] += n_z_[k][y][j];
+				if( n > 0 ){
+					n_prev = n-1;
+					if( z_[n_prev] != 0 ){
+						// add the kmer counts for the previous sequence with updated z
+						y_prev = posSeqs[n-1]->extractKmer( z_[n_prev]-1+j, std::min( z_[n_prev]-1+j, k ) );
+						n_z_[k][y_prev][j]++;
+					}
 				}
 			}
 		}
@@ -266,8 +221,8 @@ void CGS::sampling_z_q( int iteration ){
 
 		// draw a new position z from discrete posterior distribution
 		std::discrete_distribution<> posterior_dist( posterior_array.begin(), posterior_array.end() );
-		std::default_random_engine rand;		// pick a random number
-		z_[n] = posterior_dist( rand );			// draw a sample z
+		std::random_device rand;			// pick a random number
+		z_[n] = posterior_dist( rand );		// draw a sample z
 
 		if( z_[n] == 0 ) N_0++;
 	}
@@ -287,30 +242,6 @@ void CGS::sampling_z_q( int iteration ){
 		// checking z values from the first 20 sequences
 		for( n = 0; n < 20; n++ ) std::cout << z_[n] << '\t';
 		std::cout << N_0 << " sequences do not have motif. q = " << q_  << "\t";
-		// only for testing:
-/*		std::cout << std::endl << "nz[2][TGA][j] = ";
-		for( j = 0; j < W; j++ ){
-			std::cout << n_z_[K][56][j] << '\t';
-		}*/
-
-/*		std::cout << "\n After:";
-		for( n = 0; n < N; n++ ){
-			std::cout << "\n z[" << n << "] = " << z_[n] <<'\t';
-			for( i = 0; i < LW1; i++ ){
-				std::cout << "r["<<n<<"]["<<i <<"] = " << r_[n][i] <<'\t';
-			}
-			std::cout << '\n';
-		}
-
-		for( j = 0; j < W; j++ ){
-			for( y = 0; y < Y_[K+1]; y++ ){
-
-				std::cout << n_z_[K][y][j] << '\t';
-			}
-			std::cout << '\n';
-		}
-		std::cout << '\n';*/
-
 	}
 }
 

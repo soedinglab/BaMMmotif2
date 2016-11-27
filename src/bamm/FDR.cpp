@@ -380,7 +380,7 @@ void FDR::writeLogOdds(){
 	 * (1) posSequenceBasename.zoops.posLogOdds
 	 * (2) posSequenceBasename.mops.posLogOdds
 	 * (3) posSequenceBasename.zoops.negLogOdds
-	 * (4)posSequenceBasename.mops.negLogOdds
+	 * (4) posSequenceBasename.mops.negLogOdds
 	 */
 	//ToDO: it will not work if sequences have different lengths
 	int posN = Global::posSequenceSet->getN();

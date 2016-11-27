@@ -23,7 +23,7 @@ private:
 	float**				s_;					// log scores of each (K+1)-mer at each position
 	int***				n_z_;				// n^z_j(y_1:k), the k-mer counts(for 0<k<K+2 ) with y_k's rightmost nucleotide at position j
 	float**				alpha_;				// pseudo-count hyper-parameter for order k and motif position j
-	double				q_ = 0.9f; 		// hyper-parameter q specifies the fraction of sequences containing motif
+	double				q_ = 1.0f; 		// hyper-parameter q specifies the fraction of sequences containing motif
 	float*				pos_;				// positional prior
 	int*				z_;					// vector with coordinates z_n, observed position of motif in each sequence
 
