@@ -6,16 +6,33 @@ MotifSet::MotifSet(){
 
 	if( Global::BaMMpatternFilename != NULL ){
 
-	    // scan file and conduct for IUPAC pattern p
-		// * Motif* motif = new Motif( length(p) )
-		// * motif.initFromIUPACPattern( p )
-		// motifs.push_back( motif )
+		// scan file and conduct for IUPAC pattern
+		std::ifstream file;
+		file.open( Global::BaMMpatternFilename, std::ifstream::in );
+		std::string pattern;
+		int length;
+		if( !file.good() ){
+			std::cout << "Error: Cannot open bindingSitesFile sequence file: "
+					<< Global::BaMMpatternFilename << std::endl;
+			exit( -1 );
+		} else {
+			while( getline( file, pattern ) ){
+
+				length = ( int ) pattern.length();			// get length of the first sequence
+
+				Motif* motif = new Motif( length );
+
+				motif->initFromBaMMPattern( pattern );
+
+				motifs_.push_back( motif );
+			}
+		}
 
 	} else if( Global::bindingSiteFilename != NULL ){
 
 		std::ifstream file;
 		file.open( Global::bindingSiteFilename, std::ifstream::in );
-		std::string seq;
+		std::string bindingSite;
 		int length;
 
 		if( !file.good() ){
@@ -23,8 +40,8 @@ MotifSet::MotifSet(){
 					<< Global::bindingSiteFilename << std::endl;
 			exit( -1 );
 		} else {
-			getline( file, seq );					// get length of the first sequence
-			length = ( int ) seq.length();
+			getline( file, bindingSite );					// get length of the first sequence
+			length = ( int ) bindingSite.length();
 		}
 
 		length += Global::addColumns.at( 0 ) + Global::addColumns.at( 1 );

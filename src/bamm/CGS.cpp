@@ -49,10 +49,13 @@ CGS::CGS( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 	// allocate memory for positional prior pos_[i]
 	pos_ = ( float* )calloc( LW1+1, sizeof( float ) );
 
+//	EM em( motif_, bg_ );
+//	em.learnMotif();
 	// allocate memory for motif position z_[n]
 	z_ = ( int* )calloc( N, sizeof( int ) );
 	for( int n = 0; n < Global::posSequenceSet->getN(); n++ ){
 		z_[n] = rand() % ( Global::posSequenceSet->getMinL() - W + 2 );
+//		z_[n] = em.getZ()[n];
 	}
 
 }
@@ -93,34 +96,114 @@ void CGS::GibbsSampling(){
 	clock_t t0 = clock();
 	bool iterate = true;								// flag for iterating before convergence
 
+	int K = Global::modelOrder;
+	int W = motif_->getW();
+	int k, j;
+
+	// parameters for alpha learning
+	int timestep = 0;									// timestep = iteration
+	float eta = 0.001f;									// learning rate for alpha
+	float beta1 = 0.9f;									// exponential decay rate for the moment estimates
+	float beta2 = 0.999f;								// exponential decay rate for the moment estimates
+	float epsilon = 0.00000001f;						//
+	float** gradient;									// gradient of log posterior of alpha
+	float** m1;											// first moment vector (the mean)
+	float** m2;											// second moment vector (the uncentered variance)
+	float alpha_diff;
+	gradient = ( float** )calloc( K+1, sizeof( float* ) );
+	m1 = ( float** )calloc( K+1, sizeof( float* ) );
+	m2 = ( float** )calloc( K+1, sizeof( float* ) );
+	for( k = 0; k < K+1; k++ ){
+		gradient[k] = ( float* )calloc( W, sizeof( float ) );
+		m1[k] = ( float* )calloc( W, sizeof( float ) );
+		m2[k] = ( float* )calloc( W, sizeof( float ) );
+	}
+	float m1_i = 0.0f;
+	float m2_i = 0.0f;
+
+/*
+	float** v_prev;
+	v_prev = ( float** )calloc( Y_[K+1], sizeof( float* ) );
+	for( y = 0; y < Y_[K+1]; y++ ){
+		v_prev[y] = ( float* )calloc( W, sizeof( float ) );
+	}
+	float v_diff;
+*/
+
 	// iterate over
-	while( iterate && CGSIterations_ < Global::maxCGSIterations ){
+	while( iterate && timestep < Global::maxCGSIterations ){
 
-		CGSIterations_++;
+		timestep++;
 
-		if( Global::verbose /* && CGSIterations_ % 10 == 0*/ ){
-			std::cout << std::endl << CGSIterations_ << " iteration:\t";
+		if( Global::verbose ){
+			std::cout << timestep << " iteration:\t";
 		}
 
 		// sampling z and q
-		sampling_z_q( CGSIterations_ );
+		sampling_z_q();
 
 		// only for writing out model after each iteration:
-//		motif_->calculateP();
-//		motif_->write( CGSIterations_ );
+/*		motif_->calculateP();
+		motif_->write( CGSIterations_ );*/
 
-		// * optional: optimize hyper-parameter alpha
-		if( !Global::noAlphaUpdating )	updateAlphas();
+		// update model parameter v
+		motif_->updateV( n_z_, alpha_, K-1 );
+
+		// optimize hyper-parameter alpha
+//		if( !Global::noAlphaUpdating )	updateAlphas( eta );
+		alpha_diff = 0.0f;
+
+		for( k = 0; k < K+1; k++ ){
+
+			for( j = 0; j < W; j++ ){
+
+				// get gradients w.r.t. stochastic objective at timestep t
+				gradient[k][j] = calcGrad_logPostAlphas( alpha_[k][j], k, j );
+
+				// update biased first moment estimate
+				m1_i = beta1 * m1_i + ( 1 - beta1 ) * gradient[k][j];
+
+				// update biased second raw moment estimate
+				m2_i = beta2 * m2_i + ( 1 - beta2 ) * gradient[k][j] * gradient[k][j];
+
+				// compute bias-corrected first moment estimate
+				m1[k][j] = m1_i / ( 1 - beta1 );
+
+				// compute bias-corrected second raw moment estimate
+				m2[k][j] = m2_i / ( 1 - beta2 );
+
+				// update parameter alphas
+				alpha_[k][j] = alpha_[k][j] - eta * m1[k][j] / ( ( float )sqrt ( m2[k][j] ) + epsilon );
+
+				// calculate the changes
+				alpha_diff += eta * m1[k][j] / ( ( float )sqrt ( m2[k][j] ) + epsilon );
+
+			}
+		}
+		std::cout << alpha_diff << std::endl;
+		if( alpha_diff < Global::epsilon ) iterate = false;
 
 	}
+
+	// obtaining a motif model
 
 	// calculate probabilities
 	motif_->calculateP();
 
+	// free memory
+	for( k = 0; k < K+1; k++ ){
+		free( gradient[k]);
+		free( m1[k] );
+		free( m2[k] );
+	}
+	free( gradient );
+	free( m1 );
+	free( m2 );
+
 	fprintf( stdout, "\n--- Runtime for Collapsed Gibbs sampling: %.4f seconds ---\n", ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );
 }
 
-void CGS::sampling_z_q( int iteration ){
+void CGS::sampling_z_q(){
 
 	int N = Global::posSequenceSet->getN();
 	std::vector<Sequence*> posSeqs = Global::posSequenceSet->getSequences();
@@ -186,7 +269,7 @@ void CGS::sampling_z_q( int iteration ){
 		}
 
 		// updated model parameters v excluding the n'th sequence
-		motif_->updateV( n_z_, alpha_ );
+		motif_->updateV( n_z_, alpha_, K );
 
 		// compute log odd scores s[y][j], log likelihoods of the highest order K
 		for( y = 0; y < Y_[K+1]; y++ ){
@@ -231,34 +314,45 @@ void CGS::sampling_z_q( int iteration ){
 	// draw two random numbers Q and P from Gamma distribution
 	std::gamma_distribution<> P_Gamma_dist( N_0 + 1, 1 );
 	std::gamma_distribution<> Q_Gamma_dist( N - N_0 + 1, 1 );
-	std::default_random_engine rand1;		// pick a random number
-	std::default_random_engine rand2;		// pick another random number
+	std::random_device rand1;				// pick a random number
+	std::random_device rand2;				// pick another random number
 	double P = P_Gamma_dist( rand1 );		// draw a sample for P
 	double Q = Q_Gamma_dist( rand2 );		// draw a sample for Q
 
 	q_ = Q / ( Q + P );						// calculate q_
+//	q_ = ( float )( N - N_0 ) / ( float )N;
 
 	if( Global::verbose ){
 		// checking z values from the first 20 sequences
 		for( n = 0; n < 20; n++ ) std::cout << z_[n] << '\t';
-		std::cout << N_0 << " sequences do not have motif. q = " << q_  << "\t";
+		std::cout << N_0 << " sequences do not have motif. q = " << q_ << "\n";
 	}
 }
 
-void CGS::updateAlphas(){
+void CGS::updateAlphas( float eta ){
+
 	// update alphas due to the learning rate eta and gradient of the log posterior of alphas
 
-//	int K = Global::modelOrder;
-//	int W = motif_->getW();
+	int K = Global::modelOrder;
+	int W = motif_->getW();
 
-	// calcGrad_logPostAlphas();
+	int k, j;
+
+	for( k = 0; k < K+1; k++ ){
+		for( j = 0; j < W; j++ ){
+			alpha_[k][j] -= eta * calcGrad_logPostAlphas( alpha_[k][j], k, j );
+		}
+	}
 
 }
 
 float CGS::calcGrad_logPostAlphas( float alpha, int k, int j ){
+
 	// calculate gradient of the log posterior of alphas
 	float gradient_logPostAlphas;
 	float*** v = motif_->getV();
+	float** v_bg = bg_->getV();
+	int y, y2;
 
 	// the first term
 	gradient_logPostAlphas = ( -2.0f ) / alpha;
@@ -267,20 +361,26 @@ float CGS::calcGrad_logPostAlphas( float alpha, int k, int j ){
 	// the third term
 	gradient_logPostAlphas += ( float )Y_[k] * digammaf( alpha );
 	// the forth term
-	if( k == 0 ){
-		;
-	} else{
-		for( int y = 0; y < Y_[k+1]; y++ ){
-			int y2 = y % Y_[k];
+	if( k > 0 ){
+		for( y = 0; y < Y_[k+1]; y++ ){
+			y2 = y % Y_[k];
 			// the first term of the inner part
-			gradient_logPostAlphas += v[k-1][y2][j] * ( digammaf( ( float )n_z_[k][y][j] + alpha * v[k-1][y2][j] ) - digammaf( alpha * v[k-1][y2][j] ) );
+			if( j > 0 ){
+				gradient_logPostAlphas += v[k-1][y2][j] * ( digammaf( ( float )n_z_[k][y][j] + alpha * v[k-1][y2][j] )
+					- digammaf( alpha * v[k-1][y2][j] ) - digammaf( ( float )n_z_[k][y][j-1] + alpha ) + digammaf( alpha ) );
+			} else {						// when j = 0
+				gradient_logPostAlphas += v[k-1][y2][j] * ( digammaf( ( float )n_z_[k][y][j] + alpha * v[k-1][y2][j] )
+					- digammaf( alpha * v[k-1][y2][j] ) );
+			}
 		}
-		// the second term of the inner part
-		for( int y = 0; y < Y_[k]; y++ ){
-			if( j == 0){
-				gradient_logPostAlphas -= digammaf( alpha );
+	} else {	// when k = 0
+		for( y = 0; y < Y_[1]; y++ ){
+			if( j < 0 ){
+				gradient_logPostAlphas += v_bg[k][y] * ( digammaf( ( float )n_z_[k][y][j] + alpha * v_bg[k][y] )
+					- digammaf( alpha * v_bg[k][y] ) - digammaf( ( float )n_z_[k][y][j-1] + alpha ) + digammaf( alpha ) );
 			} else {
-				gradient_logPostAlphas -= digammaf( ( float )n_z_[k][y][j-1] + alpha );
+				gradient_logPostAlphas += v_bg[k][y] * ( digammaf( ( float )n_z_[k][y][j] + alpha * v_bg[k][y] )
+					- digammaf( alpha * v_bg[k][y] ) );
 			}
 		}
 	}

@@ -16,7 +16,7 @@ public:
 	Motif( const Motif& other );						// copy constructor
 	~Motif();
 
-	void initFromBaMMPattern( char* pattern );			// initialize v from IUPAC pattern  (BMM pattern)
+	void initFromBaMMPattern( std::string pattern );	// initialize v from IUPAC pattern (PEnG!motif)
 
 	void initFromBindingSites( char* filename );		// initialize v from binding site file
 
@@ -30,7 +30,7 @@ public:
 	float***	getP();									// get probabilities p
 	int***		getN();									// get the counts of (k+1)-mer for all y at motif position j
 	void        updateV( float*** n, float** alpha );	// update v for EM
-	void        updateV( int*** n, float** alpha );		// update v for Collapsed Gibbs sampling
+	void        updateV( int*** n, float** alpha, int order );	// update v for Collapsed Gibbs sampling
     void        updateVbyK( float*** n, float** alpha, int k ); // only update V's of order k (needed for testing alpha)
 	void		calculateP();							// calculate probabilities p
 

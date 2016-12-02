@@ -57,6 +57,7 @@ int main( int nargs, char* args[] ){
 			em.write();
 			// write each optimized motif
 			motif->write( N );
+			delete motif;
 		}
 	} else if( Global::CGS ){
 		// learn motifs by CGS

@@ -76,10 +76,48 @@ Motif::~Motif(){
 }
 
 // initialize v from IUPAC pattern (BaMM pattern)
-void Motif::initFromBaMMPattern( char* pattern ){
-	// calculate k-mer counts n
-	// calculate v from k-mer counts n using calculateV()
+void Motif::initFromBaMMPattern( std::string pattern ){
+
+	// calculate v from the kmers in the pattern
+	// for k = 0:
+	for( size_t j = 0; j < pattern.length(); j++ ){
+		if( pattern[j] == 'A' ){
+			v_[0][0][j] = 1.0f;
+		} else if( pattern[j] == 'C' ){
+			v_[0][1][j] = 1.0f;
+		} else if( pattern[j] == 'G' ){
+			v_[0][2][j] = 1.0f;
+		} else if( pattern[j] == 'T' ){
+			v_[0][3][j] = 1.0f;
+		} else if( pattern[j] == 'S' ){
+			v_[0][1][j] = 0.5f;
+			v_[0][2][j] = 0.5f;
+		} else if( pattern[j] == 'W' ){
+			v_[0][0][j] = 0.5f;
+			v_[0][3][j] = 0.5f;
+		} else if( pattern[j] == 'R' ){
+			v_[0][0][j] = 0.5f;
+			v_[0][2][j] = 0.5f;
+		} else if( pattern[j] == 'Y' ){
+			v_[0][1][j] = 0.5f;
+			v_[0][3][j] = 0.5f;
+		} else if( pattern[j] == 'M' ){
+			v_[0][0][j] = 0.5f;
+			v_[0][1][j] = 0.5f;
+		} else if( pattern[j] == 'K' ){
+			v_[0][2][j] = 0.5f;
+			v_[0][3][j] = 0.5f;
+		}
+	}
+	// for k > 0:
+	for( int k = 1; k < Global::modelOrder+1; k++ ){
+		for( size_t j = k; j < pattern.length(); j++ ){
+
+		}
+	}
+
 	// set isInitialized
+	isInitialized_ = true;
 }
 
 // initialize v from binding sites file
@@ -200,6 +238,7 @@ void Motif::calculateV(){
 }
 // update v from fractional k-mer counts n and current alphas (e.g for EM)
 void Motif::updateV( float*** n, float** alpha ){
+
 	assert( isInitialized_ );
 
 	int y, j, k, y2, yk;
@@ -240,7 +279,8 @@ void Motif::updateV( float*** n, float** alpha ){
 
 
 // update v from integral k-mer counts n and current alphas (e.g for CGS)
-void Motif::updateV( int*** n, float** alpha ){
+void Motif::updateV( int*** n, float** alpha, int K ){
+
 	assert( isInitialized_ );
 
 	int y, j, k, y2, yk;
@@ -264,7 +304,7 @@ void Motif::updateV( int*** n, float** alpha ){
 	free( sumN );
 
 	// for 1 <= k <= K:
-	for( k = 1; k < Global::modelOrder+1; k++ ){
+	for( k = 1; k < K+1; k++ ){
 		for( y = 0; y < Y_[k+1]; y++ ){
 			y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
 			yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer

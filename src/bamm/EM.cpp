@@ -15,18 +15,17 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 	if( folds.empty() ){										// for the complete sequence set
 		folds_.resize( Global::cvFold );
 		std::iota( std::begin( folds_ ), std::end( folds_ ), 0 );
+		posSeqs_ = Global::posSequenceSet->getSequences();
 	} else {													// for cross-validation
 		folds_ = folds;
-	}
-
-	// copy selected positive sequences due to folds
-	posSeqs_.clear();
-	for( size_t f_idx = 0; f_idx < folds_.size(); f_idx++ ){
-		for( size_t s_idx = 0; s_idx < Global::posFoldIndices[folds_[f_idx]].size(); s_idx++ ){
-			posSeqs_.push_back( Global::posSequenceSet->getSequences()[Global::posFoldIndices[folds_[f_idx]][s_idx]] );
+		// copy selected positive sequences due to folds
+		posSeqs_.clear();
+		for( size_t f_idx = 0; f_idx < folds_.size(); f_idx++ ){
+			for( size_t s_idx = 0; s_idx < Global::posFoldIndices[folds_[f_idx]].size(); s_idx++ ){
+				posSeqs_.push_back( Global::posSequenceSet->getSequences()[Global::posFoldIndices[folds_[f_idx]][s_idx]] );
+			}
 		}
 	}
-//	posSeqs_ = Global::posSequenceSet->getSequences();
 
 	// allocate memory for s_[y][j] and initialize it
 	s_ = ( float** )calloc( Y_[Global::modelOrder+1], sizeof( float* ) );
@@ -141,12 +140,12 @@ int EM::learnMotif(){
 	int y, y_bg, j;
 	float v_diff, llikelihood_prev, llikelihood_diff = 0.0f;
 	float** v_before;										// hold the parameters of the highest-order before EM
-	float q_func_old, q_func_new, l_post_old, l_post_new, l_prior_new, prev_alpha;
+	float q_func_old, q_func_new = 0.0f, l_post_old, l_post_new = 0.0f, l_prior_new, prev_alpha;
 
 
 	// allocate memory for parameters v[y][j] with the highest order
-	v_before = ( float** )calloc( Y_[Global::modelOrder+1], sizeof( float* ) );
-	for( y = 0; y < Y_[Global::modelOrder+1]; y++ ){
+	v_before = ( float** )calloc( Y_[K_model+1], sizeof( float* ) );
+	for( y = 0; y < Y_[K_model+1]; y++ ){
 		v_before[y] = ( float* )calloc( W, sizeof( float ) );
 	}
 
@@ -158,9 +157,9 @@ int EM::learnMotif(){
 		EMIterations_++;
 
 		// get parameter variables with highest order before EM
-		for( y = 0; y < Y_[Global::modelOrder+1]; y++ ){
+		for( y = 0; y < Y_[K_model+1]; y++ ){
 			for( j = 0; j < W; j++ ){
-				v_before[y][j] = motif_->getV()[Global::modelOrder][y][j];
+				v_before[y][j] = motif_->getV()[K_model][y][j];
 			}
 		}
 		llikelihood_prev = llikelihood_;
@@ -260,8 +259,8 @@ int EM::learnMotif(){
 		            + std::string( Global::posSequenceBasename );
 		    std::string opath_testing = opath + "emIter" + alphaIter.str() + ".TESTING";
 		    std::ofstream ofile_testing;
-		    ofile_testing.open( opath_testing.c_str() , std::ios_base::app);
-		    ofile_testing << std::scientific << calculateQfunc_gradient(alpha_[Global::modelOrder][0],Global::modelOrder) << ' ';
+		    ofile_testing.open( opath_testing.c_str(), std::ios_base::app );
+		    ofile_testing << std::scientific << calculateQfunc_gradient( alpha_[K_model][0], K_model ) << ' ';
 		    ofile_testing << std::scientific << q_func_new - q_func_old << ' ';
 		    ofile_testing << std::scientific << l_post_new << ' ';
 		    ofile_testing << std::scientific << l_prior_new << ' ';
@@ -284,6 +283,7 @@ int EM::learnMotif(){
 				z_[n] = LW1-i-1;
 			}
 		}
+		if( n < 20 ) std::cout << z_[n] << '\t';
 	}
 
 	// reset n_z_[k][y][j]
@@ -294,16 +294,16 @@ int EM::learnMotif(){
 			}
 		}
 	}
-	for( int i = 0; i < posSeqs_.size(); i++ ){
+	for( size_t i = 0; i < posSeqs_.size(); i++ ){
 		for( j = 0; j < W; j++ ){
 			y = posSeqs_[i]->extractKmer( z_[i]+j, std::min( z_[i]+j, K_model ) );
 			n_[K_model][y][j]++;
 		}
 	}
 	// calculate nz for lower order k
-	for( int k = K_model; k > 0; k-- ){				// k runs over all lower orders
+	for( int k = K_model; k > 0; k-- ){							// k runs over all lower orders
 		for( y = 0; y < Y_[k+1]; y++ ){
-			int y2 = y % Y_[k];					// cut off the first nucleotide in (k+1)-mer
+			int y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
 			for( j = 0; j < W; j++ ){
 				n_[k-1][y2][j] += n_[k][y][j];
 			}
@@ -411,7 +411,7 @@ void EM::MStep(){
 }
 
 void EM::optimizeAlphas( float min_brent, float max_brent, float tolerance ){
-   //for( int k = 1; k < Global::modelOrder+1; k++ ){
+
 	int k = Global::modelOrder;
 	float optim_alpha = zbrent( *this, &EM::calculateQfunc_gradient, min_brent, max_brent, tolerance, k );
 
@@ -429,6 +429,7 @@ void EM::optimizeAlphas( float min_brent, float max_brent, float tolerance ){
 }
 
 void EM::testAlphaLearning( ){
+
     std::cout << "Starting AlphaLearningtesting...  ";
     std::cout << std::endl;
     float alpha, alpha_min = 1, alpha_max = 2e4;
@@ -486,7 +487,6 @@ float EM::calculateLogPriors( int K ){
 	int W = motif_->getW();
 	float*** v_motif = motif_->getV();
 	float** v_bg = bg_->getV();
-
 
 	// the second and third parts of log Posterior Probability
 	for( j = 0; j < W; j++ ){
@@ -590,6 +590,7 @@ float EM::calculateQfunc_gradient( float alpha ,int K ){
 int* EM::getZ(){
 	return z_;
 }
+
 void EM::print(){
 
 	std::cout << " ____________________________________" << std::endl;
@@ -640,7 +641,6 @@ void EM::write(){
 		ofile_n << std::endl;
 	}
 
-
 	//TODO: this file is too large for benchmarking
 	// output responsibilities r[n][i]
 	std::string opath_r = opath + ".EMposterior";
@@ -650,10 +650,8 @@ void EM::write(){
 		for( int i = L-1; i > W-2; i-- ){
 			ofile_r << std::scientific << r_[n][i] << ' ';
 		}
-
 		ofile_r << std::endl;
 	}
-
 
 	// output parameter alphas alpha[k][j]
 	std::string opath_alpha = opath + "_emIter_" + alphaIter.str() + ".EMalpha";
