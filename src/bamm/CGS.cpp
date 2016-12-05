@@ -102,33 +102,27 @@ void CGS::GibbsSampling(){
 
 	// parameters for alpha learning
 	int timestep = 0;									// timestep = iteration
-	float eta = 0.001f;									// learning rate for alpha
+	float eta = 0.03f;									// learning rate for alpha
 	float beta1 = 0.9f;									// exponential decay rate for the moment estimates
 	float beta2 = 0.999f;								// exponential decay rate for the moment estimates
 	float epsilon = 0.00000001f;						//
+	float** a;											// a = e^alpha
 	float** gradient;									// gradient of log posterior of alpha
 	float** m1;											// first moment vector (the mean)
 	float** m2;											// second moment vector (the uncentered variance)
 	float alpha_diff;
+	a = ( float** )calloc( K+1, sizeof( float* ) );
 	gradient = ( float** )calloc( K+1, sizeof( float* ) );
 	m1 = ( float** )calloc( K+1, sizeof( float* ) );
 	m2 = ( float** )calloc( K+1, sizeof( float* ) );
 	for( k = 0; k < K+1; k++ ){
+		a[k] = ( float* )calloc( W, sizeof( float ) );
 		gradient[k] = ( float* )calloc( W, sizeof( float ) );
 		m1[k] = ( float* )calloc( W, sizeof( float ) );
 		m2[k] = ( float* )calloc( W, sizeof( float ) );
 	}
 	float m1_i = 0.0f;
 	float m2_i = 0.0f;
-
-/*
-	float** v_prev;
-	v_prev = ( float** )calloc( Y_[K+1], sizeof( float* ) );
-	for( y = 0; y < Y_[K+1]; y++ ){
-		v_prev[y] = ( float* )calloc( W, sizeof( float ) );
-	}
-	float v_diff;
-*/
 
 	// iterate over
 	while( iterate && timestep < Global::maxCGSIterations ){
@@ -156,9 +150,11 @@ void CGS::GibbsSampling(){
 		for( k = 0; k < K+1; k++ ){
 
 			for( j = 0; j < W; j++ ){
+				// get a
+				a[k][j] = ( float )exp( alpha_[k][j] );
 
 				// get gradients w.r.t. stochastic objective at timestep t
-				gradient[k][j] = calcGrad_logPostAlphas( alpha_[k][j], k, j );
+				gradient[k][j] = alpha_[k][j] * calcGrad_logPostAlphas( alpha_[k][j], k, j );
 
 				// update biased first moment estimate
 				m1_i = beta1 * m1_i + ( 1 - beta1 ) * gradient[k][j];
@@ -172,11 +168,14 @@ void CGS::GibbsSampling(){
 				// compute bias-corrected second raw moment estimate
 				m2[k][j] = m2_i / ( 1 - beta2 );
 
-				// update parameter alphas
-				alpha_[k][j] = alpha_[k][j] - eta * m1[k][j] / ( ( float )sqrt ( m2[k][j] ) + epsilon );
+				// update parameter a due to alphas
+				a[k][j] = a[k][j] - eta * m1[k][j] / ( ( float )sqrt( m2[k][j] ) + epsilon );
 
 				// calculate the changes
-				alpha_diff += eta * m1[k][j] / ( ( float )sqrt ( m2[k][j] ) + epsilon );
+				alpha_diff += eta * m1[k][j] / ( ( float )sqrt( m2[k][j] ) + epsilon );
+
+				// get updated alpha
+				alpha_[k][j] = ( float )log( a[k][j] );
 
 			}
 		}

@@ -5,8 +5,8 @@
 #include "../shared/BackgroundModel.h"
 #include "../shared/utils.h"
 #include "MotifSet.h"
-#include "EM.h"
-#include "CGS.h"
+#include "ModelLearning.h"
+
 #include "FDR.h"
 
 int main( int nargs, char* args[] ){
@@ -24,11 +24,6 @@ int main( int nargs, char* args[] ){
 	// initialization
 	Global::init( nargs, args );
 
-    if( Global::debugMode ){
-      Global::debug();
-      Alphabet::debug();
-    }
-
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "************************\n" );
 	fprintf( stderr, "*   Background Model   *\n" );
@@ -43,37 +38,26 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*   Initial Motif   *\n" );
 	fprintf( stderr, "*********************\n" );
 	MotifSet motifs;
-
-	if( Global::EM ){
-		// learn motifs by EM
-		fprintf( stderr, "\n" );
-		fprintf( stderr, "*************************\n" );
-		fprintf( stderr, "*   Learn Motif by EM   *\n" );
-		fprintf( stderr, "*************************\n" );
-		for( int N = 0; N < motifs.getN(); N++ ){
-			Motif* motif = new Motif( *motifs.getMotifs()[N] );
-			EM em( motif, bgModel );
-			em.learnMotif();
+	for( int n = 0; n < motifs.getN(); n++ ){
+		Motif* motif = new Motif( *motifs.getMotifs()[n] );
+		if( Global::EM ){
+			// learn motifs by EM
+			ModelLearning em( motif, bgModel );
+			em.EMlearning();
 			em.write();
-			// write each optimized motif
-			motif->write( N );
-			delete motif;
-		}
-	} else if( Global::CGS ){
-		// learn motifs by CGS
-		fprintf( stderr, "\n" );
-		fprintf( stderr, "***********************************************\n" );
-		fprintf( stderr, "*   Learn Motif by Collapsed Gibbs Sampling   *\n" );
-		fprintf( stderr, "***********************************************\n" );
-		for( int N = 0; N < motifs.getN(); N++ ){
-			Motif* motif = new Motif( *motifs.getMotifs()[N] );
-			CGS GSampler( motif, bgModel );
+		} else if ( Global::CGS ){
+			// learn motifs by collapsed Gibbs sampling
+			ModelLearning GSampler( motif, bgModel );
 			GSampler.GibbsSampling();
 			GSampler.write();
-			// write each optimized motif
-			motif->write( N );
-			delete motif;
+		} else {
+			std::cout << "Model is not optimized!\n";
 		}
+		if( Global::saveBaMMs ){
+			// write each optimized motif
+			motif->write( n );
+		}
+		delete motif;
 	}
 
 	// evaluate motifs

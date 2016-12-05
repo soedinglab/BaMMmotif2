@@ -360,7 +360,7 @@ void Global::printHelp(){
 	printf("\n 			--saveBaMMs\n"
 			"				Write optimized BaMM(s) to disk.\n\n");
 	printf("\n 			-h, --help\n"
-			"				 Printout this help function.\n\n");
+			"				Printout this help function.\n\n");
 	printf("\n============================================================================================\n");
 }
 
