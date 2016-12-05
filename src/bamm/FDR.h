@@ -4,7 +4,7 @@
 #include "../shared/BackgroundModel.h"
 #include "../shared/utils.h"
 #include "Motif.h"
-#include "EM.h"
+#include "ModelLearning.h"
 
 class FDR {
 

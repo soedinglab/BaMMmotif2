@@ -43,23 +43,22 @@ private:
 	float 					q_ = 0.9f; 			// hyper-parameter q specifies the fraction of sequences containing motif
 
 	float 					llikelihood_ = 0.0f;// log likelihood for each EM iteration
-	unsigned int 			EMIterations_ = 0;  // counter for EM iterations
 	float					Qfunc_ = 0.0f;		// Q function per each EM iteration
 
 	std::vector<Sequence*>	posSeqs_;			// copy positive sequences due to folds
 
 	void 					EM_EStep();			// E-step
 	void 					EM_MStep();			// M-step
-	void 					EMoptimizeAlphas( int order, int width );		// optimize alpha hyper-parameters
-	void 					EMoptimize_q();									// optimize hyper-parameter q
-	float 					EMcalcQfunc( int order );						// calculate incomplete Q-function
-	float 					EMcalcGrad_Qfunc( float alpha, int order, int width, int alphabetsize ); 	// calculate gradient of Q-function
-	float                   EMcalcLogPosterior( int order ); 				// calculate log posterior likelihood
-    float                   EMcalcLogPriors( int order ); 					// calculate log prior part of log posterior
+	void 					EM_optimizeAlphas( int order, int width );		// optimize alpha hyper-parameters
+	void 					EM_optimize_q();									// optimize hyper-parameter q
+	float 					EM_calcQfunc( int order );						// calculate incomplete Q-function
+	float 					EM_calcGrad_Qfunc( float alpha, int order, int width, int alphabetsize ); 	// calculate gradient of Q-function
+	float                   EM_calcLogPosterior( int order ); 				// calculate log posterior likelihood
+    float                   EM_calcLogPriors( int order ); 					// calculate log prior part of log posterior
 
-	void					CGSsampling_z_q();								// sample z and q by collapsed Gibbs sampling
-	void					CGSupdateAlphas( float learningrate, int order, int width );		// update alphas for all the orders up to K, given the learning rate
-	float					CGScalcGrad_logPostAlphas( float alpha, int order, int position );	// calculate the gradient of the log posterior of alphas
+	void					CGS_sampling_z_q();								// sample z and q by collapsed Gibbs sampling
+	void					CGS_updateAlphas( float learningrate, int order, int width );		// update alphas for all the orders up to K, given the learning rate
+	float					CGS_calcGradLogPostAlphas( float alpha, int order, int position );	// calculate the gradient of the log posterior of alphas
 
 	std::vector<int>		Y_;					// contains 1 at position 0
 												// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1

@@ -131,10 +131,11 @@ int ModelLearning::EMlearning(){
 		v_before[y] = ( float* )calloc( W, sizeof( float ) );
 	}
 
+	unsigned int EMIterations = 0;
 	// iterate over
-	while( iterate && ( EMIterations_ < Global::maxEMIterations ) ){
+	while( iterate && ( EMIterations < Global::maxEMIterations ) ){
 
-		EMIterations_++;
+		EMIterations++;
 
 		// get parameter variables with highest order before EM
 		llikelihood_prev = llikelihood_;
@@ -159,10 +160,10 @@ int ModelLearning::EMlearning(){
 		EM_MStep();
 
 		// * optional: optimize parameter alpha
-		if( !Global::noAlphaOptimization )	EMoptimizeAlphas( K, W );
+		if( !Global::noAlphaOptimization )	EM_optimizeAlphas( K, W );
 
 		// * optional: optimize parameter q
-		if( !Global::noQOptimization )		EMoptimize_q();
+		if( !Global::noQOptimization )		EM_optimize_q();
 
 		// check parameter difference for convergence
 		v_diff = 0.0f;
@@ -176,15 +177,15 @@ int ModelLearning::EMlearning(){
 		llikelihood_diff = llikelihood_ - llikelihood_prev;
 
 		if( Global::verbose ){
-			std::cout << EMIterations_ << " iteration:	";
+			std::cout << EMIterations << " iteration:	";
 			std::cout << "para_diff = " << v_diff << ",	";
 			std::cout << "log likelihood = " << llikelihood_ << " 	";
-			if( llikelihood_diff < 0 && EMIterations_ > 1) std::cout << " decreasing... ";
+			if( llikelihood_diff < 0 && EMIterations > 1) std::cout << " decreasing... ";
 			std::cout << std::endl;
 		}
 
 		if( v_diff < Global::epsilon )					iterate = false;
-		if( llikelihood_diff < 0 && EMIterations_ > 1 )	iterate = false;
+		if( llikelihood_diff < 0 && EMIterations > 1 )	iterate = false;
 
 	}
 
@@ -215,10 +216,10 @@ void ModelLearning::EM_EStep(){
 		int LW2 = L - W + 2;
 		float normFactor = 0.0f;								// reset normalization factor
 
-		// reset r_[n][i]
+		// reset r_[n][i] and pos_[n][i]
 		for( int i = 1; i < LW2; i++ ){
 			r_[n][i] = 1.0f;
-			pos_[n][i] = q_ / static_cast<float>( LW1 );			// p(z_n = i), i > 0
+			pos_[n][i] = q_ / static_cast<float>( LW1 );		// p(z_n = i), i > 0
 		}
 
 		// when p(z_n > 0)
@@ -235,6 +236,7 @@ void ModelLearning::EM_EStep(){
 		}
 
 		// when p(z_n = 0)
+		r_[n][0] = 1.0f;
 		pos_[n][0] = 1 - q_;
 
 		// calculate complete responsibilities and sum them up
@@ -295,7 +297,7 @@ void ModelLearning::EM_MStep(){
 	motif_->updateV( n_, alpha_, K );
 }
 
-void ModelLearning::EMoptimizeAlphas( int K, int W ){
+void ModelLearning::EM_optimizeAlphas( int K, int W ){
 /*
 	float optim_alpha = zbrent( *this, &ModelLearning::EMcalcGrad_Qfunc, min_brent, max_brent, tolerance, K );
 
@@ -309,13 +311,13 @@ void ModelLearning::EMoptimizeAlphas( int K, int W ){
 	}*/
 }
 
-void ModelLearning::EMoptimize_q(){
+void ModelLearning::EM_optimize_q(){
 
 	// optimize hyper-parameter q
 	// motif.updateV()
 }
 
-float ModelLearning::EMcalcLogPriors( int K ){
+float ModelLearning::EM_calcLogPriors( int K ){
 
 	int j,y,y2;
 	float lPriors = 0.0f;
@@ -331,7 +333,7 @@ float ModelLearning::EMcalcLogPriors( int K ){
 		// the second and third terms
 		for( y = 0; y < Y_[K+1]; y++ ){
 			// the second term
-			y2 = y % Y_[K];                         // cut off the first nucleotide in (k+1)-mer y
+			y2 = y % Y_[K];                         				// cut off the first nucleotide in (k+1)-mer y
 			if( K == 0 ){
 				lPriors -= lgammaf( alpha_[K][j] * v_bg[K][y] + 1.0f );
 				// the third term
@@ -351,12 +353,12 @@ float ModelLearning::EMcalcLogPriors( int K ){
 	return lPriors;
 }
 
-float ModelLearning::EMcalcLogPosterior( int K ){
+float ModelLearning::EM_calcLogPosterior( int K ){
 
-	return llikelihood_ + EMcalcLogPriors( K );
+	return llikelihood_ + EM_calcLogPriors( K );
 }
 
-float ModelLearning::EMcalcQfunc( int K ){
+float ModelLearning::EM_calcQfunc( int K ){
 
 	int L;
 	float prior_i, prior_0 = 1 - q_;
@@ -379,12 +381,12 @@ float ModelLearning::EMcalcQfunc( int K ){
 	}
 
 	// the priors of Q function
-	Qfunc += EMcalcLogPriors( K );
+	Qfunc += EM_calcLogPriors( K );
 
 	return Qfunc;
 }
 
-float ModelLearning::EMcalcGrad_Qfunc( float alpha ,int K, int W, int A ){
+float ModelLearning::EM_calcGrad_Qfunc( float alpha ,int K, int W, int A ){
 
 	int j, y, y2;
 	float Qfunc_grad = 0.0f;
@@ -468,7 +470,7 @@ void ModelLearning::GibbsSampling(){
 		}
 
 		// sampling z and q
-		CGSsampling_z_q();
+		CGS_sampling_z_q();
 
 		// only for writing out model after each iteration:
 /*		motif_->calculateP();
@@ -488,7 +490,7 @@ void ModelLearning::GibbsSampling(){
 				a[k][j] = ( float )exp( alpha_[k][j] );
 
 				// get gradients w.r.t. stochastic objective at timestep t
-				gradient[k][j] = alpha_[k][j] * CGScalcGrad_logPostAlphas( alpha_[k][j], k, j );
+				gradient[k][j] = alpha_[k][j] * CGS_calcGradLogPostAlphas( alpha_[k][j], k, j );
 
 				// update biased first moment estimate
 				m1_i = beta1 * m1_i + ( 1 - beta1 ) * gradient[k][j];
@@ -536,7 +538,7 @@ void ModelLearning::GibbsSampling(){
 	fprintf( stdout, "\n--- Runtime for Collapsed Gibbs sampling: %.4f seconds ---\n", ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );
 }
 
-void ModelLearning::CGSsampling_z_q(){
+void ModelLearning::CGS_sampling_z_q(){
 
 	int N = ( int )posSeqs_.size();
 	int W = motif_->getW();
@@ -557,7 +559,9 @@ void ModelLearning::CGSsampling_z_q(){
 	for( i = 0; i < N; i++ ){
 		for( j = 0; j < W; j++ ){
 			y = posSeqs_[i]->extractKmer( z_[i]-1+j, std::min( z_[i]-1+j, K ) );
-			n_z_[K][y][j]++;
+			if( y >= 0 ){
+				n_z_[K][y][j]++;
+			}
 		}
 	}
 	// calculate nz for lower order k
@@ -587,14 +591,19 @@ void ModelLearning::CGSsampling_z_q(){
 				if( z_[n] != 0 ){
 					// remove the kmer counts for the current sequence with old z
 					y = posSeqs_[n]->extractKmer( z_[n]-1+j, std::min( z_[n]-1+j, k ) );
-					n_z_[k][y][j]--;
+					if( y >= 0 ){
+						n_z_[k][y][j]--;
+					}
 				}
 				if( n > 0 ){
 					n_prev = n-1;
 					if( z_[n_prev] != 0 ){
 						// add the kmer counts for the previous sequence with updated z
 						y_prev = posSeqs_[n-1]->extractKmer( z_[n_prev]-1+j, std::min( z_[n_prev]-1+j, k ) );
-						n_z_[k][y_prev][j]++;
+						if( y_prev >= 0 ){
+							n_z_[k][y_prev][j]++;
+
+						}
 					}
 				}
 			}
@@ -619,7 +628,10 @@ void ModelLearning::CGSsampling_z_q(){
 			for( j = 0; j < W; j++ ){
 				// extract k-mers on the motif at position i over W of the n'th sequence
 				y = posSeqs_[n]->extractKmer( i-1+j, std::min( i-1+j, K ) );
-				r_[n][i] *= s_[y][j];
+				if( y >= 0 ){
+					r_[n][i] *= s_[y][j];
+
+				}
 			}
 			r_[n][i] *= pos_[n][i];
 			normFactor += r_[n][i];
@@ -661,18 +673,18 @@ void ModelLearning::CGSsampling_z_q(){
 	}
 }
 
-void ModelLearning::CGSupdateAlphas( float eta, int K, int W ){
+void ModelLearning::CGS_updateAlphas( float eta, int K, int W ){
 
 	// update alphas due to the learning rate eta and gradient of the log posterior of alphas
 	for( int k = 0; k < K+1; k++ ){
 		for( int j = 0; j < W; j++ ){
-			alpha_[k][j] -= eta * CGScalcGrad_logPostAlphas( alpha_[k][j], k, j );
+			alpha_[k][j] -= eta * CGS_calcGradLogPostAlphas( alpha_[k][j], k, j );
 		}
 	}
 
 }
 
-float ModelLearning::CGScalcGrad_logPostAlphas( float alpha, int k, int j ){
+float ModelLearning::CGS_calcGradLogPostAlphas( float alpha, int k, int j ){
 
 	// calculate gradient of the log posterior of alphas
 	float gradient_logPostAlphas;
@@ -732,7 +744,7 @@ void ModelLearning::write(){
 	 * (3) posSequenceBasename.CGSalpha:		hyper-parameter alphas
 	 */
 
-	int k, y, j;
+	int k, y, j, i;
 	int W = motif_->getW();
 	int K = Global::modelOrder;
 
@@ -759,7 +771,7 @@ void ModelLearning::write(){
 		std::ofstream ofile_r( opath_r.c_str() );
 		for( size_t n = 0; n < posSeqs_.size(); n++ ){
 			int L = posSeqs_[n]->getL();
-			for( int i = L-1; i > W-2; i-- ){
+			for( i = L; i > W-2; i-- ){
 				ofile_r << std::scientific << r_[n][i] << ' ';
 			}
 			ofile_r << std::endl;
@@ -789,9 +801,9 @@ void ModelLearning::write(){
 		// output (k+1)-mer counts nz[k][y][j]
 		std::string opath_n = opath + ".CGScounts";
 		std::ofstream ofile_n( opath_n.c_str() );
-		for( int j = 0; j < W; j++ ){
-			for( int k = 0; k < K+1; k++ ){
-				for( int y = 0; y < Y_[k+1]; y++ ){
+		for( j = 0; j < W; j++ ){
+			for( k = 0; k < K+1; k++ ){
+				for( y = 0; y < Y_[k+1]; y++ ){
 					ofile_n << std::scientific << n_z_[k][y][j] << ' ';
 				}
 				ofile_n << std::endl;
@@ -803,7 +815,7 @@ void ModelLearning::write(){
 		std::string opath_r = opath + ".CGSposterior";
 		std::ofstream ofile_r( opath_r.c_str() );
 		for( size_t n = 0; n < posSeqs_.size(); n++ ){
-			for( int i = 0; i < posSeqs_[n]->getL()-W+1; i++ ){
+			for( i = 0; i < posSeqs_[n]->getL()-W+2; i++ ){
 				ofile_r << std::scientific << r_[n][i] << ' ';
 			}
 			ofile_r << std::endl;
@@ -812,9 +824,9 @@ void ModelLearning::write(){
 		// output parameter alphas alpha[k][j]
 		std::string opath_alpha = opath + ".CGSalpha";
 		std::ofstream ofile_alpha( opath_alpha.c_str() );
-		for( int k = 0; k < K+1; k++ ){
+		for( k = 0; k < K+1; k++ ){
 			ofile_alpha << "k = " << k << std::endl;
-			for( int j = 0; j < W; j++ ){
+			for( j = 0; j < W; j++ ){
 				ofile_alpha << std::setprecision( 3 ) << alpha_[k][j] << ' ';
 			}
 			ofile_alpha << std::endl;

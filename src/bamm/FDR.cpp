@@ -88,8 +88,12 @@ void FDR::evaluateMotif(){
 													trainsetFolds_ );
 
 		// learn motif from each training set
-		EM* em = new EM( motif, bgModel, trainsetFolds_ );
-		em->learnMotif();
+		ModelLearning model( motif, bgModel, trainsetFolds_ );
+		if( Global::EM ){
+			model.EMlearning();
+		} else if( Global::CGS ){
+			model.GibbsSampling();
+		}
 
 		// score positive test sequences on optimized motif
 		std::vector<std::vector<float>> scores = scoreSequenceSet( motif, bgModel, testSet );
@@ -128,7 +132,7 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 
 	std::vector<std::vector<float>> scores( 2 );			// scores[0]: store the log odds scores at all positions of each sequence
 															// scores[1]: store maximal log odds scores of each sequence
-	int K_motif = Global::modelOrder;
+	int K = Global::modelOrder;
 	int K_bg = Global::bgModelOrder;
 	int W = motif->getW();
 	float maxScore;											// maximal logOddsScore over all positions for each sequence
@@ -140,10 +144,10 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 		for( int i = 0; i < LW1; i++ ){
 			logOdds[i] = 0.0f;
 			for( int j = 0; j < W; j++ ){
-				int y = seqSet[n]->extractKmer( i+j, std::min(i+j, K_motif ) );
+				int y = seqSet[n]->extractKmer( i+j, std::min(i+j, K ) );
 				int y_bg = y % Y_[K_bg+1];
 				if( y >= 0 ){
-					logOdds[i] += ( logf( motif->getV()[K_motif][y][j] ) - logf( bg->getV()[std::min( K_motif, K_bg )][y_bg] ) );
+					logOdds[i] += ( logf( motif->getV()[K][y][j] ) - logf( bg->getV()[std::min( K, K_bg )][y_bg] ) );
 				}
 			}
 
@@ -214,8 +218,8 @@ Sequence* FDR::sampleSequence( int L, float** v ){
 			if( sequence[i] == 0 )	sequence[i] = a;	// Trick: this is to solve the numerical problem
 		}
 	}
-	Sequence* sampleSequence = new Sequence( sequence, L, header, Y_, Global::revcomp );
-	return sampleSequence;
+
+	return new Sequence( sequence, L, header, Y_, Global::revcomp );
 }
 
 void FDR::calculatePR(){
