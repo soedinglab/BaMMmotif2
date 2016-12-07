@@ -21,8 +21,8 @@ private:
 
 	Motif*				motif_;				// motif learned on full SequenceSet
 	std::vector<int>	trainsetFolds_;		// fold indices for training set
-	float**				testsetV_;			// kmer frequencies in the test set
-	int** 				testsetN_;			// kmer counts in the test set
+	float**				testsetV_;			// k-mer frequencies in the test set
+	int** 				testsetN_;			// k-mer counts in the test set
 
 	std::vector<float> 	posScoreAll_;		// store log odds scores over all positions on the sequences
 	std::vector<float> 	posScoreMax_;		// store maximal log odds score from each sequence
@@ -41,9 +41,6 @@ private:
 											// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
 											// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
 
-							// generate background sample sequence set based on the full positive sequence set
-	std::vector<Sequence*>	sampleSequenceSet();
-
 							// generate background sample sequence set based on each test set
 	std::vector<Sequence*>	sampleSequenceSet( std::vector<Sequence*> seqSet );
 
@@ -57,8 +54,7 @@ private:
 	void 		   			calculatePR();
 
 							// calculate trimer conditional probabilities for the test set
-	void					calculateKmerV( std::vector<Sequence*> seqs );
-	void					writeLogOdds();
+	void					calculateKmerV( std::vector<Sequence*> seqSet );
 
 };
 

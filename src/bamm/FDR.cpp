@@ -114,11 +114,6 @@ void FDR::evaluateMotif(){
 		negScoreMax_.insert( std::end( negScoreMax_ ), std::begin( scores[1] ), std::end( scores[1] ) );
 	}
 
-	// write log odds scores into files before sorting
-	if( Global::saveLogOdds ){
-		writeLogOdds();
-	}
-
 	printf( " __________________________________\n"
 			"|                                  |\n"
 			"|  calculate precision and recall  |\n"
@@ -376,50 +371,4 @@ void FDR::write(){
 		ofile_mops_tfp << TFP_mops_[i] << std::endl;
 	}
 
-}
-
-void FDR::writeLogOdds(){
-	/**
-	 * save log odds scores into four files before sorting them
-	 * (1) posSequenceBasename.zoops.posLogOdds
-	 * (2) posSequenceBasename.mops.posLogOdds
-	 * (3) posSequenceBasename.zoops.negLogOdds
-	 * (4) posSequenceBasename.mops.negLogOdds
-	 */
-	//ToDO: it will not work if sequences have different lengths
-	int posN = Global::posSequenceSet->getN();
-	int negN;
-	if( Global::negSeqGiven ){
-		negN = Global::negSequenceSet->getN();
-	} else {
-		negN = posN * Global::mFold;
-	}
-	int LW1 = Global::posSequenceSet->getMaxL()-motif_->getW()+1;
-
-	std::string opath = std::string( Global::outputDirectory ) + '/'
-			+ std::string( Global::posSequenceBasename );
-	std::string opath_zoops_posScore = opath + ".zoops.posLogOdds";
-	std::string opath_mops_posScore = opath + ".mops.posLogOdds";
-	std::string opath_zoops_negScore = opath + ".zoops.negLogOdds";
-	std::string opath_mops_negScore = opath + ".mops.negLogOdds";
-	std::ofstream ofile_zoops_posScore( opath_zoops_posScore );
-	std::ofstream ofile_mops_posScore( opath_mops_posScore );
-	std::ofstream ofile_zoops_negScore( opath_zoops_negScore );
-	std::ofstream ofile_mops_negScore( opath_mops_negScore );
-
-	for( int i = 0; i < posN; i++ ){
-		ofile_zoops_posScore << posScoreMax_[i] << std::endl;
-	}
-
-	for( int i = 0; i < posN * LW1; i++ ){
-		ofile_mops_posScore << posScoreAll_[i] << std::endl;
-	}
-
-	for( int i = 0; i < negN; i++ ){
-		ofile_zoops_negScore << negScoreMax_[i] << std::endl;
-	}
-
-	for( int i = 0; i < negN * LW1; i++ ){
-		ofile_mops_negScore << negScoreAll_[i] << std::endl;
-	}
 }

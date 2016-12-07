@@ -7,12 +7,12 @@ char*               Global::outputDirectory = NULL;			// output directory
 char*               Global::posSequenceFilename = NULL;		// filename of positive sequence FASTA file
 char*				Global::posSequenceBasename = NULL;		// basename of positive sequence FASTA file
 SequenceSet*        Global::posSequenceSet = NULL;			// positive Sequence Set
-std::vector< std::vector<int> >	Global::posFoldIndices;		// sequence indices for positive sequence set
+std::vector<std::vector<int>> Global::posFoldIndices;		// sequence indices for positive sequence set
 
 char*               Global::negSequenceFilename = NULL;		// filename of negative sequence FASTA file
 char*				Global::negSequenceBasename = NULL;		// basename of negative sequence FASTA file
 SequenceSet*        Global::negSequenceSet = NULL;			// negative Sequence Set
-std::vector< std::vector<int> >	Global::negFoldIndices;		// sequence indices for given negative sequence set
+std::vector<std::vector<int>> Global::negFoldIndices;		// sequence indices for given negative sequence set
 bool				Global::negSeqGiven = false;			// a flag for the negative sequence given by users
 // weighting options
 char*               Global::intensityFilename = NULL;		// filename of intensity file (i.e. for HT-SELEX data)
@@ -32,7 +32,7 @@ int        			Global::modelOrder = 2;					// model order
 std::vector<float> 	Global::modelAlpha( modelOrder+1, 1.0f );	// initial alphas
 float				Global::modelBeta = 20.0f;				// alpha_k = beta x gamma^(k-1) for k > 0
 float				Global::modelGamma = 3.0f;
-std::vector<int>    Global::addColumns(2);					// add columns to the left and right of initial model
+std::vector<int>    Global::addColumns( 2 );				// add columns to the left and right of initial model
 bool                Global::interpolate = true;             // calculate prior probabilities from lower-order probabilities
                                                             // instead of background frequencies of mononucleotides
 bool                Global::interpolateBG = true;           // calculate prior probabilities from lower-order probabilities
@@ -43,12 +43,9 @@ std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.0f );	// background m
 
 // EM options
 bool				Global::EM = false;						// flag to trigger EM learning
-unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();  // maximum number of iterations
+int				 	Global::maxEMIterations = std::numeric_limits<int>::max();  // maximum number of iterations
 float               Global::epsilon = 0.001f;				// threshold for likelihood convergence parameter
 bool                Global::noAlphaOptimization = false;	// disable alpha optimization
-int                 Global::alphaIter = 1;					// alpha learning will happen in each alphaIter-th EMiteration
-bool                Global::TESTING = false;                // turn on when you want to have printouts for checking alpha learning
-bool				Global::fixPseudos = false;				// only update v[k_model] for simulating exact EM algorithm
 bool                Global::noQOptimization = false;		// disable q optimization
 
 // CGS (Collapsed Gibbs sampling) options
@@ -61,9 +58,7 @@ bool				Global::noQSampling = false;			// disable q sampling in CGS
 bool                Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
 int        			Global::mFold = 20;						// number of negative sequences as multiple of positive sequences
 int        			Global::cvFold = 5;						// size of cross-validation folds
-int 				Global::sOrder = 2;						// the kmer order for sampling negative sequence set
-bool				Global::saveLogOdds = false;			// a flag for writing log odds scores to disk.
-// further FDR options...
+int 				Global::sOrder = 2;						// the k-mer order for sampling negative sequence set
 
 // printout options
 bool                Global::verbose = false;
@@ -234,9 +229,6 @@ int Global::readArguments( int nargs, char* args[] ){
 		opt >> GetOpt::Option( "maxEMIterations", maxEMIterations );
 		opt >> GetOpt::Option( 'e', "epsilon", epsilon );
 		opt >> GetOpt::OptionPresent( "noAlphaOptimization", noAlphaOptimization );
-		opt >> GetOpt::OptionPresent( "TESTING", TESTING );
-		opt >> GetOpt::Option( "alphaIter", alphaIter );
-	    opt >> GetOpt::OptionPresent( "fixPseudos", fixPseudos );
 		opt >> GetOpt::OptionPresent( "noQOptimization", noQOptimization );
 	}
 
@@ -252,7 +244,6 @@ int Global::readArguments( int nargs, char* args[] ){
 		opt >> GetOpt::Option( 'm', "mFold", mFold  );
 		opt >> GetOpt::Option( 'n', "cvFold", cvFold );
 		opt >> GetOpt::Option( 's', "samplingOrder", sOrder );
-		opt >> GetOpt::Option( "saveLogOdds", saveLogOdds );
 	}
 
 	// printout options
@@ -352,8 +343,6 @@ void Global::printHelp(){
 			"				number of cross-validation folds. The default is 5.\n\n"
 			"			-s, --samplingOrder <INTERGER>\n"
 			"				order of kmer for sampling negative set. The default is 2.\n\n");
-	printf("\n 			--saveLogOdds\n"
-			"				save log odds scores for positive and negative sequence sets.\n\n");
 	printf("\n 		Options for output:	\n");
 	printf("\n 			--verbose \n"
 			"				verbose printouts. Defaults to false.\n\n");

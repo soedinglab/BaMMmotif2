@@ -50,14 +50,14 @@ private:
 	void 					EM_EStep();			// E-step
 	void 					EM_MStep();			// M-step
 	void 					EM_optimizeAlphas( int order, int width );		// optimize alpha hyper-parameters
-	void 					EM_optimize_q();									// optimize hyper-parameter q
+	void 					EM_optimize_q();								// optimize hyper-parameter q
 	float 					EM_calcQfunc( int order );						// calculate incomplete Q-function
 	float 					EM_calcGrad_Qfunc( float alpha, int order, int width, int alphabetsize ); 	// calculate gradient of Q-function
 	float                   EM_calcLogPosterior( int order ); 				// calculate log posterior likelihood
     float                   EM_calcLogPriors( int order ); 					// calculate log prior part of log posterior
 
 	void					CGS_sampling_z_q();								// sample z and q by collapsed Gibbs sampling
-	void					CGS_updateAlphas( float learningrate, int order, int width );		// update alphas for all the orders up to K, given the learning rate
+	void					CGS_updateAlphas( int order, int width );		// update alphas for all the orders up to K, given the learning rate
 	float					CGS_calcGradLogPostAlphas( float alpha, int order, int position );	// calculate the gradient of the log posterior of alphas
 
 	std::vector<int>		Y_;					// contains 1 at position 0

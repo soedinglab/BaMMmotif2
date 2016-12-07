@@ -30,12 +30,12 @@ public:
 	static char*		posSequenceFilename;				// filename of positive sequence FASTA file
 	static char*		posSequenceBasename;				// basename of positive sequence FASTA file
 	static SequenceSet*	posSequenceSet;						// positive Sequence Set
-	static std::vector<std::vector<int>>	posFoldIndices;	// sequence indices for positive sequence set
+	static std::vector<std::vector<int>> posFoldIndices;	// sequence indices for positive sequence set
 
 	static char*		negSequenceFilename;				// filename of negative sequence FASTA file
 	static char*		negSequenceBasename;				// basename of negative sequence FASTA file
 	static SequenceSet*	negSequenceSet;						// negative Sequence Set
-	static std::vector<std::vector<int>>	negFoldIndices;	// sequence indices for given negative sequence set
+	static std::vector<std::vector<int>> negFoldIndices;	// sequence indices for given negative sequence set
 	static bool			negSeqGiven;						// a flag for the negative sequence given by users
 
 	// weighting options
@@ -67,12 +67,9 @@ public:
 
 	// EM options
 	static bool			EM;									// flag to trigger EM learning
-	static unsigned int	maxEMIterations;					// maximum number of iterations for EM
+	static int			maxEMIterations;					// maximum number of iterations for EM
 	static float		epsilon;							// threshold for likelihood convergence parameter
 	static bool			noAlphaOptimization;				// disable alpha optimization
-	static int          alphaIter;                          // how many EM iterations before turning on AlphaLearning
-	static bool         TESTING;                            // used for massive write out during alpha testing
-	static bool			fixPseudos;							// only update v[k_model] for simulating exact EM algorithm
 	static bool			noQOptimization;					// disable q optimization
 
 	// CGS (Collapsed Gibbs sampling) options
@@ -86,8 +83,6 @@ public:
 	static int			mFold;								// number of negative sequences as multiple of positive sequences
 	static int			cvFold;								// number of cross-validation (cv) folds
 	static int 			sOrder;								// the kmer order for sampling negative sequence set
-	static bool			saveLogOdds;						// a flag for writing log odds scores to disk.
-	// further FDR options...
 
 	// other options
 	static bool			verbose;							// verbose printouts, defaults to false
