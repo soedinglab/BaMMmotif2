@@ -42,13 +42,13 @@ private:
 											// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
 
 							// generate background sample sequence set based on each test set
-	std::vector<Sequence*>	sampleSequenceSet( std::vector<Sequence*> seqSet );
+	std::vector<std::unique_ptr<Sequence>>	sampleSequenceSet( std::vector<Sequence*> seqSet );
 
 							// generate negative sequence based on each sequence in the test set
-	Sequence* 				sampleSequence( int length, float** freq );
+	std::unique_ptr<Sequence> sampleSequence( int length, float** freq );
 
 							// score sequences for both positive and negative sets
-	std::vector<std::vector<float>>	scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqSet );
+	std::vector<std::vector<float>>	scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<std::unique_ptr<Sequence>> seqSet );
 
 							// calculate precision and recall for both ZOOPS and MOPS models
 	void 		   			calculatePR();

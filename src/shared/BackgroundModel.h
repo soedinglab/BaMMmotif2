@@ -2,7 +2,6 @@
 #define BACKGROUNDMODEL_H_
 
 #include <fstream>	// e.g. std::ofstream
-#include <iomanip>	// e.g. std::setprecision
 #include <iostream>	// e.g. std::cerr
 #include <limits>	// e.g. std::numeric_limits
 #include <numeric>	// e.g. std::iota

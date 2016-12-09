@@ -368,7 +368,8 @@ void Motif::write( int N ){						// write each motif with a number
 	 * (2) posSequenceBasename.ihbp: 		probabilities of PWM after EM
 	 */
 
-	std::string opath = std::string( Global::outputDirectory )  + "/motif_" + std::to_string( N );
+	std::string opath = std::string( Global::outputDirectory )  + '/'
+			+ Global::posSequenceBasename + "_motif_" + std::to_string( N+1 );
 
 	// output conditional probabilities v[k][y][j] and probabilities prob[k][y][j]
 	std::string opath_v = opath + ".ihbcp"; 	// inhomogeneous bamm conditional probabilities

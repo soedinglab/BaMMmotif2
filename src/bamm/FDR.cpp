@@ -30,11 +30,11 @@ FDR::FDR( Motif* motif ){
 		testsetV_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
 		testsetN_[k] = ( int* )calloc( Y_[k+1], sizeof( int ) );
 	}
-
+/*
 	posScoreAll_.reserve( posN * LW1 );								// store log odds scores over all positions on the sequences
 	posScoreMax_.reserve( posN );									// store maximal log odds score from each sequence
 	negScoreAll_.reserve( negN * LW1 );
-	negScoreMax_.reserve( negN );
+	negScoreMax_.reserve( negN );*/
 
 }
 
@@ -100,18 +100,21 @@ void FDR::evaluateMotif(){
 		posScoreAll_.insert( std::end( posScoreAll_ ), std::begin( scores[0] ), std::end( scores[0] ) );
 		posScoreMax_.insert( std::end( posScoreMax_ ), std::begin( scores[1] ), std::end( scores[1] ) );
 
-		std::vector<Sequence*> negSet;
+		std::vector<std::unique_ptr<Sequence>> negSet;
 		if( !Global::negSeqGiven ){
 			// generate negative sequence set
 			negSet = sampleSequenceSet( testSet );
-		} else {
+		} /*else {
 			for( size_t i = 0; i < Global::negFoldIndices[fold].size(); i++ )
 				negSet.push_back( negSeqs[Global::negFoldIndices[fold][i]] );
-		}
+		}*/
 		// score negative sequence set
 		scores = scoreSequenceSet( motif, bgModel, negSet );
 		negScoreAll_.insert( std::end( negScoreAll_ ), std::begin( scores[0] ), std::end( scores[0] ) );
 		negScoreMax_.insert( std::end( negScoreMax_ ), std::begin( scores[1] ), std::end( scores[1] ) );
+
+		delete motif;
+		delete bgModel;
 	}
 
 	printf( " __________________________________\n"
@@ -123,7 +126,7 @@ void FDR::evaluateMotif(){
 }
 
 // score sequences for both positive and negative sequence sets
-std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqSet ){
+std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<std::unique_ptr<Sequence>> seqSet ){
 
 	std::vector<std::vector<float>> scores( 2 );			// scores[0]: store the log odds scores at all positions of each sequence
 															// scores[1]: store maximal log odds scores of each sequence
@@ -161,9 +164,9 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 }
 
 // generate negative sequences based on each test set
-std::vector<Sequence*> FDR::sampleSequenceSet( std::vector<Sequence*> seqs ){
+std::vector<std::unique_ptr<Sequence>> FDR::sampleSequenceSet( std::vector<Sequence*> seqs ){
 
-	std::vector<Sequence*> sampleSet;
+	std::vector<std::unique_ptr<Sequence>> sampleSet;
 
 	calculateKmerV( seqs );
 
@@ -177,9 +180,11 @@ std::vector<Sequence*> FDR::sampleSequenceSet( std::vector<Sequence*> seqs ){
 }
 
 // generate sample sequence based on trimer conditional probabilities
-Sequence* FDR::sampleSequence( int L, float** v ){
+std::unique_ptr<Sequence> FDR::sampleSequence( int L, float** v ){
 
+	// TODO: this is not the right way to allocate memory!!!
 	uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
+
 	std::string header = "sample sequence";
 
 	// get a random number for the first nucleotide
@@ -214,7 +219,8 @@ Sequence* FDR::sampleSequence( int L, float** v ){
 		}
 	}
 
-	return new Sequence( sequence, L, header, Y_, Global::revcomp );
+	// TODO: this is not the right way to allocate memory!!!
+	return std::unique_ptr<Sequence>( new Sequence( sequence, L, header, Y_, Global::revcomp ) );
 }
 
 void FDR::calculatePR(){
@@ -342,7 +348,7 @@ void FDR::write(){
 	 */
 
 	std::string opath = std::string( Global::outputDirectory ) + '/'
-			+ std::string( Global::posSequenceBasename );
+			+ Global::posSequenceBasename;
 	std::string opath_zoops_p = opath + ".zoops.precision";
 	std::string opath_zoops_r = opath + ".zoops.recall";
 	std::string opath_mops_p = opath + ".mops.precision";

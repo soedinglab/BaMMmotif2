@@ -28,12 +28,12 @@ public:
 	static char*		outputDirectory; 					// output directory
 
 	static char*		posSequenceFilename;				// filename of positive sequence FASTA file
-	static char*		posSequenceBasename;				// basename of positive sequence FASTA file
+	static std::string	posSequenceBasename;				// basename of positive sequence FASTA file
 	static SequenceSet*	posSequenceSet;						// positive Sequence Set
 	static std::vector<std::vector<int>> posFoldIndices;	// sequence indices for positive sequence set
 
 	static char*		negSequenceFilename;				// filename of negative sequence FASTA file
-	static char*		negSequenceBasename;				// basename of negative sequence FASTA file
+	static std::string	negSequenceBasename;				// basename of negative sequence FASTA file
 	static SequenceSet*	negSequenceSet;						// negative Sequence Set
 	static std::vector<std::vector<int>> negFoldIndices;	// sequence indices for given negative sequence set
 	static bool			negSeqGiven;						// a flag for the negative sequence given by users
@@ -49,7 +49,7 @@ public:
 	static char*		bindingSiteFilename;				// filename of binding sites file
 	static char*		PWMFilename;						// filename of PWM file
 	static char*		BaMMFilename;						// filename of Markov model (.bamm) file
-	static char*		initialModelBasename;				// basename of initial model
+	static std::string	initialModelBasename;				// basename of initial model
 
 	// model options
 	static int			modelOrder;							// model order
@@ -82,12 +82,12 @@ public:
 	static bool			FDR;								// triggers False-Discovery-Rate (FDR) estimation
 	static int			mFold;								// number of negative sequences as multiple of positive sequences
 	static int			cvFold;								// number of cross-validation (cv) folds
-	static int 			sOrder;								// the kmer order for sampling negative sequence set
+	static int 			sOrder;								// the k-mer order for sampling negative sequence set
 
 	// other options
 	static bool			verbose;							// verbose printouts, defaults to false
 	static bool         debugMode;                          // verbose printouts for debugging, defaults to false
-	static bool			saveBaMMs;							// Write optimized BaMM(s) to disk.
+	static bool			saveBaMMs;							// write optimized BaMM(s) to disk.
 
 	static void         init( int nargs, char* args[] );
 	static void         destruct();

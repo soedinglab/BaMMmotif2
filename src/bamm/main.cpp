@@ -40,23 +40,21 @@ int main( int nargs, char* args[] ){
 	MotifSet motifs;
 	for( int n = 0; n < motifs.getN(); n++ ){
 		Motif* motif = new Motif( *motifs.getMotifs()[n] );
-		if( Global::EM ){
-			// learn motifs by EM
-			ModelLearning em( motif, bgModel );
-			em.EMlearning();
-			em.write();
-		} else if ( Global::CGS ){
-			// learn motifs by collapsed Gibbs sampling
-			ModelLearning GSampler( motif, bgModel );
-			GSampler.GibbsSampling();
-			GSampler.write();
+		ModelLearning model( motif, bgModel );
+		if( Global::EM ){				// learn motifs by EM
+			model.EMlearning();
+		} else if ( Global::CGS ){		// learn motifs by collapsed Gibbs sampling
+			model.GibbsSampling();
 		} else {
 			std::cout << "Model is not optimized!\n";
+			exit( -1 );
 		}
 		if( Global::saveBaMMs ){
-			// write each optimized motif
-			motif->write( n );
+			model.write();
 		}
+
+		// write out the learned model
+		motif->write( n );
 		delete motif;
 	}
 

@@ -5,6 +5,7 @@
 #include <limits>		// e.g. std::numeric_limits
 #include <numeric>		// e.g. std::numeric
 #include <vector>
+#include <memory>
 
 #include <sys/stat.h>	// e.g. stat
 
@@ -42,8 +43,16 @@
 #define CALL_EM_FN( object, ptrToFunc )( ( object ).*( ptrToFunc ) )
 #endif
 
+#ifndef make_unique
+// note: this implementation does not disable this overload for array types
+template<typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args)
+{
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+#endif
 
-static char*							baseName( const char* filePath );
+static std::string						baseName( const char* filePath );
 // calculate posterior probabilities from log likelihoods
 std::vector<double>						calculatePosteriorProbabilities( std::vector<double> lLikelihoods );
 static void								createDirectory( char* dir );
@@ -54,9 +63,11 @@ static int								ipow( unsigned int base, int exp );
 template <typename T>
 std::vector<size_t> sortIndices( const std::vector<T> &v ); // returns a permutation which rearranges v into ascending order
 
-inline char* baseName( const char* filePath ){
+inline std::string baseName( const char* filePath ){
 
-	int i = 0, start = 0, end = 0;
+	int i = 0;
+	int start = 0;
+	int end = 0;
 
 	while( filePath[++i] != '\0' ){
 		if( filePath[i] == '.' ){
@@ -70,11 +81,15 @@ inline char* baseName( const char* filePath ){
 		start = i + 1;
 	}
 
-	char* baseName = ( char* )malloc( ( end-start+2 ) * sizeof( char ) );
+	char* shortName = new char[end-start+2];
+
 	for( i = start; i <= end; i++ ){
-		baseName[i-start] = filePath[i];
+		shortName[i-start] = filePath[i];
 	}
-	baseName[i-start] = '\0';
+	shortName[i-start] = '\0';
+	std::string baseName( shortName );
+
+	delete shortName;
 
 	return baseName;
 }

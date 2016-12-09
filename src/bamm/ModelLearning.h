@@ -42,7 +42,7 @@ private:
 	float** 				alpha_;	        	// pseudo-count hyper-parameter for order k and motif position j
 	float 					q_ = 0.9f; 			// hyper-parameter q specifies the fraction of sequences containing motif
 
-	float 					llikelihood_ = 0.0f;// log likelihood for each EM iteration
+	float 					llikelihood_ = 0.0f;// log likelihood for each iteration
 	float					Qfunc_ = 0.0f;		// Q function per each EM iteration
 
 	std::vector<Sequence*>	posSeqs_;			// copy positive sequences due to folds
@@ -58,7 +58,10 @@ private:
 
 	void					CGS_sampling_z_q();								// sample z and q by collapsed Gibbs sampling
 	void					CGS_updateAlphas( int order, int width );		// update alphas for all the orders up to K, given the learning rate
-	float					CGS_calcGradLogPostAlphas( float alpha, int order, int position );	// calculate the gradient of the log posterior of alphas
+	float					calcLogPostAlphas( float* alphas, int order );	// calculate the log posterior of alphas
+	float					calcGradLogPostAlphas( float alpha, int order, int position );	// calculate the gradient of the log posterior of alphas
+
+	void					testAlphaUpdate();	// only for testing, will be removed afterwards
 
 	std::vector<int>		Y_;					// contains 1 at position 0
 												// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
