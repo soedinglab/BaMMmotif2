@@ -281,7 +281,7 @@ void FDR::calculatePR(){
 	int idx_max = 0;									// index when the difference between TFP and FP reaches maximum
 	for( int i = 0; i < ( posN + negN ) * LW1; i++ ){
 		if( posScoreAll_[idx_posAll] > negScoreAll_[idx_negAll] ||
-		idx_posAll == 0 || idx_negAll == negN * LW1 ){
+				idx_posAll == 0 || idx_negAll == negN * LW1 -1 ){
 			idx_posAll++;
 		} else {
 			idx_negAll++;
@@ -319,7 +319,7 @@ void FDR::calculatePR(){
 
 	for( int i = 0; i < posN + negN; i++ ){
 		if( posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] ||
-				idx_posMax == 0 || idx_negMax == negN ){
+				idx_posMax == 0 || idx_negMax == negN-1 ){
 			idx_posMax++;
 		} else {
 			idx_negMax++;

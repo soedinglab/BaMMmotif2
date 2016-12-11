@@ -5,12 +5,12 @@
 char*               Global::outputDirectory = NULL;			// output directory
 
 char*               Global::posSequenceFilename = NULL;		// filename of positive sequence FASTA file
-char*			Global::posSequenceBasename = NULL;		// basename of positive sequence FASTA file
+std::string			Global::posSequenceBasename;			// basename of positive sequence FASTA file
 SequenceSet*        Global::posSequenceSet = NULL;			// positive Sequence Set
 std::vector<std::vector<int>> Global::posFoldIndices;		// sequence indices for positive sequence set
 
 char*               Global::negSequenceFilename = NULL;		// filename of negative sequence FASTA file
-char*			Global::negSequenceBasename = NULL;		// basename of negative sequence FASTA file
+std::string			Global::negSequenceBasename;			// basename of negative sequence FASTA file
 SequenceSet*        Global::negSequenceSet = NULL;			// negative Sequence Set
 std::vector<std::vector<int>> Global::negFoldIndices;		// sequence indices for given negative sequence set
 bool				Global::negSeqGiven = false;			// a flag for the negative sequence given by users
@@ -25,7 +25,7 @@ char*               Global::BaMMpatternFilename = NULL;		// filename of BaMMpatt
 char*               Global::bindingSiteFilename = NULL;		// filename of binding sites file
 char*               Global::PWMFilename = NULL;				// filename of PWM file
 char*               Global::BaMMFilename = NULL;			// filename of Markov model (.bamm) file
-char*			Global::initialModelBasename = NULL;	// basename of initial model
+std::string			Global::initialModelBasename;			// basename of initial model
 
 // model options
 int        			Global::modelOrder = 2;					// model order
