@@ -126,7 +126,7 @@ void FDR::evaluateMotif(){
 }
 
 // score sequences for both positive and negative sequence sets
-std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<std::unique_ptr<Sequence>> seqSet ){
+std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundModel* bg, const std::vector<std::unique_ptr<Sequence>> & seqSet ){
 
 	std::vector<std::vector<float>> scores( 2 );			// scores[0]: store the log odds scores at all positions of each sequence
 															// scores[1]: store maximal log odds scores of each sequence
@@ -163,6 +163,43 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 	return scores;
 }
 
+// score sequences for both positive and negative sequence sets
+std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqSet ){
+
+	std::vector<std::vector<float>> scores( 2 );			// scores[0]: store the log odds scores at all positions of each sequence
+															// scores[1]: store maximal log odds scores of each sequence
+	int K = Global::modelOrder;
+	int K_bg = Global::bgModelOrder;
+	int W = motif->getW();
+	float maxScore;											// maximal logOddsScore over all positions for each sequence
+
+	for( size_t n = 0; n < seqSet.size(); n++ ){
+		int LW1 = seqSet[n]->getL() - W + 1;
+		maxScore = -FLT_MAX;
+		std::vector<float> logOdds( LW1 );					// calculate log odds scores for all the positions
+		for( int i = 0; i < LW1; i++ ){
+			logOdds[i] = 0.0f;
+			for( int j = 0; j < W; j++ ){
+				int y = seqSet[n]->extractKmer( i+j, std::min(i+j, K ) );
+				int y_bg = y % Y_[K_bg+1];
+				if( y >= 0 ){
+					logOdds[i] += ( logf( motif->getV()[K][y][j] ) - logf( bg->getV()[std::min( K, K_bg )][y_bg] ) );
+				}
+			}
+
+			// take all the log odds scores for MOPS model:
+			scores[0].push_back( logOdds[i] );
+
+			// take the largest log odds score for ZOOPS model:
+			if( logOdds[i] > maxScore ){
+				maxScore = logOdds[i];
+			}
+		}
+		scores[1].push_back( maxScore );
+
+	}
+	return scores;
+}
 // generate negative sequences based on each test set
 std::vector<std::unique_ptr<Sequence>> FDR::sampleSequenceSet( std::vector<Sequence*> seqs ){
 
@@ -221,6 +258,7 @@ std::unique_ptr<Sequence> FDR::sampleSequence( int L, float** v ){
 
 	// TODO: this is not the right way to allocate memory!!!
 	return std::unique_ptr<Sequence>( new Sequence( sequence, L, header, Y_, Global::revcomp ) );
+	free( sequence );
 }
 
 void FDR::calculatePR(){

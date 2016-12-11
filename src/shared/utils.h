@@ -52,7 +52,7 @@ std::unique_ptr<T> make_unique(Args&&... args)
 }
 #endif
 
-static std::string						baseName( const char* filePath );
+static char*							baseName( const char* filePath );
 // calculate posterior probabilities from log likelihoods
 std::vector<double>						calculatePosteriorProbabilities( std::vector<double> lLikelihoods );
 static void								createDirectory( char* dir );
@@ -63,11 +63,9 @@ static int								ipow( unsigned int base, int exp );
 template <typename T>
 std::vector<size_t> sortIndices( const std::vector<T> &v ); // returns a permutation which rearranges v into ascending order
 
-inline std::string baseName( const char* filePath ){
+inline char* baseName( const char* filePath ){
 
-	int i = 0;
-	int start = 0;
-	int end = 0;
+	int i = 0, start = 0, end = 0;
 
 	while( filePath[++i] != '\0' ){
 		if( filePath[i] == '.' ){
@@ -81,15 +79,11 @@ inline std::string baseName( const char* filePath ){
 		start = i + 1;
 	}
 
-	char* shortName = new char[end-start+2];
-
+	char* baseName = ( char* )malloc( ( end-start+2 ) * sizeof( char ) );
 	for( i = start; i <= end; i++ ){
-		shortName[i-start] = filePath[i];
+		baseName[i-start] = filePath[i];
 	}
-	shortName[i-start] = '\0';
-	std::string baseName( shortName );
-
-	delete shortName;
+	baseName[i-start] = '\0';
 
 	return baseName;
 }

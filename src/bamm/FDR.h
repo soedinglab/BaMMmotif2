@@ -48,7 +48,10 @@ private:
 	std::unique_ptr<Sequence> sampleSequence( int length, float** freq );
 
 							// score sequences for both positive and negative sets
-	std::vector<std::vector<float>>	scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<std::unique_ptr<Sequence>> seqSet );
+	std::vector<std::vector<float>>	scoreSequenceSet( Motif* motif, BackgroundModel* bg, const std::vector<std::unique_ptr<Sequence>> & seqSet );
+
+							// score sequences for both positive and negative sets
+	std::vector<std::vector<float>>	scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqSet );
 
 							// calculate precision and recall for both ZOOPS and MOPS models
 	void 		   			calculatePR();
