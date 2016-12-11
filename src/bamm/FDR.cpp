@@ -219,9 +219,7 @@ std::vector<std::unique_ptr<Sequence>> FDR::sampleSequenceSet( std::vector<Seque
 // generate sample sequence based on trimer conditional probabilities
 std::unique_ptr<Sequence> FDR::sampleSequence( int L, float** v ){
 
-	// TODO: this is not the right way to allocate memory!!!
 	uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
-
 	std::string header = "sample sequence";
 
 	// get a random number for the first nucleotide
@@ -255,10 +253,10 @@ std::unique_ptr<Sequence> FDR::sampleSequence( int L, float** v ){
 			if( sequence[i] == 0 )	sequence[i] = a;	// Trick: this is to solve the numerical problem
 		}
 	}
-
-	// TODO: this is not the right way to allocate memory!!!
-	return std::unique_ptr<Sequence>( new Sequence( sequence, L, header, Y_, Global::revcomp ) );
+	std::unique_ptr<Sequence> seq( new Sequence( sequence, L, header, Y_, Global::revcomp ) );
 	free( sequence );
+	return seq;
+
 }
 
 void FDR::calculatePR(){
@@ -277,7 +275,8 @@ void FDR::calculatePR(){
 	std::sort( posScoreAll_.begin(), posScoreAll_.end(), std::greater<float>() );
 	std::sort( negScoreAll_.begin(), negScoreAll_.end(), std::greater<float>() );
 	// Rank and score these log odds score values
-	int idx_posAll = 0, idx_negAll = 0;					// index for arrays storing the complete log odds scores
+	int idx_posAll = 0;
+	int idx_negAll = 0;									// index for arrays storing the complete log odds scores
 	float max_diff = 0.0f;								// maximal difference between TFP and FP
 	int idx_max = 0;									// index when the difference between TFP and FP reaches maximum
 	for( int i = 0; i < ( posN + negN ) * LW1; i++ ){
@@ -315,7 +314,8 @@ void FDR::calculatePR(){
 	std::sort( negScoreMax_.begin(), negScoreMax_.end(), std::greater<float>() );
 
 	// Rank and score these log odds score values
-	int idx_posMax = 0, idx_negMax = 0;					// index for arrays storing the max log odds scores
+	int idx_posMax = 0;
+	int idx_negMax = 0;									// index for arrays storing the max log odds scores
 
 	for( int i = 0; i < posN + negN; i++ ){
 		if( posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] ||

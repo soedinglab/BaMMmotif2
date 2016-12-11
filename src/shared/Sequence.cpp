@@ -6,7 +6,7 @@ Sequence::Sequence( uint8_t* sequence, int L, std::string header, std::vector<in
 		L_ = 2 * L + 1;
 		sequence_ = ( uint8_t* )calloc( L_, sizeof( uint8_t ) );
 		appendRevComp( sequence, L );
-	} else{
+	} else {
 		L_ = L;
 		sequence_ = ( uint8_t* )calloc( L_, sizeof( uint8_t ) );
 		std::memcpy( sequence_, sequence, L_ );
