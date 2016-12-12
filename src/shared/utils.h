@@ -80,7 +80,7 @@ inline std::string baseName( const char* filePath ){
 	}
 
 	std::string basename( filePath, start, end-start+1 );
-	std::cout << basename <<'\0';
+
 	return basename;
 }
 
