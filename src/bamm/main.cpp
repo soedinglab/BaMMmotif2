@@ -5,14 +5,13 @@
 #include "../shared/BackgroundModel.h"
 #include "../shared/utils.h"
 #include "MotifSet.h"
-#include "EM.h"
-#include "CGS.h"
+#include "ModelLearning.h"
+
 #include "FDR.h"
 
 int main( int nargs, char* args[] ){
 
 	clock_t t0 = clock();
-
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "======================================\n" );
 	fprintf( stderr, "=      Welcome to use BaMMmotif      =\n" );
@@ -23,11 +22,6 @@ int main( int nargs, char* args[] ){
 
 	// initialization
 	Global::init( nargs, args );
-
-    if( Global::debugMode ){
-      Global::debug();
-      Alphabet::debug();
-    }
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "************************\n" );
@@ -43,37 +37,24 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*   Initial Motif   *\n" );
 	fprintf( stderr, "*********************\n" );
 	MotifSet motifs;
+	for( int n = 0; n < motifs.getN(); n++ ){
+		Motif* motif = new Motif( *motifs.getMotifs()[n] );
+		ModelLearning model( motif, bgModel );
+		if( Global::EM ){				// learn motifs by EM
+			model.EMlearning();
+		} else if ( Global::CGS ){		// learn motifs by collapsed Gibbs sampling
+//			model.GibbsSampling();
+		} else {
+			std::cout << "Model is not optimized!\n";
+			exit( -1 );
+		}
+		if( Global::saveBaMMs ){
+			model.write();
+		}
 
-	if( Global::EM ){
-		// learn motifs by EM
-		fprintf( stderr, "\n" );
-		fprintf( stderr, "*************************\n" );
-		fprintf( stderr, "*   Learn Motif by EM   *\n" );
-		fprintf( stderr, "*************************\n" );
-		for( int N = 0; N < motifs.getN(); N++ ){
-			Motif* motif = new Motif( *motifs.getMotifs()[N] );
-			EM em( motif, bgModel );
-			em.learnMotif();
-			em.write();
-			// write each optimized motif
-			motif->write( N );
-			delete motif;
-		}
-	} else if( Global::CGS ){
-		// learn motifs by CGS
-		fprintf( stderr, "\n" );
-		fprintf( stderr, "***********************************************\n" );
-		fprintf( stderr, "*   Learn Motif by Collapsed Gibbs Sampling   *\n" );
-		fprintf( stderr, "***********************************************\n" );
-		for( int N = 0; N < motifs.getN(); N++ ){
-			Motif* motif = new Motif( *motifs.getMotifs()[N] );
-			CGS GSampler( motif, bgModel );
-			GSampler.GibbsSampling();
-			GSampler.write();
-			// write each optimized motif
-			motif->write( N );
-			delete motif;
-		}
+		// write out the learned model
+		motif->write( n );
+		delete motif;
 	}
 
 	// evaluate motifs

@@ -7,7 +7,8 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 		                          std::vector< std::vector<int> > foldIndices,
 		                          std::vector<int> folds ){
 
-	name_.assign( baseName( sequenceSet.getSequenceFilepath().c_str() ) );
+	//name_.assign( baseName( sequenceSet.getSequenceFilepath().c_str() ) );
+	name_ = baseName( sequenceSet.getSequenceFilepath().c_str() );
 
 	// calculate the maximum possible order
 	int l = static_cast<int>( floorf(

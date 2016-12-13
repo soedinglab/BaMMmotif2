@@ -5,6 +5,7 @@
 #include <limits>		// e.g. std::numeric_limits
 #include <numeric>		// e.g. std::numeric
 #include <vector>
+#include <memory>
 
 #include <sys/stat.h>	// e.g. stat
 
@@ -42,8 +43,16 @@
 #define CALL_EM_FN( object, ptrToFunc )( ( object ).*( ptrToFunc ) )
 #endif
 
+#ifndef make_unique
+// note: this implementation does not disable this overload for array types
+template<typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args)
+{
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+#endif
 
-static char*							baseName( const char* filePath );
+static std::string						baseName( const char* filePath );
 // calculate posterior probabilities from log likelihoods
 std::vector<double>						calculatePosteriorProbabilities( std::vector<double> lLikelihoods );
 static void								createDirectory( char* dir );
@@ -54,7 +63,7 @@ static int								ipow( unsigned int base, int exp );
 template <typename T>
 std::vector<size_t> sortIndices( const std::vector<T> &v ); // returns a permutation which rearranges v into ascending order
 
-inline char* baseName( const char* filePath ){
+inline std::string baseName( const char* filePath ){
 
 	int i = 0, start = 0, end = 0;
 
@@ -70,13 +79,9 @@ inline char* baseName( const char* filePath ){
 		start = i + 1;
 	}
 
-	char* baseName = ( char* )malloc( ( end-start+2 ) * sizeof( char ) );
-	for( i = start; i <= end; i++ ){
-		baseName[i-start] = filePath[i];
-	}
-	baseName[i-start] = '\0';
+	std::string basename( filePath, start, end-start+1 );
 
-	return baseName;
+	return basename;
 }
 
 inline std::vector<double> calculatePosteriorProbabilities( std::vector<double> lLikelihoods ){
@@ -379,4 +384,88 @@ inline float digammaf( float x ){
 		return result;
 	}
 }
+/*
+
+inline double ddigammaf( double x ){
+	 force into the interval 1..3
+	if( x < 0.0f )
+		return ddigammaf(1.0-x)+M_PIf/tan(M_PIf*(1.0-x)) ;	 reflection formula
+	else if( x < 1.0 )
+		return ddigammaf(1.0+x)-1.0/x ;
+	else if ( x == 1.0)
+		return -M_GAMMAf ;
+	else if ( x == 2.0)
+		return 1.0-M_GAMMAf ;
+	else if ( x == 3.0)
+		return 1.5-M_GAMMAf ;
+	else if ( x > 3.0)
+		 duplication formula
+		return 0.5f*(ddigammaf(x/2.0)+ddigammaf((x+1.0)/2.0))+M_LN2f ;
+	else
+	{
+		 Just for your information, the following lines contain
+		* the Maple source code to re-generate the table that is
+		* eventually becoming the Kncoe[] array below
+		* interface(prettyprint=0) :
+		* Digits := 63 :
+		* r := 0 :
+		*
+		* for l from 1 to 60 do
+		* 	d := binomial(-1/2,l) :
+		* 	r := r+d*(-1)^l*(Zeta(2*l+1) -1) ;
+		* 	evalf(r) ;
+		* 	print(%,evalf(1+Psi(1)-r)) ;
+		*o d :
+		*
+		* for N from 1 to 28 do
+		* 	r := 0 :
+		* 	n := N-1 :
+		*
+ 		*	for l from iquo(n+3,2) to 70 do
+		*		d := 0 :
+ 		*		for s from 0 to n+1 do
+ 		*		 d := d+(-1)^s*binomial(n+1,s)*binomial((s-1)/2,l) :
+ 		*		od :
+ 		*		if 2*l-n > 1 then
+ 		*		r := r+d*(-1)^l*(Zeta(2*l-n) -1) :
+ 		*		fi :
+ 		*	od :
+ 		*	print(evalf((-1)^n*2*r)) ;
+ 		*od :
+ 		*quit :
+
+		static double Kncoe[] = {
+		.30459198f,
+		.72037977f,		-.12454959f,
+		.27769457e-1f, 	-.67762371e-2f,
+		.17238755e-2f, 	-.44817699e-3f,
+		.11793660e-3f, 	-.31253894e-4f,
+		.83173997e-5f, 	-.22191427e-5f,
+		.59302266e-6f, 	-.15863051e-6f,
+		.42459203e-7f, 	-.11369129e-7f,
+		.30450221e-8f, 	-.81568455e-9f,
+		.21852324e-9f, 	-.58546491e-10f,
+		.15686348e-10f, -.42029496e-11f,
+		.11261435e-11f, -.30174353e-12f,
+		.80850955e-13f, -.21663779e-13f,
+		.58047634e-14f, -.15553767e-14f,
+		.41676108e-15f,	-.11167065e-15f } ;
+
+		register double Tn_1 = 1.0f ;	 T_{n-1}(x), started at n=1
+		register double Tn = x-2.0f ;	 T_{n}(x) , started at n=1
+		register double result = Kncoe[0] + Kncoe[1]*Tn ;
+
+		x -= 2.0f;
+
+		for( size_t n = 2; n < sizeof( Kncoe ) / sizeof( double ); n++ ){
+			const double Tn1 = 2.0f * x * Tn - Tn_1;	 Chebyshev recursion, Eq. 22.7.4 Abramowitz-Stegun
+			result += Kncoe[n] * Tn1;
+			Tn_1 = Tn;
+			Tn = Tn1;
+		}
+		return result;
+	}
+}
+*/
+
 #endif /* UTILS_H_ */
