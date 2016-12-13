@@ -105,6 +105,7 @@ int main( int nargs, char* args[] ){
 			( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC, ( ( float )( clock() - t0 ) ) / ( CLOCKS_PER_SEC * 60.0f ) );
 
 
+
 	// free memory
 	if( bgModel ) delete bgModel;
 	Global::destruct();
