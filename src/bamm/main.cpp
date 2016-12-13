@@ -6,6 +6,7 @@
 #include "../shared/utils.h"
 #include "MotifSet.h"
 #include "ModelLearning.h"
+#include "ScoreSeqSet.h"
 
 #include "FDR.h"
 
@@ -54,6 +55,12 @@ int main( int nargs, char* args[] ){
 
 		// write out the learned model
 		motif->write( n );
+
+		// score the model on sequence set
+		ScoreSeqSet seqset( motif, bgModel, Global::posSequenceSet->getSequences() );
+		seqset.score();
+		seqset.write();
+
 		delete motif;
 	}
 
@@ -103,8 +110,6 @@ int main( int nargs, char* args[] ){
 
 	fprintf( stdout, "\n-------------- Runtime: %.2f seconds (%0.2f minutes) --------------\n",
 			( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC, ( ( float )( clock() - t0 ) ) / ( CLOCKS_PER_SEC * 60.0f ) );
-
-
 
 	// free memory
 	if( bgModel ) delete bgModel;
