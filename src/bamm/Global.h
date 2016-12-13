@@ -69,7 +69,6 @@ public:
 	static bool			EM;									// flag to trigger EM learning
 	static int			maxEMIterations;					// maximum number of iterations for EM
 	static float		epsilon;							// threshold for likelihood convergence parameter
-	static bool			noAlphaOptimization;				// disable alpha optimization
 	static bool			noQOptimization;					// disable q optimization
 
 	// CGS (Collapsed Gibbs sampling) options

@@ -45,7 +45,6 @@ std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.0f );	// background m
 bool				Global::EM = false;						// flag to trigger EM learning
 int				 	Global::maxEMIterations = std::numeric_limits<int>::max();  // maximum number of iterations
 float               Global::epsilon = 0.001f;				// threshold for likelihood convergence parameter
-bool                Global::noAlphaOptimization = false;	// disable alpha optimization
 bool                Global::noQOptimization = false;		// disable q optimization
 
 // CGS (Collapsed Gibbs sampling) options
@@ -228,7 +227,6 @@ int Global::readArguments( int nargs, char* args[] ){
 	if( opt >> GetOpt::OptionPresent( "EM", EM ) ){
 		opt >> GetOpt::Option( "maxEMIterations", maxEMIterations );
 		opt >> GetOpt::Option( 'e', "epsilon", epsilon );
-		opt >> GetOpt::OptionPresent( "noAlphaOptimization", noAlphaOptimization );
 		opt >> GetOpt::OptionPresent( "noQOptimization", noQOptimization );
 	}
 
