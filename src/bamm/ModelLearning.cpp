@@ -209,6 +209,7 @@ void ModelLearning::EM_EStep(){
 
 	// calculate responsibilities r_[n][i] at position i in sequence n
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){				// n runs over all sequences
+
 		int L = posSeqs_[n]->getL();
 		int LW1 = L - W + 1;
 		int LW2 = L - W + 2;
@@ -223,7 +224,9 @@ void ModelLearning::EM_EStep(){
 
 		// when p(z_n > 0)
 		for( int ij = 0; ij < L; ij++ ){						// ij = i+j runs over all positions in sequence
+
 			int y = posSeqs_[n]->extractKmer( ij, std::min( ij, K ) );			// extract (k+1)-mer y from positions (i-k,...,i)
+
 			for( int j = std::max( 0, ij-L+W ); j < std::min( W, ij+1 ); j++ ){	// j runs over all motif positions
 				if( y != -1 ){									// skip 'N' and other unknown alphabets
 					r_[n][L-W+1-ij+j] *= s_[y][j];
@@ -811,10 +814,10 @@ void ModelLearning::write(){
 		float cutoff = 0.3f;									// threshold for having a motif on the sequence in term of responsibilities
 		for( size_t n = 0; n < posSeqs_.size(); n++ ){
 			int LW1 = posSeqs_[n]->getL() - W + 1;
-			ofile_r << std::scientific << r_[n][0] << ' ';		// print out the responsibility of not having a motif on the sequence
+			ofile_r << std::scientific << std::setprecision( 2 ) << r_[n][0] << ' ';	// print out the responsibility of not having a motif on the sequence
 			ofile_pos << n+1 << '\t';							// print out the sequence number
 			for( i = LW1; i > 0; i-- ){
-				ofile_r << std::scientific << r_[n][i] << ' ';
+				ofile_r << std::setprecision( 2 ) << r_[n][i] << ' ';
 				if( r_[n][i] >= cutoff ){
 					ofile_pos << LW1-i << '\t';
 				}
