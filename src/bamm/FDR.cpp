@@ -96,6 +96,9 @@ void FDR::evaluateMotif(){
 		}
 
 		// score positive test sequences on optimized motif
+		ScoreSeqSet ScoreTestset( motif, bgModel, testSet );
+		float** testSetScores = ScoreTestset.score();
+
 		std::vector<std::vector<float>> scores = scoreSequenceSet( motif, bgModel, testSet );
 		posScoreAll_.insert( std::end( posScoreAll_ ), std::begin( scores[0] ), std::end( scores[0] ) );
 		posScoreMax_.insert( std::end( posScoreMax_ ), std::begin( scores[1] ), std::end( scores[1] ) );

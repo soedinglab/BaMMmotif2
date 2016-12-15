@@ -5,6 +5,7 @@
 #include "../shared/utils.h"
 #include "Motif.h"
 #include "ModelLearning.h"
+#include "ScoreSeqSet.h"
 
 class FDR {
 

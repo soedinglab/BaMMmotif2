@@ -29,14 +29,29 @@
 #define M_PIf 3.14159265f
 #endif
 
+#ifndef M_PId
+/** The constant Pi for double */
+#define M_PId 3.14159265358979363
+#endif
+
 #ifndef M_GAMMAf
 /** Euler's constant for float */
 #define M_GAMMAf 0.57721566f
 #endif
 
+#ifndef M_GAMMAd
+/** Euler's constant for double */
+#define M_GAMMAd 0.5772156649015328
+#endif
+
 #ifndef M_LN2f
 /** the natural logarithm of 2 for float */
 #define M_LN2f 0.69314718f
+#endif
+
+#ifndef M_LN2d
+/** the natural logarithm of 2 for double */
+#define M_LN2d 0.693147180559945309
 #endif
 
 #ifndef CALL_EM_FN
@@ -384,26 +399,26 @@ inline float digammaf( float x ){
 		return result;
 	}
 }
-/*
 
-inline double ddigammaf( double x ){
-	 force into the interval 1..3
-	if( x < 0.0f )
-		return ddigammaf(1.0-x)+M_PIf/tan(M_PIf*(1.0-x)) ;	 reflection formula
+inline double digamma(double x)
+{
+	/* force into the interval 1..3 */
+	if( x < 0.0 )
+		return digamma(1.0-x)+M_PId/tan(M_PId*(1.0-x)) ;	/* reflection formula */
 	else if( x < 1.0 )
-		return ddigammaf(1.0+x)-1.0/x ;
+		return digamma(1.0+x)-1.0/x ;
 	else if ( x == 1.0)
-		return -M_GAMMAf ;
+		return -M_GAMMAd ;
 	else if ( x == 2.0)
-		return 1.0-M_GAMMAf ;
+		return 1.0-M_GAMMAd ;
 	else if ( x == 3.0)
-		return 1.5-M_GAMMAf ;
+		return 1.5-M_GAMMAd ;
 	else if ( x > 3.0)
-		 duplication formula
-		return 0.5f*(ddigammaf(x/2.0)+ddigammaf((x+1.0)/2.0))+M_LN2f ;
+		/* duplication formula */
+		return 0.5*(digamma(x/2.0)+digamma((x+1.0)/2.0))+M_LN2d ;
 	else
 	{
-		 Just for your information, the following lines contain
+		/* Just for your information, the following lines contain
 		* the Maple source code to re-generate the table that is
 		* eventually becoming the Kncoe[] array below
 		* interface(prettyprint=0) :
@@ -433,39 +448,39 @@ inline double ddigammaf( double x ){
  		*	print(evalf((-1)^n*2*r)) ;
  		*od :
  		*quit :
-
+		*/
 		static double Kncoe[] = {
-		.30459198f,
-		.72037977f,		-.12454959f,
-		.27769457e-1f, 	-.67762371e-2f,
-		.17238755e-2f, 	-.44817699e-3f,
-		.11793660e-3f, 	-.31253894e-4f,
-		.83173997e-5f, 	-.22191427e-5f,
-		.59302266e-6f, 	-.15863051e-6f,
-		.42459203e-7f, 	-.11369129e-7f,
-		.30450221e-8f, 	-.81568455e-9f,
-		.21852324e-9f, 	-.58546491e-10f,
-		.15686348e-10f, -.42029496e-11f,
-		.11261435e-11f, -.30174353e-12f,
-		.80850955e-13f, -.21663779e-13f,
-		.58047634e-14f, -.15553767e-14f,
-		.41676108e-15f,	-.11167065e-15f } ;
+				.30459198558715155634315638246624251,
+				.72037977439182833573548891941219706, -.12454959243861367729528855995001087,
+				.27769457331927827002810119567456810e-1, -.67762371439822456447373550186163070e-2,
+				.17238755142247705209823876688592170e-2, -.44817699064252933515310345718960928e-3,
+				.11793660000155572716272710617753373e-3, -.31253894280980134452125172274246963e-4,
+				.83173997012173283398932708991137488e-5, -.22191427643780045431149221890172210e-5,
+				.59302266729329346291029599913617915e-6, -.15863051191470655433559920279603632e-6,
+				.42459203983193603241777510648681429e-7, -.11369129616951114238848106591780146e-7,
+				.304502217295931698401459168423403510e-8, -.81568455080753152802915013641723686e-9,
+				.21852324749975455125936715817306383e-9, -.58546491441689515680751900276454407e-10,
+				.15686348450871204869813586459513648e-10, -.42029496273143231373796179302482033e-11,
+				.11261435719264907097227520956710754e-11, -.30174353636860279765375177200637590e-12,
+				.80850955256389526647406571868193768e-13, -.21663779809421233144009565199997351e-13,
+				.58047634271339391495076374966835526e-14, -.15553767189204733561108869588173845e-14,
+				.41676108598040807753707828039353330e-15, -.11167065064221317094734023242188463e-15 } ;
 
-		register double Tn_1 = 1.0f ;	 T_{n-1}(x), started at n=1
-		register double Tn = x-2.0f ;	 T_{n}(x) , started at n=1
-		register double result = Kncoe[0] + Kncoe[1]*Tn ;
+		register double Tn_1 = 1.0 ;	/* T_{n-1}(x), started at n=1 */
+		register double Tn = x-2.0 ;	/* T_{n}(x) , started at n=1 */
+		register double resul = Kncoe[0] + Kncoe[1]*Tn ;
 
-		x -= 2.0f;
+		x -= 2.0 ;
 
-		for( size_t n = 2; n < sizeof( Kncoe ) / sizeof( double ); n++ ){
-			const double Tn1 = 2.0f * x * Tn - Tn_1;	 Chebyshev recursion, Eq. 22.7.4 Abramowitz-Stegun
-			result += Kncoe[n] * Tn1;
-			Tn_1 = Tn;
-			Tn = Tn1;
+		for(size_t n = 2 ; n < sizeof(Kncoe)/sizeof(double) ;n++)
+		{
+			const double Tn1 = 2.0 * x * Tn - Tn_1 ;	/* Chebyshev recursion, Eq. 22.7.4 Abramowitz-Stegun */
+			resul += Kncoe[n]*Tn1 ;
+			Tn_1 = Tn ;
+			Tn = Tn1 ;
 		}
-		return result;
+		return resul ;
 	}
 }
-*/
 
 #endif /* UTILS_H_ */

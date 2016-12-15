@@ -652,37 +652,37 @@ double ModelLearning::calcLogPostAlphas( double** alpha, int k ){
 		// the third term of equation 46
 		logPosterior += ( double )ipow( Y_[1], k ) * lgamma( alpha[k][j] );
 
-		std::cout << logPosterior << std::endl;
-
 		// the forth term of equation 46
 		for( y = 0; y < Y_[k+1]; y++ ){
 			y2 = y % Y_[k];
 			if( k == 0 ){
 				// the first part
-//				logPosterior += lgamma( ( double )n_z_[k][y][j] + alpha[k][j] * v_bg[k][y] );
+				logPosterior += lgamma( ( double )n_z_[k][y][j] + alpha[k][j] * v_bg[k][y] );
 
 				// the second part
-//				logPosterior -= lgamma( alpha[k][j] * v_bg[k][y] );
+				logPosterior -= lgamma( alpha[k][j] * v_bg[k][y] );
 
 				// the third part
 				float* sumN = ( float* )calloc( W, sizeof( float ) );
-				for( j = 0; j < W; j++ ){
+				for( int jj = 0; jj < W; jj++ ){
 					for( y = 0; y < Y_[1]; y++ ){
-						sumN[j] += ( float )n_z_[0][y][j];
+						sumN[jj] += ( float )n_z_[0][y][jj];
 					}
 				}
-//				logPosterior -= lgamma( sumN[j] + alpha[k][j] );
+
+				logPosterior -= lgamma( sumN[j] + alpha[k][j] );
+
 				free( sumN );
 
 			} else {
 				// the first part
-//				logPosterior += lgamma( ( double )n_z_[k][y][j] + alpha[k][j] * v[k-1][y2][j] );
+				logPosterior += lgamma( ( double )n_z_[k][y][j] + alpha[k][j] * v[k-1][y2][j] );
 
 				// the second part
-//				logPosterior -= lgamma( alpha[k][j] * v[k-1][y2][j] );
+				logPosterior -= lgamma( alpha[k][j] * v[k-1][y2][j] );
 
 				// the third part
-//				logPosterior -= lgamma( ( double )n_z_[k][y][j-1] + alpha[k][j] );
+				logPosterior -= lgamma( ( double )n_z_[k][y][j-1] + alpha[k][j] );
 
 			}
 
@@ -728,33 +728,33 @@ double ModelLearning::calcGradLogPostAlphas( double** alpha, int k, int j ){
 */
 
 	// the third term of equation 47
-	gradient += ( double )ipow( Y_[1], k ) * digammaf( alpha[k][j] );
+	gradient += ( double )ipow( Y_[1], k ) * digamma( alpha[k][j] );
 
 	// the forth term of equation 47
 	for( y = 0; y < Y_[k+1]; y++ ){
 		y2 = y % Y_[k];
 		if( k == 0 ){
 			// the first part
-//			gradient += v_bg[k][y] * digammaf( ( double )n_z_[k][y][j] + alpha[k][j] * v_bg[k][y] );
+			gradient += v_bg[k][y] * digamma( ( double )n_z_[k][y][j] + alpha[k][j] * v_bg[k][y] );
 
 			// the second part
-//			gradient -= v_bg[k][y] * digammaf( alpha[k][j] * v_bg[k][y] );
+			gradient -= v_bg[k][y] * digamma( alpha[k][j] * v_bg[k][y] );
 
 			// the third part
 			int sumC = 0;
 			for( y = 0; y < Y_[1]; y++ ){
 				sumC += n_z_[0][y][j];
 			}
-//			gradient -= digammaf( ( double )sumC + alpha[k][j] );
+			gradient -= digamma( ( double )sumC + alpha[k][j] );
 		} else {
 			// the first part
-//			gradient += v[k-1][y2][j] * digammaf( ( double )n_z_[k][y][j] + alpha[k][j] * v[k-1][y2][j] );
+			gradient += v[k-1][y2][j] * digamma( ( double )n_z_[k][y][j] + alpha[k][j] * v[k-1][y2][j] );
 
 			// the second part
-//			gradient -= digammaf( alpha[k][j] * v[k-1][y2][j] );
+			gradient -= v[k-1][y2][j] * digamma( alpha[k][j] * v[k-1][y2][j] );
 
 			// the third part
-//			gradient -= digammaf( ( double )n_z_[k][y][j-1] + alpha[k][j] );
+			gradient -= digamma( ( double )n_z_[k][y][j-1] + alpha[k][j] );
 
 
 		}
@@ -856,7 +856,7 @@ void ModelLearning::write(){
 		std::ofstream ofile_r( opath_r.c_str() );
 		for( size_t n = 0; n < posSeqs_.size(); n++ ){
 			for( i = 0; i < posSeqs_[n]->getL()-W+2; i++ ){
-				ofile_r << std::scientific << r_[n][i] << ' ';
+				ofile_r << std::scientific << std::setprecision( 2 ) << r_[n][i] << ' ';
 			}
 			ofile_r << std::endl;
 		}

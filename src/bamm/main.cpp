@@ -44,7 +44,7 @@ int main( int nargs, char* args[] ){
 		if( Global::EM ){				// learn motifs by EM
 			model.EMlearning();
 		} else if ( Global::CGS ){		// learn motifs by collapsed Gibbs sampling
-//			model.GibbsSampling();
+			model.GibbsSampling();
 		} else {
 			std::cout << "Model is not optimized!\n";
 			exit( -1 );
