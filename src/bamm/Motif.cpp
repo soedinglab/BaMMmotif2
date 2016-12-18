@@ -385,8 +385,8 @@ void Motif::write( int N ){						// write each motif with a number
 	for( j = 0; j < W_; j++ ){
 		for( k = 0; k < Global::modelOrder+1; k++ ){
 			for( y = 0; y < Y[k+1]; y++ ){
-				ofile_v << std::scientific << std::setprecision(8) << v_[k][y][j] << ' ';
-				ofile_p << std::scientific << std::setprecision(8) << p_[k][y][j] << ' ';
+				ofile_v << std::scientific << std::setprecision(3) << v_[k][y][j] << ' ';
+				ofile_p << std::scientific << std::setprecision(3) << p_[k][y][j] << ' ';
 			}
 			ofile_v << std::endl;
 			ofile_p << std::endl;

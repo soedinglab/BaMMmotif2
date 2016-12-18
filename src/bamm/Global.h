@@ -86,7 +86,8 @@ public:
 	// other options
 	static bool			verbose;							// verbose printouts, defaults to false
 	static bool         debugMode;                          // verbose printouts for debugging, defaults to false
-	static bool			saveBaMMs;							// write optimized BaMM(s) to disk.
+	static bool			saveBaMMs;							// write optimized BaMM(s) to disk
+	static bool			saveLogOdds;						// write the log odds of positive and negative sets to disk
 
 	static void         init( int nargs, char* args[] );
 	static void         destruct();

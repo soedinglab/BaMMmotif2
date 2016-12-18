@@ -18,24 +18,22 @@ ScoreSeqSet::ScoreSeqSet( Motif* motif, BackgroundModel* bg, std::vector<Sequenc
 	seqSet_ = seqSet;
 
 	// allocate memory for scores_[n][i]
-	scores_ = ( float** )calloc( seqSet_.size(), sizeof( float* ) );
+	scores_.resize( seqSet_.size() );
 	for( size_t n = 0; n < seqSet_.size(); n++ ){
 		int LW1 = seqSet_[n]->getL() - motif_->getW() + 1;
-		scores_[n] = ( float* )calloc( LW1, sizeof( float ) );
+		scores_[n].resize( LW1 );
+		for( int i = 0; i < LW1; i++ ){
+			scores_[n][i] = 0.0f;
+		}
 	}
 }
 
 ScoreSeqSet::~ScoreSeqSet(){
 
-	for( size_t n = 0; n < seqSet_.size(); n++ ){
-		free( scores_[n] );
-	}
-	free( scores_ );
-
 }
 
 // store the log odds scores at all positions of each sequence
-float** ScoreSeqSet::score(){
+void ScoreSeqSet::score(){
 
 	int K = Global::modelOrder;
 	int K_bg = Global::bgModelOrder;
@@ -62,6 +60,9 @@ float** ScoreSeqSet::score(){
 		}
 
 	}
+}
+
+std::vector<std::vector<float>> ScoreSeqSet::getScores(){
 	return scores_;
 }
 
