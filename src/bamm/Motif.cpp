@@ -178,10 +178,32 @@ void Motif::initFromBindingSites( char* filename ){
 }
 
 // initialize v from PWM file
-void Motif::initFromPWM( char* filename ){
-	// set higher-order conditional probabilities to PWM probabilities
-	// v[k][y][j] = PWM[0][y][j]
+void Motif::initFromPWM( float** PWM, int asize ){
+
+	// for k = 0, obtain v from PWM:
+	for( int y = 0; y < asize; y++ ){
+		for( int j = 0; j < W_; j++ ){
+			v_[0][y][j] = PWM[y][j];
+		}
+	}
+
+	// for k > 0:
+	for( int k = 1; k < Global::modelOrder+1; k++ ){
+		for( int y = 0; y < Y_[k+1]; y++ ){
+			int y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
+			int yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer y
+			int yl = y % Y_[1];									// the last nucleotide in (k+1)-mer y
+			for( int j = 0; j < k; j++ ){						// when j < k, i.e. p(A|CG) = p(A|C)
+				v_[k][y][j] = v_[k-1][y2][j];
+			}
+			for( int j = k; j < W_; j++ ){
+				v_[k][y][j] = v_[0][yl][j] * v_[k-1][yk][j-1];
+			}
+		}
+	}
+
 	// set isInitialized
+	isInitialized_ = true;
 }
 
 // initialize v from Bayesian Markov model file and set isInitialized

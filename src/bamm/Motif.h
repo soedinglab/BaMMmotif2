@@ -20,7 +20,7 @@ public:
 
 	void initFromBindingSites( char* filename );				// initialize v from binding site file
 
-	void initFromPWM( char* filename );							// initialize v from PWM file
+	void initFromPWM( float** PWM, int asize );					// initialize v from PWM file
 
 	void initFromBayesianMarkovModel( char* filename );			// initialize v from Bayesian Markov model file and set isInitialized
 
