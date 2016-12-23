@@ -273,7 +273,7 @@ void FDR::calculatePR(){
 		Pre_MOPS_.push_back( 1.0f - FP_MOPS_[i] / TFP_MOPS_[i] );
 		Rec_MOPS_.push_back( ( TFP_MOPS_[i] - FP_MOPS_[i] ) / max_diff );
 		if( ( TFP_MOPS_[i] - FP_MOPS_[i] ) / max_diff <= 0.5f ){
-			pre_half_ = Pre_MOPS_[i];
+			prec_mid_MOPS_ = Pre_MOPS_[i];
 		}
 	}
 
@@ -296,6 +296,8 @@ void FDR::calculatePR(){
 
 		Pre_ZOOPS_.push_back( ( float )idx_posMax / ( float )( i+1 ) );  // i_posM = TP
 		Rec_ZOOPS_.push_back( ( float )idx_posMax / ( float )posN );
+		if( ( Rec_ZOOPS_[i] - 0.5f ) < 0.01f )
+			prec_mid_ZOOPS_ = Pre_ZOOPS_[i];
 	}
 
 }
@@ -338,8 +340,12 @@ void FDR::calcKmerFreq( std::vector<Sequence*> seqs ){
 	}
 }
 
-float FDR::getPre_half(){
-	return pre_half_;
+float FDR::getPrec_middle_ZOOPS(){
+	return prec_mid_ZOOPS_;
+}
+
+float FDR::getPrec_middle_MOPS(){
+	return prec_mid_MOPS_;
 }
 
 void FDR::print(){
@@ -356,6 +362,7 @@ void FDR::write(){
 	 * (4) posSequenceBasename.mops.recall:		recall values for MOPS model
 	 * (5) posSequenceBasename.mops.fp:			false positives for MOPS model
 	 * (6) posSequenceBasename.mops.tfp:		true and false positive values for MOPS model
+	 * (7) posSequenceBasename.prec05:			precision when recall = 0.5 for both MOPS and ZOOPS models
 	 */
 
 	std::string opath = std::string( Global::outputDirectory ) + '/'
@@ -366,6 +373,7 @@ void FDR::write(){
 	std::string opath_mops_r = opath + ".mops.recall";
 //	std::string opath_mops_fp = opath + ".mops.fp";
 //	std::string opath_mops_tfp = opath + ".mops.tfp";
+	std::string opath_prec_middle = opath + ".prec05";
 
 	std::ofstream ofile_zoops_p( opath_zoops_p );
 	std::ofstream ofile_zoops_r( opath_zoops_r );
@@ -373,6 +381,7 @@ void FDR::write(){
 	std::ofstream ofile_mops_r( opath_mops_r );
 //	std::ofstream ofile_mops_fp( opath_mops_fp );
 //	std::ofstream ofile_mops_tfp( opath_mops_tfp );
+	std::ofstream ofile_prec_middle( opath_prec_middle );
 
 	size_t i;
 
@@ -388,6 +397,8 @@ void FDR::write(){
 //		ofile_mops_tfp << TFP_MOPS_[i] << std::endl;
 	}
 
+	ofile_prec_middle << "Average precision for ZOOPS model:\n" << prec_mid_ZOOPS_
+			<< "\nAverage precision for MOPS model:\n" << prec_mid_MOPS_ << std::endl;
 
 }
 

@@ -16,7 +16,8 @@ public:
 
 	void 	evaluateMotif();
 
-	float 	getPre_half();					// get precision when recall = 0.5
+	float 	getPrec_middle_ZOOPS();			// get precision when recall = 0.5 for ZOOPS model
+	float 	getPrec_middle_MOPS();			// get precision when recall = 0.5 for MOPS model
 	void 	print();
 	void 	write();
 	void 	writeLogOdds();					// print out log odds scores for both positive and negative set
@@ -42,7 +43,8 @@ private:
 	std::vector<float>	FP_MOPS_;			// false positive values for MOPS model
 	std::vector<float>	TFP_MOPS_;			// true and false positive values for MOPS model
 
-	float 				pre_half_ = 0.0f;	// precision when recall = 0.5
+	float 				prec_mid_ZOOPS_ = 0.0f;	// precision when recall = 0.5 for ZOOPS model
+	float 				prec_mid_MOPS_ = 0.0f;	// precision when recall = 0.5 for MOPS model
 
 	std::vector<int>	Y_;					// contains 1 at position 0
 											// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
