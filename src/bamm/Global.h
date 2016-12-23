@@ -61,6 +61,7 @@ public:
                                                             // instead of background frequencies of mono-nucleotides
     static bool        interpolateBG;                       // calculate prior probabilities from lower-order probabilities
                                                             // instead of background frequencies of mono-nucleotides
+
 	// background model options
 	static int			bgModelOrder;						// background model order, defaults to 2
 	static std::vector<float> bgModelAlpha;					// background model alpha
@@ -88,6 +89,7 @@ public:
 	static bool         debugMode;                          // verbose printouts for debugging, defaults to false
 	static bool			saveBaMMs;							// write optimized BaMM(s) to disk
 	static bool			saveLogOdds;						// write the log odds of positive and negative sets to disk
+	static bool			saveInitialModel;					// write out the initial model to disk
 
 	static void         init( int nargs, char* args[] );
 	static void         destruct();

@@ -175,10 +175,16 @@ void Motif::initFromBindingSites( char* filename ){
 
 	// set isInitialized
 	isInitialized_ = true;
+
+	// optional: save initial model
+	if( Global::saveInitialModel ){
+		calculateP();
+		write( -1 );
+	}
 }
 
 // initialize v from PWM file
-void Motif::initFromPWM( float** PWM, int asize ){
+void Motif::initFromPWM( float** PWM, int asize, int count ){
 
 	// for k = 0, obtain v from PWM:
 	for( int y = 0; y < asize; y++ ){
@@ -204,6 +210,14 @@ void Motif::initFromPWM( float** PWM, int asize ){
 
 	// set isInitialized
 	isInitialized_ = true;
+
+	// optional: save initial model
+	// TOdo: delete after
+	if( Global::saveInitialModel ){
+		calculateP();
+		write( count + 13 );
+	}
+
 }
 
 // initialize v from Bayesian Markov model file and set isInitialized

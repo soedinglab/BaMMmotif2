@@ -12,6 +12,7 @@
 
 int main( int nargs, char* args[] ){
 
+	srand( 42 );
 	clock_t t0 = clock();
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "======================================\n" );

@@ -270,7 +270,7 @@ void FDR::calculatePR(){
 	}
 
 	for( int i = 0; i < idx_max; i++ ){
-		Pre_MOPS_.push_back( 1 - FP_MOPS_[i] / TFP_MOPS_[i] );
+		Pre_MOPS_.push_back( 1.0f - FP_MOPS_[i] / TFP_MOPS_[i] );
 		Rec_MOPS_.push_back( ( TFP_MOPS_[i] - FP_MOPS_[i] ) / max_diff );
 		if( ( TFP_MOPS_[i] - FP_MOPS_[i] ) / max_diff <= 0.5f ){
 			pre_half_ = Pre_MOPS_[i];
@@ -419,15 +419,15 @@ void FDR::writeLogOdds(){
 		ofile_zoops_posScore << posScoreMax_[i] << std::endl;
 	}
 
-	for( i = 0; i < posScoreAll_.size(); i++ ){
+	for( i = 0; i < posScoreAll_.size(); i+=Global::mFold ){
 		ofile_mops_posScore << posScoreAll_[i] << std::endl;
 	}
 
-	for( i = 0; i < negScoreMax_.size(); i++ ){
+	for( i = 0; i < negScoreMax_.size(); i+=Global::mFold ){
 		ofile_zoops_negScore << negScoreMax_[i] << std::endl;
 	}
 
-	for( i = 0; i < negScoreAll_.size(); i++ ){
+	for( i = 0; i < negScoreAll_.size(); i+=Global::mFold*Global::mFold ){
 		ofile_mops_negScore << negScoreAll_[i] << std::endl;
 	}
 }

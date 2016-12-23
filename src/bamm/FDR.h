@@ -14,12 +14,12 @@ public:
 	FDR( Motif* motif );
 	~FDR();
 
-	void evaluateMotif();
+	void 	evaluateMotif();
 
-	float getPre_half();					// get precision when recall = 0.5
-	void print();
-	void write();
-	void writeLogOdds();					// print out log odds scores for both positive and negative set
+	float 	getPre_half();					// get precision when recall = 0.5
+	void 	print();
+	void 	write();
+	void 	writeLogOdds();					// print out log odds scores for both positive and negative set
 											// for both MOPS and ZOOPS models
 
 private:

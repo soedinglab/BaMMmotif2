@@ -125,7 +125,7 @@ MotifSet::MotifSet(){
 					}
 
 					// initialize each motif with a PWM
-					motif->initFromPWM( PWM, asize );
+					motif->initFromPWM( PWM, asize, N_ );
 
 					motifs_.push_back( motif );
 

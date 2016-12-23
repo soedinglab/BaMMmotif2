@@ -64,6 +64,7 @@ bool                Global::verbose = false;
 bool                Global::debugMode = false;              // debug-mode: prints out everything.
 bool				Global::saveBaMMs = true;
 bool				Global::saveLogOdds = false;			// write the log odds of positive and negative sets to disk
+bool				Global::saveInitialModel = false;		// write out the initial model to disk
 
 void Global::init( int nargs, char* args[] ){
 
@@ -153,6 +154,9 @@ int Global::readArguments( int nargs, char* args[] ){
 		fprintf( stderr, "Error: No initial model is provided.\n" );
 		exit( -1 );
 	}
+
+	opt >> GetOpt::OptionPresent( "saveInitialModel", saveInitialModel );
+
 
 	// model options
 	opt >> GetOpt::Option( 'k', "order", modelOrder );
