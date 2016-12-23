@@ -12,6 +12,7 @@
 
 int main( int nargs, char* args[] ){
 
+	srand( 42 );						// seed random number
 	clock_t t0 = clock();
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "======================================\n" );
@@ -39,27 +40,30 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*********************\n" );
 	MotifSet motifs;
 	for( int n = 0; n < motifs.getN(); n++ ){
+
+		// initialize the model
 		Motif* motif = new Motif( *motifs.getMotifs()[n] );
+
+		// train the model with either EM or Gibbs sampling
 		ModelLearning model( motif, bgModel );
 		if( Global::EM ){				// learn motifs by EM
 			model.EMlearning();
 		} else if ( Global::CGS ){		// learn motifs by collapsed Gibbs sampling
-//			model.GibbsSampling();
+			model.GibbsSampling();
 		} else {
 			std::cout << "Model is not optimized!\n";
 			exit( -1 );
-		}
-		if( Global::saveBaMMs ){
-			model.write();
 		}
 
 		// write out the learned model
 		motif->write( n );
 
+/*
 		// score the model on sequence set
 		ScoreSeqSet seqset( motif, bgModel, Global::posSequenceSet->getSequences() );
 		seqset.score();
 		seqset.write();
+*/
 
 		delete motif;
 	}
@@ -75,6 +79,7 @@ int main( int nargs, char* args[] ){
 			FDR fdr( motif );
 			fdr.evaluateMotif();
 			fdr.write();
+			if( Global::saveLogOdds ) fdr.writeLogOdds();
 			delete motif;
 		}
 	}

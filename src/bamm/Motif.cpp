@@ -175,13 +175,49 @@ void Motif::initFromBindingSites( char* filename ){
 
 	// set isInitialized
 	isInitialized_ = true;
+
+	// optional: save initial model
+	if( Global::saveInitialModel ){
+		calculateP();
+		write( -1 );
+	}
 }
 
 // initialize v from PWM file
-void Motif::initFromPWM( char* filename ){
-	// set higher-order conditional probabilities to PWM probabilities
-	// v[k][y][j] = PWM[0][y][j]
+void Motif::initFromPWM( float** PWM, int asize, int count ){
+
+	// for k = 0, obtain v from PWM:
+	for( int y = 0; y < asize; y++ ){
+		for( int j = 0; j < W_; j++ ){
+			v_[0][y][j] = PWM[y][j];
+		}
+	}
+
+	// for k > 0:
+	for( int k = 1; k < Global::modelOrder+1; k++ ){
+		for( int y = 0; y < Y_[k+1]; y++ ){
+			int y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
+			int yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer y
+			int yl = y % Y_[1];									// the last nucleotide in (k+1)-mer y
+			for( int j = 0; j < k; j++ ){						// when j < k, i.e. p(A|CG) = p(A|C)
+				v_[k][y][j] = v_[k-1][y2][j];
+			}
+			for( int j = k; j < W_; j++ ){
+				v_[k][y][j] = v_[0][yl][j] * v_[k-1][yk][j-1];
+			}
+		}
+	}
+
 	// set isInitialized
+	isInitialized_ = true;
+
+	// optional: save initial model
+	// TOdo: delete after
+	if( Global::saveInitialModel ){
+		calculateP();
+		write( count + 13 );
+	}
+
 }
 
 // initialize v from Bayesian Markov model file and set isInitialized
@@ -385,8 +421,8 @@ void Motif::write( int N ){						// write each motif with a number
 	for( j = 0; j < W_; j++ ){
 		for( k = 0; k < Global::modelOrder+1; k++ ){
 			for( y = 0; y < Y[k+1]; y++ ){
-				ofile_v << std::scientific << std::setprecision(8) << v_[k][y][j] << ' ';
-				ofile_p << std::scientific << std::setprecision(8) << p_[k][y][j] << ' ';
+				ofile_v << std::scientific << std::setprecision(3) << v_[k][y][j] << ' ';
+				ofile_p << std::scientific << std::setprecision(3) << p_[k][y][j] << ' ';
 			}
 			ofile_v << std::endl;
 			ofile_p << std::endl;

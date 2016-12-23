@@ -55,7 +55,7 @@ bool				Global::noQSampling = false;			// disable q sampling in CGS
 
 // FDR options
 bool                Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
-int        			Global::mFold = 20;						// number of negative sequences as multiple of positive sequences
+int        			Global::mFold = 10;						// number of negative sequences as multiple of positive sequences
 int        			Global::cvFold = 5;						// size of cross-validation folds
 int 				Global::sOrder = 2;						// the k-mer order for sampling negative sequence set
 
@@ -63,6 +63,8 @@ int 				Global::sOrder = 2;						// the k-mer order for sampling negative sequen
 bool                Global::verbose = false;
 bool                Global::debugMode = false;              // debug-mode: prints out everything.
 bool				Global::saveBaMMs = true;
+bool				Global::saveLogOdds = false;			// write the log odds of positive and negative sets to disk
+bool				Global::saveInitialModel = false;		// write out the initial model to disk
 
 void Global::init( int nargs, char* args[] ){
 
@@ -152,6 +154,9 @@ int Global::readArguments( int nargs, char* args[] ){
 		fprintf( stderr, "Error: No initial model is provided.\n" );
 		exit( -1 );
 	}
+
+	opt >> GetOpt::OptionPresent( "saveInitialModel", saveInitialModel );
+
 
 	// model options
 	opt >> GetOpt::Option( 'k', "order", modelOrder );
@@ -248,6 +253,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "verbose", verbose );
 	opt >> GetOpt::OptionPresent( "debug", debugMode );
 	opt >> GetOpt::OptionPresent( "saveBaMMs", saveBaMMs );
+	opt >> GetOpt::OptionPresent( "saveLogOdds", saveLogOdds );
 
 	// for remaining unknown options
 	if( opt.options_remain() ){
@@ -282,7 +288,7 @@ void Global::printHelp(){
 	printf("\n		Options for initial model: \n");
 	printf("\n 			--BaMMpatternFile <STRING> \n"
 			"				file that contains patterns.\n\n");
-	printf("\n 			--bindingSitesFile <STRING> \n"
+	printf("\n 			--bindingSiteFile <STRING> \n"
 			"				file that contains binding sites.\n\n");
 	printf("\n 			--PWMFile <STRING> \n"
 			"				file that contains PWM data.\n");
@@ -345,7 +351,9 @@ void Global::printHelp(){
 	printf("\n 			--verbose \n"
 			"				verbose printouts. Defaults to false.\n\n");
 	printf("\n 			--saveBaMMs\n"
-			"				Write optimized BaMM(s) to disk.\n\n");
+			"				Write optimized BaMM(s) parameters to disk.\n\n");
+	printf("\n 			--saveLogOdds\n"
+			"				Write log odds scores from positive and negative sets to disk.\n\n");
 	printf("\n 			-h, --help\n"
 			"				Printout this help function.\n\n");
 	printf("\n============================================================================================\n");

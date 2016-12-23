@@ -51,13 +51,17 @@ private:
 
 	void 					EM_optimize_q();	// optimize hyper-parameter q
 
-	void					CGS_sampling_z_q();								// sample z and q by collapsed Gibbs sampling
-	void					CGS_updateAlphas( int order, int width );		// update alphas for all the orders up to K, given the learning rate
-	double					calcLogPostAlphas( double** alphas, int order );	// calculate the log posterior of alphas
-	double					calcGradLogPostAlphas( double** alphas, int order, int position );	// calculate the gradient of the log posterior of alphas
+	void					CGS_sampling_z_q();													// sample z and q by collapsed Gibbs sampling
+	void					CGS_updateAlphas( int order, int width, float learningrate );		// update alphas for all the orders up to K, given the learning rate
+	float					calcLogPostAlphas( float** alphas, int order );						// calculate the log posterior of alphas
+	float					calcGradLogPostAlphas( float** alphas, int order, int position );	// calculate the gradient of the log posterior of alphas
 
-	void					testAlphaUpdate( double** alphas, int order, int width );	// only for testing, will be removed afterwards
+	void					testAlphaUpdate( float** alphas, int order, int width );			// only for testing, will be removed afterwards
 
+	// test on double precision
+	double					calcLogPostAlphasD( double** alphas, int order );					// calculate the log posterior of alphas
+	double					calcGradLogPostAlphasD( double** alphas, int order, int position );	// calculate the gradient of the log posterior of alphas
+	void					testAlphaUpdateD( double** alphas, int order, int width );			// only for testing, will be removed afterwards
 	std::vector<int>		Y_;					// contains 1 at position 0
 												// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
 												// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64

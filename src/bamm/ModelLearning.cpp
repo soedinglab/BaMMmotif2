@@ -9,6 +9,9 @@
 
 #include <random>
 #include <cmath>
+#include <boost/math/special_functions.hpp>		/* gamma function and digamma function */
+#include <boost/math/special_functions/digamma.hpp>
+#include <boost/random.hpp>
 
 ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 
@@ -190,6 +193,11 @@ int ModelLearning::EMlearning(){
 	// calculate probabilities
 	motif_->calculateP();
 
+	// write model parameters on the disc
+	if( Global::saveBaMMs ){
+		write();
+	}
+
 	// free memory
 	for( y = 0; y < Y_[K+1]; y++ ){
 		free( v_before[y] );
@@ -313,9 +321,18 @@ void ModelLearning::GibbsSampling(){
 
 	int K = Global::modelOrder;
 	int W = motif_->getW();
+	int k, j;
 
 	// parameters for alpha learning
 	int timestep = 0;								// timestep = iteration
+	float** eta = new float*[K+1];					// learning rate for alpha learning
+	for( k = 0; k < K+1; k++ ){
+		eta[k] = new float[W];
+		for( j = 0; j < W; j++ ){
+			eta[k][j] = 0.1f;
+		}
+	}
+
 
 	// iterate over
 	while( iterate && timestep < Global::maxCGSIterations ){
@@ -337,20 +354,16 @@ void ModelLearning::GibbsSampling(){
 		motif_->updateV( n_z_, alpha_, K );
 
 		// optimize hyper-parameter alpha
-		if( !Global::noAlphaUpdating )	CGS_updateAlphas( K, W );
-
-		// test alphas
-		// a toy example:
-		double** toys = new double*[3];
-		for( int i = 0; i < 3; i++ ){
-			toys[i] = new double[10];
-			for( int b = 0; b < 10; b++ ){
-				toys[i][b] = 10.0;
+//		CGS_updateAlphas( K, W, eta );
+		for( k = 0; k < K+1; k++ ){
+			for( j = 0; j < W; j++ ){
+				alpha_[k][j] = alpha_[k][j] - eta[k][j] * calcGradLogPostAlphas( alpha_, k, j ) ;
+				eta[k][j] *= 0.9f;
 			}
 		}
-		testAlphaUpdate( toys, 2, 10 );
-		delete[] toys;
-//		testAlphaUpdate( alpha_, K, W );
+
+		testAlphaUpdate( alpha_, K, W );
+
 
 	}
 
@@ -358,6 +371,11 @@ void ModelLearning::GibbsSampling(){
 
 	// calculate probabilities
 	motif_->calculateP();
+
+	// write model parameters on the disc
+	if( Global::saveBaMMs ){
+		write();
+	}
 
 	fprintf( stdout, "\n--- Runtime for Collapsed Gibbs sampling: %.4f seconds ---\n", ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );
 }
@@ -472,8 +490,8 @@ void ModelLearning::CGS_sampling_z_q(){
 
 		// draw a new position z from discrete posterior distribution
 		std::discrete_distribution<> posterior_dist( posterior_array.begin(), posterior_array.end() );
-		std::random_device rand;						// pick a random number
-		z_[n] = posterior_dist( rand );					// draw a sample z
+		boost::random::mt19937 rng;
+		z_[n] = posterior_dist( rng );					// draw a sample z
 
 		if( z_[n] == 0 ) N_0++;
 	}
@@ -497,12 +515,13 @@ void ModelLearning::CGS_sampling_z_q(){
 	}
 }
 
-void ModelLearning::CGS_updateAlphas( int K, int W ){
+void ModelLearning::CGS_updateAlphas( int K, int W, float eta ){
 
 /*
+
 	// update alphas using stochastic optimization algorithm ADAM (DP Kingma & JL Ba 2015)
 	int k, j;
-	float eta = 0.0001f;									// learning rate for a
+	float eta = 0.01f;									// learning rate for a
 	float beta1 = 0.9f;									// exponential decay rate for the moment estimates
 	float beta2 = 0.999f;								// exponential decay rate for the moment estimates
 	float epsilon = 0.00000001f;						// cutoff
@@ -531,7 +550,7 @@ void ModelLearning::CGS_updateAlphas( int K, int W ){
 			a[k][j] = ( float )exp( alpha_[k][j] );
 
 			// get gradients w.r.t. stochastic objective at timestep t
-			gradient[k][j] = alpha_[k][j] * calcGradLogPostAlphas( alpha_[k][j], k, j );
+			gradient[k][j] = alpha_[k][j] * calcGradLogPostAlphas( alpha_, k, j );
 
 			// update biased first moment estimate
 			m1_i = beta1 * m1_i + ( 1 - beta1 ) * gradient[k][j];
@@ -562,10 +581,10 @@ void ModelLearning::CGS_updateAlphas( int K, int W ){
 	free( gradient );
 	free( m1 );
 	free( m2 );
+
 */
 
 	int k, j;
-	float eta = 0.0005f;									// learning rate for a
 	float** a;											// a = e^alpha
 	float** gradient;									// gradient of log posterior of alpha
 
@@ -579,9 +598,8 @@ void ModelLearning::CGS_updateAlphas( int K, int W ){
 	for( k = 0; k < K+1; k++ ){
 
 		for( j = 0; j < W; j++ ){
-
 			// update parameter a using a fixed learning rate
-//			alpha_[k][j] = alpha_[k][j] - eta * calcGradLogPostAlphas( alpha_, k, j ) ;
+			alpha_[k][j] = alpha_[k][j] - eta * calcGradLogPostAlphas( alpha_, k, j ) ;
 
 		}
 
@@ -594,9 +612,10 @@ void ModelLearning::CGS_updateAlphas( int K, int W ){
 	}
 	free( a );
 	free( gradient );
+
 }
 
-void ModelLearning::testAlphaUpdate( double** alphas, int K, int W ){
+void ModelLearning::testAlphaUpdate( float** alphas, int K, int W ){
 
 	int k, j;
 
@@ -604,17 +623,166 @@ void ModelLearning::testAlphaUpdate( double** alphas, int K, int W ){
 
 		std::cout << "k = " << k << std::endl;
 
-		double stepsize = 0.0001;
+		float stepsize = 0.0001f;
+		float diff;
+		for( j = 0; j < W; j++ ){
+			std::cout << "j = " << j << '\t';
+			std::cout << std::setprecision(8) << "alpha = " << alphas[k][j] << '\t';
+			// calculate the delta of log posterior
+			alphas[k][j] += stepsize;
+			diff = calcLogPostAlphas( alphas, k );
+
+			alphas[k][j] -= 2.0f * stepsize;
+			diff -= calcLogPostAlphas( alphas, k );
+
+			diff /= ( 2.0f * stepsize );
+
+			// recover alphas
+			alphas[k][j] += stepsize;
+
+			// print out the gradient
+
+			std::cout << "analytical gradient: "<< calcGradLogPostAlphas( alphas, k, j ) << std::endl;
+	//		std::cout << "numerical gradient: " << std::setprecision(12) << diff << std::endl;
+
+		}
+
+	}
+	std::cout << std::endl;
+}
+
+float ModelLearning::calcLogPostAlphas( float** alpha, int k ){
+
+	// calculate log posterior of alphas due to equation 46
+	float logPosterior = 0.0;
+	float*** v = motif_->getV();
+	float** v_bg = bg_->getV();
+	int W = motif_->getW();
+	int j, y, y2;
+
+	for( j = 0; j < W; j++ ){
+
+		// the first term of equation 46
+		logPosterior -= 2.0f * logf( alpha[k][j] );
+
+		// the second term of equation 46
+		logPosterior -= Global::modelBeta * powf( Global::modelGamma, ( float )k ) / alpha[k][j];
+
+		// the third term of equation 46
+		logPosterior += ( float )ipow( Y_[1], k ) * boost::math::lgamma( alpha[k][j] );
+
+		// the forth term of equation 46
+		for( y = 0; y < Y_[k+1]; y++ ){
+			y2 = y % Y_[k];									// cutoff the first nucleotide in the (k+1)-mer
+			if( k == 0 ){
+				// the first part
+				logPosterior += boost::math::lgamma( ( float )n_z_[k][y][j] + alpha[k][j] * v_bg[k][y] );
+
+				// the second part
+				logPosterior -= boost::math::lgamma( alpha[k][j] * v_bg[k][y] );
+
+				// the third part
+				if( j == 0 ){
+					logPosterior -= boost::math::lgamma( alpha[k][j] );
+				} else {
+					logPosterior -= boost::math::lgamma( ( float )n_z_[k][y][j-1] + alpha[k][j] );
+				}
+
+			} else {
+				// the first part
+				logPosterior += boost::math::lgamma( ( float )n_z_[k][y][j] + alpha[k][j] * v[k-1][y2][j] );
+
+				// the second part
+				logPosterior -= boost::math::lgamma( alpha[k][j] * v[k-1][y2][j] );
+
+				// the third part
+				if( j == 0 ){
+					logPosterior -= boost::math::lgamma( alpha[k][j] );
+				} else {
+					logPosterior -= boost::math::lgamma( ( float )n_z_[k][y][j-1] + alpha[k][j] );
+				}
+
+			}
+		}
+
+	}
+	return logPosterior;
+}
+
+float ModelLearning::calcGradLogPostAlphas( float** alpha, int k, int j ){
+
+	// calculate gradient of the log posterior of alphas due to equation 47
+	float gradient = 0.0;
+	float*** v = motif_->getV();
+	float** v_bg = bg_->getV();
+	int y, y2;
+
+	// the first term of equation 47
+	gradient -= 2.0f / alpha[k][j];
+
+	// the second term of equation 47
+	gradient += Global::modelBeta * powf( Global::modelGamma, ( float )k ) / powf( alpha[k][j], 2.f );
+
+	// the third term of equation 47
+	gradient += ( float )ipow( Y_[1], k ) * boost::math::digamma( alpha[k][j] );
+
+
+	// the forth term of equation 47
+	for( y = 0; y < Y_[k+1]; y++ ){
+		y2 = y % Y_[k];
+		if( k == 0 ){
+			// the first part
+			gradient += v_bg[k][y] * boost::math::digamma( ( float )n_z_[k][y][j] + alpha[k][j] * v_bg[k][y] );
+
+			// the second part
+			gradient -= v_bg[k][y] * boost::math::digamma( alpha[k][j] * v_bg[k][y] );
+
+			// the third part
+			if( j == 0 ){
+				gradient -= boost::math::digamma( alpha[k][j] );
+			} else {
+				gradient -= boost::math::digamma( ( float )n_z_[k][y][j-1] + alpha[k][j] );
+			}
+
+		} else {
+			// the first part
+			gradient += v[k-1][y2][j] * boost::math::digamma( ( float )n_z_[k][y][j] + alpha[k][j] * v[k-1][y2][j] );
+
+			// the second part
+			gradient -= v[k-1][y2][j] * boost::math::digamma( alpha[k][j] * v[k-1][y2][j] );
+
+			// the third part
+			if( j == 0 ){
+				gradient -= boost::math::digamma( alpha[k][j] );
+			} else {
+				gradient -= boost::math::digamma( ( float )n_z_[k][y][j-1] + alpha[k][j] );
+			}
+		}
+	}
+
+	return gradient;
+}
+
+
+void ModelLearning::testAlphaUpdateD( double** alphas, int K, int W ){
+
+	int k, j;
+
+	for( k = 0; k < K+1; k++ ){
+
+		std::cout << "k = " << k << std::endl;
+
+		double stepsize = 0.001;
 		double diff;
 		for( j = 0; j < W; j++ ){
 			std::cout << "j = " << j << '\t';
 			std::cout << "alpha = " << alphas[k][j] << '\t';
 			// calculate the delta of log posterior
 			alphas[k][j] += stepsize;
-			diff = calcLogPostAlphas( alphas, k );
+			diff = calcLogPostAlphasD( alphas, k );
 
 			alphas[k][j] -= 2.0 * stepsize;
-			diff -= calcLogPostAlphas( alphas, k );
+			diff -= calcLogPostAlphasD( alphas, k );
 
 			diff /= ( 2.0 * stepsize );
 
@@ -623,7 +791,7 @@ void ModelLearning::testAlphaUpdate( double** alphas, int K, int W ){
 
 			// print out the gradient
 
-			std::cout << "analytical gradient: "<< calcGradLogPostAlphas( alphas, k, j ) << '\t';
+			std::cout << "analytical gradient: "<< calcGradLogPostAlphasD( alphas, k, j ) << '\t';
 			std::cout << "numerical gradient: " << std::setprecision(12) << diff << std::endl;
 
 		}
@@ -632,10 +800,10 @@ void ModelLearning::testAlphaUpdate( double** alphas, int K, int W ){
 	std::cout << std::endl;
 }
 
-double ModelLearning::calcLogPostAlphas( double** alpha, int k ){
+double ModelLearning::calcLogPostAlphasD( double** alpha, int k ){
 
 	// calculate log posterior of alphas due to equation 46
-	double logPosterior = 0.0f;
+	double logPosterior = 0.0;
 	float*** v = motif_->getV();
 	float** v_bg = bg_->getV();
 	int W = motif_->getW();
@@ -650,116 +818,96 @@ double ModelLearning::calcLogPostAlphas( double** alpha, int k ){
 		logPosterior -= Global::modelBeta * pow( Global::modelGamma, ( double )k ) / alpha[k][j];
 
 		// the third term of equation 46
-		logPosterior += ( double )ipow( Y_[1], k ) * lgamma( alpha[k][j] );
-
-		std::cout << logPosterior << std::endl;
+		logPosterior += ( double )ipow( Y_[1], k ) * boost::math::lgamma( alpha[k][j] );
 
 		// the forth term of equation 46
 		for( y = 0; y < Y_[k+1]; y++ ){
-			y2 = y % Y_[k];
+			y2 = y % Y_[k];									// cutoff the first nucleotide in the (k+1)-mer
 			if( k == 0 ){
 				// the first part
-//				logPosterior += lgamma( ( double )n_z_[k][y][j] + alpha[k][j] * v_bg[k][y] );
+				logPosterior += boost::math::lgamma( ( double )n_z_[k][y][j] + alpha[k][j] * v_bg[k][y] );
 
 				// the second part
-//				logPosterior -= lgamma( alpha[k][j] * v_bg[k][y] );
+				logPosterior -= boost::math::lgamma( alpha[k][j] * v_bg[k][y] );
 
 				// the third part
-				float* sumN = ( float* )calloc( W, sizeof( float ) );
-				for( j = 0; j < W; j++ ){
-					for( y = 0; y < Y_[1]; y++ ){
-						sumN[j] += ( float )n_z_[0][y][j];
-					}
+				if( j == 0 ){
+					logPosterior -= boost::math::lgamma( alpha[k][j] );
+				} else {
+					logPosterior -= boost::math::lgamma( ( double )n_z_[k][y][j-1] + alpha[k][j] );
 				}
-//				logPosterior -= lgamma( sumN[j] + alpha[k][j] );
-				free( sumN );
 
 			} else {
 				// the first part
-//				logPosterior += lgamma( ( double )n_z_[k][y][j] + alpha[k][j] * v[k-1][y2][j] );
+				logPosterior += boost::math::lgamma( ( double )n_z_[k][y][j] + alpha[k][j] * v[k-1][y2][j] );
 
 				// the second part
-//				logPosterior -= lgamma( alpha[k][j] * v[k-1][y2][j] );
+				logPosterior -= boost::math::lgamma( alpha[k][j] * v[k-1][y2][j] );
 
 				// the third part
-//				logPosterior -= lgamma( ( double )n_z_[k][y][j-1] + alpha[k][j] );
+				if( j == 0 ){
+					logPosterior -= boost::math::lgamma( alpha[k][j] );
+				} else {
+					logPosterior -= boost::math::lgamma( ( double )n_z_[k][y][j-1] + alpha[k][j] );
+				}
 
 			}
-
 		}
 
 	}
 	return logPosterior;
 }
 
-double ModelLearning::calcGradLogPostAlphas( double** alpha, int k, int j ){
+double ModelLearning::calcGradLogPostAlphasD( double** alpha, int k, int j ){
 
-	// calculate gradient of the log posterior of alphas due to equation 48
+	// calculate gradient of the log posterior of alphas due to equation 47
 	double gradient = 0.0;
 	float*** v = motif_->getV();
 	float** v_bg = bg_->getV();
 	int y, y2;
 
-	// the first term of equation 47/48
+	// the first term of equation 47
 	gradient -= 2.0 / alpha[k][j];
 
-	// the second term of equation 47/48
+	// the second term of equation 47
 	gradient += Global::modelBeta * pow( Global::modelGamma, ( double )k ) / pow( alpha[k][j], 2.0 );
 
-/*
-	// the third term of equation 48
-	for( y = 0; y < Y_[k+1]; y++ ){
-		y2 = y % Y_[k];
-		if( k == 0 ){
-			float* sumN = ( float* )calloc( W, sizeof( float ) );
-			for( j = 0; j < W; j++ ){
-				for( y = 0; y < Y_[1]; y++ ){
-					sumN[j] += n_z_[0][y][j];
-				}
-			}
-			gradient += v_bg[k][y] * ( digammaf( ( float )n_z_[k][y][j] + alpha * v_bg[k][y] )
-				- digammaf( alpha * v_bg[k][y] ) - digammaf( ( float )sumN[j] + alpha ) + digammaf( alpha ) );
-			free( sumN );
-		} else {
-			gradient += v[k-1][y2][j] * ( digammaf( ( float )n_z_[k][y][j] + alpha * v[k-1][y2][j] )
-				- digammaf( alpha * v[k-1][y2][j] ) - digammaf( ( float )n_z_[k][y][j-1] + alpha ) + digammaf( alpha ) );
-		}
-	}
-*/
-
 	// the third term of equation 47
-	gradient += ( double )ipow( Y_[1], k ) * digammaf( alpha[k][j] );
+	gradient += ( double )ipow( Y_[1], k ) * boost::math::digamma( alpha[k][j] );
+
 
 	// the forth term of equation 47
 	for( y = 0; y < Y_[k+1]; y++ ){
 		y2 = y % Y_[k];
 		if( k == 0 ){
 			// the first part
-//			gradient += v_bg[k][y] * digammaf( ( double )n_z_[k][y][j] + alpha[k][j] * v_bg[k][y] );
+			gradient += v_bg[k][y] * boost::math::digamma( ( double )n_z_[k][y][j] + alpha[k][j] * v_bg[k][y] );
 
 			// the second part
-//			gradient -= v_bg[k][y] * digammaf( alpha[k][j] * v_bg[k][y] );
+			gradient -= v_bg[k][y] * boost::math::digamma( alpha[k][j] * v_bg[k][y] );
 
 			// the third part
-			int sumC = 0;
-			for( y = 0; y < Y_[1]; y++ ){
-				sumC += n_z_[0][y][j];
+			if( j == 0 ){
+				gradient -= boost::math::digamma( alpha[k][j] );
+			} else {
+				gradient -= boost::math::digamma( ( double )n_z_[k][y][j-1] + alpha[k][j] );
 			}
-//			gradient -= digammaf( ( double )sumC + alpha[k][j] );
+
 		} else {
 			// the first part
-//			gradient += v[k-1][y2][j] * digammaf( ( double )n_z_[k][y][j] + alpha[k][j] * v[k-1][y2][j] );
+			gradient += v[k-1][y2][j] * boost::math::digamma( ( double )n_z_[k][y][j] + alpha[k][j] * v[k-1][y2][j] );
 
 			// the second part
-//			gradient -= digammaf( alpha[k][j] * v[k-1][y2][j] );
+			gradient -= v[k-1][y2][j] * boost::math::digamma( alpha[k][j] * v[k-1][y2][j] );
 
 			// the third part
-//			gradient -= digammaf( ( double )n_z_[k][y][j-1] + alpha[k][j] );
-
-
+			if( j == 0 ){
+				gradient -= boost::math::digamma( alpha[k][j] );
+			} else {
+				gradient -= boost::math::digamma( ( double )n_z_[k][y][j-1] + alpha[k][j] );
+			}
 		}
 	}
-
 
 	return gradient;
 }
@@ -856,7 +1004,7 @@ void ModelLearning::write(){
 		std::ofstream ofile_r( opath_r.c_str() );
 		for( size_t n = 0; n < posSeqs_.size(); n++ ){
 			for( i = 0; i < posSeqs_[n]->getL()-W+2; i++ ){
-				ofile_r << std::scientific << r_[n][i] << ' ';
+				ofile_r << std::scientific << std::setprecision( 2 ) << r_[n][i] << ' ';
 			}
 			ofile_r << std::endl;
 		}

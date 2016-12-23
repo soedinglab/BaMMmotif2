@@ -5,6 +5,7 @@
 #include "../shared/utils.h"
 #include "Motif.h"
 #include "ModelLearning.h"
+#include "ScoreSeqSet.h"
 
 class FDR {
 
@@ -13,14 +14,19 @@ public:
 	FDR( Motif* motif );
 	~FDR();
 
-	void evaluateMotif();
-	void print();
-	void write();
+	void 	evaluateMotif();
+
+	float 	getPrec_middle_ZOOPS();			// get precision when recall = 0.5 for ZOOPS model
+	float 	getPrec_middle_MOPS();			// get precision when recall = 0.5 for MOPS model
+	void 	print();
+	void 	write();
+	void 	writeLogOdds();					// print out log odds scores for both positive and negative set
+											// for both MOPS and ZOOPS models
 
 private:
 
-	Motif*				motif_;				// motif learned on full SequenceSet
-	std::vector<int>	trainsetFolds_;		// fold indices for training set
+	Motif*				motif_;				// initial motif
+
 	float**				testsetV_;			// k-mer frequencies in the test set
 	int** 				testsetN_;			// k-mer counts in the test set
 
@@ -29,13 +35,16 @@ private:
 	std::vector<float> 	negScoreAll_;
 	std::vector<float> 	negScoreMax_;
 
-	std::vector<float>	P_zoops_;			// precision for ZOOPS model
-	std::vector<float>	R_zoops_;			// recall for ZOOPS model
+	std::vector<float>	Pre_ZOOPS_;			// precision for ZOOPS model
+	std::vector<float>	Rec_ZOOPS_;			// recall for ZOOPS model
 
-	std::vector<float>	P_mops_;			// precision for MOPS model
-	std::vector<float>	R_mops_;			// recall for MOPS model
-	float*				FP_mops_;			// false positive values for MOPS model
-	float*				TFP_mops_;			// true and false positive values for MOPS model
+	std::vector<float>	Pre_MOPS_;			// precision for MOPS model
+	std::vector<float>	Rec_MOPS_;			// recall for MOPS model
+	std::vector<float>	FP_MOPS_;			// false positive values for MOPS model
+	std::vector<float>	TFP_MOPS_;			// true and false positive values for MOPS model
+
+	float 				prec_mid_ZOOPS_ = 0.0f;	// precision when recall = 0.5 for ZOOPS model
+	float 				prec_mid_MOPS_ = 0.0f;	// precision when recall = 0.5 for MOPS model
 
 	std::vector<int>	Y_;					// contains 1 at position 0
 											// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
@@ -57,7 +66,7 @@ private:
 	void 		   			calculatePR();
 
 							// calculate trimer conditional probabilities for the test set
-	void					calculateKmerV( std::vector<Sequence*> seqSet );
+	void					calcKmerFreq( std::vector<Sequence*> seqSet );
 
 };
 
