@@ -68,7 +68,7 @@ void FDR::evaluateMotif(){
 		// learn motif from each training set
 		ModelLearning model( motif, bgModel, trainsetFolds );
 		if( Global::EM ){
-			model.EMlearning();
+			model.EM();
 		} else if( Global::CGS ){
 			model.GibbsSampling();
 		}

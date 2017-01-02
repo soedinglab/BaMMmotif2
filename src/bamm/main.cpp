@@ -7,7 +7,6 @@
 #include "MotifSet.h"
 #include "ModelLearning.h"
 #include "ScoreSeqSet.h"
-
 #include "FDR.h"
 
 int main( int nargs, char* args[] ){
@@ -47,7 +46,7 @@ int main( int nargs, char* args[] ){
 		// train the model with either EM or Gibbs sampling
 		ModelLearning model( motif, bgModel );
 		if( Global::EM ){				// learn motifs by EM
-			model.EMlearning();
+			model.EM();
 		} else if ( Global::CGS ){		// learn motifs by collapsed Gibbs sampling
 			model.GibbsSampling();
 		} else {

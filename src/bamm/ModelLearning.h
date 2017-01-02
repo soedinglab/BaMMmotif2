@@ -18,7 +18,7 @@ public:
 	ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int> folds = std::vector<int>() );
 	~ModelLearning();
 
-	int						EMlearning();
+	int						EM();
 	void 					GibbsSampling();
 
 	void					print();

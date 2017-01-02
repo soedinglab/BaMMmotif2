@@ -112,7 +112,7 @@ ModelLearning::~ModelLearning(){
 
 }
 
-int ModelLearning::EMlearning(){
+int ModelLearning::EM(){
 
 	printf( " ______\n"
 			"|      |\n"
@@ -123,7 +123,7 @@ int ModelLearning::EMlearning(){
 	bool iterate = true;									// flag for iterating before convergence
 	int W = motif_->getW();
 	int K = Global::modelOrder;
-	int K_bg = Global::bgModelOrder;
+	int K_bg = ( Global::bgModelOrder < K ) ? Global::bgModelOrder : K;
 
 	int y, y_bg, j;
 	float v_diff, llikelihood_prev, llikelihood_diff = 0.0f;
@@ -153,7 +153,7 @@ int ModelLearning::EMlearning(){
 		for( y = 0; y < Y_[K+1]; y++ ){
 			for( j = 0; j < W; j++ ){
 				y_bg = y % Y_[K_bg+1];
-				s_[y][j] = motif_->getV()[K][y][j] / bg_->getV()[std::min( K, K_bg )][y_bg];
+				s_[y][j] = motif_->getV()[K][y][j] / bg_->getV()[K_bg][y_bg];
 			}
 		}
 
@@ -216,7 +216,8 @@ void ModelLearning::EM_EStep(){
 	llikelihood_ = 0.0f;										// reset log likelihood
 
 	// calculate responsibilities r_[n][i] at position i in sequence n
-	for( size_t n = 0; n < posSeqs_.size(); n++ ){				// n runs over all sequences
+	// n runs over all sequences
+	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 
 		int L = posSeqs_[n]->getL();
 		int LW1 = L - W + 1;
@@ -231,12 +232,17 @@ void ModelLearning::EM_EStep(){
 		pos_[n][0] = 1 - q_;
 
 		// when p(z_n > 0)
-		for( int ij = 0; ij < L; ij++ ){						// ij = i+j runs over all positions in sequence
+		// ij = i+j runs over all positions in sequence
+		for( int ij = 0; ij < L; ij++ ){
 
-			int y = posSeqs_[n]->extractKmer( ij, std::min( ij, K ) );			// extract (k+1)-mer y from positions (i-k,...,i)
+			// extract (k+1)-mer y from positions (i-k,...,i)
+			int y = posSeqs_[n]->extractKmer( ij,( ij < K ) ? ij : K );
 
-			for( int j = std::max( 0, ij-L+W ); j < std::min( W, ij+1 ); j++ ){	// j runs over all motif positions
-				if( y != -1 ){									// skip 'N' and other unknown alphabets
+			// j runs over all motif positions
+			for( int j = ( 0 > ( ij-L+W ) ? 0 :  ij-L+W ); j < ( W < (ij+1) ? W : ij+1 ); j++ ){
+
+				// skip 'N' and other unknown alphabets
+				if( y != -1 ){
 					r_[n][L-W+1-ij+j] *= s_[y][j];
 				} else {
 					r_[n][L-W+1-ij+j] = 0.0f;
@@ -276,13 +282,17 @@ void ModelLearning::EM_MStep(){
 	}
 
 	// compute fractional occurrence counts for the highest order K
-	for( size_t n = 0; n < posSeqs_.size(); n++ ){				// n runs over all sequences
+	// n runs over all sequences
+	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 		int L = posSeqs_[n]->getL();
 		int LW1 = L - W + 1;
-		for( int ij = 0; ij < L; ij++ ){						// ij = i+j runs over all positions in x
-			int y = posSeqs_[n]->extractKmer( ij, std::min( ij, K ) );
-			for( int j = std::max( 0, ij-L+W ); j < std::min( W, ij+1 ); j++ ){
-				if( y != -1 && ( ij-j ) < LW1 ){				// skip 'N' and other unknown alphabets
+
+		// ij = i+j runs over all positions in x
+		for( int ij = 0; ij < L; ij++ ){
+			int y = posSeqs_[n]->extractKmer( ij, ( ij < K ) ? ij : K );
+			for( int j = ( 0 > ( ij-L+W ) ? 0 :  ij-L+W ); j < ( W < (ij+1) ? W : ij+1 ); j++ ){
+				// skip 'N' and other unknown alphabets
+				if( y != -1 && ( ij-j ) < LW1 ){
 					n_[K][y][j] += r_[n][L-W+1-ij+j];
 				}
 			}
@@ -290,7 +300,8 @@ void ModelLearning::EM_MStep(){
 	}
 
 	// compute fractional occurrence counts from higher to lower order
-	for( int k = K; k > 0; k-- ){								// k runs over all orders
+	// k runs over all orders
+	for( int k = K; k > 0; k-- ){
 		for( int y = 0; y < Y_[k+1]; y++ ){
 			int y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
 			for( int j = 0; j < W; j++ ){
@@ -364,7 +375,6 @@ void ModelLearning::GibbsSampling(){
 
 		testAlphaUpdate( alpha_, K, W );
 
-
 	}
 
 	// obtaining a motif model
@@ -385,7 +395,7 @@ void ModelLearning::CGS_sampling_z_q(){
 	int N = ( int )posSeqs_.size();
 	int W = motif_->getW();
 	int K = Global::modelOrder;
-	int K_bg = Global::bgModelOrder;
+	int K_bg = ( Global::bgModelOrder < K ) ? Global::bgModelOrder : K;
 	int k, y, y_prev, y2, y_bg, j, i, LW1, n, n_prev;
 	int N_0 = 0;								// counts of sequences which do not contain motifs.
 
@@ -400,7 +410,7 @@ void ModelLearning::CGS_sampling_z_q(){
 	// count k-mers for the highest order K
 	for( i = 0; i < N; i++ ){
 		for( j = 0; j < W; j++ ){
-			y = posSeqs_[i]->extractKmer( z_[i]-1+j, std::min( z_[i]-1+j, K ) );
+			y = posSeqs_[i]->extractKmer( z_[i]-1+j, ( z_[i]-1+j < K ) ?  z_[i]-1+j : K );
 			if( y >= 0 ){
 				n_z_[K][y][j]++;
 			}
@@ -433,7 +443,7 @@ void ModelLearning::CGS_sampling_z_q(){
 			for( j = 0; j < W; j++ ){
 				if( z_[n] != 0 ){
 					// remove the k-mer counts for the current sequence with old z
-					y = posSeqs_[n]->extractKmer( z_[n]-1+j, std::min( z_[n]-1+j, k ) );
+					y = posSeqs_[n]->extractKmer( z_[n]-1+j, ( z_[n]-1+j < k ) ? z_[n]-1+j : k );
 					if( y >= 0 ){
 						n_z_[k][y][j]--;
 					}
@@ -442,7 +452,7 @@ void ModelLearning::CGS_sampling_z_q(){
 					n_prev = n-1;
 					if( z_[n_prev] != 0 ){
 						// add the k-mer counts for the previous sequence with updated z
-						y_prev = posSeqs_[n-1]->extractKmer( z_[n_prev]-1+j, std::min( z_[n_prev]-1+j, k ) );
+						y_prev = posSeqs_[n-1]->extractKmer( z_[n_prev]-1+j, ( z_[n_prev]-1+j < k ) ? z_[n_prev]-1+j : k );
 						if( y_prev >= 0 ){
 							n_z_[k][y_prev][j]++;
 						}
@@ -458,7 +468,7 @@ void ModelLearning::CGS_sampling_z_q(){
 		for( y = 0; y < Y_[K+1]; y++ ){
 			for( j = 0; j < W; j++ ){
 				y_bg = y % Y_[K_bg+1];
-				s_[y][j] = motif_->getV()[K][y][j] / bg_->getV()[std::min( K, K_bg )][y_bg];
+				s_[y][j] = motif_->getV()[K][y][j] / bg_->getV()[K_bg][y_bg];
 			}
 		}
 
@@ -469,7 +479,7 @@ void ModelLearning::CGS_sampling_z_q(){
 			r_[n][i] = 1.0f;
 			for( j = 0; j < W; j++ ){
 				// extract k-mers on the motif at position i over W of the n'th sequence
-				y = posSeqs_[n]->extractKmer( i-1+j, std::min( i-1+j, K ) );
+				y = posSeqs_[n]->extractKmer( i-1+j, ( i-1+j < K ) ? i-1+j : K );
 				if( y >= 0 ){
 					r_[n][i] *= s_[y][j];
 
