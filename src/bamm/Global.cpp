@@ -51,7 +51,9 @@ bool                Global::noQOptimization = false;		// disable q optimization
 bool				Global::CGS = false;					// flag to trigger Collapsed Gibbs sampling
 int 				Global::maxCGSIterations = 200;			// maximum number of iterations for CGS
 bool				Global::noAlphaUpdating = false;		// disable alpha sampling in CGS
-bool				Global::noQSampling = false;			// disable q sampling in CGS
+bool				Global::noZQSampling = false;			// disable q sampling in CGS
+float				Global::eta = 0.01f;					// learning rate for Gibbs sampling, only for tuning
+int					Global::interval = 10;					// interval for sampling z and q, only for tuning
 
 // FDR options
 bool                Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
@@ -238,8 +240,10 @@ int Global::readArguments( int nargs, char* args[] ){
 	// CGS options
 	if( opt >> GetOpt::OptionPresent( "CGS", CGS ) ){
 		opt >> GetOpt::Option( "maxCGSIterations", maxCGSIterations );
-		opt >> GetOpt::OptionPresent( "noAlphaSampling", noAlphaUpdating );
-		opt >> GetOpt::OptionPresent( "noQSampling", noQSampling );
+		opt >> GetOpt::OptionPresent( "noAlphaUpdating", noAlphaUpdating );
+		opt >> GetOpt::OptionPresent( "noZQSampling", noZQSampling );
+		opt >> GetOpt::Option( "eta", eta );
+		opt >> GetOpt::Option( "interval", interval );
 	}
 
 	// FDR options

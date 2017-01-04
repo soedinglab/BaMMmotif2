@@ -76,7 +76,9 @@ public:
 	static bool			CGS;								// flag to trigger Collapsed Gibbs sampling
 	static int 			maxCGSIterations;					// maximum number of iterations for CGS
 	static bool			noAlphaUpdating;					// disable alpha sampling in CGS
-	static bool			noQSampling;						// disable q sampling in CGS
+	static bool			noZQSampling;						// disable q sampling in CGS
+	static float		eta;								// learning rate for optimizing alphas, only for tuning
+	static int			interval;							// interval for sampling z and q, only for tuning
 
 	// FDR options
 	static bool			FDR;								// triggers False-Discovery-Rate (FDR) estimation

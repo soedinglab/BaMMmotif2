@@ -52,9 +52,9 @@ private:
 	void 					EM_optimize_q();	// optimize hyper-parameter q
 
 	void					CGS_sampling_z_q();													// sample z and q by collapsed Gibbs sampling
-	void					CGS_updateAlphas( int order, int width, float learningrate );		// update alphas for all the orders up to K, given the learning rate
-	float					calcLogPostAlphas( float** alphas, int order );						// calculate the log posterior of alphas
-	float					calcGradLogPostAlphas( float** alphas, int order, int position );	// calculate the gradient of the log posterior of alphas
+	inline void				CGS_updateAlphas( int order, int width, float learningrate );		// update alphas for all the orders up to K, given the learning rate
+	float					calc_logPosterior_alphas( float** alphas, int order );				// calculate the log posterior of alphas
+	float					calc_gradient_alphas( float** alphas, int order, int position );	// calculate the gradient of the log posterior of alphas
 
 	void					testAlphaUpdate( float** alphas, int order, int width );			// only for testing, will be removed afterwards
 

@@ -11,8 +11,11 @@
 
 int main( int nargs, char* args[] ){
 
-	srand( 42 );						// seed random number
+	// seed random number
+	srand( 42 );
+
 	clock_t t0 = clock();
+
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "======================================\n" );
 	fprintf( stderr, "=      Welcome to use BaMMmotif      =\n" );
@@ -45,13 +48,21 @@ int main( int nargs, char* args[] ){
 
 		// train the model with either EM or Gibbs sampling
 		ModelLearning model( motif, bgModel );
-		if( Global::EM ){				// learn motifs by EM
+		if( Global::EM ){
+
+			// learn motifs by EM
 			model.EM();
-		} else if ( Global::CGS ){		// learn motifs by collapsed Gibbs sampling
+
+		} else if ( Global::CGS ){
+
+			// learn motifs by collapsed Gibbs sampling
 			model.GibbsSampling();
+
 		} else {
+
 			std::cout << "Model is not optimized!\n";
 			exit( -1 );
+
 		}
 
 		// write out the learned model
