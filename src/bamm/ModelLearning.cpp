@@ -78,6 +78,7 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int
 		alpha_[k] = ( float* )malloc( W * sizeof( float ) );
 		for( j = 0; j < W; j++ ){
 			alpha_[k][j] = Global::modelAlpha[k];
+//			alpha_[k][j] = 10.0f;
 		}
 	}
 }
@@ -328,11 +329,43 @@ void ModelLearning::GibbsSampling(){
 			"|___________________________|\n\n" );
 
 	clock_t t0 = clock();
-	bool iterate = true;										// flag for iterating before convergence
+	bool iterate = true;								// flag for iterating before convergence
 
 	int K = Global::modelOrder;
 	int W = motif_->getW();
+	int N = ( int )posSeqs_.size();
+
 	float lposterior_prev = 0.0f, lposterior_new = 0.0f, lposterior_diff = 0.0f;
+
+	int k, y, y2, j, i;
+
+	// count the k-mers
+	// 1. reset n_z_[k][y][j]
+	for( k = 0; k < K+1; k++ ){
+		for( y = 0; y < Y_[k+1]; y++ ){
+			for( j = 0; j < W; j++ ){
+				n_z_[k][y][j] = 0;
+			}
+		}
+	}
+	// 2. count k-mers for the highest order K
+	for( i = 0; i < N; i++ ){
+		for( j = 0; j < W; j++ ){
+			y = posSeqs_[i]->extractKmer( z_[i]-1+j, ( z_[i]-1+j < K ) ?  z_[i]-1+j : K );
+			if( y >= 0 ){
+				n_z_[K][y][j]++;
+			}
+		}
+	}
+	// 3. calculate nz for lower order k
+	for( k = K; k > 0; k-- ){						// k runs over all lower orders
+		for( y = 0; y < Y_[k+1]; y++ ){
+			y2 = y % Y_[k];							// cut off the first nucleotide in (k+1)-mer
+			for( j = 0; j < W; j++ ){
+				n_z_[k-1][y2][j] += n_z_[k][y][j];
+			}
+		}
+	}
 
 	// parameters for alpha learning
 	int timestep = 0;								// timestep = iteration
@@ -423,7 +456,7 @@ void ModelLearning::CGS_sampling_z_q(){
 	int W = motif_->getW();
 	int K = Global::modelOrder;
 	int K_bg = ( Global::bgModelOrder < K ) ? Global::bgModelOrder : K;
-	int k, y, y_prev, y2, y_bg, j, i, LW1, n, n_prev;
+	int k, y, y_prev, y_bg, j, i, LW1, n, n_prev;
 	int N_0 = 0;								// counts of sequences which do not contain motifs.
 
 	float** v_bg = bg_->getV();
@@ -431,38 +464,13 @@ void ModelLearning::CGS_sampling_z_q(){
 	// generated a random number, which is seeded by 42
 	std::mt19937 rng( 42 );
 
-	// reset n_z_[k][y][j]
-	for( k = 0; k < K+1; k++ ){
-		for( y = 0; y < Y_[k+1]; y++ ){
-			for( j = 0; j < W; j++ ){
-				n_z_[k][y][j] = 0;
-			}
-		}
-	}
-	// count k-mers for the highest order K
-	for( i = 0; i < N; i++ ){
-		for( j = 0; j < W; j++ ){
-			y = posSeqs_[i]->extractKmer( z_[i]-1+j, ( z_[i]-1+j < K ) ?  z_[i]-1+j : K );
-			if( y >= 0 ){
-				n_z_[K][y][j]++;
-			}
-		}
-	}
-	// calculate nz for lower order k
-	for( k = K; k > 0; k-- ){					// k runs over all lower orders
-		for( y = 0; y < Y_[k+1]; y++ ){
-			y2 = y % Y_[k];						// cut off the first nucleotide in (k+1)-mer
-			for( j = 0; j < W; j++ ){
-				n_z_[k-1][y2][j] += n_z_[k][y][j];
-			}
-		}
-	}
-
 	// sampling z:
 	// loop over all sequences and drop one sequence each time and update r
 	for( n = 0; n < N; n++ ){
 
 		LW1 = posSeqs_[n]->getL() - W + 1;
+
+		n_prev = ( n > 0) ? n-1 : N-1;
 
 		// calculate positional prior:
 		pos_[n][0] = 1.0f - q_;
@@ -480,16 +488,15 @@ void ModelLearning::CGS_sampling_z_q(){
 						n_z_[k][y][j]--;
 					}
 				}
-				if( n > 0 ){
-					n_prev = n-1;
-					if( z_[n_prev] != 0 ){
-						// add the k-mer counts for the previous sequence with updated z
-						y_prev = posSeqs_[n-1]->extractKmer( z_[n_prev]-1+j, ( z_[n_prev]-1+j < k ) ? z_[n_prev]-1+j : k );
-						if( y_prev >= 0 ){
-							n_z_[k][y_prev][j]++;
-						}
+
+				if( z_[n_prev] != 0 ){
+					// add the k-mer counts for the previous sequence with updated z
+					y_prev = posSeqs_[n_prev]->extractKmer( z_[n_prev]-1+j, ( z_[n_prev]-1+j < k ) ? z_[n_prev]-1+j : k );
+					if( y_prev >= 0 ){
+						n_z_[k][y_prev][j]++;
 					}
 				}
+
 			}
 		}
 
