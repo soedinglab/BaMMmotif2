@@ -1,4 +1,5 @@
 #include "Sequence.h"
+#include "utils.h"
 
 Sequence::Sequence( uint8_t* sequence, int L, std::string header, std::vector<int> Y, bool revcomp ){
 
@@ -12,7 +13,10 @@ Sequence::Sequence( uint8_t* sequence, int L, std::string header, std::vector<in
 		std::memcpy( sequence_, sequence, L_ );
 	}
 	header_ = header;
-	Y_ = Y;
+	Y_ = new int[10];
+	for( int i = 0; i < 10; i++ ){
+		Y_[i] = ipow( Alphabet::getSize(), i );
+	}
 
 }
 
@@ -20,6 +24,7 @@ Sequence::~Sequence(){
 	if( sequence_ != NULL ){
 		free( sequence_ );
 	}
+	delete[] Y_;
 }
 
 uint8_t* Sequence::getSequence(){
@@ -59,6 +64,7 @@ int Sequence::extractKmer( int i, int k ){
 	 *  y:			| 0 1 2 3 |	 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 |  0   1   2   3  ... | ...
 	 */
 	int y = 0;
+
 	for( int j = k; j >= 0; j-- ){
 		if( sequence_[i-j] > 0 ){
 			y += ( sequence_[i-j] -1 ) * Y_[j];

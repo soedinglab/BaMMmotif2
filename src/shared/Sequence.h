@@ -5,7 +5,7 @@
 #include <vector>
 
 #include <stdint.h>	// e.g. uint8_t
-
+#include <math.h>
 #include "Alphabet.h"
 
 class Sequence{
@@ -40,7 +40,7 @@ private:
 	float			intensity_ = 0.0f;				// sequence intensity
 	float			weight_ = 0.0f;					// sequence weight calculated from its intensity
 
-	std::vector<int> Y_;							// contains 1 at position 0
+	int* 			Y_;								// contains 1 at position 0
 													// and the number of oligomers y for increasing order k at positions k+1
 													// e.g.
 													// alphabet size_ = 4: Y_ = 4^0 4^1 4^2 ... 4^15 < std::numeric_limits<int>::max()

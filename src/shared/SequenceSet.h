@@ -26,9 +26,7 @@ public:
 	unsigned int 			getMinL();
 	unsigned int			getMaxL();
 	float* 					getBaseFrequencies();
-	int***					countKmers( int order = 0, int width = 0, int* z = {}, int s = -1 );	// count kmers from the sequence set
-																									// if sequence s is given, count kmers excluding sequence s
-																									// if not, count kmers from all sequences
+
 	void					print();			// print sequences
 	void                    debug();            // exhaustive printouts
 

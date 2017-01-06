@@ -449,50 +449,6 @@ int SequenceSet::readFASTA( bool revcomp ){
 	return 0;
 }
 
-int*** SequenceSet::countKmers( int K, int W, int* z, int s ){
-
-	int*** n;
-	int k, y, y2, j;
-	// allocate memory for counts nz_[k][y][j]
-	n = ( int*** )calloc( K+1, sizeof( int** ) );
-	for( k = 0; k < K+1; k++ ){
-		n[k] = ( int** )calloc( Y_[k+1], sizeof( int* ) );
-		for( y = 0; y < Y_[k+1]; y++ ){
-			n[k][y] = ( int* )calloc( W, sizeof( int ) );
-		}
-	}
-
-	// counts K-mers at position i except the n'th sequence
-	for( int i = 0; i < N_; i++ ){
-//		std::cout << "z[" << i << "]=" << z[i] << ":\t";
-		if( i == s ){
-//			std::cout << std::endl;
-			continue;						// skip the s'th sequence
-		} else {
-			for( j = 0; j < W; j++ ){
-				y = sequences_[i]->extractKmer( z[i]+j, std::min( z[i]+j, K ) );
-//				if( y >= 0 )				// skip unknown alphabets
-				n[K][y][j]++;
-//				std::cout << y << '\t';
-			}
-//			std::cout << std::endl;
-		}
-
-	}
-
-	// calculate nz for lower order k
-	for( k = K; k > 0; k-- ){				// k runs over all lower orders
-		for( y = 0; y < Y_[k+1]; y++ ){
-			y2 = y % Y_[k];					// cut off the first nucleotide in (k+1)-mer
-			for( j = 0; j < W; j++ ){
-				n[k-1][y2][j] += n[k][y][j];
-			}
-		}
-	}
-
-	return n;
-}
-
 int SequenceSet::readIntensities(){
 
 	std::cerr << "Error: SequenceSet::readIntensities() is not implemented so far." << std::endl;
