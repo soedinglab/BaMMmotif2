@@ -143,12 +143,68 @@ MotifSet::MotifSet(){
 	} else if( Global::BaMMFilename != NULL ){
 
 		// read file to calculate motif length
-		// Motif* motif = new Motif( length )
-		// motif.initFromBMM( file )
-		// motifs.push_back( motif )
-	}
+		std::ifstream file;
+		file.open( Global::BaMMFilename, std::ifstream::in );
 
-//	if( Global::verbose ) print();
+		if( !file.good() ){
+			std::cout << "Error: Cannot open BaMM file: " << Global::BaMMFilename << std::endl;
+			exit( -1 );
+		} else {
+
+			int length = 0;
+			int order  = -1;
+			int asize  = 0;
+			std::string line;
+
+
+			// read file to calculate motif length, order and alphabet size
+			while( getline( file, line ) ){
+
+				if( line.empty() ){
+					length++;
+				}else{
+					if( length == 0 ){
+						order++;
+						if( order == 0 ){
+							for( unsigned int i = 0; i < line.length(); i++ ){
+								if( line[i] == ' ' )
+									asize++;
+							}
+						}
+					}
+				}
+			}
+
+			// adjust modelOrder
+			Global::modelOrder = order;
+
+			// adjust Alphabet
+			char* alphabetType = new char[9];
+			if( asize == 4 ){
+				strcpy( alphabetType, "STANDARD");
+			}else{
+				if( asize == 6 ){
+					strcpy( alphabetType, "EXTENDED");
+				}else{
+					// asize isn't enough to guess alphabet type: thorw error
+					std::cout << "Error: Please provide Alphabet Type of your BaMM File: " << Global::BaMMFilename << std::endl;
+					exit( -1 );
+				}
+			}
+			Alphabet::init( alphabetType );
+
+			// construct an initial motif
+			Motif* motif = new Motif( length );
+
+			// initialize motif from file
+			motif->initFromBayesianMarkovModel( Global::BaMMFilename );
+
+			motifs_.push_back( motif );
+
+			N_ = 1;
+		}
+	}
+	//	if( Global::verbose ) print();
 }
 
 MotifSet::~MotifSet(){

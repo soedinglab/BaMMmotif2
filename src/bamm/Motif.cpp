@@ -1,3 +1,5 @@
+#include <fstream>		// std::fstream
+
 #include "Motif.h"
 
 Motif::Motif( int length ){
@@ -222,6 +224,44 @@ void Motif::initFromPWM( float** PWM, int asize, int count ){
 
 // initialize v from Bayesian Markov model file and set isInitialized
 void Motif::initFromBayesianMarkovModel( char* filename ){
+
+	int k,y,j;
+	std::ifstream file;
+	file.open( filename, std::ifstream::in );
+	std::string line;
+
+	// loop over motif position j
+	for( j = 0; j < W_; j++ ){
+
+		// loop over order k
+		for( k = 0; k < Global::modelOrder+1 ; k++ ){
+
+			getline(file,line);
+
+			std::stringstream number( line );
+
+			float probability;
+
+			y = 0;
+			while( number >> probability ){
+				// fill up for kmers y
+				v_[k][y][j] = probability;
+				y++;
+			}
+		}
+		// read 'empty' line
+		getline(file, line);
+	}
+
+	// set isInitialized
+	isInitialized_ = true;
+
+	// optional: save initial model
+	// TOdo: delete after
+	if( Global::saveInitialModel ){
+		calculateP();
+		write( -1 );
+	}
 
 }
 

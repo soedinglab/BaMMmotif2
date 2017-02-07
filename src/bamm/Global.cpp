@@ -147,7 +147,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	} else if ( opt >> GetOpt::OptionPresent( "PWMFile" ) ){
 		opt >> GetOpt::Option( "PWMFile", PWMFilename );
 		initialModelBasename = baseName( PWMFilename );
-	} else if( opt >> GetOpt::OptionPresent( "BMMFile" ) ){
+	} else if( opt >> GetOpt::OptionPresent( "BaMMFile" ) ){
 		opt >> GetOpt::Option( "BaMMFile", BaMMFilename );
 		initialModelBasename = baseName( BaMMFilename );
 	} else {
