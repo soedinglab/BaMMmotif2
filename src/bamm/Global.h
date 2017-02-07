@@ -1,10 +1,3 @@
-/*
- * Global.h
- *
- *  Created on: Apr 1, 2016
- *      Author: wanwan
- */
-
 #ifndef GLOBAL_H_
 #define GLOBAL_H_
 
@@ -22,6 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <algorithm>                                        // std::min
 
 #include "../shared/SequenceSet.h"
 #include "../shared/Alphabet.h"
@@ -34,68 +28,80 @@ public:
 	static char*		outputDirectory; 					// output directory
 
 	static char*		posSequenceFilename;				// filename of positive sequence FASTA file
+	static std::string	posSequenceBasename;				// basename of positive sequence FASTA file
+	static SequenceSet*	posSequenceSet;						// positive Sequence Set
+	static std::vector<std::vector<int>> posFoldIndices;	// sequence indices for positive sequence set
+
 	static char*		negSequenceFilename;				// filename of negative sequence FASTA file
+	static std::string	negSequenceBasename;				// basename of negative sequence FASTA file
+	static SequenceSet*	negSequenceSet;						// negative Sequence Set
+	static std::vector<std::vector<int>> negFoldIndices;	// sequence indices for given negative sequence set
+	static bool			negSeqGiven;						// a flag for the negative sequence given by users
 
-	static char*		posSequenceBasename;				// basename of positive sequence FASTA file
-	static char*		negSequenceBasename;				// basename of negative sequence FASTA file
-
+	// weighting options
+	static char*		intensityFilename;					// filename of intensity file (i.e. for HT-SELEX data)
 
 	static char* 		alphabetType;						// provide alphabet type
 	static bool			revcomp;							// also search on reverse complement of sequences, defaults to false
 
-	static SequenceSet*	posSequenceSet;						// positive Sequence Set
-	static SequenceSet*	negSequenceSet;						// negative Sequence Set
-
-	static char*		intensityFilename;					// filename of intensity file (i.e. for HT-SELEX data)
-	// further weighting options...
-
-	// files to initialize model(s)
+	// initial model(s) options
 	static char*		BaMMpatternFilename;				// filename of BaMMpattern file
-	static char*		bindingSitesFilename;				// filename of binding sites file
+	static char*		bindingSiteFilename;				// filename of binding sites file
 	static char*		PWMFilename;						// filename of PWM file
-	static char*		BaMMFilename;						// filename of Markov model (.bmm) file
-
-	static char*		initialModelBasename;				// basename of initial model
+	static char*		BaMMFilename;						// filename of Markov model (.bamm) file
+	static std::string	initialModelBasename;				// basename of initial model
 
 	// model options
 	static int			modelOrder;							// model order
 	static std::vector<float> modelAlpha;					// initial alphas
+	static float		modelBeta;							// alpha_k = beta x gamma^(k-1) for k > 0
+	static float		modelGamma;
 	static std::vector<int>	addColumns;						// add columns to the left and right of models used to initialize Markov models
+    static bool        interpolate;                         // calculate prior probabilities from lower-order probabilities
+                                                            // instead of background frequencies of mono-nucleotides
+    static bool        interpolateBG;                       // calculate prior probabilities from lower-order probabilities
+                                                            // instead of background frequencies of mono-nucleotides
 
 	// background model options
 	static int			bgModelOrder;						// background model order, defaults to 2
-	static float		bgModelAlpha;						// background model alpha
+	static std::vector<float> bgModelAlpha;					// background model alpha
 
 	// EM options
-	static unsigned int	maxEMIterations;					// maximum number of iterations
+	static bool			EM;									// flag to trigger EM learning
+	static int			maxEMIterations;					// maximum number of iterations for EM
 	static float		epsilon;							// threshold for likelihood convergence parameter
-	static bool			noAlphaOptimization;				// disable alpha optimization
 	static bool			noQOptimization;					// disable q optimization
+
+	// CGS (Collapsed Gibbs sampling) options
+	static bool			CGS;								// flag to trigger Collapsed Gibbs sampling
+	static int 			maxCGSIterations;					// maximum number of iterations for CGS
+	static bool			noAlphaUpdating;					// disable alpha sampling in CGS
+	static bool			noZQSampling;						// disable q sampling in CGS
+	static float		eta;								// learning rate for optimizing alphas, only for tuning
+	static int			interval;							// interval for sampling z and q, only for tuning
 
 	// FDR options
 	static bool			FDR;								// triggers False-Discovery-Rate (FDR) estimation
-	static unsigned int	mFold;								// number of negative sequences as multiple of positive sequences
-	static unsigned int	cvFold;								// number of cross-validation folds
-	static std::vector< std::vector<int> >	posFoldIndices;	// sequence indices for each cross-validation fold
-	static std::vector< std::vector<int> >	negFoldIndices;	// sequence indices for each cross-validation fold
-	// further FDR options...
+	static int			mFold;								// number of negative sequences as multiple of positive sequences
+	static int			cvFold;								// number of cross-validation (cv) folds
+	static int 			sOrder;								// the k-mer order for sampling negative sequence set
 
+	// other options
 	static bool			verbose;							// verbose printouts, defaults to false
+	static bool         debugMode;                          // verbose printouts for debugging, defaults to false
+	static bool			saveBaMMs;							// write optimized BaMM(s) to disk
+	static bool			saveLogOdds;						// write the log odds of positive and negative sets to disk
+	static bool			saveInitialModel;					// write out the initial model to disk
 
 	static void         init( int nargs, char* args[] );
 	static void         destruct();
+	static void         debug();
 
 	static char* 		String( const char *s );			// convert const char* to string, for GetOpt library
-	static int			ipow( unsigned int base, int exp );	// power function for integers
-	static int*			powA;								// sizes of alphabet to the power k
 
-	static bool			setSlow;							// develop with the slow EM version
 private:
 
 	static int	        readArguments( int nargs, char* args[] );
-	static void	        createDirectory( char* dir );
-	static char*		baseName( char* path );
-	static void	        generateFolds( unsigned int posN, unsigned int negN, unsigned int fold );
 	static void	        printHelp();
 };
 

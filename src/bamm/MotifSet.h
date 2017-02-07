@@ -1,14 +1,8 @@
-/*
- * MotifSet.h
- *
- *  Created on: Apr 1, 2016
- *      Author: wanwan
- */
-
 #ifndef MOTIFSET_H_
 #define MOTIFSET_H_
 
 #include "Motif.h"
+#include "../shared/utils.h"
 
 class MotifSet {
 
@@ -27,6 +21,7 @@ private:
 
 	std::vector<Motif*> motifs_;			// motifs
 	int          		N_ = 0;				// number of motifs
+
 };
 
 #endif /* MOTIFSET_H_ */

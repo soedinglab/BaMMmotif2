@@ -1,47 +1,51 @@
-/*
- * SequenceSet.cpp
- *
- *  Created on: Apr 7, 2016
- *      Author: wanwan
- */
-
-#include <iostream>			// std::
-#include <fstream>			// std::fstream
-#include <cstdio>           // EOF
-#include <string>			// string, find_last_of,
-#include <cstring>			// memcpy
-#include <algorithm>		// count
-
 #include "SequenceSet.h"
-#include "Alphabet.h"
 
+SequenceSet::SequenceSet( std::string sequenceFilepath, bool revcomp, std::string intensityFilepath ){
 
-SequenceSet::SequenceSet( char* sequenceFilepath, char* intensityFilepath ){
+	if( Alphabet::getSize() == 0 ){
+		std::cerr << "Error: Initialize Alphabet before constructing a SequenceSet" << std::endl;
+		exit( -1 );
+	}
 
 	sequenceFilepath_ = sequenceFilepath;
-	intensityFilepath_ = intensityFilepath;
-	baseFrequencies_ = new float[Alphabet::getSize()];
 
-	readFASTA();
+	// calculate the length of the subsequence that is max. extractable
+	// depends on the return type (int) of Sequence::extractKmer()
+	int l = static_cast<int>( floorf(
+				logf( static_cast<float>( std::numeric_limits<int>::max() ) ) /
+				logf( static_cast<float>( Alphabet::getSize() ) ) ) );
 
-	// if intensity file is given, read in intensity file
-	if ( intensityFilepath != NULL ) readIntensities();
+	for( int i = 0; i <= l; i++ ){
+		Y_.push_back( ipow( Alphabet::getSize(), i ) );
+	}
+
+	baseFrequencies_ = new float[Y_[1]];
+
+	readFASTA( revcomp );
+
+	if( !( intensityFilepath.empty() ) ){
+		intensityFilepath_ = intensityFilepath;
+		readIntensities();
+	}
+
 }
 
 SequenceSet::~SequenceSet(){
-	if( baseFrequencies_ ) delete[] baseFrequencies_;
-	std::cout << "Destructor for SequenceSet class works fine. \n";
+    for( size_t i = 0; i < sequences_.size(); i++ ){
+		delete sequences_[i];
+	}
+    if( !baseFrequencies_ ) delete baseFrequencies_;
 }
 
-char* SequenceSet::getSequenceFilepath(){
+std::string SequenceSet::getSequenceFilepath(){
 	return sequenceFilepath_;
 }
 
-char* SequenceSet::getIntensityFilepath(){
+std::string SequenceSet::getIntensityFilepath(){
 	return intensityFilepath_;
 }
 
-std::vector<Sequence> SequenceSet::getSequences(){
+std::vector<Sequence*> SequenceSet::getSequences(){
 	return sequences_;
 }
 
@@ -61,255 +65,392 @@ float* SequenceSet::getBaseFrequencies(){
 	return baseFrequencies_;
 }
 
-int SequenceSet::readFASTA(){
+void SequenceSet::print(){
+
+/*	for( int i = 0; i < N_; i++ ){
+		sequences_[i]->print();
+	}*/
+
+}
+
+void SequenceSet::debug(){
+    // read FASTA with massive printouts to check the function
+    // -> NOTE: this is a "quick-an-dirty" version which is invalid as soon as someone changes something in readFATSA.
+    // needs to be done better:
+    //-> since readFASTA is independent of global variables, one should do a real test sequenceSet and check if
+    // the output for readFasta gives the expected outcome instead
+
+        bool revcomp = false;
+        int N = 0; // sequence counter
+        int maxL = 0;
+        int minL = std::numeric_limits<int>::max();
+        std::vector<unsigned int> baseCounts( Alphabet::getSize() );
+
+        std::string line, header, sequence;
+        std::ifstream file( sequenceFilepath_.c_str() ); // opens FASTA file
+
+        if( file.is_open() ){
+
+            while( getline( file, line ).good() ){
+
+                fprintf( stdout,  "Current Line: %s \n", line.c_str());
+
+                if( !( line.empty() ) ){ // skip blank lines
+
+                    fprintf( stdout,  "Line not empty\n");
+
+                    if( line[0] == '>' ){
+
+                        fprintf( stdout,  "Line is a header line\n");
+
+                        if( !( header.empty() ) ){
+
+                            fprintf( stdout,  "There has already been a header line before\n");
+
+                            if( !( sequence.empty() ) ){
+
+                                fprintf( stdout,  "There has already been a sequence line before\n");
+
+                                N++; // increment sequence counter
+                                fprintf( stdout,   "\t N -> %d \n", N);
+
+                                int L = static_cast<int>( sequence.length() );
+
+                                fprintf( stdout,   "current sequence length -> %d \n", L);
+
+                                if ( L > maxL ){
+                                    fprintf( stdout, "maxL = %d \n ", maxL);
+                                    fprintf( stdout,  "sequence length is longer than maxL -> maxL = L \n");
+                                    maxL = L;
+                                    fprintf( stdout, "maxL = %d \n ", maxL);
+                                }
+                                if ( L < minL ){
+                                    fprintf( stdout, "minL = %d \n ", minL);
+                                    fprintf( stdout,  "sequence length is smaller than minL -> minL = L \n");
+                                    minL = L;
+                                    fprintf( stdout, "minL = %d \n ", minL);
+                                }
+
+                                // translate sequence into encoding
+                                uint8_t* encoding = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
+                                fprintf( stdout, "translate sequence into encoding ...\n");
+                                fprintf( stdout, " Sequence ->  Encoding \n");
+                                for( int i = 0; i < L; i++ ){
+                                    encoding[i] = Alphabet::getCode( sequence[i] );
+                                    fprintf( stdout, "       %d ->  %d       \n", sequence[i], encoding[i] );
+                                    if( encoding[i] == 0 ){
+                                        std::cerr << "Warning: The FASTA file contains an undefined base: " << sequence[i] << std::endl;
+                                        continue; // exclude undefined base from base counts
+                                    }
+                                    baseCounts[encoding[i]-1]++; // count base
+                                }
+
+                                fprintf( stdout, "\n Counted baseCounts:\n");
+                                fprintf( stdout, "Encoding -> counts \n");
+                                for( int i = 0; i < L; i++ ){
+                                    encoding[i] = Alphabet::getCode( sequence[i] );
+                                    if( encoding[i] == 0 ){
+                                        std::cerr << "Warning: The FASTA file contains an undefined base: " << sequence[i] << std::endl;
+                                        continue; // exclude undefined base from base counts
+                                    }
+                                    fprintf( stdout, "      %d -> %d     \n", encoding[i], baseCounts[encoding[i]-1]);
+                                }
+
+                                fprintf( stdout, "create new Sequence with encoding, L, header, Y, revcomp");
+                                sequences_.push_back( new Sequence( encoding, L, header, Y_, revcomp ) );
+
+                                sequence.clear();
+                                header.clear();
+
+                                free( encoding );
+
+                            } else{
+
+                                std::cerr << "Warning: Ignore FASTA entry without sequence: " << sequenceFilepath_ << std::endl;
+                                header.clear();
+                            }
+                        }
+
+                        if( line.length() == 1 ){ // corresponds to ">\n"
+                            // set header to sequence counter
+                            header = static_cast<std::ostringstream*>( &( std::ostringstream() << ( N+1 ) ) )->str();
+                        } else{
+                            header = line.substr( 1 );// fetch header
+                        }
+                        fprintf( stdout, "Header = %s \n", header.c_str() );
+
+                    } else if ( !( header.empty() ) ){
+
+                        fprintf( stdout, "Line is a sequence and header is not empty\n");
+
+                        if( line.find( ' ' ) != std::string::npos ){
+                            // space character in sequence
+                            std::cerr << "Error: FASTA sequence contains space character: " << sequenceFilepath_ << std::endl;
+                            exit( -1 );
+                        } else{
+                            sequence += line;
+                            fprintf( stdout, "line added to sequence\n");
+                            fprintf( stdout, "%s", sequence.c_str() );
+                        }
+
+                    } else{
+
+                        std::cerr << "Error: Wrong FASTA format: " << sequenceFilepath_ << std::endl;
+                        exit( -1 );
+                    }
+                }
+            }
+
+            if( !( header.empty() ) ){ // store the last sequence
+
+                if( !( sequence.empty() ) ){
+
+                    N++; // increment sequence counter
+                    fprintf( stdout,   "\t N -> %d \n", N);
+
+                    int L = static_cast<int>( sequence.length() );
+                    fprintf( stdout,   "current sequence length -> %d \n", L);
+
+                    if ( L > maxL ){
+                        fprintf( stdout, "maxL = %d \n ", maxL);
+                        fprintf( stdout,  "sequence length is longer than maxL -> maxL = L \n");
+                        maxL = L;
+                        fprintf( stdout, "maxL = %d \n ", maxL);                    }
+                    if ( L < minL ){
+                        fprintf( stdout, "minL = %d \n ", minL);
+                        fprintf( stdout,  "sequence length is smaller than minL -> minL = L \n");
+                        minL = L;
+                        fprintf( stdout, "minL = %d \n ", minL);
+                    }
+
+                    // translate sequence into encoding
+                    uint8_t* encoding = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
+                    fprintf( stdout, "translate sequence into encoding ...\n");
+                    fprintf( stdout, " Sequence ->  Encoding \n");
+                    for( int i = 0; i < L; i++ ){
+                        encoding[i] = Alphabet::getCode( sequence[i] );
+                        fprintf( stdout, "       %d ->  %d       \n", sequence[i], encoding[i] );
+                        if( encoding[i] == 0 ){
+                            std::cerr << "Warning: The FASTA file contains an undefined base: " << sequence[i] << std::endl;
+                            continue; // exclude undefined base from base counts
+                        }
+                        baseCounts[encoding[i]-1]++; // count base
+                    }
+
+                    fprintf( stdout, "\n Counted baseCounts:\n");
+                    fprintf( stdout, "Encoding -> counts \n");
+                    for( int i = 0; i < L; i++ ){
+                        encoding[i] = Alphabet::getCode( sequence[i] );
+                        if( encoding[i] == 0 ){
+                            std::cerr << "Warning: The FASTA file contains an undefined base: " << sequence[i] << std::endl;
+                            continue; // exclude undefined base from base counts
+                        }
+                        fprintf( stdout, "      %d -> %d     \n", encoding[i], baseCounts[encoding[i]-1]);
+                    }
+
+                    fprintf( stdout, "create new Sequence with encoding, L, header, Y, revcomp");
+                    sequences_.push_back( new Sequence( encoding, L, header, Y_, revcomp ) );
+
+                    sequence.clear();
+                    header.clear();
+
+                    free( encoding );
+
+                } else{
+
+                    std::cerr << "Warning: Ignore FASTA entry without sequence: " << sequenceFilepath_ << std::endl;
+                    header.clear();
+                }
+            }
+
+            file.close();
+
+        } else{
+
+            std::cerr << "Error: Cannot open FASTA file: " << sequenceFilepath_ << std::endl;
+            exit( -1 );
+        }
+
+        N_ = N;
+        maxL_ = maxL;
+        minL_ = minL;
+
+        fprintf( stdout, "Final Numbers: N_ = %d maxL_ = %d minL_ = %d \n", N, maxL, minL);
+
+        exit(0);
+
+}
+
+int SequenceSet::readFASTA( bool revcomp ){
 
 	/**
-	 * while reading in the sequences, do:
+	 * while reading in the sequences do:
 	 * 1. extract the header for each sequence
-	 * 2. calculate the minimal and maximal length in the file
+	 * 2. calculate the min. and max. sequence length in the file
 	 * 3. count the number of sequences
-	 * 4. calculate mono-nucleotide frequencies
+	 * 4. calculate base frequencies
 	 */
-/*
-	unsigned int N = 0; 							// sequence counter
-	unsigned int ls;								// length of the sequence
-	unsigned int lh;								// length of the header
-	unsigned int sizeSeq = 1000;					// initialize the size of sequence array as 1000
-//	unsigned int* baseCounts = ( unsigned int* )calloc( Alphabet::getSize() , sizeof( unsigned int ) );
-	unsigned int* baseCounts = new unsigned int[Alphabet::getSize()];
-	unsigned int baseSumCount = 0;					// total number of nucleotides in the FASTA file
-	unsigned int maxL = 0, minL = 1000;				// initialize the min. and max. length
 
-	FILE* fp;
-	std::string header;
+	int N = 0; // sequence counter
+	int maxL = 0;
+	int minL = std::numeric_limits<int>::max();
+	std::vector<unsigned int> baseCounts( Alphabet::getSize() );
+	std::string line, header, sequence;
+	std::ifstream file( sequenceFilepath_.c_str() ); // opens FASTA file
 
-//	int* sequence = ( int* )calloc( sizeSeq, sizeof( int ) );
-	int* sequence = new int[sizeSeq];
+	if( file.is_open() ){
 
-	if( ( fp = fopen( sequenceFilepath_, "r" ) ) == NULL ){
-		fprintf( stderr, "Cannot open positive sequence file: %s\n", sequenceFilepath_ );
-		exit( -1 );
-	}
+		while( getline( file, line ).good() ){
 
-	int base; // in ASCII code
-	base = fgetc( fp );
+			if( !( line.empty() ) ){ // skip blank lines
 
-	fprintf( stderr, "Start reading in the FASTA file! \n" );
+				if( line[0] == '>' ){
 
-	// skipping leading blank lines
-	while( ( base == '\n' || base == '\r' ) && base != EOF ){
-		base = fgetc( fp );
-	}
+					if( !( header.empty() ) ){
 
-	while( base != EOF ){
+						if( !( sequence.empty() ) ){
 
-		// reset parameters to 0
-		ls = 0;
-		lh = 0;
-		header = "";
-		memset( &sequence, 0, ls );
+							N++; // increment sequence counter
 
-		if( base != '>' ){
-			fprintf( stderr, "Error: Not a FASTA format file! \n"
-					"Please check the content in the file. \n" );
-			exit( -1 );
-		}
+							int L = static_cast<int>( sequence.length() );
 
-		N++;										// count the number of header
+							if ( L > maxL ){
+								maxL = L;
+							}
+							if ( L < minL ){
+								minL = L;
+							}
 
-		base = fgetc( fp ); 						// read in the first char after '>' in the header
-		fprintf( stderr, "Start reading in each header... \n" );
+							// translate sequence into encoding
+							uint8_t* encoding = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
 
-		while( ( base != '\n' && base != '\r' ) && base != EOF ) {
-			lh++;
-			header += ( char )base;					// append each letter to the header
-			base = fgetc( fp );
-		} 											// end of header or start of sequence line
+							for( int i = 0; i < L; i++ ){
 
-		while( base == '\n' || base == '\r' ){		// skipping blank lines in between
-			base = fgetc( fp );
-		} 											// start of sequence line
+								encoding[i] = Alphabet::getCode( sequence[i] );
 
-		fprintf( stderr, "Start reading in each sequence... \n" );
-		while( base != '>' && base != EOF ){
+								if( encoding[i] == 0 ){
 
-			if( base == '\n' || base == '\r' ){		// skip all the '\n' and '\r'
-				base = fgetc( fp );
-				continue;
-			}
+									std::cerr << "Warning: The FASTA file contains an undefined base: " <<
+											sequence[i] << " at sequence " << header << std::endl;
 
-			ls++;
+									continue; // exclude undefined base from base counts
 
-			baseCounts[ Alphabet::getCode( ( char )base )-1 ]++;// count the occurrence of mono-nucleotides
+								}
+								baseCounts[encoding[i]-1]++; // count base
+							}
+							sequences_.push_back( new Sequence( encoding, L, header, Y_, revcomp ) );
 
-			if( ls > sizeSeq ){									// before memcpy, check if the sequence length exceeds the size of array
-				sizeSeq *= 2;
-				sequence = ( int* )realloc( sequence, sizeSeq );
-			}
+							sequence.clear();
+							header.clear();
 
-//			std::memcpy( &sequence[ls-1], &base, 1 );			// memcpy base into sequence array
-			strncat( sequence, base, 1 );
-		}
+							free( encoding );
 
-		Sequence* seq = new Sequence( sequence, ls, header );
-		fprintf( stderr, "A new sequence object is created! \n" );
+						} else{
 
-		sequences_.push_back( seq );
-		fprintf( stderr, "A new sequence object is push to the sequences vector! \n" );
-
-		if( ls == 0 ){											// check if sequence is empty
-			fprintf( stderr, "Empty sequence with the entry %d !\n ", N );
-		}
-
-		if ( ls > maxL )										// check the length of each sequence if it is min or max
-			maxL = ls;
-		if ( ls < minL )
-			minL = ls;
-
-		fprintf( stderr, "header of sequence is %s \n", sequences_[N-1]->getHeader().c_str());
-		fprintf( stderr, "the length is %d \n", sequences_[N-1]->getL() );
-		for( int i = 1; i < 5; i++ ){
-			fprintf( stderr, " The base count is %d \n", baseCounts[i] );
-		}
-
-		delete seq;
-		base = fgetc( fp );
-
-	}
-
-	fprintf( stderr, "Finish reading in the FASTA file. \n" );
-
-
-	for( unsigned int i = 0; i < Alphabet::getSize(); i++ ){	// Calculate the sum of all mono-nucleotides
-		baseSumCount += baseCounts[i+1];
-	}
-	for( unsigned int i = 0; i < Alphabet::getSize(); i++ ){	// Calculate the frequencies of all mono-nucleotides
-		baseFrequencies_[i] = ( float )baseCounts[i+1] / ( float )baseSumCount;
-	}
-
-	// assign the maxL_, minL_ and N_
-	maxL_ = maxL;
-	minL_ = minL;
-	N_ = N;
-
-	free( sequence );
-	delete [] baseCounts;
-
-	fprintf( stderr, "max length is %d \n", maxL_ );
-	fprintf( stderr, "min length is %d \n", minL_ );
-	fprintf( stderr, "number of sequences is %d \n", N_ );
-*/
-
-	std::ifstream seqfile( sequenceFilepath_ ); 				// open sequence file
-	std::string line;
-	std::string header;
-	std::string sequence;
-
-	int maxL = 0, minL = 1000;									// initialize the min. and max. length
-	int N = 0;													// count sequences
-	int i, L;
-	unsigned int* baseCounts = new unsigned int[Alphabet::getSize()];
-	for( i = 0; i < Alphabet::getSize(); i++ )
-		baseCounts[i] = 0;
-
-	if( seqfile ){
-		while( getline( seqfile, line ).good() ){
-			if( line.empty() || line[0] == '>' ){
-				if( !header.empty() ){
-					L = ( int )sequence.length();
-					uint8_t* encodeSeq = new uint8_t[L];
-
-					for( i = 0; i < L; i++ ){
-						encodeSeq[i] = Alphabet::getCode( sequence[i] );
-						if( encodeSeq[i] == 0 ){
-							fprintf( stderr, "Warning: The FASTA file contains other alphabet(s) "
-									"than %s on line %d.\n", Alphabet::getAlphabet(), N );
-							continue;
+							std::cerr << "Warning: Ignore FASTA entry without sequence: " << sequenceFilepath_ << std::endl;
+							header.clear();
 						}
-						baseCounts[encodeSeq[i]-1]++;			// count the occurrence of mono-nucleotides
 					}
 
-					sequences_.push_back( Sequence( encodeSeq, L, header ) );
+					if( line.length() == 1 ){ // corresponds to ">\n"
+						// set header to sequence counter
+						header = static_cast<std::ostringstream*>( &( std::ostringstream() << ( N+1 ) ) )->str();
+					} else{
+						header = line.substr( 1 );// fetch header
+					}
 
-					if ( L > maxL )								// check the length of each sequence if it is min or max
-						maxL = L;
-					if ( L < minL )
-						minL = L;
+				} else if ( !( header.empty() ) ){
 
-					N++;										// count the number of sequences
+					if( line.find( ' ' ) != std::string::npos ){
+						// space character in sequence
+						std::cerr << "Error: FASTA sequence contains space character: " << sequenceFilepath_ << std::endl;
+						exit( -1 );
+					} else{
+						sequence += line;
+					}
 
-					sequence.clear();
-					header.clear();
-					delete []encodeSeq;
-				}
-				if( !line.empty()  ){
-					if( line.length() == 1 )					// for empty entry
-						header = "NonName";
-					else
-						header = line.substr(1);				// fetch the header
-				}
-			} else if( !header.empty() ){
-				if( line.find(' ') != std::string::npos ){		// Invalid sequence--no spaces allowed
-					header.clear();
-					sequence.clear();
-				} else {
-					sequence += line;
+				} else{
+
+					std::cerr << "Error: Wrong FASTA format: " << sequenceFilepath_ << std::endl;
+					exit( -1 );
 				}
 			}
 		}
-		if( !header.empty() ){									// for the last entry if no new line follows by
-			L = ( int )sequence.length();
-			uint8_t* encodeSeq = new uint8_t[L];
-			for( int i = 0; i < L; i++ ){
-				encodeSeq[i] = Alphabet::getCode( sequence[i] );
-				if( encodeSeq[i] == 0 ){
-					fprintf( stderr, "Warning: The FASTA file contains other alphabet(s) "
-							"than %s on line %d.\n", Alphabet::getAlphabet(), N );
-					continue;
+
+		if( !( header.empty() ) ){ // store the last sequence
+
+			if( !( sequence.empty() ) ){
+
+				N++; // increment sequence counter
+
+				int L = static_cast<int>( sequence.length() );
+
+				if ( L > maxL ){
+					maxL = L;
 				}
-				baseCounts[encodeSeq[i]-1]++;					// count the occurrence of mono-nucleotides
+				if ( L < minL ){
+					minL = L;
+				}
+
+				// translate sequence into encoding
+				uint8_t* encoding = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
+
+				for( int i = 0; i < L; i++ ){
+
+					encoding[i] = Alphabet::getCode( sequence[i] );
+
+					if( encoding[i] == 0 ){
+
+						std::cerr << "Warning: The FASTA file contains an undefined base: " <<
+								sequence[i] << " at sequence " << header << std::endl;
+
+						continue; // exclude undefined base from base counts
+					}
+					baseCounts[encoding[i]-1]++; // count base
+				}
+				sequences_.push_back( new Sequence( encoding, L, header, Y_, revcomp ) );
+
+				sequence.clear();
+				header.clear();
+
+				free( encoding );
+
+			} else{
+
+				std::cerr << "Warning: Ignore FASTA entry without sequence: " << sequenceFilepath_ << std::endl;
+				header.clear();
 			}
-
-			sequences_.push_back( Sequence( encodeSeq, L, header ) );
-
-			if ( L > maxL )										// check the length of each sequence if it is min or max
-				maxL = L;
-			if ( L < minL )
-				minL = L;
-
-			N++;												// count the number of sequences
-
-			sequence.clear();
-			header.clear();
-			delete []encodeSeq;
 		}
-	} else {
-		fprintf( stderr, "Error: Cannot open positive sequence file: %s\n", sequenceFilepath_ );
-		exit( -1 );
-	}
-	seqfile.close();											// close sequence file
 
-	if( minL == 0 ){											// exclude format with empty sequence under '>'
-		fprintf( stderr, "Error: Wrong FASTA format file!\n" );
+		file.close();
+
+	} else{
+
+		std::cerr << "Error: Cannot open FASTA file: " << sequenceFilepath_ << std::endl;
 		exit( -1 );
 	}
 
+	N_ = N;
 	maxL_ = maxL;
 	minL_ = minL;
-	N_ = N;
 
-	unsigned int baseSumCount = 0;
-	for( i = 0; i < Alphabet::getSize(); i++ )				// Calculate the sum of all mono-nucleotides
-		baseSumCount += baseCounts[i];
+	 // calculate the sum of bases
+	unsigned int sumCounts = 0;
+	for( int i = 0; i < Y_[1]; i++ ){
+		sumCounts += baseCounts[i];
+	}
 
-	for( i = 0; i < Alphabet::getSize(); i++ )				// Calculate the frequencies of all mono-nucleotides
-		baseFrequencies_[i] = ( float )baseCounts[i] / ( float )baseSumCount;
-
-	delete []baseCounts;
+	// calculate base frequencies
+	for( int i = 0; i < Y_[1]; i++ ){
+		baseFrequencies_[i] = static_cast<float>( baseCounts[i] ) /
+		                      static_cast<float>( sumCounts );
+	}
 
 	return 0;
 }
 
 int SequenceSet::readIntensities(){
-	return -1;
+
+	std::cerr << "Error: SequenceSet::readIntensities() is not implemented so far." << std::endl;
+	exit( -1 );
 }

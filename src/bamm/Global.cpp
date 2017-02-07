@@ -1,10 +1,3 @@
-/*
- * Global.cpp
- *
- *  Created on: Apr 4, 2016
- *      Author: wanwan
- */
-
 #include <sys/stat.h>   			// get file status
 
 #include "Global.h"
@@ -12,53 +5,68 @@
 char*               Global::outputDirectory = NULL;			// output directory
 
 char*               Global::posSequenceFilename = NULL;		// filename of positive sequence FASTA file
-char*               Global::negSequenceFilename = NULL;		// filename of negative sequence FASTA file
+std::string			Global::posSequenceBasename;			// basename of positive sequence FASTA file
+SequenceSet*        Global::posSequenceSet = NULL;			// positive Sequence Set
+std::vector<std::vector<int>> Global::posFoldIndices;		// sequence indices for positive sequence set
 
-char*				Global::posSequenceBasename = NULL;		// basename of positive sequence FASTA file
-char*				Global::negSequenceBasename = NULL;		// basename of negative sequence FASTA file
+char*               Global::negSequenceFilename = NULL;		// filename of negative sequence FASTA file
+std::string			Global::negSequenceBasename;			// basename of negative sequence FASTA file
+SequenceSet*        Global::negSequenceSet = NULL;			// negative Sequence Set
+std::vector<std::vector<int>> Global::negFoldIndices;		// sequence indices for given negative sequence set
+bool				Global::negSeqGiven = false;			// a flag for the negative sequence given by users
+// weighting options
+char*               Global::intensityFilename = NULL;		// filename of intensity file (i.e. for HT-SELEX data)
+
 char*				Global::alphabetType = NULL;			// alphabet type is defaulted to standard which is ACGT
 bool                Global::revcomp = false;				// also search on reverse complement of sequences
 
-SequenceSet*        Global::posSequenceSet = NULL;			// positive Sequence Set
-SequenceSet*        Global::negSequenceSet = NULL;			// negative Sequence Set
-
-char*               Global::intensityFilename = NULL;		// filename of intensity file (i.e. for HT-SELEX data)
-// further weighting options...
-
-// files to initialize model(s)
+// initial model(s) options
 char*               Global::BaMMpatternFilename = NULL;		// filename of BaMMpattern file
-char*               Global::bindingSitesFilename = NULL;	// filename of binding sites file
+char*               Global::bindingSiteFilename = NULL;		// filename of binding sites file
 char*               Global::PWMFilename = NULL;				// filename of PWM file
-char*               Global::BaMMFilename = NULL;			// filename of Markov model (.bmm) file
-char*				Global::initialModelBasename = NULL;	// basename of initial model
+char*               Global::BaMMFilename = NULL;			// filename of Markov model (.bamm) file
+std::string			Global::initialModelBasename;			// basename of initial model
 
 // model options
 int        			Global::modelOrder = 2;					// model order
-std::vector<float> 	Global::modelAlpha;						// initial alphas
-std::vector<int>    Global::addColumns(2);					// add columns to the left and right of models used to initialize Markov models
-
+std::vector<float> 	Global::modelAlpha( modelOrder+1, 1.0f );	// initial alphas
+float				Global::modelBeta = 20.0f;				// alpha_k = beta x gamma^(k-1) for k > 0
+float				Global::modelGamma = 3.0f;
+std::vector<int>    Global::addColumns( 2 );				// add columns to the left and right of initial model
+bool                Global::interpolate = true;             // calculate prior probabilities from lower-order probabilities
+                                                            // instead of background frequencies of mononucleotides
+bool                Global::interpolateBG = true;           // calculate prior probabilities from lower-order probabilities
+                                                            // instead of background frequencies of mononucleotides
 // background model options
 int        			Global::bgModelOrder = 2;				// background model order, defaults to 2
-float				Global::bgModelAlpha = 10.0f;			// background model alpha
+std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.0f );	// background model alpha
 
 // EM options
-unsigned int        Global::maxEMIterations = std::numeric_limits<int>::max();	// maximum number of iterations
+bool				Global::EM = false;						// flag to trigger EM learning
+int				 	Global::maxEMIterations = std::numeric_limits<int>::max();  // maximum number of iterations
 float               Global::epsilon = 0.001f;				// threshold for likelihood convergence parameter
-bool                Global::noAlphaOptimization = false;	// disable alpha optimization
 bool                Global::noQOptimization = false;		// disable q optimization
+
+// CGS (Collapsed Gibbs sampling) options
+bool				Global::CGS = false;					// flag to trigger Collapsed Gibbs sampling
+int 				Global::maxCGSIterations = 200;			// maximum number of iterations for CGS
+bool				Global::noAlphaUpdating = false;		// disable alpha sampling in CGS
+bool				Global::noZQSampling = false;			// disable q sampling in CGS
+float				Global::eta = 0.01f;					// learning rate for Gibbs sampling, only for tuning
+int					Global::interval = 10;					// interval for sampling z and q, only for tuning
 
 // FDR options
 bool                Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
-unsigned int        Global::mFold = 20;						// number of negative sequences as multiple of positive sequences
-unsigned int        Global::cvFold = 5;						// size of cross-validation folds
-std::vector< std::vector<int> > Global::posFoldIndices; 	// sequence indices for each cross-validation fold
-std::vector< std::vector<int> > Global::negFoldIndices; 	// sequence indices for each cross-validation fold
-// further FDR options...
+int        			Global::mFold = 10;						// number of negative sequences as multiple of positive sequences
+int        			Global::cvFold = 5;						// size of cross-validation folds
+int 				Global::sOrder = 2;						// the k-mer order for sampling negative sequence set
 
-bool                Global::verbose = false;            	// verbose printouts
-bool				Global::setSlow = false;				// develop with the slow EM version
-
-int* 				Global::powA = NULL;
+// printout options
+bool                Global::verbose = false;
+bool                Global::debugMode = false;              // debug-mode: prints out everything.
+bool				Global::saveBaMMs = true;
+bool				Global::saveLogOdds = false;			// write the log odds of positive and negative sets to disk
+bool				Global::saveInitialModel = false;		// write out the initial model to disk
 
 void Global::init( int nargs, char* args[] ){
 
@@ -66,58 +74,29 @@ void Global::init( int nargs, char* args[] ){
 
 	Alphabet::init( alphabetType );
 
-	// read in positive sequence set
-	posSequenceSet = new SequenceSet( posSequenceFilename );
+	// read in positive and negative sequence set
+	posSequenceSet = new SequenceSet( posSequenceFilename, revcomp );
+	negSequenceSet = new SequenceSet( negSequenceFilename, true );
 
-	// read in or generate negative sequence set
-	if( negSequenceFilename == NULL )						// use positive for negative sequence set
-		negSequenceSet = new SequenceSet( *posSequenceSet );
-	else													// read in negative sequence set
-		negSequenceSet = new SequenceSet( negSequenceFilename );
-
-	// generate folds (fill posFoldIndices and negFoldIndices)
-	generateFolds( posSequenceSet->getN(), negSequenceSet->getN(), cvFold );
+	// generate fold indices for positive and negative sequence set
+	Global::posFoldIndices = generateFoldIndices( posSequenceSet->getN(), cvFold );
+	Global::negFoldIndices = generateFoldIndices( negSequenceSet->getN(), cvFold );
 
 	// optional: read in sequence intensities (header and intensity columns?)
 	if( intensityFilename != 0 ){
 		;// read in sequence intensity
 	}
-
-	powA = new int[modelOrder+2];
-	for( int k = 0; k < modelOrder+2; k++ )
-		powA[k] = ipow( Alphabet::getSize(), k );
 }
 
 int Global::readArguments( int nargs, char* args[] ){
 
-	/*
+	/**
 	 * read command line to get options
 	 * process flags from user
-	 *
-	 * Process input arguments:
-	 * 1. Essential parameters:
-	 * 		* output directory: the first argument
-	 * 		* positive sequence file: the second argument
-	 * 2. flags
-	 * 		* initial motif model
-	 * 			* BaMMpattern file
-	 * 			* binding sites file
-	 * 			* PWM file
-	 * 			* iIMM file
-	 * 			( They must not be provided simultaneously! )
-	 * 		* model and background model options
-	 * 			* modelOrder / bgModelOrder
-	 * 			* modelAlpha / bgModelAlpha
-	 * 		* --fdr
-	 * 			* mfold: for generating negative sequence file
-	 * 			* nfolds: for cross-validation
-	 * 		* alphabetType
-	 * 			* if NULL, by default: ACGT
-	 *
 	 */
 
-	if( nargs < 3 ) {			// At least 2 parameters are required, but this is not precise, needed to be specified!!
-		fprintf( stderr, "Error: Arguments are missing! \n" );
+	if( nargs < 3 ) {
+		std::cerr << "Error: Arguments are missing! \n" << std::endl;
 		printHelp();
 		exit( -1 );
 	}
@@ -130,13 +109,22 @@ int Global::readArguments( int nargs, char* args[] ){
 	posSequenceFilename = args[2];
 	posSequenceBasename = baseName( posSequenceFilename );
 
-	GetOpt::GetOpt_pp opt( nargs, args );
+	// read in options from the third argument on
+	GetOpt::GetOpt_pp opt( nargs-2, args+2 );
 
-	// negative sequence set
-	if( opt >> GetOpt::OptionPresent( "negSeqFile" ) ){
-		opt >> GetOpt::Option( "negSeqFile", negSequenceFilename );
-		negSequenceBasename = baseName( negSequenceFilename );
+	if( opt >> GetOpt::OptionPresent( 'h', "help" ) ){
+		printHelp();
+		exit( -1 );
 	}
+
+	// read in negative sequence file
+	if( opt >> GetOpt::OptionPresent( "negSeqFile" ) ){
+		negSeqGiven = true;
+		opt >> GetOpt::Option( "negSeqFile", negSequenceFilename );
+	} else {
+	    negSequenceFilename = posSequenceFilename;
+	}
+	negSequenceBasename = baseName( negSequenceFilename );
 
 	// Alphabet Type
 	if( opt >> GetOpt::OptionPresent( "alphabet" ) ){
@@ -146,22 +134,22 @@ int Global::readArguments( int nargs, char* args[] ){
 		strcpy( alphabetType, "STANDARD");
 	}
 
-	opt >> GetOpt::OptionPresent( "revcomp", revcomp );
+	opt >> GetOpt::OptionPresent( "reverseComp", revcomp );
 
-	// for HT-SLEX data
+	// for HT-SELEX data
 	opt >> GetOpt::Option( "intensityFile", intensityFilename );
 
-	// get initial motif files
+	// get initial model files
 	if( opt >> GetOpt::OptionPresent( "BaMMpatternFile" ) ){
 		opt >> GetOpt::Option( "BaMMpatternFile", BaMMpatternFilename );
 		initialModelBasename = baseName( BaMMpatternFilename );
-	} else if ( opt >> GetOpt::OptionPresent( "bindingSitesFile" ) ){
-		opt >> GetOpt::Option( "bindingSitesFile", bindingSitesFilename );
-		initialModelBasename = baseName( bindingSitesFilename );
+	} else if ( opt >> GetOpt::OptionPresent( "bindingSiteFile" ) ){
+		opt >> GetOpt::Option( "bindingSiteFile", bindingSiteFilename );
+		initialModelBasename = baseName( bindingSiteFilename );
 	} else if ( opt >> GetOpt::OptionPresent( "PWMFile" ) ){
 		opt >> GetOpt::Option( "PWMFile", PWMFilename );
 		initialModelBasename = baseName( PWMFilename );
-	} else if( opt >> GetOpt::OptionPresent( "BMMFile" ) ){
+	} else if( opt >> GetOpt::OptionPresent( "BaMMFile" ) ){
 		opt >> GetOpt::Option( "BaMMFile", BaMMFilename );
 		initialModelBasename = baseName( BaMMFilename );
 	} else {
@@ -169,19 +157,42 @@ int Global::readArguments( int nargs, char* args[] ){
 		exit( -1 );
 	}
 
-	// model options
-	opt >> GetOpt::Option( 'k', "modelOrder", modelOrder );
-	if( opt >> GetOpt::OptionPresent( "modelAlpha" ) || opt >> GetOpt::OptionPresent( 'a' ) )
-		opt >> GetOpt::Option( 'a', "modelAlpha", modelAlpha );
-	else 		// defaults modelAlpha.at(k) to 10.0
-		for( int k = 0; k < modelOrder+1; k++ )
-			modelAlpha.push_back( 10.0f );
+	opt >> GetOpt::OptionPresent( "saveInitialModel", saveInitialModel );
 
-	if( opt >> GetOpt::OptionPresent( "addColumns" ) ){
+
+	// model options
+	opt >> GetOpt::Option( 'k', "order", modelOrder );
+
+	if( opt >> GetOpt::OptionPresent( 'a', "alpha" ) ){
+		modelAlpha.clear();
+		opt >> GetOpt::Option( 'a', "alpha", modelAlpha );
+		if( static_cast<int>( modelAlpha.size() ) != modelOrder+1 ){
+			if( static_cast<int>( modelAlpha.size() ) > modelOrder+1 ){
+				modelAlpha.resize( modelOrder+1 );
+			} else{
+				modelAlpha.resize( modelOrder+1, modelAlpha.back() );
+			}
+		}
+	} else {
+		if( static_cast<int>( modelAlpha.size() ) != modelOrder+1 ){
+			if( static_cast<int>( modelAlpha.size() ) > modelOrder+1 ){
+				modelAlpha.resize( modelOrder+1 );
+			} else{
+				modelAlpha.resize( modelOrder+1, modelAlpha.back() );
+			}
+		}
+		if( modelOrder > 0 ){
+			for( int k = 1; k < modelOrder + 1; k++ ){
+				modelAlpha[k] = modelBeta * powf( modelGamma, static_cast<float>( k ) - 1.0f );
+			}
+		}
+	}
+
+	if( opt >> GetOpt::OptionPresent( "extend" ) ){
 		addColumns.clear();
-		opt >> GetOpt::Option( "addColumns", addColumns );
+		opt >> GetOpt::Option( "extend", addColumns );
 		if( addColumns.size() < 1 || addColumns.size() > 2 ){
-			fprintf( stderr, "--addColumns format error.\n" );
+			fprintf( stderr, "--extend format error.\n" );
 			exit( -1 );
 		}
 		if( addColumns.size() == 1 )
@@ -192,130 +203,173 @@ int Global::readArguments( int nargs, char* args[] ){
 	}
 
 	// background model options
-	opt >> GetOpt::Option( 'K', "bgModelOrder", bgModelOrder );
-	opt >> GetOpt::Option( 'A', "bgModelAlpha", bgModelAlpha );
+	opt >> GetOpt::Option( 'K', "Order", bgModelOrder );
 
-	// em options
-	opt >> GetOpt::Option( "maxEMIterations", maxEMIterations );
-	opt >> GetOpt::Option( "epsilon", epsilon );
-	opt >> GetOpt::OptionPresent( "noAlphaOptimization", noAlphaOptimization );
-	opt >> GetOpt::OptionPresent( "noQOptimization", noQOptimization );
-
-	// FDR options
-	if( opt >> GetOpt::OptionPresent( "FDR", FDR) ){
-		opt >> GetOpt::Option( "m", mFold  );
-		opt >> GetOpt::Option( "n", cvFold );
-	}
-
-	opt >> GetOpt::OptionPresent( "verbose", verbose );
-
-	opt >> GetOpt::OptionPresent( "setSlow", setSlow );			// to be deleted when release
-
-	if( opt.options_remain() ){
-		std::cerr << "Warning: Unknown options remaining..." << std::endl;
-		return false;
-	}
-	return 0;
-}
-
-void Global::createDirectory( char* dir ){
-	struct stat fileStatus;
-	if( stat( dir, &fileStatus ) != 0 ){
-		fprintf( stderr, "Status: Output directory does not exist. "
-				"New directory is created automatically.\n" );
-		char* command = ( char* )calloc( 1024, sizeof( char ) );
-		sprintf( command, "mkdir %s", dir );
-		if( system( command ) != 0 ){
-			fprintf( stderr, "Directory %s could not be created.\n", dir );
-			exit( -1 );
+	if( opt >> GetOpt::OptionPresent( 'A', "Alpha" ) ){
+		bgModelAlpha.clear();
+		opt >> GetOpt::Option( 'A', "Alpha", bgModelAlpha );
+		if( static_cast<int>( bgModelAlpha.size() ) != bgModelOrder+1 ){
+			if( static_cast<int>( bgModelAlpha.size() ) > bgModelOrder+1 ){
+				bgModelAlpha.resize( bgModelOrder+1 );
+			} else{
+				bgModelAlpha.resize( bgModelOrder+1, bgModelAlpha.back() );
+			}
 		}
-		free( command );
-	}
-}
-
-char* Global::baseName( char* filepath ){
-	std::string path = filepath;
-	char* base;
-	int i = 0, start = 0, end = 0;
-	while( path[++i] != '\0' )
-		if( path[i] == '.' )
-			end = i - 1;
-	while( --i != 0 && path[i] != '/' )
-		;
-	if( i == 0 )
-		start = 0;
-	else
-		start = i + 1;
-	base = ( char* )malloc( ( end-start+2 ) * sizeof( char ) );
-	for( i = start; i <= end; i++ )
-		base[i-start] = path[i];
-	base[i-start] = '\0';
-	return base;
-}
-
-void Global::generateFolds( unsigned int posN, unsigned int negN, unsigned int fold ){
-	posFoldIndices.resize( fold );
-	negFoldIndices.resize( fold );
-	// generate posFoldIndices
-	unsigned int i = 0, j;
-	while( i < posN ){
-		for( j = 0; j < fold; j++ ){
-			posFoldIndices[j].push_back( i );
-			i++;
-		}
-	}
-	// generate negFoldIndices
-	if( negSequenceFilename == NULL ){
-		negFoldIndices = posFoldIndices;
 	} else {
-		// generate negFoldIndices
-		i = 0;
-		while( i < negN ){
-			for( j = 0; j < fold; j++ ){
-				negFoldIndices[j].push_back( i );
-				i++;
+		if( static_cast<int>( bgModelAlpha.size() ) != bgModelOrder+1 ){
+			if( static_cast<int>( bgModelAlpha.size() ) > bgModelOrder+1 ){
+				bgModelAlpha.resize( bgModelOrder+1 );
+			} else{
+				bgModelAlpha.resize( bgModelOrder+1, bgModelAlpha.back() );
+			}
+		}
+		if( bgModelOrder > 0 ){
+			for( int k = 1; k < bgModelOrder + 1; k++ ){
+				bgModelAlpha[k] = 10.0f;
 			}
 		}
 	}
-}
 
-// power function for integers
-int Global::ipow( unsigned int base, int exp ){
-    int result = 1;
-    while( exp ){
-        if( exp & 1 )
-        	result *= base;
-        exp >>= 1;
-        base *= base;
-    }
-    return result;
+	// EM options
+	if( opt >> GetOpt::OptionPresent( "EM", EM ) ){
+		opt >> GetOpt::Option( "maxEMIterations", maxEMIterations );
+		opt >> GetOpt::Option( 'e', "epsilon", epsilon );
+		opt >> GetOpt::OptionPresent( "noQOptimization", noQOptimization );
+	}
+
+	// CGS options
+	if( opt >> GetOpt::OptionPresent( "CGS", CGS ) ){
+		opt >> GetOpt::Option( "maxCGSIterations", maxCGSIterations );
+		opt >> GetOpt::OptionPresent( "noAlphaUpdating", noAlphaUpdating );
+		opt >> GetOpt::OptionPresent( "noZQSampling", noZQSampling );
+		opt >> GetOpt::Option( "eta", eta );
+		opt >> GetOpt::Option( "interval", interval );
+	}
+
+	// FDR options
+	if( opt >> GetOpt::OptionPresent( "FDR", FDR ) ){
+		opt >> GetOpt::Option( 'm', "mFold", mFold  );
+		opt >> GetOpt::Option( 'n', "cvFold", cvFold );
+		opt >> GetOpt::Option( 's', "samplingOrder", sOrder );
+	}
+
+	// printout options
+	opt >> GetOpt::OptionPresent( "verbose", verbose );
+	opt >> GetOpt::OptionPresent( "debug", debugMode );
+	opt >> GetOpt::OptionPresent( "saveBaMMs", saveBaMMs );
+	opt >> GetOpt::OptionPresent( "saveLogOdds", saveLogOdds );
+
+	// for remaining unknown options
+	if( opt.options_remain() ){
+		printHelp();
+		std::cerr << "Oops! Unknown option(s) remaining... \n\n";
+		exit( -1 );
+	}
+
+	return 0;
 }
 
 void Global::printHelp(){
-	printf("\n=================================================================\n");
-	printf("\n Usage: ./BaMMmotif OUTDIR SEQFILE [options] \n\n");
+	printf("\n============================================================================================\n");
+	printf("\n SYNOPSIS:	BaMMmotif OUTDIR SEQFILE [options] \n\n");
+	printf("\t DESCRIPTION \n");
+	printf("\t 		Learn Bayesian inhomogeneous Markov models (BaMM) from sequence Data.\n"
+			"		The default extension of sequence file is .fasta\n\n");
 	printf("\t OUTDIR:  output directory for all results. \n");
-	printf("\t SEQFILE: file with sequences from positive set in FASTA format. \n");
-	printf("\n Options: \n");
-	printf("\n [Initial model] Choose one of these four types of file: \n");
-	printf("\n --BaMMpatternFile: \n");
-	printf("\n --bindingSitesFile:\n");
-	printf("\n --PWMFile: \n");
-	printf("\n --BaMMFile: \n");
-	printf("\n -- \n");
-	printf("\n -- \n");
-	printf("\n -- \n");
-	printf("\n -- \n");
-	printf("\n -- \n");
-	printf("\n=================================================================\n");
+	printf("\t SEQFILE: file with sequences from positive set in FASTA format. \n\n");
+	printf("\n OPTIONS: \n");
+	printf("\n		Options for reading in sequence file: \n");
+	printf("\n			--alphabet <STRING> \n"
+			"				STANDARD.		For alphabet type ACGT; \n"
+			"				METHYLC. 		For alphabet type ACGTM; \n"
+			"				HYDROXYMETHYLC.	For alphabet type ACGTH; \n"
+			"				EXTENDED.		For alphabet type ACGTMH. \n\n");
+	printf("\n			--reverseComp \n"
+			"				search motif on the reverse complementary sequence as well. \n\n");
+	printf("\n		Options for HT-SELEX data: \n");
+	printf("\n			--intensityFile	<STRING> \n"
+			"				intensity file name. \n\n");
+	printf("\n		Options for initial model: \n");
+	printf("\n 			--BaMMpatternFile <STRING> \n"
+			"				file that contains patterns.\n\n");
+	printf("\n 			--bindingSiteFile <STRING> \n"
+			"				file that contains binding sites.\n\n");
+	printf("\n 			--PWMFile <STRING> \n"
+			"				file that contains PWM data.\n");
+	printf("\n 			--BaMMFile <STRING> \n"
+			"				file that contains BaMM data.\n\n");
+	printf("\n 			--saveInitialModel \n"
+			"				save initial model.\n\n");
+	printf("\n 		Options for inhomogeneous BaMM: \n");
+	printf("\n 			-k, --order <INTEGER> \n"
+			"				model Order. The default is 2. \n\n");
+	printf("\n 			-a, --alpha <FLOAT> [<FLOAT>...] \n"
+			"				Order-specific prior strength. The default is 1.0 (for k = 0) and\n"
+			"				20 x 3^(k-1) (for k > 0). The options -b and -g are ignored.\n\n");
+	printf("\n 			--extend <INTEGER>{1, 2} \n"
+			"				Extend BaMMs by adding uniformly initialized positions to the left\n"
+			"				and/or right of initial BaMMs. e.g. invoking with --extend 0 2 adds\n"
+			"				two positions to the right of initial BaMMs. Invoking with --extend 2\n"
+			"				adds two positions to both sides of initial BaMMs. By default, BaMMs\n"
+			"				are not being extended.\n\n");
+	printf("\n 		Options for homogeneous (background) BaMM: \n");
+	printf("\n 			-K, --Order <INTEGER> \n"
+			"				Order. The default is 2.\n"
+			"				Order of background model should not exceed order of motif model.\n\n");
+	printf("\n 			-A, --Alpha <FLOAT> \n"
+			"				Prior strength. The default is 10.0.\n\n");
+	printf("\n 		Options for EM: \n");
+	printf("\n 			--EM  \n"
+			"				trigger Expectation Maximization (EM) algorithm.\n\n");
+	printf("\n 			-q <FLOAT> \n"
+			"				Prior probability for a positive sequence to contain a motif.\n"
+			"				The default is 0.9.\n\n");
+	printf("\n 			-e, --epsilon <FLOAT> \n"
+			"				The EM algorithm is deemed to be converged when the sum over the\n"
+			"				absolute differences in BaMM probabilities from successive EM rounds\n"
+			"				is smaller than epsilon. The default is 0.001.\n\n");
+	printf("\n 			--maxEMIterations <INTEGER> (*) \n"
+			"				Limit the number of EM iterations. *For developers.\n\n");
+	printf("\n 			--noAlphaOptimization (*) \n"
+			"				disable alpha optimization. Defaults to false. *For developers.\n\n");
+	printf("\n 			--noQOptimization (*) \n"
+			"				disable q optimization. Defaults to false. *For developers.\n\n");
+	printf("\n 		Options for CGS: \n");
+	printf("\n 			--CGS  \n"
+			"				trigger Collapsed Gibbs Sampling (CGS) algorithm.\n\n");
+	printf("\n 			--noAlphaSampling (*) \n"
+			"				disable alpha sampling. Defaults to false. *For developers.\n\n");
+	printf("\n 			--noQSampling (*) \n"
+			"				disable q sampling. Defaults to false. *For developers.\n\n");
+	printf("\n 		Options for FDR: \n");
+	printf("\n 			--FDR \n"
+			"				triggers False-Discovery-Rate (FDR) estimation. The default is false.\n\n");
+	printf("\n 			-m, --mFold <INTEGER>\n"
+			"				number of negative sequences as multiple of positive sequences.\n"
+			"				The default is 20.\n\n");
+	printf("\n 			-n, --cvFold <INTEGER>\n"
+			"				number of cross-validation folds. The default is 5.\n\n"
+			"			-s, --samplingOrder <INTERGER>\n"
+			"				order of kmer for sampling negative set. The default is 2.\n\n");
+	printf("\n 		Options for output:	\n");
+	printf("\n 			--verbose \n"
+			"				verbose printouts. Defaults to false.\n\n");
+	printf("\n 			--saveBaMMs\n"
+			"				Write optimized BaMM(s) parameters to disk.\n\n");
+	printf("\n 			--saveLogOdds\n"
+			"				Write log odds scores from positive and negative sets to disk.\n\n");
+	printf("\n 			-h, --help\n"
+			"				Printout this help function.\n\n");
+	printf("\n============================================================================================\n");
 }
 
 void Global::destruct(){
-	Alphabet::destruct();
-	if( powA ) delete[] powA;
-	if( alphabetType ) delete[] alphabetType;
-	if( posSequenceBasename ) free( posSequenceBasename );
-	if( negSequenceBasename ) free( negSequenceBasename );
-	if( initialModelBasename ) free( initialModelBasename );
-	std::cout << "Destruct() for Global class works fine. \n";
+    Alphabet::destruct();
+    if( alphabetType ) 			delete[] alphabetType;
+    if( posSequenceSet )	 	delete posSequenceSet;
+    if( negSequenceSet ) 		delete negSequenceSet;
+}
+
+void Global::debug(){
+
 }

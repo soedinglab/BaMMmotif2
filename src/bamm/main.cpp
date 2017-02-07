@@ -1,22 +1,20 @@
-/*
- * main.cpp
- *
- *  Created on: Apr 1, 2016
- *      Author: wanwan
- */
-
-#include <time.h>		// time()
+#include <time.h>		// time(), clock_t, clock, CLOCKS_PER_SEC
 #include <stdio.h>
 
 #include "Global.h"
 #include "../shared/BackgroundModel.h"
+#include "../shared/utils.h"
 #include "MotifSet.h"
-#include "EM.h"
+#include "ModelLearning.h"
+#include "ScoreSeqSet.h"
 #include "FDR.h"
 
 int main( int nargs, char* args[] ){
 
-	long timestamp = time( NULL );
+	// seed random number
+	srand( 42 );
+
+	clock_t t0 = clock();
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "======================================\n" );
@@ -33,75 +31,101 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "************************\n" );
 	fprintf( stderr, "*   Background Model   *\n" );
 	fprintf( stderr, "************************\n" );
-	BackgroundModel* bgModel = new BackgroundModel();
+	BackgroundModel* bgModel = new BackgroundModel( *Global::negSequenceSet,
+													Global::bgModelOrder,
+													Global::bgModelAlpha,
+													Global::interpolateBG );
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "*********************\n" );
 	fprintf( stderr, "*   Initial Motif   *\n" );
 	fprintf( stderr, "*********************\n" );
 	MotifSet motifs;
+	for( int n = 0; n < motifs.getN(); n++ ){
 
-	// learn motifs
-	fprintf( stderr, "\n" );
-	fprintf( stderr, "*************************\n" );
-	fprintf( stderr, "*   Learn Motif by EM   *\n" );
-	fprintf( stderr, "*************************\n" );
+		// initialize the model
+		Motif* motif = new Motif( *motifs.getMotifs()[n] );
 
-	for( int N = 0; N < motifs.getN(); N++ ){
-		EM em( motifs.getMotifs()[0], bgModel );
-		em.learnMotif();
-		em.write();
-	}
+		// train the model with either EM or Gibbs sampling
+		ModelLearning model( motif, bgModel );
+		if( Global::EM ){
 
-	// write motifs
-	motifs.write();
+			// learn motifs by EM
+			model.EM();
+
+		} else if ( Global::CGS ){
+
+			// learn motifs by collapsed Gibbs sampling
+			model.GibbsSampling();
+
+		} else {
+
+			std::cout << "Model is not optimized!\n";
+
+			//exit( -1 );	// allow to do FDR on Initial Model i.e. for PWMs or precalculated BaMMs
+
+		}
+
+		// write out the learned model
+		motif->write( n );
 
 /*
-	// evaluate motifs
-	fprintf( stderr, "\n" );
-	fprintf( stderr, "***********\n" );
-	fprintf( stderr, "*   FDR   *\n" );
-	fprintf( stderr, "***********\n" );
-	std::vector<Motif*>::const_iterator iter;
-	for( iter = motifs.getMotifs().begin(); iter != motifs.getMotifs().end(); iter++ ){
-		FDR fdr( *iter );
-		fdr.evaluateMotif();
-		fdr.write();
-	}
+		// score the model on sequence set
+		ScoreSeqSet seqset( motif, bgModel, Global::posSequenceSet->getSequences() );
+		seqset.score();
+		seqset.write();
 */
+
+		delete motif;
+	}
+
+	// evaluate motifs
+	if( Global::FDR ){
+		fprintf( stderr, "\n" );
+		fprintf( stderr, "***********\n" );
+		fprintf( stderr, "*   FDR   *\n" );
+		fprintf( stderr, "***********\n" );
+		for( int n = 0; n < motifs.getN(); n++ ){
+			Motif* motif = new Motif( *motifs.getMotifs()[n] );
+			FDR fdr( motif );
+			fdr.evaluateMotif();
+			fdr.write(n);
+			if( Global::saveLogOdds ) fdr.writeLogOdds(n);
+			delete motif;
+		}
+	}
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "******************\n" );
 	fprintf( stderr, "*   Statistics   *\n" );
 	fprintf( stderr, "******************\n" );
-
 	std::cout << "Given alphabet type is " << Alphabet::getAlphabet();
+	// for positive sequence set
 	std::cout << "\nGiven positive sequence set is " << Global::posSequenceBasename
 			<< "\n	"<< Global::posSequenceSet->getN() << " sequences. max.length: " <<
 			Global::posSequenceSet->getMaxL() << ", min.length: " <<
 			Global::posSequenceSet->getMinL() << "\n	base frequencies:";
-	for( int i = 0; i < Alphabet::getSize(); i++ )
+	for( int i = 0; i < Alphabet::getSize(); i++ ){
 		std::cout << ' ' << Global::posSequenceSet->getBaseFrequencies()[i]
 		          << "(" << Alphabet::getAlphabet()[i] << ")";
-	if( Global::negSequenceFilename ){
+	}
+	// for negative sequence set
+	if( Global::negSeqGiven ){
 		std::cout << "\nGiven negative sequence set is " << Global::negSequenceBasename
 				<< "\n	"<< Global::negSequenceSet->getN() << " sequences. max.length: "
 				<< Global::negSequenceSet->getMaxL() << ", min.length: " <<
 				Global::negSequenceSet->getMinL() << "\n	base frequencies:";
 		for( int i = 0; i < Alphabet::getSize(); i++ )
 			std::cout << ' ' << Global::negSequenceSet->getBaseFrequencies()[i]
-			          << "(" << Alphabet::getAlphabet()[i] << ")";
-	} else
-		std::cout << "\nNone negative sequence set is given";
+					  << "(" << Alphabet::getAlphabet()[i] << ")";
+	}
 	std::cout << "\nGiven initial model is " << Global::initialModelBasename;
-	std::cout << "\nGiven folds for FDR estimation: " << Global::cvFold;
-	if( Global::setSlow )
-		std::cout << "\n***** This is a slow EM version. *****";
-	else
-		std::cout << "\n***** This is a fast EM version. *****";
+	if( Global::FDR ){
+		std::cout << "\nGiven folds for FDR estimation: " << Global::cvFold;
+	}
 
-	fprintf( stdout, "\n-------------- Runtime: %ld seconds (%0.2f minutes) --------------\n",
-			time( NULL )-timestamp, ( float )( time( NULL )-timestamp )/60.0f );
+	fprintf( stdout, "\n-------------- Runtime: %.2f seconds (%0.2f minutes) --------------\n",
+			( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC, ( ( float )( clock() - t0 ) ) / ( CLOCKS_PER_SEC * 60.0f ) );
 
 	// free memory
 	if( bgModel ) delete bgModel;
