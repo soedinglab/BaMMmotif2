@@ -61,7 +61,8 @@ int main( int nargs, char* args[] ){
 		} else {
 
 			std::cout << "Model is not optimized!\n";
-			exit( -1 );
+
+			//exit( -1 );	// allow to do FDR on Initial Model i.e. for PWMs or precalculated BaMMs
 
 		}
 
@@ -84,12 +85,12 @@ int main( int nargs, char* args[] ){
 		fprintf( stderr, "***********\n" );
 		fprintf( stderr, "*   FDR   *\n" );
 		fprintf( stderr, "***********\n" );
-		for( int N = 0; N < motifs.getN(); N++ ){
-			Motif* motif = new Motif( *motifs.getMotifs()[N] );
+		for( int n = 0; n < motifs.getN(); n++ ){
+			Motif* motif = new Motif( *motifs.getMotifs()[n] );
 			FDR fdr( motif );
 			fdr.evaluateMotif();
-			fdr.write();
-			if( Global::saveLogOdds ) fdr.writeLogOdds();
+			fdr.write(n);
+			if( Global::saveLogOdds ) fdr.writeLogOdds(n);
 			delete motif;
 		}
 	}

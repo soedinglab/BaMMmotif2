@@ -97,6 +97,12 @@ void FDR::evaluateMotif(){
 			"|  calculate precision and recall  |\n"
 			"|__________________________________|\n\n" );
 	calculatePR();
+
+	printf( " __________________________________\n"
+			"|                                  |\n"
+			"|  calculate TP FP FN TN           |\n"
+			"|__________________________________|\n\n" );
+	caclulateTPFPFNTN();
 }
 
 // score sequences for both positive and negative sequence sets
@@ -233,6 +239,64 @@ std::unique_ptr<Sequence> FDR::sampleSequence( int L, float** v ){
 
 }
 
+void FDR::caclulateTPFPFNTN(){
+
+	int posN = Global::posSequenceSet->getN();
+	int negN = posN * Global::mFold;
+
+	// for MOPS model:
+	// Sort log odds scores from large to small
+	std::sort( posScoreAll_.begin(), posScoreAll_.end(), std::greater<float>() );
+	std::sort( negScoreAll_.begin(), negScoreAll_.end(), std::greater<float>() );
+
+	// Rank and score these log odds score values
+	int idx_posAll = 0;
+	int idx_negAll = 0;									// index for arrays storing the complete log odds scores
+
+	for( int i = 0; i <= posN + negN -1; i++ ){
+		if( posScoreAll_[idx_posAll] > negScoreAll_[idx_negAll] ||
+				 idx_negAll == posN+negN-1 ){
+				//idx_posAll == 0 || idx_negAll == posN+negN-1 ){
+
+			idx_posAll++;
+		} else {
+			idx_negAll++;
+		}
+
+		MOPS_TP_.push_back( ( float )idx_posAll );
+		MOPS_FN_.push_back( ( float )posN - ( float )idx_posAll );
+		MOPS_FP_.push_back( ( float )idx_negAll );
+		MOPS_TN_.push_back( ( float )negN - ( float )idx_negAll );
+
+	}
+
+
+	// for ZOOPS model:
+	// Sort log odds scores from large to small
+	std::sort( posScoreMax_.begin(), posScoreMax_.end(), std::greater<float>() );
+	std::sort( negScoreMax_.begin(), negScoreMax_.end(), std::greater<float>() );
+
+	// Rank and score these log odds score values
+	int idx_posMax = 0;
+	int idx_negMax = 0;									// index for arrays storing the max log odds scores
+
+	for( int i = 0; i <= posN + negN -1; i++ ){
+		if( posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] ||
+				idx_negMax == posN+negN-1 ){
+				//idx_posMax == 0 || idx_negMax == posN+negN-1 ){
+			idx_posMax++;
+		} else {
+			idx_negMax++;
+		}
+
+		ZOOPS_TP_.push_back( ( float )idx_posMax );
+		ZOOPS_FN_.push_back( ( float )posN - ( float )idx_posMax );
+		ZOOPS_FP_.push_back( ( float )idx_negMax );
+		ZOOPS_TN_.push_back( ( float )negN - ( float )idx_negMax );
+	}
+
+}
+
 void FDR::calculatePR(){
 
 	int posN = Global::posSequenceSet->getN();
@@ -352,10 +416,10 @@ void FDR::print(){
 
 }
 
-void FDR::write(){
+void FDR::write(int n){
 
 	/**
-	 * save FDR parameters in six flat files:
+	 * save FDR parameters in nine flat files:
 	 * (1) posSequenceBasename.zoops.precision:	precision values for ZOOPS model
 	 * (2) posSequenceBasename.zoops.recall:	recall values for ZOOPS model
 	 * (3) posSequenceBasename.mops.precision:	precision values for MOPS model
@@ -363,10 +427,13 @@ void FDR::write(){
 	 * (5) posSequenceBasename.mops.fp:			false positives for MOPS model
 	 * (6) posSequenceBasename.mops.tfp:		true and false positive values for MOPS model
 	 * (7) posSequenceBasename.prec05:			precision when recall = 0.5 for both MOPS and ZOOPS models
+	 * (8) posSequenceBasename.zoops.stats: 	TP, FP, TN, FN values for ZOOPS model
+	 * (9) posSequenceBasename.mops.stats:		TP, FP, TN, FN values for MOPS model
 	 */
 
 	std::string opath = std::string( Global::outputDirectory ) + '/'
-			+ Global::posSequenceBasename;
+			+ Global::posSequenceBasename + "_motif_" + std::to_string( n+1 );
+
 	std::string opath_zoops_p = opath + ".zoops.precision";
 	std::string opath_zoops_r = opath + ".zoops.recall";
 	std::string opath_mops_p = opath + ".mops.precision";
@@ -374,6 +441,8 @@ void FDR::write(){
 //	std::string opath_mops_fp = opath + ".mops.fp";
 //	std::string opath_mops_tfp = opath + ".mops.tfp";
 	std::string opath_prec_middle = opath + ".prec05";
+	std::string opath_zoops_stats = opath + ".zoops.stats";
+	std::string opath_mops_stats = opath + ".mops.stats";
 
 	std::ofstream ofile_zoops_p( opath_zoops_p );
 	std::ofstream ofile_zoops_r( opath_zoops_r );
@@ -382,6 +451,8 @@ void FDR::write(){
 //	std::ofstream ofile_mops_fp( opath_mops_fp );
 //	std::ofstream ofile_mops_tfp( opath_mops_tfp );
 	std::ofstream ofile_prec_middle( opath_prec_middle );
+	std::ofstream ofile_zoops_stats( opath_zoops_stats );
+	std::ofstream ofile_mops_stats( opath_mops_stats );
 
 	size_t i;
 
@@ -400,9 +471,24 @@ void FDR::write(){
 	ofile_prec_middle << "Average precision for ZOOPS model:\n" << prec_mid_ZOOPS_
 			<< "\nAverage precision for MOPS model:\n" << prec_mid_MOPS_ << std::endl;
 
+	ofile_zoops_stats << "TP" << "\t" << "FP" << "\t" << "FN" << "\t" << "TN" << std::endl;
+	for( i = 0; i < ZOOPS_TP_.size(); i++ ){
+		ofile_zoops_stats << ZOOPS_TP_[i] << "\t"
+				<< ZOOPS_FP_[i] << "\t"
+				<< ZOOPS_FN_[i] << "\t"
+				<< ZOOPS_TN_[i] << "\t"<< std::endl;
+	}
+
+	ofile_mops_stats << "TP" << "\t" << "FP" << "\t" << "FN" << "\t" << "TN" << std::endl;
+	for( i = 0; i < MOPS_TP_.size(); i++ ){
+		ofile_mops_stats << MOPS_TP_[i] << "\t"
+				<< MOPS_FP_[i] << "\t"
+				<< MOPS_FN_[i] << "\t"
+				<< MOPS_TN_[i] << "\t"<< std::endl;
+	}
 }
 
-void FDR::writeLogOdds(){
+void FDR::writeLogOdds(int n){
 
 	/**
 	 * save log odds scores into four files before sorting them
@@ -413,7 +499,7 @@ void FDR::writeLogOdds(){
 	 */
 
 	std::string opath = std::string( Global::outputDirectory ) + '/'
-			+ Global::posSequenceBasename;
+			+ Global::posSequenceBasename + "_motif_" + std::to_string( n+1 );
 
 	std::string opath_zoops_posScore = opath + ".zoops.posLogOdds";
 	std::string opath_mops_posScore = opath + ".mops.posLogOdds";
@@ -431,14 +517,17 @@ void FDR::writeLogOdds(){
 	}
 
 	for( i = 0; i < posScoreAll_.size(); i+=Global::mFold ){
+	//for( i = 0; i < posScoreAll_.size(); i++ ){
 		ofile_mops_posScore << posScoreAll_[i] << std::endl;
 	}
 
 	for( i = 0; i < negScoreMax_.size(); i+=Global::mFold ){
+	//for( i = 0; i < negScoreMax_.size(); i++ ){
 		ofile_zoops_negScore << negScoreMax_[i] << std::endl;
 	}
 
 	for( i = 0; i < negScoreAll_.size(); i+=Global::mFold*Global::mFold ){
+	//for( i = 0; i < negScoreAll_.size(); i++ ){
 		ofile_mops_negScore << negScoreAll_[i] << std::endl;
 	}
 }
