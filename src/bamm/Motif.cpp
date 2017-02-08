@@ -223,9 +223,9 @@ void Motif::initFromPWM( float** PWM, int asize, int count ){
 }
 
 // initialize v from Bayesian Markov model file and set isInitialized
-void Motif::initFromBayesianMarkovModel( char* filename ){
+void Motif::initFromBaMM( char* filename ){
 
-	int k,y,j;
+	int k, y, j;
 	std::ifstream file;
 	file.open( filename, std::ifstream::in );
 	std::string line;
@@ -236,7 +236,7 @@ void Motif::initFromBayesianMarkovModel( char* filename ){
 		// loop over order k
 		for( k = 0; k < Global::modelOrder+1 ; k++ ){
 
-			getline(file,line);
+			getline( file, line );
 
 			std::stringstream number( line );
 
@@ -245,12 +245,13 @@ void Motif::initFromBayesianMarkovModel( char* filename ){
 			y = 0;
 			while( number >> probability ){
 				// fill up for kmers y
-				v_[k][y][j] = probability;
+				//v_[k][y][j] = probability;
+				v_[k][y][j] = 1.0f / ( float )ipow( 4, k );
 				y++;
 			}
 		}
 		// read 'empty' line
-		getline(file, line);
+		getline( file, line );
 	}
 
 	// set isInitialized

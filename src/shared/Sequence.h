@@ -47,4 +47,25 @@ private:
 													// limits the length of oligomers to 15 (and the order to 14)
 };
 
+inline int Sequence::extractKmer( int i, int k ){
+
+	/**
+	 *  extract (k+1)mer y from positions (i-k,...,i) of the sequence
+	 *  e.g.		| monomer |                      dimer                      |      trimer     ... | ...
+	 *  (k+1)mer:	| A C G T | AA AC AG AT CA CC CG CT GA GC GG GT TA TC TG TT | AAA AAC AAG AAT ... | ...
+	 *  y:			| 0 1 2 3 |	 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 |  0   1   2   3  ... | ...
+	 */
+	int y = 0;
+
+	for( int j = k; j >= 0; j-- ){
+		if( sequence_[i-j] > 0 ){
+			y += ( sequence_[i-j] -1 ) * Y_[j];
+		} else {
+			y = -1; 													// for non-defined alphabet letters
+			break;
+		}
+	}
+	return y;
+}
+
 #endif /* SEQUENCE_H_ */

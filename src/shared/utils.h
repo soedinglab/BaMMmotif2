@@ -99,6 +99,48 @@ inline std::string baseName( const char* filePath ){
 	return basename;
 }
 
+inline std::vector<double> calculatePosteriorProbabilities( std::vector<double> lLikelihoods ){
+
+	// see http://stats.stackexchange.com/questions/66616/converting-normalizing-very-small-likelihood-values-to-probability/66621#66621
+
+	int d = std::numeric_limits<double>::digits10; // digits of precision
+
+	double epsilon = pow( 10, -d );
+	long unsigned int N = lLikelihoods.size();
+
+	double limit = log( epsilon ) - log( static_cast<double>( N ) );
+
+	// sort indices into ascending order
+	std::vector<size_t> order = sortIndices( lLikelihoods );
+	// sort likelihoods into ascending order
+	std::sort( lLikelihoods.begin(), lLikelihoods.end() );
+
+	for( unsigned int i = 0; i < N; i++ ){
+		lLikelihoods[i] = lLikelihoods[i] - lLikelihoods[N-1];
+	}
+
+	double partition = 0.0;
+
+	for( unsigned int i = 0; i < N; i++ ){
+		if( lLikelihoods[i] >= limit ){
+			lLikelihoods[i] = exp( lLikelihoods[i] );
+			partition += lLikelihoods[i];
+		}
+	}
+
+	std::vector<double> posteriors( N );
+
+	for( unsigned int i = 0; i < N; i++ ){
+		if( lLikelihoods[i] >= limit ){
+			posteriors[order[i]] = lLikelihoods[i] / partition;
+		} else{
+			posteriors[order[i]] = 0.0;
+		}
+	}
+
+	return( posteriors );
+}
+
 inline void createDirectory( char* dir ){
 
 	struct stat fileStatus;
