@@ -55,6 +55,11 @@ int main( int nargs, char* args[] ){
 			//exit( -1 );	// allow to do FDR on Initial Model i.e. for PWMs or precalculated BaMMs
 		}
 
+		// write model parameters on the disc
+		if( Global::saveBaMMs ){
+			model.write( n );
+		}
+
 		// write out the learned model
 		motif->write( n );
 

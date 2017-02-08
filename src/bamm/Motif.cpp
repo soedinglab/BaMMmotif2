@@ -422,7 +422,7 @@ void Motif::calculateP(){
 
 void Motif::print(){
 
-	printf( " _______________________\n"
+	fprintf( stderr," _______________________\n"
 			"|                       |\n"
 			"|  n for Initial Model  |\n"
 			"|_______________________|\n\n" );

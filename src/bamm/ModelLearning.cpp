@@ -114,7 +114,7 @@ ModelLearning::~ModelLearning(){
 
 int ModelLearning::EMlearning(){
 
-	printf( " ______\n"
+	fprintf( stderr," ______\n"
 			"|      |\n"
 			"|  EM  |\n"
 			"|______|\n\n" );
@@ -192,11 +192,6 @@ int ModelLearning::EMlearning(){
 
 	// calculate probabilities
 	motif_->calculateP();
-
-	// write model parameters on the disc
-	if( Global::saveBaMMs ){
-		write();
-	}
 
 	// free memory
 	for( y = 0; y < Y_[K+1]; y++ ){
@@ -311,7 +306,7 @@ void ModelLearning::EM_optimize_q(){
 
 void ModelLearning::GibbsSampling(){
 
-	printf( " ___________________________\n"
+	fprintf(stderr, " ___________________________\n"
 			"|                           |\n"
 			"|  Collapsed Gibbs sampler  |\n"
 			"|___________________________|\n\n" );
@@ -371,11 +366,6 @@ void ModelLearning::GibbsSampling(){
 
 	// calculate probabilities
 	motif_->calculateP();
-
-	// write model parameters on the disc
-	if( Global::saveBaMMs ){
-		write();
-	}
 
 	fprintf( stdout, "\n--- Runtime for Collapsed Gibbs sampling: %.4f seconds ---\n", ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );
 }
@@ -916,7 +906,7 @@ void ModelLearning::print(){
 
 }
 
-void ModelLearning::write(){
+void ModelLearning::write( int N ){
 
 	/**
 	 * 	 * save EM parameters in four flat files:
@@ -937,7 +927,7 @@ void ModelLearning::write(){
 	int K = Global::modelOrder;
 
 	std::string opath = std::string( Global::outputDirectory ) + '/'
-						+ Global::posSequenceBasename;
+						+ Global::posSequenceBasename + "_motif_" + std::to_string( N+1 );
 
 	if( Global::EM ){
 		// output (k+1)-mer counts n[k][y][j]

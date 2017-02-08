@@ -35,7 +35,7 @@ void FDR::evaluateMotif(){
 	std::vector<std::vector<float>> scores;
 	for( int fold = 0; fold < Global::cvFold; fold++ ){
 
-		printf( " ________________________________\n"
+		fprintf(stderr, " ________________________________\n"
 				"|                                |\n"
 				"|  Cross validation for fold-%d   |\n"
 				"|________________________________|\n\n", fold+1 );
@@ -92,13 +92,13 @@ void FDR::evaluateMotif(){
 		delete bgModel;
 	}
 
-	printf( " __________________________________\n"
+	fprintf(stderr, " __________________________________\n"
 			"|                                  |\n"
 			"|  calculate precision and recall  |\n"
 			"|__________________________________|\n\n" );
 	calculatePR();
 
-	printf( " __________________________________\n"
+	fprintf(stderr," __________________________________\n"
 			"|                                  |\n"
 			"|  calculate TP FP FN TN           |\n"
 			"|__________________________________|\n\n" );

@@ -22,7 +22,7 @@ public:
 	void 					GibbsSampling();
 
 	void					print();
-	void					write();
+	void					write( int n);
 
 
 private:
