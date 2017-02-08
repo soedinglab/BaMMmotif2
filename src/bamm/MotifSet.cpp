@@ -224,13 +224,13 @@ int MotifSet::getN(){
 }
 
 void MotifSet::print(){
-	printf( " ____________________________\n"
+	fprintf(stderr, " ____________________________\n"
 			"|                            |\n"
 			"| PROBABILITIES for MotifSet |\n"
 			"|____________________________|\n\n" );
 
 	for( int i = 0; i < N_; i++ ){
-		printf( " ________________________________________\n"
+		fprintf(stderr, " ________________________________________\n"
 				"|                                        |\n"
 				"| INITIALIZED PROBABILITIES for Motif %d  |\n"
 				"|________________________________________|\n\n", i+1 );

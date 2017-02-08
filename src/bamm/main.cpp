@@ -66,6 +66,11 @@ int main( int nargs, char* args[] ){
 
 		}
 
+		// write model parameters on the disc
+		if( Global::saveBaMMs ){
+			model.write( n );
+		}
+
 		// write out the learned model
 		motif->write( n );
 
