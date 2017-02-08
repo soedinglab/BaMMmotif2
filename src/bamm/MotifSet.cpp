@@ -181,23 +181,25 @@ MotifSet::MotifSet(){
 			// adjust Alphabet
 			char* alphabetType = new char[9];
 			if( asize == 4 ){
-				strcpy( alphabetType, "STANDARD");
-			}else{
+				strcpy( alphabetType, "STANDARD" );
+			} else {
 				if( asize == 6 ){
-					strcpy( alphabetType, "EXTENDED");
+					strcpy( alphabetType, "EXTENDED" );
 				}else{
-					// asize isn't enough to guess alphabet type: thorw error
+					// asize isn't enough to guess alphabet type: throw error
 					std::cout << "Error: Please provide Alphabet Type of your BaMM File: " << Global::BaMMFilename << std::endl;
 					exit( -1 );
 				}
 			}
+			// todo: what if asize = 5?
+
 			Alphabet::init( alphabetType );
 
 			// construct an initial motif
 			Motif* motif = new Motif( length );
 
 			// initialize motif from file
-			motif->initFromBayesianMarkovModel( Global::BaMMFilename );
+			motif->initFromBaMM( Global::BaMMFilename );
 
 			motifs_.push_back( motif );
 

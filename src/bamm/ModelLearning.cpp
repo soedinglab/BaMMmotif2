@@ -333,7 +333,6 @@ void ModelLearning::GibbsSampling(){
 
 	int K = Global::modelOrder;
 	int W = motif_->getW();
-	int N = ( int )posSeqs_.size();
 
 	float lposterior_prev = 0.0f, lposterior_new = 0.0f, lposterior_diff = 0.0f;
 
@@ -349,7 +348,7 @@ void ModelLearning::GibbsSampling(){
 		}
 	}
 	// 2. count k-mers for the highest order K
-	for( i = 0; i < N; i++ ){
+	for( i = 0; i < ( int )posSeqs_.size(); i++ ){
 		for( j = 0; j < W; j++ ){
 			y = posSeqs_[i]->extractKmer( z_[i]-1+j, ( z_[i]-1+j < K ) ?  z_[i]-1+j : K );
 			if( y >= 0 ){
@@ -422,8 +421,8 @@ void ModelLearning::GibbsSampling(){
 				lposterior_diff = lposterior_new - lposterior_prev;
 
 				std::cout << timestep << " iter:	";
-				std::cout << "old log posterior= " << lposterior_prev << '\t';
-				std::cout << "new log posterior= " << lposterior_new << '\t';
+				std::cout << "old lpos= " << lposterior_prev << '\t';
+				std::cout << "new lpos= " << lposterior_new << '\t';
 				std::cout << "diff= " << lposterior_diff << std::endl;
 
 				// write the log posterior into a file
@@ -717,7 +716,7 @@ float ModelLearning::calc_logPosterior_alphas( float** alpha, int k ){
 }
 
 float ModelLearning::calc_gradient_alphas( float** alpha, int k, int j ){
-	// calculate gradient of the log posterior of alphas due to equation 47 in the thoery
+	// calculate gradient of the log posterior of alphas due to equation 47 in the theory
 	// Note that j >= k
 
 	float gradient = 0.0f;
