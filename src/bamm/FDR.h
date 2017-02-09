@@ -35,25 +35,19 @@ private:
 	std::vector<float> 	negScoreAll_;
 	std::vector<float> 	negScoreMax_;
 
-	std::vector<float>	Pre_ZOOPS_;			// precision for ZOOPS model
-	std::vector<float>	Rec_ZOOPS_;			// recall for ZOOPS model
+	std::vector<float>	ZOOPS_Pre_;			// precision for ZOOPS model
+	std::vector<float>	ZOOPS_Rec_;			// recall for ZOOPS model
 	std::vector<float>  ZOOPS_TP_;			// true positives for ZOOPS model
 	std::vector<float>  ZOOPS_FP_;			// false positives for ZOOPS model
-	std::vector<float>  ZOOPS_FN_;			// false negatives for ZOOPS model
-	std::vector<float>  ZOOPS_TN_;			// true negatives for ZOOPS model
 
-	std::vector<float>	Pre_MOPS_;			// precision for MOPS model
-	std::vector<float>	Rec_MOPS_;			// recall for MOPS model
-	std::vector<float>	FP_MOPS_;			// false positive values for MOPS model
-	std::vector<float>	TFP_MOPS_;			// true and false positive values for MOPS model
+
+	std::vector<float>	MOPS_Pre_;			// precision for MOPS model
+	std::vector<float>	MOPS_Rec_;			// recall for MOPS model
 	std::vector<float>  MOPS_TP_;			// true positives for MOPS model
 	std::vector<float>  MOPS_FP_;			// false positives for MOPS model
-	std::vector<float>  MOPS_FN_;			// false negatives for MOPS model
-	std::vector<float>  MOPS_TN_;			// true negatives for MOPS model
 
-
-	float 				prec_mid_ZOOPS_ = 0.0f;	// precision when recall = 0.5 for ZOOPS model
-	float 				prec_mid_MOPS_ = 0.0f;	// precision when recall = 0.5 for MOPS model
+	float				occurrence_;		// the fraction of motif occurrence
+	float				occ_mult_;			// the number of motif occurrences per sequence
 
 	std::vector<int>	Y_;					// contains 1 at position 0
 											// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
@@ -70,9 +64,6 @@ private:
 
 							// score sequences for both positive and negative sets
 	std::vector<std::vector<float>>	scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqSet );
-
-							// calculate TP FP FN and TN for ZOOPS and MOPS models
-	void 					caclulateTPFPFNTN();
 
 							// calculate precision and recall for both ZOOPS and MOPS models
 	void 		   			calculatePR();

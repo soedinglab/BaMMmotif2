@@ -459,7 +459,9 @@ void ModelLearning::CGS_sampling_z_q(){
 
 		LW1 = posSeqs_[n]->getL() - W + 1;
 
-		n_prev = ( n > 0) ? n-1 : N-1;
+		// get the index of the previous sequence
+//		n_prev = ( n > 0) ? n-1 : N-1;
+		n_prev = ( n - 1 ) % N;
 
 		// calculate positional prior:
 		pos_[n][0] = 1.0f - q_;
