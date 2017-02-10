@@ -19,8 +19,9 @@ public:
 	float 	getPrec_middle_ZOOPS();			// get precision when recall = 0.5 for ZOOPS model
 	float 	getPrec_middle_MOPS();			// get precision when recall = 0.5 for MOPS model
 	void 	print();
-	void 	write(int n);
-	void 	writeLogOdds( int n);			// print out log odds scores for both positive and negative set
+	void 	writePR( int n );
+	void	writePvalues( int n );
+	void 	writeLogOdds( int n );			// print out log odds scores for both positive and negative set
 											// for both MOPS and ZOOPS models
 
 private:
@@ -49,6 +50,9 @@ private:
 	float				occurrence_;		// the fraction of motif occurrence
 	float				occ_mult_;			// the number of motif occurrences per sequence
 
+	std::vector<float>	ZOOPS_Pvalue_;
+	std::vector<float>	MOPS_Pvalue_;
+
 	std::vector<int>	Y_;					// contains 1 at position 0
 											// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
 											// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
@@ -67,6 +71,9 @@ private:
 
 							// calculate precision and recall for both ZOOPS and MOPS models
 	void 		   			calculatePR();
+
+							// calculate P-values for log odds scores of positive sequences
+	void					calculatePvalues();
 
 							// calculate trimer conditional probabilities for the test set
 	void					calcKmerFreq( std::vector<Sequence*> seqSet );

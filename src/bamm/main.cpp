@@ -94,8 +94,9 @@ int main( int nargs, char* args[] ){
 			Motif* motif = new Motif( *motifs.getMotifs()[n] );
 			FDR fdr( motif );
 			fdr.evaluateMotif();
-			fdr.write(n);
-			if( Global::saveLogOdds ) fdr.writeLogOdds(n);
+//			fdr.writePR( n );
+			fdr.writePvalues( n );
+			if( Global::saveLogOdds ) fdr.writeLogOdds( n );
 			delete motif;
 		}
 	}
