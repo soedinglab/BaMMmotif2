@@ -96,13 +96,15 @@ void FDR::evaluateMotif(){
 		delete motif;
 		delete bgModel;
 	}
+/*
 
 	fprintf(stderr, " __________________________________\n"
 					"|                                  |\n"
 					"|  calculate precision and recall  |\n"
 					"|__________________________________|\n\n" );
-//	calculatePR();
+	calculatePR();
 
+*/
 	fprintf(stderr, " ______________________\n"
 					"|                      |\n"
 					"|  calculate P-values  |\n"
@@ -359,8 +361,6 @@ void FDR::calculatePvalues(){
 */
 
 	int M = Global::mFold;
-	int posN = Global::posSequenceSet->getN();
-	int negN = posN * M;
 
 	// for MOPS model:
 	// Sort log odds scores from large to small
@@ -368,14 +368,14 @@ void FDR::calculatePvalues(){
 	std::sort( negScoreAll_.begin(), negScoreAll_.end(), std::greater<float>() );
 
 	// Rank and score these log odds score values
-	int idx_posAll = 0;
-	int idx_negAll = 0;
+	size_t idx_posAll = 0;
+	size_t idx_negAll = 0;
+	size_t len_all = posScoreAll_.size() + negScoreAll_.size();
 
-	for( int i = 0; i < posN + negN; i++ ){
-		if( posScoreAll_[idx_posAll] >= negScoreAll_[idx_negAll] ||
-				idx_negAll == posN+negN-1 ){
+	for( size_t i = 0; i < len_all; i++ ){
+		if( posScoreAll_[idx_posAll] >= negScoreAll_[idx_negAll] ){
 			idx_posAll++;
-			MOPS_Pvalue_.push_back( ( ( float )idx_negAll + 0.5f ) / ( float )( M * posN + 1 ) );
+			MOPS_Pvalue_.push_back( ( ( float )idx_negAll + 0.5f ) / ( float )( M * posScoreAll_.size()  + 1 ) );
 		} else {
 			idx_negAll++;
 		}
@@ -387,14 +387,13 @@ void FDR::calculatePvalues(){
 	std::sort( negScoreMax_.begin(), negScoreMax_.end(), std::greater<float>() );
 
 	// Rank and score these log odds score values
-	int idx_posMax = 0;
-	int idx_negMax = 0;
-
-	for( int i = 0; i < posN + negN; i++ ){
-		if( posScoreMax_[idx_posMax] >= negScoreMax_[idx_negMax] ||
-				idx_negMax == posN+negN-1 ){
+	size_t idx_posMax = 0;
+	size_t idx_negMax = 0;
+	size_t len_max = posScoreMax_.size() + negScoreMax_.size();
+	for( size_t i = 0; i < len_max; i++ ){
+		if( posScoreMax_[idx_posMax] >= negScoreMax_[idx_negMax] || idx_negMax == len_max - 1 ){
 			idx_posMax++;
-			ZOOPS_Pvalue_.push_back( ( ( float )idx_negMax + 0.5f ) / ( float )( M * posN + 1 ) );
+			ZOOPS_Pvalue_.push_back( ( ( float )idx_negMax + 0.5f ) / ( float )( M * posScoreMax_.size() + 1 ) );
 		} else {
 			idx_negMax++;
 		}
@@ -495,7 +494,7 @@ void FDR::writePvalues( int n ){
 			+ Global::posSequenceBasename + "_motif_" + std::to_string( n+1 );
 
 	std::string opath_zoops = opath + ".zoops.pvalues";
-	std::string opath_mops = opath + "mops.pvalues";
+	std::string opath_mops = opath + ".mops.pvalues";
 
 	std::ofstream ofile_zoops( opath_zoops );
 	std::ofstream ofile_mops( opath_mops );
@@ -541,11 +540,12 @@ void FDR::writeLogOdds( int n ){
 		ofile_mops_posScore << posScoreAll_[i] << std::endl;
 	}
 
-	for( i = 0; i < negScoreMax_.size(); i++ ){
+	// write down every mFold log odds scores for negative sets
+	for( i = 0; i < negScoreMax_.size(); i+=Global::mFold ){
 		ofile_zoops_negScore << negScoreMax_[i] << std::endl;
 	}
 
-	for( i = 0; i < negScoreAll_.size(); i++ ){
+	for( i = 0; i < negScoreAll_.size(); i+=Global::mFold ){
 		ofile_mops_negScore << negScoreAll_[i] << std::endl;
 	}
 }
