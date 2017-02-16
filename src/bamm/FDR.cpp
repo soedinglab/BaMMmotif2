@@ -42,10 +42,12 @@ void FDR::evaluateMotif(){
 
 	for( int fold = 0; fold < Global::cvFold; fold++ ){
 
-		fprintf(stderr, " ________________________________\n"
-						"|                                |\n"
-						"|  Cross validation for fold-%d   |\n"
-						"|________________________________|\n\n", fold+1 );
+		if( Global::verbose ){
+			fprintf(stderr, " ________________________________\n"
+							"|                                |\n"
+							"|  Cross validation for fold-%d   |\n"
+							"|________________________________|\n\n", fold+1 );
+		}
 
 		Motif* motif = new Motif( *motif_ );			// deep copy the initial motif
 
@@ -108,18 +110,20 @@ void FDR::evaluateMotif(){
 		delete bgModel;
 	}
 
-
-	fprintf(stderr, " __________________________________\n"
-					"|                                  |\n"
-					"|  calculate precision and recall  |\n"
-					"|__________________________________|\n\n" );
+	if( Global::verbose ){
+		fprintf(stderr, " __________________________________\n"
+						"|                                  |\n"
+						"|  calculate precision and recall  |\n"
+						"|__________________________________|\n\n" );
+	}
 	calculatePR();
 
-
-	fprintf(stderr, " ______________________\n"
-					"|                      |\n"
-					"|  calculate P-values  |\n"
-					"|______________________|\n\n" );
+	if( Global::verbose ){
+		fprintf(stderr, " ______________________\n"
+						"|                      |\n"
+						"|  calculate P-values  |\n"
+						"|______________________|\n\n" );
+	}
 	calculatePvalues();
 }
 
@@ -396,7 +400,7 @@ void FDR::calculatePvalues(){
 
 	for( size_t i = 0; i < len_all; i++ ){
 		if( posScoreAll_[idx_posAll] >= negScoreAll_[idx_negAll]
-		  || idx_posAll == 0 || idx_negAll == len_all - 1){
+		  /*|| idx_posAll == 0 || idx_negAll == len_all - 1*/ ){
 			idx_posAll++;
 			MOPS_Pvalue_.push_back( ( ( float )idx_negAll + 0.5f )
 					/ ( float )( negScoreAll_.size()  + 1 ) );
@@ -417,7 +421,7 @@ void FDR::calculatePvalues(){
 	size_t len_max = posScoreMax_.size() + negScoreMax_.size();
 	for( size_t i = 0; i < len_max; i++ ){
 		if( posScoreMax_[idx_posMax] >= negScoreMax_[idx_negMax]
-		    || idx_posMax == 0 || idx_negMax == len_max - 1 ){
+		    /*|| idx_posMax == 0 || idx_negMax == len_max - 1*/ ){
 			idx_posMax++;
 			ZOOPS_Pvalue_.push_back( ( ( float )idx_negMax + 0.5f )
 					/ ( float )( M * posScoreMax_.size() + 1 ) );
@@ -551,12 +555,12 @@ void FDR::writePvalues( int n ){
 	std::ofstream ofile_mops( opath_mops );
 
 	for( size_t i = 0; i < ZOOPS_Pvalue_.size(); i++ ){
-		ofile_zoops << std::setprecision(6)
+		ofile_zoops << std::setprecision(4)
 					<< ZOOPS_Pvalue_[i] << std::endl;
 	}
 
 	for( size_t i = 0; i < MOPS_Pvalue_.size(); i++ ){
-		ofile_mops  << std::setprecision(6)
+		ofile_mops  << std::setprecision(4)
 					<< MOPS_Pvalue_[i] << std::endl;
 	}
 
