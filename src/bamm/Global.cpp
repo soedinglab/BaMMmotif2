@@ -46,6 +46,7 @@ bool				Global::EM = false;						// flag to trigger EM learning
 int				 	Global::maxEMIterations = std::numeric_limits<int>::max();  // maximum number of iterations
 float               Global::epsilon = 0.001f;				// threshold for likelihood convergence parameter
 bool                Global::noQOptimization = false;		// disable q optimization
+float				Global::q = 0.9f;						// prior probability for a positive sequence to contain a motif
 
 // CGS (Collapsed Gibbs sampling) options
 bool				Global::CGS = false;					// flag to trigger Collapsed Gibbs sampling
@@ -65,6 +66,8 @@ int 				Global::sOrder = 2;						// the k-mer order for sampling negative sequen
 bool                Global::verbose = false;
 bool                Global::debugMode = false;              // debug-mode: prints out everything.
 bool				Global::saveBaMMs = true;
+bool				Global::savePRs = false;				// write the precision, recall, TP and FP
+bool				Global::savePvalues = true;				// write p-values for each log odds score from sequence set
 bool				Global::saveLogOdds = false;			// write the log odds of positive and negative sets to disk
 bool				Global::saveInitialModel = false;		// write out the initial model to disk
 
@@ -257,6 +260,8 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "verbose", verbose );
 	opt >> GetOpt::OptionPresent( "debug", debugMode );
 	opt >> GetOpt::OptionPresent( "saveBaMMs", saveBaMMs );
+	opt >> GetOpt::OptionPresent( "savePRs", savePRs );
+	opt >> GetOpt::OptionPresent( "savePvalues", savePvalues );
 	opt >> GetOpt::OptionPresent( "saveLogOdds", saveLogOdds );
 
 	// for remaining unknown options

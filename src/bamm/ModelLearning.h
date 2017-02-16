@@ -40,7 +40,7 @@ private:
 	int*					z_;					// observed position of motif in each sequence
 	float**					pos_;				// positional prior, pos[i]=0 means no motif is found on the sequence
 	float** 				alpha_;	        	// pseudo-count hyper-parameter for order k and motif position j
-	float 					q_ = 0.9f; 			// hyper-parameter q specifies the fraction of sequences containing motif
+	float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif
 
 	float 					llikelihood_ = 0.0f;// log likelihood for each iteration
 

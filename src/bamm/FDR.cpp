@@ -17,7 +17,7 @@ FDR::FDR( Motif* motif ){
 		testsetN_[k] = ( int* )calloc( Y_[k+1], sizeof( int ) );
 	}
 
-	occurrence_ = 0.0f;
+	occ_frac_ = 0.0f;
 
 	occ_mult_ = 0.0f;
 
@@ -36,8 +36,10 @@ FDR::~FDR(){
 void FDR::evaluateMotif(){
 
 	std::vector<Sequence*> posSeqs = Global::posSequenceSet->getSequences();
+	std::vector<Sequence*> negSeqs = Global::negSequenceSet->getSequences();
 
 	std::vector<std::vector<float>> scores;
+
 	for( int fold = 0; fold < Global::cvFold; fold++ ){
 
 		fprintf(stderr, " ________________________________\n"
@@ -74,7 +76,7 @@ void FDR::evaluateMotif(){
 		ModelLearning model( motif, bgModel, trainsetFolds );
 		if( Global::EM ){
 			model.EM();
-		} else if( Global::CGS ){
+		} else if ( Global::CGS ){
 			model.GibbsSampling();
 		}
 
@@ -83,20 +85,29 @@ void FDR::evaluateMotif(){
 		posScoreAll_.insert( std::end( posScoreAll_ ), std::begin( scores[0] ), std::end( scores[0] ) );
 		posScoreMax_.insert( std::end( posScoreMax_ ), std::begin( scores[1] ), std::end( scores[1] ) );
 
-		std::vector<std::unique_ptr<Sequence>> negSet;
 
-		// generate negative sequence set
-		negSet = sampleSequenceSet( testSet );
+		if( !Global::negSeqGiven ){
+			std::vector<std::unique_ptr<Sequence>> negSet;
+			// generate negative sequence set
+			negSet = sampleSequenceSet( testSet );
+			// score negative sequence set
+			scores = scoreSequenceSet( motif, bgModel, negSet );
+		} else {
+			std::vector<Sequence*> negSet;
+			for( size_t i = 0; i < Global::negFoldIndices[fold].size(); i++ ){
+				negSet.push_back( negSeqs[Global::negFoldIndices[fold][i]] );
+			}
+			// score negative sequence set
+			scores = scoreSequenceSet( motif, bgModel, negSet );
+		}
 
-		// score negative sequence set
-		scores = scoreSequenceSet( motif, bgModel, negSet );
 		negScoreAll_.insert( std::end( negScoreAll_ ), std::begin( scores[0] ), std::end( scores[0] ) );
 		negScoreMax_.insert( std::end( negScoreMax_ ), std::begin( scores[1] ), std::end( scores[1] ) );
 
 		delete motif;
 		delete bgModel;
 	}
-/*
+
 
 	fprintf(stderr, " __________________________________\n"
 					"|                                  |\n"
@@ -104,7 +115,7 @@ void FDR::evaluateMotif(){
 					"|__________________________________|\n\n" );
 	calculatePR();
 
-*/
+
 	fprintf(stderr, " ______________________\n"
 					"|                      |\n"
 					"|  calculate P-values  |\n"
@@ -123,14 +134,23 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 	float maxScore;											// maximal logOddsScore over all positions for each sequence
 
 	for( size_t n = 0; n < seqSet.size(); n++ ){
+
 		int LW1 = seqSet[n]->getL() - W + 1;
+
 		maxScore = -FLT_MAX;
+
 		std::vector<float> logOdds( LW1 );					// calculate log odds scores for all the positions
+
 		for( int i = 0; i < LW1; i++ ){
+
 			logOdds[i] = 0.0f;
+
 			for( int j = 0; j < W; j++ ){
+
 				int y = seqSet[n]->extractKmer( i+j, std::min(i+j, K ) );
+
 				int y_bg = y % Y_[K_bg+1];
+
 				if( y >= 0 ){
 					logOdds[i] += ( logf( motif->getV()[K][y][j] ) - logf( bg->getV()[std::min( K, K_bg )][y_bg] ) );
 				}
@@ -144,6 +164,7 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 				maxScore = logOdds[i];
 			}
 		}
+
 		scores[1].push_back( maxScore );
 
 	}
@@ -161,14 +182,23 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 	float maxScore;											// maximal logOddsScore over all positions for each sequence
 
 	for( size_t n = 0; n < seqSet.size(); n++ ){
+
 		int LW1 = seqSet[n]->getL() - W + 1;
+
 		maxScore = -FLT_MAX;
+
 		std::vector<float> logOdds( LW1 );					// calculate log odds scores for all the positions
+
 		for( int i = 0; i < LW1; i++ ){
+
 			logOdds[i] = 0.0f;
+
 			for( int j = 0; j < W; j++ ){
+
 				int y = seqSet[n]->extractKmer( i+j, std::min(i+j, K ) );
+
 				int y_bg = y % Y_[K_bg+1];
+
 				if( y >= 0 ){
 					logOdds[i] += ( logf( motif->getV()[K][y][j] ) - logf( bg->getV()[std::min( K, K_bg )][y_bg] ) );
 				}
@@ -182,6 +212,7 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 				maxScore = logOdds[i];
 			}
 		}
+
 		scores[1].push_back( maxScore );
 
 	}
@@ -204,7 +235,7 @@ std::vector<std::unique_ptr<Sequence>> FDR::sampleSequenceSet( std::vector<Seque
 	return sampleSet;
 }
 
-// generate sample sequence based on trimer conditional probabilities
+// generate sample sequence based on k-mer frequencies from positive set
 std::unique_ptr<Sequence> FDR::sampleSequence( int L, float** v ){
 
 	uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
@@ -226,11 +257,11 @@ std::unique_ptr<Sequence> FDR::sampleSequence( int L, float** v ){
 		random = ( double )rand() / ( double )RAND_MAX;	// get another random double number
 		// calculate y of K-mer
 		int yk = 0;
-		for( int k = std::min( i, Global::sOrder ); k > 0; k-- ){
+		for( int k = ( i < Global::sOrder ) ? i : Global::sOrder; k > 0; k-- ){
 			yk += ( sequence[i-k] - 1 ) * Y_[k];
 		}
 
-		// assign a nucleotide based on K-mer frequency
+		// assign a nucleotide based on k-mer frequency
 		f = 0.0f;
 		for( uint8_t a = 1; a <= Y_[1]; a++ ){
 			f += v[std::min( i, Global::sOrder )][yk+a-1];
@@ -252,25 +283,32 @@ std::unique_ptr<Sequence> FDR::sampleSequence( int L, float** v ){
 
 void FDR::calculatePR(){
 
-	int M = Global::mFold;
+	int M;
 	int posN = Global::posSequenceSet->getN();
-	int negN = posN * M;
+	int negN;
+	if( Global::negSeqGiven ){
+		negN = Global::negSequenceSet->getN();
+		M = negN / posN;
+	} else {
+		M = Global::mFold;
+		negN = posN * M;
 
+	}
 	// for MOPS model:
 	// Sort log odds scores from large to small
 	std::sort( posScoreAll_.begin(), posScoreAll_.end(), std::greater<float>() );
 	std::sort( negScoreAll_.begin(), negScoreAll_.end(), std::greater<float>() );
 
 	// Rank and score these log odds score values
-	int idx_posAll = 0;
-	int idx_negAll = 0;									// index for arrays storing the complete log odds scores
+	size_t idx_posAll = 0;
+	size_t idx_negAll = 0;								// index for arrays storing the complete log odds scores
 	float E_TP_MOPS = 0.0f;								// maximal distance between TFP and FP = expectation value of TP
-	int idx_max = posN + negN;							// index when the distance between TFP and FP reaches maximum
-														// otherwise, set posN+negN as initial cutoff
+	size_t idx_max = posN+negN;							// index when the distance between TFP and FP reaches maximum
+														// otherwise, set total number as initial cutoff
 
-	for( int i = 0; i < posN + negN; i++ ){
-		if( posScoreAll_[idx_posAll] >= negScoreAll_[idx_negAll] ||
-				idx_negAll == posN+negN-1 ){
+	for( size_t i = 0; i < posScoreAll_.size() + negScoreAll_.size(); i++ ){
+		if( posScoreAll_[idx_posAll] >= negScoreAll_[idx_negAll] || /* idx_posAll == 0 || */
+				idx_negAll == posScoreAll_.size() + negScoreAll_.size()-1 ){
 			idx_posAll++;
 		} else {
 			idx_negAll++;
@@ -279,17 +317,17 @@ void FDR::calculatePR(){
 		MOPS_TP_.push_back( ( float )idx_posAll - ( float )idx_negAll / ( float )M );
 		MOPS_FP_.push_back( ( float )idx_negAll / ( float )M );
 
-		if( E_TP_MOPS == MOPS_TP_[i] ){					// stop when the distance between TFP and FP reaches maximum
+		if( E_TP_MOPS == MOPS_TP_[i] ){
 			idx_max = i;
-			break;
+//			break;										// stop when the distance between TFP and FP reaches maximum
 		}
 		if( E_TP_MOPS < MOPS_TP_[i] ){
 			E_TP_MOPS = MOPS_TP_[i];
 		}
 	}
 
-	for( int i = 0; i < idx_max; i++ ){
-		MOPS_Pre_.push_back( MOPS_TP_[i] / ( MOPS_TP_[i] + MOPS_FP_[i] ) );
+	for( size_t i = 0; i < idx_max; i++ ){
+		MOPS_FDR_.push_back( MOPS_FP_[i] / ( MOPS_TP_[i] + MOPS_FP_[i] ) );
 		MOPS_Rec_.push_back( MOPS_TP_[i] / E_TP_MOPS );
 	}
 
@@ -305,62 +343,46 @@ void FDR::calculatePR(){
 	int idx_posMax = 0;
 	int idx_negMax = 0;
 	int min_idx_pos = 0;
+	int posN_est = static_cast<int>( Global::q * ( float )posN );
 
 	for( int i = 0; i < posN + negN; i++ ){
 		if( posScoreMax_[idx_posMax] >= negScoreMax_[idx_negMax] ||
-				idx_negMax == posN+negN-1 ){
+				/* idx_posMax == 0 || */ idx_negMax == posN+negN-1 ){
 			idx_posMax++;
 		} else {
 			idx_negMax++;
 		}
 
-		ZOOPS_TP_.push_back( ( float )idx_posMax - ( float )idx_negMax / ( float )M );
+		ZOOPS_TP_.push_back( ( float )idx_posMax );
 		ZOOPS_FP_.push_back( ( float )idx_negMax / ( float )M );
 
-		if( idx_posMax == posN - 1 ){
+		if( idx_posMax == posN_est ){
 			min_idx_pos = i + 1;
 		}
-	}
 
-	std::cout << min_idx_pos << std::endl;
+		ZOOPS_FDR_.push_back( 1 - ( float )idx_posMax / ( float )(i+1) );
+		ZOOPS_Rec_.push_back( ( float )idx_posMax / ( float )posN );
 
-	for( int i = 0; i < posN + negN; i++ ){
-		ZOOPS_Pre_.push_back( ZOOPS_TP_[i] / ( ZOOPS_TP_[i] + ZOOPS_FP_[i]) );
-		ZOOPS_Rec_.push_back( ZOOPS_TP_[i] / ZOOPS_TP_[min_idx_pos] );
 	}
 
 	// the fraction of motif occurrence
-	occurrence_ = 1 - ZOOPS_FP_[min_idx_pos] / ( float )posN;
+	occ_frac_ = 1 - ZOOPS_FP_[min_idx_pos] / ( float )posN;
 
 }
 
 void FDR::calculatePvalues(){
 
-/*
-	// for MOPS model:
-	// Sort log odds scores in descending order
-	std::sort( negScoreAll_.begin(), negScoreAll_.end(), std::greater<float>() );
-	for( size_t i = 0; i < posScoreAll_.size(); i++ ){
-		// Return iterator to lower/upper bound
-		std::vector<float>::iterator low, up;
-		low = std::lower_bound( negScoreAll_.begin(), negScoreAll_.end(), posScoreAll_[i] );
-		up = std::upper_bound( negScoreAll_.begin(), negScoreAll_.end(), posScoreAll_[i] );
-		MOPS_Pvalue_.push_back( ( float )( *up + *low ) / ( 2 * ( float ) negScoreAll_.size() ) );
-	}
+	/**
+	 *  calculate p-values for the log odds scores from positive sequence set
+	 * 	later used for evaluating models using fdrtool R package
+	 */
 
-	// for ZOOPS model:
-	// Sort log odds scores in descending order
-	std::sort( negScoreMax_.begin(), negScoreMax_.end(), std::greater<float>() );
-	for( size_t i = 0; i < posScoreAll_.size(); i++ ){
-		// Return iterator to lower/upper bound
-		std::vector<float>::iterator low, up;
-		low = std::lower_bound( negScoreMax_.begin(), negScoreMax_.end(), posScoreMax_[i] );
-		up = std::upper_bound( negScoreMax_.begin(), negScoreMax_.end(), posScoreMax_[i] );
-		ZOOPS_Pvalue_.push_back( ( float )( *up + *low ) / ( 2 * ( float )negScoreMax_.size() ) );
+	int M;
+	if( Global::negSeqGiven ){
+		M = Global::negSequenceSet->getN() / Global::posSequenceSet->getN();
+	} else {
+		M = Global::mFold;
 	}
-*/
-
-	int M = Global::mFold;
 
 	// for MOPS model:
 	// Sort log odds scores from large to small
@@ -373,12 +395,15 @@ void FDR::calculatePvalues(){
 	size_t len_all = posScoreAll_.size() + negScoreAll_.size();
 
 	for( size_t i = 0; i < len_all; i++ ){
-		if( posScoreAll_[idx_posAll] >= negScoreAll_[idx_negAll] ){
+		if( posScoreAll_[idx_posAll] >= negScoreAll_[idx_negAll]
+		  || idx_posAll == 0 || idx_negAll == len_all - 1){
 			idx_posAll++;
-			MOPS_Pvalue_.push_back( ( ( float )idx_negAll + 0.5f ) / ( float )( M * posScoreAll_.size()  + 1 ) );
+			MOPS_Pvalue_.push_back( ( ( float )idx_negAll + 0.5f )
+					/ ( float )( negScoreAll_.size()  + 1 ) );
 		} else {
 			idx_negAll++;
 		}
+
 	}
 
 	// for ZOOPS model:
@@ -391,9 +416,11 @@ void FDR::calculatePvalues(){
 	size_t idx_negMax = 0;
 	size_t len_max = posScoreMax_.size() + negScoreMax_.size();
 	for( size_t i = 0; i < len_max; i++ ){
-		if( posScoreMax_[idx_posMax] >= negScoreMax_[idx_negMax] || idx_negMax == len_max - 1 ){
+		if( posScoreMax_[idx_posMax] >= negScoreMax_[idx_negMax]
+		    || idx_posMax == 0 || idx_negMax == len_max - 1 ){
 			idx_posMax++;
-			ZOOPS_Pvalue_.push_back( ( ( float )idx_negMax + 0.5f ) / ( float )( M * posScoreMax_.size() + 1 ) );
+			ZOOPS_Pvalue_.push_back( ( ( float )idx_negMax + 0.5f )
+					/ ( float )( M * posScoreMax_.size() + 1 ) );
 		} else {
 			idx_negMax++;
 		}
@@ -437,6 +464,22 @@ void FDR::calcKmerFreq( std::vector<Sequence*> seqs ){
 			testsetV_[k][y] = ( float )testsetN_[k][y] / ( float )testsetN_[k-1][yk];
 		}
 	}
+
+/*	// correct k-mer frequencies
+//	float eta0 = 0.9945f;
+	float eta0 = 0.1f;
+	int W = motif_->getW();
+	int K = Global::modelOrder;
+	for( int k = 0; k < K; k++ ){
+		for( int y = 0; y < Y_[k+1]; y++ ){
+			float corr = 0.0f;
+			for( int j = K; j < W; j++){
+				corr += motif_->getV()[k][y][j];
+			}
+			testsetV_[k][y] = ( 1 - ( 1 - eta0 ) * ( float )( W - K ) ) * testsetV_[k][y] + ( 1 - eta0 ) * corr;
+		}
+	}
+	*/
 }
 
 void FDR::print(){
@@ -447,9 +490,9 @@ void FDR::writePR( int n ){
 
 	/**
 	 * save FDR parameters in three flat files:
-	 * (1) posSequenceBasename.zoops.stats: 	TP, FP, TN, FN values for ZOOPS model
-	 * (2) posSequenceBasename.mops.stats:		TP, FP, TN, FN values for MOPS model
-	 * (3) posSequenceBasename.occ:				fraction of motif occurrence and number of motif occurrences per sequence
+	 * (1) posSequenceBasename.zoops.stats: 	TP, FP, precision and recall for ZOOPS model
+	 * (2) posSequenceBasename.mops.stats:		TP, FP, precision and recall for MOPS model
+	 * (3) posSequenceBasename.occ:				fraction occurrence and motif occurrences per sequence
 	 */
 
 	std::string opath = std::string( Global::outputDirectory ) + '/'
@@ -465,24 +508,32 @@ void FDR::writePR( int n ){
 	size_t i;
 
 	// for ZOOPS model:
-	ofile_zoops << "TP" << '\t' << "FP" << '\t' << "Precision" << '\t' << "Recall" << '\t' << std::endl;
-	for( i = 0; i < ZOOPS_Pre_.size(); i++ ){
+	ofile_zoops << "TP" << '\t' << "FP" << '\t'
+				<< "Precision" << '\t'
+				<< "Recall" << '\t' << std::endl;
+
+	for( i = 0; i < ZOOPS_FDR_.size(); i++ ){
 		ofile_zoops << ZOOPS_TP_[i]  << '\t'
 					<< ZOOPS_FP_[i]  << '\t'
-					<< ZOOPS_Pre_[i] << '\t'
+					<< ZOOPS_FDR_[i] << '\t'
 					<< ZOOPS_Rec_[i] << '\t' << std::endl;
 	}
 
 	// for MOPS model:
-	ofile_mops << "TP" << '\t' << "FP" << '\t' << "Precision" << '\t' << "Recall" << '\t' << std::endl;
-	for( i = 0; i < MOPS_Pre_.size(); i++ ){
+	ofile_mops  << "TP" << '\t' << "FP" << '\t'
+				<< "Precision" << '\t'
+				<< "Recall" << '\t' << std::endl;
+
+	for( i = 0; i < MOPS_FDR_.size(); i++ ){
 		ofile_mops  << MOPS_TP_[i]  << '\t'
 					<< MOPS_FP_[i]  << '\t'
-					<< MOPS_Pre_[i] << '\t'
+					<< MOPS_FDR_[i] << '\t'
 					<< MOPS_Rec_[i] << '\t' << std::endl;
 	}
+
+	// write occurrences:
 	ofile_occ << "The fraction of motif occurrence:" << std::endl
-			  << occurrence_<< std::endl
+			  << occ_frac_<< std::endl
 	 	 	  << "The number of motif occurrences per sequence:" << std::endl
 	 	 	  << occ_mult_ << std::endl;
 
@@ -500,52 +551,54 @@ void FDR::writePvalues( int n ){
 	std::ofstream ofile_mops( opath_mops );
 
 	for( size_t i = 0; i < ZOOPS_Pvalue_.size(); i++ ){
-		ofile_zoops << ZOOPS_Pvalue_[i] <<std::endl;
+		ofile_zoops << std::setprecision(6)
+					<< ZOOPS_Pvalue_[i] << std::endl;
 	}
 
 	for( size_t i = 0; i < MOPS_Pvalue_.size(); i++ ){
-		ofile_mops << MOPS_Pvalue_[i] <<std::endl;
+		ofile_mops  << std::setprecision(6)
+					<< MOPS_Pvalue_[i] << std::endl;
 	}
 
 }
 void FDR::writeLogOdds( int n ){
 
 	/**
-	 * save log odds scores into four files before sorting them
-	 * (1) posSequenceBasename.zoops.posLogOdds
-	 * (2) posSequenceBasename.mops.posLogOdds
-	 * (3) posSequenceBasename.zoops.negLogOdds
-	 * (4) posSequenceBasename.mops.negLogOdds
+	 * save log odds scores into two files:
+	 * (1) posSequenceBasename.zoops.logOdds
+	 * (2) posSequenceBasename.mops.logOdds
 	 */
 
 	std::string opath = std::string( Global::outputDirectory ) + '/'
 			+ Global::posSequenceBasename + "_motif_" + std::to_string( n+1 );
 
-	std::string opath_zoops_posScore = opath + ".zoops.posLogOdds";
-	std::string opath_mops_posScore = opath + ".mops.posLogOdds";
-	std::string opath_zoops_negScore = opath + ".zoops.negLogOdds";
-	std::string opath_mops_negScore = opath + ".mops.negLogOdds";
-	std::ofstream ofile_zoops_posScore( opath_zoops_posScore );
-	std::ofstream ofile_mops_posScore( opath_mops_posScore );
-	std::ofstream ofile_zoops_negScore( opath_zoops_negScore );
-	std::ofstream ofile_mops_negScore( opath_mops_negScore );
+	std::string opath_zoops_logOdds = opath + ".zoops.logOdds";
+	std::string opath_mops_logOdds = opath + ".mops.logOdds";
+	std::ofstream ofile_zoops_logOdds( opath_zoops_logOdds );
+	std::ofstream ofile_mops_logOdds( opath_mops_logOdds );
 
 	size_t i;
+	int M;
+	if( Global::negSeqGiven ){
+		M = Global::negSequenceSet->getN() / Global::posSequenceSet->getN();
+	} else {
+		M = Global::mFold;
+	}
 
+	ofile_zoops_logOdds << "positive" << '\t'
+						<< "negative" << std::endl;
 	for( i = 0; i < posScoreMax_.size(); i++ ){
-		ofile_zoops_posScore << posScoreMax_[i] << std::endl;
+		ofile_zoops_logOdds	<< std::setprecision(6)
+							<< posScoreMax_[i] << '\t'
+							<< negScoreMax_[i*M] << std::endl;
 	}
 
+	ofile_mops_logOdds 	<< "positive" << '\t'
+						<< "negative" << std::endl;
 	for( i = 0; i < posScoreAll_.size(); i++ ){
-		ofile_mops_posScore << posScoreAll_[i] << std::endl;
+		ofile_mops_logOdds 	<< std::setprecision(6)
+							<< posScoreAll_[i] << '\t'
+							<< negScoreAll_[i*M] << std::endl;
 	}
 
-	// write down every mFold log odds scores for negative sets
-	for( i = 0; i < negScoreMax_.size(); i+=Global::mFold ){
-		ofile_zoops_negScore << negScoreMax_[i] << std::endl;
-	}
-
-	for( i = 0; i < negScoreAll_.size(); i+=Global::mFold ){
-		ofile_mops_negScore << negScoreAll_[i] << std::endl;
-	}
 }

@@ -71,6 +71,7 @@ public:
 	static int			maxEMIterations;					// maximum number of iterations for EM
 	static float		epsilon;							// threshold for likelihood convergence parameter
 	static bool			noQOptimization;					// disable q optimization
+	static float		q;									// prior probability for a positive sequence to contain a motif
 
 	// CGS (Collapsed Gibbs sampling) options
 	static bool			CGS;								// flag to trigger Collapsed Gibbs sampling
@@ -90,6 +91,8 @@ public:
 	static bool			verbose;							// verbose printouts, defaults to false
 	static bool         debugMode;                          // verbose printouts for debugging, defaults to false
 	static bool			saveBaMMs;							// write optimized BaMM(s) to disk
+	static bool			savePRs;							// write the precision, recall, TP and FP
+	static bool			savePvalues;						// write p-values for each log odds score from sequence set
 	static bool			saveLogOdds;						// write the log odds of positive and negative sets to disk
 	static bool			saveInitialModel;					// write out the initial model to disk
 
