@@ -24,6 +24,9 @@ public:
 	void 	writeLogOdds( int n );			// print out log odds scores for both positive and negative set
 											// for both MOPS and ZOOPS models
 
+											// generate a sample sequence set for simulation
+											// can be separated in a different class
+
 private:
 
 	Motif*				motif_;				// initial motif
@@ -36,18 +39,18 @@ private:
 	std::vector<float> 	negScoreAll_;
 	std::vector<float> 	negScoreMax_;
 
-	std::vector<float>	ZOOPS_Pre_;			// precision for ZOOPS model
+	std::vector<float>	ZOOPS_FDR_;			// precision for ZOOPS model
 	std::vector<float>	ZOOPS_Rec_;			// recall for ZOOPS model
 	std::vector<float>  ZOOPS_TP_;			// true positives for ZOOPS model
 	std::vector<float>  ZOOPS_FP_;			// false positives for ZOOPS model
 
 
-	std::vector<float>	MOPS_Pre_;			// precision for MOPS model
+	std::vector<float>	MOPS_FDR_;			// precision for MOPS model
 	std::vector<float>	MOPS_Rec_;			// recall for MOPS model
 	std::vector<float>  MOPS_TP_;			// true positives for MOPS model
 	std::vector<float>  MOPS_FP_;			// false positives for MOPS model
 
-	float				occurrence_;		// the fraction of motif occurrence
+	float				occ_frac_;			// the fraction of motif occurrence
 	float				occ_mult_;			// the number of motif occurrences per sequence
 
 	std::vector<float>	ZOOPS_Pvalue_;

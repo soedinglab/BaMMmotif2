@@ -18,6 +18,8 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int
 	motif_ = motif;
 	bg_ = bg;
 
+	q_ = Global::q;
+
 	// define parameters
 	int K = Global::modelOrder;
 	int K_bg = Global::bgModelOrder;
@@ -116,9 +118,9 @@ ModelLearning::~ModelLearning(){
 int ModelLearning::EM(){
 
 	fprintf( stderr," ______\n"
-			"|      |\n"
-			"|  EM  |\n"
-			"|______|\n\n" );
+					"|      |\n"
+					"|  EM  |\n"
+					"|______|\n\n" );
 
 	clock_t t0 = clock();
 	bool iterate = true;									// flag for iterating before convergence
@@ -319,9 +321,9 @@ void ModelLearning::EM_optimize_q(){
 void ModelLearning::GibbsSampling(){
 
 	fprintf(stderr, " ___________________________\n"
-			"|                           |\n"
-			"|  Collapsed Gibbs sampler  |\n"
-			"|___________________________|\n\n" );
+					"|                           |\n"
+					"|  Collapsed Gibbs sampler  |\n"
+					"|___________________________|\n\n" );
 
 	clock_t t0 = clock();
 	bool iterate = true;								// flag for iterating before convergence
