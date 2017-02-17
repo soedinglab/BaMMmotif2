@@ -110,21 +110,25 @@ void FDR::evaluateMotif(){
 		delete bgModel;
 	}
 
-	if( Global::verbose ){
-		fprintf(stderr, " __________________________________\n"
-						"|                                  |\n"
-						"|  calculate precision and recall  |\n"
-						"|__________________________________|\n\n" );
+	if( Global::savePRs ){
+		if( Global::verbose ){
+			fprintf(stderr, " __________________________________\n"
+							"|                                  |\n"
+							"|  calculate precision and recall  |\n"
+							"|__________________________________|\n\n" );
+		}
+		calculatePR();
 	}
-	calculatePR();
 
-	if( Global::verbose ){
-		fprintf(stderr, " ______________________\n"
-						"|                      |\n"
-						"|  calculate P-values  |\n"
-						"|______________________|\n\n" );
+	if( Global::savePvalues ){
+		if( Global::verbose ){
+			fprintf(stderr, " ______________________\n"
+							"|                      |\n"
+							"|  calculate P-values  |\n"
+							"|______________________|\n\n" );
+		}
+		calculatePvalues();
 	}
-	calculatePvalues();
 }
 
 // score sequences for the positive sequence set
@@ -311,7 +315,7 @@ void FDR::calculatePR(){
 														// otherwise, set total number as initial cutoff
 
 	for( size_t i = 0; i < posScoreAll_.size() + negScoreAll_.size(); i++ ){
-		if( posScoreAll_[idx_posAll] >= negScoreAll_[idx_negAll] || /* idx_posAll == 0 || */
+		if( posScoreAll_[idx_posAll] >= negScoreAll_[idx_negAll] || idx_posAll == 0 ||
 				idx_negAll == posScoreAll_.size() + negScoreAll_.size()-1 ){
 			idx_posAll++;
 		} else {
@@ -351,7 +355,7 @@ void FDR::calculatePR(){
 
 	for( int i = 0; i < posN + negN; i++ ){
 		if( posScoreMax_[idx_posMax] >= negScoreMax_[idx_negMax] ||
-				/* idx_posMax == 0 || */ idx_negMax == posN+negN-1 ){
+			idx_posMax == 0 ||  idx_negMax == posN+negN-1 ){
 			idx_posMax++;
 		} else {
 			idx_negMax++;
@@ -360,11 +364,13 @@ void FDR::calculatePR(){
 		ZOOPS_TP_.push_back( ( float )idx_posMax );
 		ZOOPS_FP_.push_back( ( float )idx_negMax / ( float )M );
 
+		// take the faction of q sequences as real positives
 		if( idx_posMax == posN_est ){
 			min_idx_pos = i + 1;
 		}
 
-		ZOOPS_FDR_.push_back( 1 - ( float )idx_posMax / ( float )(i+1) );
+		//ZOOPS_FDR_.push_back( 1.0f - ( float )idx_posMax / ( float )(i+1) );
+		ZOOPS_FDR_.push_back( ZOOPS_FP_[i] / ( float )idx_posMax );
 		ZOOPS_Rec_.push_back( ( float )idx_posMax / ( float )posN );
 
 	}
@@ -381,6 +387,35 @@ void FDR::calculatePvalues(){
 	 * 	later used for evaluating models using fdrtool R package
 	 */
 
+
+	// Method 1:
+	// for MOPS model:
+	// Sort log odds scores in ascending order
+	std::sort( negScoreAll_.begin(), negScoreAll_.end(), std::less<float>() );
+	std::sort( posScoreAll_.begin(), posScoreAll_.end(), std::greater<float>() );
+	for( size_t i = 0; i < posScoreAll_.size(); i++ ){
+		// Return iterator to lower/upper bound
+		size_t low, up;
+		low = std::distance( negScoreAll_.begin(), std::lower_bound( negScoreAll_.begin(), negScoreAll_.end(), posScoreAll_[i] ) );
+		up =  std::distance( negScoreAll_.begin(), std::upper_bound( negScoreAll_.begin(), negScoreAll_.end(), posScoreAll_[i] ) );
+		MOPS_Pvalue_.push_back( 1.0f - ( float )( up + low ) / ( 2.0f * ( float ) negScoreAll_.size() ) );
+	}
+
+	// for ZOOPS model:
+	// Sort log odds scores in ascending order
+	std::sort( negScoreMax_.begin(), negScoreMax_.end(), std::less<float>() );
+	std::sort( posScoreMax_.begin(), posScoreMax_.end(), std::greater<float>() );
+	for( size_t i = 0; i < posScoreMax_.size(); i++ ){
+		// Return iterator to lower/upper bound
+		size_t low, up;
+		low = std::distance( negScoreMax_.begin(), std::lower_bound( negScoreMax_.begin(), negScoreMax_.end(), posScoreMax_[i] ) );
+		up =  std::distance( negScoreMax_.begin(), std::upper_bound( negScoreMax_.begin(), negScoreMax_.end(), posScoreMax_[i] ) );
+		ZOOPS_Pvalue_.push_back( 1.0f - ( float )( up + low ) / ( 2.0f * ( float )negScoreMax_.size() ) );
+	}
+
+
+/*
+	// Method 2:
 	int M;
 	if( Global::negSeqGiven ){
 		M = Global::negSequenceSet->getN() / Global::posSequenceSet->getN();
@@ -400,10 +435,10 @@ void FDR::calculatePvalues(){
 
 	for( size_t i = 0; i < len_all; i++ ){
 		if( posScoreAll_[idx_posAll] >= negScoreAll_[idx_negAll]
-		  /*|| idx_posAll == 0 || idx_negAll == len_all - 1*/ ){
+		    || idx_posAll == 0 || idx_negAll == len_all - 1 ){
 			idx_posAll++;
 			MOPS_Pvalue_.push_back( ( ( float )idx_negAll + 0.5f )
-					/ ( float )( negScoreAll_.size()  + 1 ) );
+					/ ( ( float ) negScoreAll_.size()  + 1.0f ) );
 		} else {
 			idx_negAll++;
 		}
@@ -421,15 +456,15 @@ void FDR::calculatePvalues(){
 	size_t len_max = posScoreMax_.size() + negScoreMax_.size();
 	for( size_t i = 0; i < len_max; i++ ){
 		if( posScoreMax_[idx_posMax] >= negScoreMax_[idx_negMax]
-		    /*|| idx_posMax == 0 || idx_negMax == len_max - 1*/ ){
+		    || idx_posMax == 0  || idx_negMax == len_max - 1 ){
 			idx_posMax++;
 			ZOOPS_Pvalue_.push_back( ( ( float )idx_negMax + 0.5f )
-					/ ( float )( M * posScoreMax_.size() + 1 ) );
+					/ ( ( float )( M * posScoreMax_.size() ) + 1.0f ) );
 		} else {
 			idx_negMax++;
 		}
 	}
-
+*/
 }
 
 void FDR::calcKmerFreq( std::vector<Sequence*> seqs ){
@@ -494,8 +529,8 @@ void FDR::writePR( int n ){
 
 	/**
 	 * save FDR parameters in three flat files:
-	 * (1) posSequenceBasename.zoops.stats: 	TP, FP, precision and recall for ZOOPS model
-	 * (2) posSequenceBasename.mops.stats:		TP, FP, precision and recall for MOPS model
+	 * (1) posSequenceBasename.zoops.stats: 	TP, FP, FDR and recall for ZOOPS model
+	 * (2) posSequenceBasename.mops.stats:		TP, FP, FDR and recall for MOPS model
 	 * (3) posSequenceBasename.occ:				fraction occurrence and motif occurrences per sequence
 	 */
 
@@ -513,7 +548,7 @@ void FDR::writePR( int n ){
 
 	// for ZOOPS model:
 	ofile_zoops << "TP" << '\t' << "FP" << '\t'
-				<< "Precision" << '\t'
+				<< "FDR" << '\t'
 				<< "Recall" << '\t' << std::endl;
 
 	for( i = 0; i < ZOOPS_FDR_.size(); i++ ){
@@ -525,7 +560,7 @@ void FDR::writePR( int n ){
 
 	// for MOPS model:
 	ofile_mops  << "TP" << '\t' << "FP" << '\t'
-				<< "Precision" << '\t'
+				<< "FDR" << '\t'
 				<< "Recall" << '\t' << std::endl;
 
 	for( i = 0; i < MOPS_FDR_.size(); i++ ){
@@ -555,12 +590,12 @@ void FDR::writePvalues( int n ){
 	std::ofstream ofile_mops( opath_mops );
 
 	for( size_t i = 0; i < ZOOPS_Pvalue_.size(); i++ ){
-		ofile_zoops << std::setprecision(4)
+		ofile_zoops << std::setprecision(3)
 					<< ZOOPS_Pvalue_[i] << std::endl;
 	}
 
 	for( size_t i = 0; i < MOPS_Pvalue_.size(); i++ ){
-		ofile_mops  << std::setprecision(4)
+		ofile_mops  << std::setprecision(3)
 					<< MOPS_Pvalue_[i] << std::endl;
 	}
 
