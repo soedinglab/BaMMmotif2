@@ -33,7 +33,7 @@ FDR::~FDR(){
 	free( testsetN_ );
 }
 
-void FDR::evaluateMotif(){
+void FDR::evaluateMotif( int n ){
 
 	std::vector<Sequence*> posSeqs = Global::posSequenceSet->getSequences();
 	std::vector<Sequence*> negSeqs = Global::negSequenceSet->getSequences();
@@ -110,6 +110,8 @@ void FDR::evaluateMotif(){
 		delete bgModel;
 	}
 
+	if( Global::saveLogOdds ) 	writeLogOdds( n );
+
 	if( Global::savePRs ){
 		if( Global::verbose ){
 			fprintf(stderr, " __________________________________\n"
@@ -118,6 +120,7 @@ void FDR::evaluateMotif(){
 							"|__________________________________|\n\n" );
 		}
 		calculatePR();
+		writePR( n );
 	}
 
 	if( Global::savePvalues ){
@@ -128,6 +131,7 @@ void FDR::evaluateMotif(){
 							"|______________________|\n\n" );
 		}
 		calculatePvalues();
+		writePvalues( n );
 	}
 }
 
@@ -369,9 +373,10 @@ void FDR::calculatePR(){
 			min_idx_pos = i + 1;
 		}
 
-		//ZOOPS_FDR_.push_back( 1.0f - ( float )idx_posMax / ( float )(i+1) );
-		ZOOPS_FDR_.push_back( ZOOPS_FP_[i] / ( float )idx_posMax );
-		ZOOPS_Rec_.push_back( ( float )idx_posMax / ( float )posN );
+		ZOOPS_FDR_.push_back( ZOOPS_FP_[i] / ( ZOOPS_TP_[i] + ZOOPS_FP_[i] ) );
+		// ZOOPS_FDR_.push_back( 1.0f - ( float )idx_posMax / ( float )(i+1) );
+		// ZOOPS_FDR_.push_back( ZOOPS_FP_[i] / ( float )idx_posMax );
+		ZOOPS_Rec_.push_back( ZOOPS_TP_[i] / ( float )posN );
 
 	}
 
@@ -398,7 +403,11 @@ void FDR::calculatePvalues(){
 		size_t low, up;
 		low = std::distance( negScoreAll_.begin(), std::lower_bound( negScoreAll_.begin(), negScoreAll_.end(), posScoreAll_[i] ) );
 		up =  std::distance( negScoreAll_.begin(), std::upper_bound( negScoreAll_.begin(), negScoreAll_.end(), posScoreAll_[i] ) );
-		MOPS_Pvalue_.push_back( 1.0f - ( float )( up + low ) / ( 2.0f * ( float ) negScoreAll_.size() ) );
+		float p = 1.0f - ( float )( up + low ) / ( 2.0f * ( float ) negScoreAll_.size() );
+		// avoid the rounding errors, such as p-value = 0 or p-value > 1
+		if( p < 1e-6 ) p = 0.000001f;
+		if( p > 1.0f ) p = 1.0f;
+		MOPS_Pvalue_.push_back( p );
 	}
 
 	// for ZOOPS model:
@@ -410,7 +419,11 @@ void FDR::calculatePvalues(){
 		size_t low, up;
 		low = std::distance( negScoreMax_.begin(), std::lower_bound( negScoreMax_.begin(), negScoreMax_.end(), posScoreMax_[i] ) );
 		up =  std::distance( negScoreMax_.begin(), std::upper_bound( negScoreMax_.begin(), negScoreMax_.end(), posScoreMax_[i] ) );
-		ZOOPS_Pvalue_.push_back( 1.0f - ( float )( up + low ) / ( 2.0f * ( float )negScoreMax_.size() ) );
+		float p = 1.0f - ( float )( up + low ) / ( 2.0f * ( float )negScoreMax_.size() );
+		// avoid the rounding errors, such as p-value = 0 or p-value > 1
+		if( p < 1e-6 ) p = 0.000001f;
+		if( p > 1.0f ) p = 1.0f;
+		ZOOPS_Pvalue_.push_back( p );
 	}
 
 
@@ -528,10 +541,9 @@ void FDR::print(){
 void FDR::writePR( int n ){
 
 	/**
-	 * save FDR parameters in three flat files:
+	 * save FDR parameters in two flat files:
 	 * (1) posSequenceBasename.zoops.stats: 	TP, FP, FDR and recall for ZOOPS model
 	 * (2) posSequenceBasename.mops.stats:		TP, FP, FDR and recall for MOPS model
-	 * (3) posSequenceBasename.occ:				fraction occurrence and motif occurrences per sequence
 	 */
 
 	std::string opath = std::string( Global::outputDirectory ) + '/'
@@ -539,29 +551,31 @@ void FDR::writePR( int n ){
 
 	std::string opath_zoops_stats = opath + ".zoops.stats";
 	std::string opath_mops_stats = opath + ".mops.stats";
-	std::string opath_occ = opath + ".occ";
 
 	std::ofstream ofile_zoops( opath_zoops_stats );
 	std::ofstream ofile_mops( opath_mops_stats );
-	std::ofstream ofile_occ( opath_occ );
 	size_t i;
 
 	// for ZOOPS model:
-	ofile_zoops << "TP" << '\t' << "FP" << '\t'
+	// the headers:
+	ofile_zoops << "TP" << '\t'
+				<< "FP" << '\t'
 				<< "FDR" << '\t'
-				<< "Recall" << '\t' << std::endl;
+				<< "Recall" << std::endl;
 
 	for( i = 0; i < ZOOPS_FDR_.size(); i++ ){
 		ofile_zoops << ZOOPS_TP_[i]  << '\t'
 					<< ZOOPS_FP_[i]  << '\t'
 					<< ZOOPS_FDR_[i] << '\t'
-					<< ZOOPS_Rec_[i] << '\t' << std::endl;
+					<< ZOOPS_Rec_[i] << std::endl;
 	}
 
 	// for MOPS model:
-	ofile_mops  << "TP" << '\t' << "FP" << '\t'
+	ofile_mops  << "TP" << '\t'
+				<< "FP" << '\t'
 				<< "FDR" << '\t'
-				<< "Recall" << '\t' << std::endl;
+				<< "Recall" << std::endl;
+
 
 	for( i = 0; i < MOPS_FDR_.size(); i++ ){
 		ofile_mops  << MOPS_TP_[i]  << '\t'
@@ -569,12 +583,6 @@ void FDR::writePR( int n ){
 					<< MOPS_FDR_[i] << '\t'
 					<< MOPS_Rec_[i] << '\t' << std::endl;
 	}
-
-	// write occurrences:
-	ofile_occ << "The fraction of motif occurrence:" << std::endl
-			  << occ_frac_<< std::endl
-	 	 	  << "The number of motif occurrences per sequence:" << std::endl
-	 	 	  << occ_mult_ << std::endl;
 
 }
 

@@ -24,7 +24,7 @@ public:
 	FDR( Motif* motif );
 	~FDR();
 
-	void 	evaluateMotif();
+	void 	evaluateMotif( int n );
 
 	float 	getPrec_middle_ZOOPS();			// get precision when recall = 0.5 for ZOOPS model
 	float 	getPrec_middle_MOPS();			// get precision when recall = 0.5 for MOPS model

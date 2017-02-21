@@ -7,6 +7,8 @@
 
 #include "ScoreSeqSet.h"
 
+#include <float.h>		// -FLT_MAX
+
 ScoreSeqSet::ScoreSeqSet( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqSet ){
 
 	for( int k = 0; k < std::max( Global::modelOrder+2 , Global::bgModelOrder+2 ); k++ ){
@@ -18,14 +20,8 @@ ScoreSeqSet::ScoreSeqSet( Motif* motif, BackgroundModel* bg, std::vector<Sequenc
 	seqSet_ = seqSet;
 
 	// allocate memory for scores_[n][i]
-	scores_.resize( seqSet_.size() );
-	for( size_t n = 0; n < seqSet_.size(); n++ ){
-		int LW1 = seqSet_[n]->getL() - motif_->getW() + 1;
-		scores_[n].resize( LW1 );
-		for( int i = 0; i < LW1; i++ ){
-			scores_[n][i] = 0.0f;
-		}
-	}
+	scores_.resize( 2 );
+
 }
 
 ScoreSeqSet::~ScoreSeqSet(){
@@ -35,15 +31,22 @@ ScoreSeqSet::~ScoreSeqSet(){
 // store the log odds scores at all positions of each sequence
 void ScoreSeqSet::score(){
 
-	int K = Global::modelOrder;
-	int K_bg = Global::bgModelOrder;
-	int W = motif_->getW();
+	int 	K = Global::modelOrder;
+	int 	K_bg = Global::bgModelOrder;
+	int 	W = motif_->getW();
+	float 	maxScore;								// maximal logOddsScore over all positions for each sequence
 
 	for( size_t n = 0; n < seqSet_.size(); n++ ){
 
 		int LW1 = seqSet_[n]->getL() - W + 1;
 
+		maxScore = -FLT_MAX;
+
+		std::vector<float> logOdds( LW1 );
+
 		for( int i = 0; i < LW1; i++ ){
+
+			logOdds[i] = 0.0f;
 
 			for( int j = 0; j < W; j++ ){
 
@@ -53,11 +56,22 @@ void ScoreSeqSet::score(){
 
 				if( y >= 0 ){
 
-					scores_[n][i] += ( logf( motif_->getV()[K][y][j] ) - logf( bg_->getV()[std::min( K, K_bg )][y_bg] ) );
+					logOdds[i] += ( logf( motif_->getV()[K][y][j] ) - logf( bg_->getV()[std::min( K, K_bg )][y_bg] ) );
 
 				}
 			}
+
+			// take all the log odds scores for MOPS model:
+			scores_[0].push_back( logOdds[i] );
+
+			// take the largest log odds score for ZOOPS model:
+			if( logOdds[i] > maxScore ){
+				maxScore = logOdds[i];
+			}
+
 		}
+
+		scores_[1].push_back( maxScore );
 
 	}
 }
