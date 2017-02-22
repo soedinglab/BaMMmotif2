@@ -1,95 +1,58 @@
-/build/
-/Debug/
-/nbproject/
+# C++
+#####
 
-.gitignore
-# CMakeLists.txt
+# Prerequisites
+*.d
 
-#####=== C ===#####
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
-# Precompiled Headers
-*.gch
-*.pch
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
-#####=== C++ ===#####
 # Compiled Object files
 *.slo
 *.lo
 *.o
 *.obj
+
 # Precompiled Headers
 *.gch
 *.pch
+
 # Compiled Dynamic libraries
 *.so
 *.dylib
 *.dll
+
 # Fortran module files
 *.mod
+*.smod
+
 # Compiled Static libraries
 *.lai
 *.la
 *.a
 *.lib
+
 # Executables
 *.exe
 *.out
 *.app
-#####=== R ===#####
-# History files
-.Rhistory
-.Rapp.history
-# Example code in package build process
-*-Ex.R
-# RStudio files
-.Rproj.user/
-# produced vignettes
-vignettes/*.html
-vignettes/*.pdf
-#####=== Perl ===#####
-/blib/
-/.build/
-_build/
-cover_db/
-inc/
-Build
-!Build/
-Build.bat
-.last_cover_stats
-/Makefile
-/Makefile.old
-/MANIFEST.bak
-/META.yml
-/META.json
-/MYMETA.*
-nytprof.out
-/pm_to_blib
-*.o
-*.bs
-#####=== Eclipse ===#####
-*.pydevproject
+
+
+# CMake
+#######
+
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+
+
+# Eclipse
+#########
+
 .metadata
-.gradle
 bin/
 tmp/
 *.tmp
@@ -99,56 +62,59 @@ tmp/
 local.properties
 .settings/
 .loadpath
+.recommenders
+
+# Eclipse Core
+.project
+
 # External tool builders
 .externalToolBuilders/
+
 # Locally stored "Eclipse launch configurations"
 *.launch
-# CDT-specific
-.project
+
+# PyDev specific (Python IDE for Eclipse)
+*.pydevproject
+
+# CDT-specific (C/C++ Development Tooling)
 .cproject
-# PDT-specific
+
+# JDT-specific (Eclipse Java Development Tools)
+.classpath
+
+# Java annotation processor (APT)
+.factorypath
+
+# PDT-specific (PHP Development Tools)
 .buildpath
+
 # sbteclipse plugin
 .target
+
+# Tern plugin
+.tern-project
+
 # TeXlipse plugin
 .texlipse
-#####=== Vim ===#####
-[._]*.s[a-w][a-z]
-[._]s[a-w][a-z]
-*.un~
-Session.vim
-.netrwhist
-*~
-#####=== Emacs ===#####
-# -*- mode: gitignore; -*-
-*~
-\#*\#
-/.emacs.desktop
-/.emacs.desktop.lock
-*.elc
-auto-save-list
-tramp
-.\#*
-# Org-mode
-.org-id-locations
-*_archive
-# flymake-mode
-*_flymake.*
-# eshell files
-/eshell/history
-/eshell/lastdir
-# elpa packages
-/elpa/
-# reftex files
-*.rel
-# AUCTeX auto folder
-/auto/
-# cask packages
-.cask/
-/Release_noOptimFlag
-/doc
-/output
-/differences.log
-/Release_OSX
-/Release_OSX-32Bit
 
+# STS (Spring Tool Suite)
+.springBeans
+
+# Code Recommenders
+.recommenders/
+
+# Scala IDE specific (Scala & Java development for Eclipse)
+.cache-main
+.scala_dependencies
+.worksheet
+
+
+# netbeans
+##########
+
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
