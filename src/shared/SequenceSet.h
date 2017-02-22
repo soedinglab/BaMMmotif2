@@ -1,51 +1,54 @@
-/*
- * SequenceSet.h
- *
- *  Created on: Apr 1, 2016
- *      Author: wanwan
- */
-
 #ifndef SEQUENCESET_H_
 #define SEQUENCESET_H_
 
-#include <vector>			//std::vector
+#include <fstream>	// e.g. std::ifstream
+#include <limits>	// e.g. std::numeric_limits
+#include <sstream>	// e.g. std::ostringstream
+#include <vector>
 
-#include <stdlib.h>			// malloc, calloc, free, rand, exit
+#include <math.h>	// e.g. logf
 
+#include "Alphabet.h"
 #include "Sequence.h"
+#include "utils.h"
 
-class SequenceSet {
-
-friend class Sequence;
-friend class EM;
+class SequenceSet{
 
 public:
 
-	SequenceSet( char* sequenceFilepath, char* intensityFilepath = NULL );
+	SequenceSet( std::string sequenceFilepath, bool revcomp = false, std::string intensityFilepath = "" );
 	~SequenceSet();
 
-	char* 					getSequenceFilepath();	            // get input sequence filename
-	char* 					getIntensityFilepath();             // get input intensity filename
-	std::vector<Sequence> 	getSequences();			            // get sequences
-//	Sequence*			 	getSequences();			            // get sequences
-	int 					getN();					            // get number of sequences
-	unsigned int 			getMinL();				            // get min. length of sequences
-	unsigned int			getMaxL();				            // get max. length of sequences
-	float* 					getBaseFrequencies();	            // get mono-nucleotide frequencies
+	std::string				getSequenceFilepath();
+	std::string				getIntensityFilepath();
+	std::vector<Sequence*> 	getSequences();
+	int 					getN();
+	unsigned int 			getMinL();
+	unsigned int			getMaxL();
+	float* 					getBaseFrequencies();
+
+	void					print();			// print sequences
+	void                    debug();            // exhaustive printouts
 
 private:
 
-	char*					sequenceFilepath_;		            // input sequence filename
-	char*					intensityFilepath_;		            // input intensity filename
-	std::vector<Sequence>	sequences_;							// sequences
-//	Sequence*				sequences_;							// sequences
-	int 					N_;						            // number of sequences
-	unsigned int 			minL_;					            // min. length of sequences
-	unsigned int 			maxL_;					            // max. length of sequences
-	float* 					baseFrequencies_;		            // mono-nucleotide frequencies
+	std::string				sequenceFilepath_;	// path to FASTA file
+	std::string				intensityFilepath_;	// path to intensity file
 
-	int 					readFASTA();			            // read in FASTA file
-	int 					readIntensities();		            // read in intensity file
+	std::vector<Sequence*>	sequences_;			// sequences
+	int 					N_;					// number of sequences
+	unsigned int 			minL_;				// length of the shortest sequence
+	unsigned int 			maxL_;				// length of the longest sequence
+	float*	 				baseFrequencies_;	// kmer frequencies
+
+	std::vector<int>		Y_;					// contains 1 at position 0
+												// and the number of oligomers y for increasing order k at positions k+1
+												// e.g.
+												// alphabet size_ = 4: Y_ = 4^0 4^1 4^2 ... 4^15 < std::numeric_limits<int>::max()
+												// limits the length of oligomers to 15 (and the order to 14)
+
+	int 					readFASTA( bool revcomp = false );	 // read in FASTA file
+	int 					readIntensities();		             // read in intensity file
 };
 
 #endif /* SEQUENCESET_H_ */
