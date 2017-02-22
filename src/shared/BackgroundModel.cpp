@@ -20,7 +20,7 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 	}
 
 	K_ = order;
-	for( int k = 0; k < K_+2; k++ ){
+	for( int k = 0; k < 10; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 

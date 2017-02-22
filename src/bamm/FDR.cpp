@@ -6,7 +6,7 @@ FDR::FDR( Motif* motif ){
 
 	motif_ = motif;
 
-	for( int k = 0; k < std::max( Global::modelOrder+2 , Global::bgModelOrder+2 ); k++ ){
+	for( int k = 0; k < Global::Yk; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 
@@ -75,10 +75,11 @@ void FDR::evaluateMotif( int n ){
 													trainsetFolds );
 
 		// learn motif from each training set
-		ModelLearning model( motif, bgModel, trainsetFolds );
 		if( Global::EM ){
+			ModelLearning model( motif, bgModel, trainsetFolds );
 			model.EM();
 		} else if ( Global::CGS ){
+			ModelLearning model( motif, bgModel, trainsetFolds );
 			model.GibbsSampling();
 		}
 
@@ -86,7 +87,6 @@ void FDR::evaluateMotif( int n ){
 		scores = scoreSequenceSet( motif, bgModel, testSet );
 		posScoreAll_.insert( std::end( posScoreAll_ ), std::begin( scores[0] ), std::end( scores[0] ) );
 		posScoreMax_.insert( std::end( posScoreMax_ ), std::begin( scores[1] ), std::end( scores[1] ) );
-
 
 		if( !Global::negSeqGiven ){
 			std::vector<std::unique_ptr<Sequence>> negSet;
@@ -164,7 +164,7 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 				int y_bg = y % Y_[K_bg+1];
 
 				if( y >= 0 ){
-					logOdds[i] += ( logf( motif->getV()[K][y][j] ) - logf( bg->getV()[std::min( K, K_bg )][y_bg] ) );
+					logOdds[i] += ( logf( motif->getV()[K][y][j] + 0.000001f ) - logf( bg->getV()[std::min( K, K_bg )][y_bg] ) );
 				}
 			}
 
@@ -212,7 +212,7 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 				int y_bg = y % Y_[K_bg+1];
 
 				if( y >= 0 ){
-					logOdds[i] += ( logf( motif->getV()[K][y][j] ) - logf( bg->getV()[std::min( K, K_bg )][y_bg] ) );
+					logOdds[i] += ( logf( motif->getV()[K][y][j] + 0.000001f ) - logf( bg->getV()[std::min( K, K_bg )][y_bg] ) );
 				}
 			}
 
@@ -307,7 +307,7 @@ void FDR::calculatePR(){
 
 	}
 	// for MOPS model:
-	// Sort log odds scores from large to small
+	// Sort log odds scores in descending order
 	std::sort( posScoreAll_.begin(), posScoreAll_.end(), std::greater<float>() );
 	std::sort( negScoreAll_.begin(), negScoreAll_.end(), std::greater<float>() );
 
@@ -347,7 +347,7 @@ void FDR::calculatePR(){
 	occ_mult_ = E_TP_MOPS / ( float )posN;
 
 	// for ZOOPS model:
-	// Sort log odds scores from large to small
+	// Sort log odds scores in descending order
 	std::sort( posScoreMax_.begin(), posScoreMax_.end(), std::greater<float>() );
 	std::sort( negScoreMax_.begin(), negScoreMax_.end(), std::greater<float>() );
 

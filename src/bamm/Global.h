@@ -95,6 +95,7 @@ public:
 	static bool			savePvalues;						// write p-values for each log odds score from sequence set
 	static bool			saveLogOdds;						// write the log odds of positive and negative sets to disk
 	static bool			saveInitialModel;					// write out the initial model to disk
+	static int			Yk;									// the counts of numbers in Y_ array
 
 	static void         init( int nargs, char* args[] );
 	static void         destruct();

@@ -22,10 +22,9 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int
 
 	// define parameters
 	int K = Global::modelOrder;
-	int K_bg = Global::bgModelOrder;
 	int W = motif_->getW();
 	int y, k, j, LW2;
-	for( k = 0; k < std::max( K+2, K_bg+2 ); k++ ){
+	for( k = 0; k < Global::Yk; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 

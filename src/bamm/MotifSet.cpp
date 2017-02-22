@@ -134,9 +134,9 @@ MotifSet::MotifSet(){
 
 					// free memory for PWM
 					for( y = 0; y < asize; y++ ){
-						delete PWM[y];
+						delete[] PWM[y];
 					}
-					delete PWM;
+					delete[] PWM;
 				}
 			}
 		}

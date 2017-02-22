@@ -11,7 +11,7 @@
 
 ScoreSeqSet::ScoreSeqSet( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqSet ){
 
-	for( int k = 0; k < std::max( Global::modelOrder+2 , Global::bgModelOrder+2 ); k++ ){
+	for( int k = 0; k < Global::Yk; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 

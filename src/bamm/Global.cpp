@@ -70,6 +70,7 @@ bool				Global::savePRs = false;				// write the precision, recall, TP and FP
 bool				Global::savePvalues = true;				// write p-values for each log odds score from sequence set
 bool				Global::saveLogOdds = false;			// write the log odds of positive and negative sets to disk
 bool				Global::saveInitialModel = false;		// write out the initial model to disk
+int					Global::Yk = 10;						// the counts of numbers in Y_ array
 
 void Global::init( int nargs, char* args[] ){
 
