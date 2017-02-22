@@ -354,7 +354,8 @@ int SequenceSet::readFASTA( bool revcomp ){
 
 					if( line.length() == 1 ){ // corresponds to ">\n"
 						// set header to sequence counter
-						header = static_cast<std::ostringstream*>( &( std::ostringstream() << ( N+1 ) ) )->str();
+//						header = static_cast<std::ostringstream*>( &( std::ostringstream() << ( N+1 ) ) )->str();
+						header = std::to_string( N+1 );
 					} else{
 						header = line.substr( 1 );// fetch header
 					}

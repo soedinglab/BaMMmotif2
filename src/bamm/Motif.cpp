@@ -189,9 +189,15 @@ void Motif::initFromBindingSites( char* filename ){
 void Motif::initFromPWM( float** PWM, int asize, int count ){
 
 	// for k = 0, obtain v from PWM:
-	for( int y = 0; y < asize; y++ ){
-		for( int j = 0; j < W_; j++ ){
+	for( int j = 0; j < W_; j++ ){
+		float norm = 0.0f;
+		for( int y = 0; y < asize; y++ ){
 			v_[0][y][j] = PWM[y][j];
+			norm += PWM[y][j];
+		}
+		// normalize PWMs to sum up the weights to 1
+		for( int y = 0; y < asize; y++ ){
+			v_[0][y][j] /= norm;
 		}
 	}
 

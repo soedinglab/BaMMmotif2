@@ -93,10 +93,7 @@ int main( int nargs, char* args[] ){
 		for( int n = 0; n < motifs.getN(); n++ ){
 			Motif* motif = new Motif( *motifs.getMotifs()[n] );
 			FDR fdr( motif );
-			fdr.evaluateMotif();
-			if( Global::savePRs ) 		fdr.writePR( n );
-			if( Global::savePvalues ) 	fdr.writePvalues( n );
-			if( Global::saveLogOdds ) 	fdr.writeLogOdds( n );
+			fdr.evaluateMotif( n );
 			delete motif;
 		}
 	}

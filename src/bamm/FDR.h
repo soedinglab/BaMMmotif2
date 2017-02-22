@@ -9,12 +9,22 @@
 
 class FDR {
 
+	/*
+	 * FDR class deals with cross-validation:
+	 * 1. calculate log odds scores for each position on each sequence,
+	 * 2. generate negative sequence set based on k-mer frequencies if
+	 *    no negative sequence set is given,
+	 * 3. calculate true positives(TP), false positives(FP), false
+	 *    discovery rate(FDR) and recall values,
+	 * 4. calculate p-values due to log odds scores, in order to use
+	 *    fdrtool R package for further estimation
+	 */
 public:
 
 	FDR( Motif* motif );
 	~FDR();
 
-	void 	evaluateMotif();
+	void 	evaluateMotif( int n );
 
 	float 	getPrec_middle_ZOOPS();			// get precision when recall = 0.5 for ZOOPS model
 	float 	getPrec_middle_MOPS();			// get precision when recall = 0.5 for MOPS model

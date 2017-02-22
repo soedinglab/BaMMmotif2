@@ -291,6 +291,8 @@ void Global::printHelp(){
 			"				EXTENDED.		For alphabet type ACGTMH. \n\n");
 	printf("\n			--reverseComp \n"
 			"				search motif on the reverse complementary sequence as well. \n\n");
+	printf("\n			--negSeqFile \n"
+			"				negative sequence file. \n\n");
 	printf("\n		Options for HT-SELEX data: \n");
 	printf("\n			--intensityFile	<STRING> \n"
 			"				intensity file name. \n\n");
@@ -340,27 +342,32 @@ void Global::printHelp(){
 	printf("\n 			--noQOptimization (*) \n"
 			"				disable q optimization. Defaults to false. *For developers.\n\n");
 	printf("\n 		Options for CGS: \n");
-	printf("\n 			--CGS  \n"
+	printf("\n 			--CGS\n"
 			"				trigger Collapsed Gibbs Sampling (CGS) algorithm.\n\n");
 	printf("\n 			--noAlphaSampling (*) \n"
 			"				disable alpha sampling. Defaults to false. *For developers.\n\n");
 	printf("\n 			--noQSampling (*) \n"
 			"				disable q sampling. Defaults to false. *For developers.\n\n");
 	printf("\n 		Options for FDR: \n");
-	printf("\n 			--FDR \n"
+	printf("\n 			--FDR\n"
 			"				triggers False-Discovery-Rate (FDR) estimation. The default is false.\n\n");
 	printf("\n 			-m, --mFold <INTEGER>\n"
 			"				number of negative sequences as multiple of positive sequences.\n"
-			"				The default is 20.\n\n");
+			"				The default is 10.\n\n");
 	printf("\n 			-n, --cvFold <INTEGER>\n"
 			"				number of cross-validation folds. The default is 5.\n\n"
 			"			-s, --samplingOrder <INTERGER>\n"
-			"				order of kmer for sampling negative set. The default is 2.\n\n");
+			"				order of k-mer for sampling negative set. The default is 2.\n\n");
 	printf("\n 		Options for output:	\n");
 	printf("\n 			--verbose \n"
 			"				verbose printouts. Defaults to false.\n\n");
 	printf("\n 			--saveBaMMs\n"
 			"				Write optimized BaMM(s) parameters to disk.\n\n");
+	printf("\n 			--savePRs\n"
+			"				Write true positives(TP), false positives(FP), FDR and recall values to disk.\n\n");
+	printf("\n 			--savePvalues\n"
+			"				Write p-values for plotting area under the Sensitivity-FDR curve (AUSFC)\n"
+			"				to disk.\n\n");
 	printf("\n 			--saveLogOdds\n"
 			"				Write log odds scores from positive and negative sets to disk.\n\n");
 	printf("\n 			-h, --help\n"
