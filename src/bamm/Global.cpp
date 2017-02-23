@@ -71,6 +71,7 @@ bool				Global::savePvalues = true;				// write p-values for each log odds score
 bool				Global::saveLogOdds = false;			// write the log odds of positive and negative sets to disk
 bool				Global::saveInitialModel = false;		// write out the initial model to disk
 int					Global::Yk = 10;						// the counts of numbers in Y_ array
+bool				Global::testAlphas = false;				// test for alpha learning
 
 void Global::init( int nargs, char* args[] ){
 
@@ -249,6 +250,7 @@ int Global::readArguments( int nargs, char* args[] ){
 		opt >> GetOpt::Option( "eta", eta );
 		opt >> GetOpt::Option( "interval", interval );
 	}
+	opt >> GetOpt::OptionPresent( "testAlphas", testAlphas );
 
 	// FDR options
 	if( opt >> GetOpt::OptionPresent( "FDR", FDR ) ){

@@ -6,9 +6,11 @@
  */
 
 #include "ModelLearning.h"
+#include "SeqGenerator.h"
 
 #include <random>
 #include <cmath>
+
 #include <boost/math/special_functions.hpp>		/* gamma function and digamma function */
 #include <boost/math/special_functions/digamma.hpp>
 #include <boost/random.hpp>
@@ -363,7 +365,7 @@ void ModelLearning::GibbsSampling(){
 	}
 
 	// parameters for alpha learning
-	int timestep = 0;								// timestep = iteration
+	int iteration = 0;
 
 	float** eta = new float*[K+1];					// learning rate for alpha learning
 	for( int k = 0; k < K+1; k++ ){
@@ -379,9 +381,9 @@ void ModelLearning::GibbsSampling(){
 	std::ofstream ofile_lposterior( opath.c_str() );
 
 	// iterate over
-	while( iterate && timestep < Global::maxCGSIterations ){
+	while( iterate && iteration < Global::maxCGSIterations ){
 
-		timestep++;
+		iteration++;
 		std::cout << std::scientific << std::setprecision(2);
 
 		// sampling z and q
@@ -393,7 +395,7 @@ void ModelLearning::GibbsSampling(){
 		// update alphas:
 		if( !Global::noAlphaUpdating ){
 
-			if( timestep % Global::interval == 0 ){
+			if( iteration % Global::interval == 0 ){
 
 				lposterior_prev = calc_logPosterior_alphas( alpha_, K );
 
@@ -416,7 +418,7 @@ void ModelLearning::GibbsSampling(){
 				lposterior_new = calc_logPosterior_alphas( alpha_, K );
 				lposterior_diff = lposterior_new - lposterior_prev;
 
-				std::cout << timestep << " iter:	";
+				std::cout << iteration << " iter:	";
 				std::cout << "old lpos= " << lposterior_prev << '\t';
 				std::cout << "new lpos= " << lposterior_new << '\t';
 				std::cout << "diff= " << lposterior_diff << std::endl;
@@ -906,6 +908,10 @@ double ModelLearning::calcGradLogPostAlphasD( double** alpha, int k, int j ){
 	}
 
 	return gradient;
+}
+
+Motif* ModelLearning::getMotif(){
+	return motif_;
 }
 
 void ModelLearning::print(){

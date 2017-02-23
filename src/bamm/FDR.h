@@ -5,20 +5,22 @@
 #include "../shared/utils.h"
 #include "Motif.h"
 #include "ModelLearning.h"
+#include "SeqGenerator.h"
 #include "ScoreSeqSet.h"
 
 class FDR {
 
 	/*
-	 * FDR class deals with cross-validation:
-	 * 1. calculate log odds scores for each position on each sequence,
+	 * FDR class deals with N-fold cross-validation:
+	 * 1. calculate log odds scores for each position on each sequence;
 	 * 2. generate negative sequence set based on k-mer frequencies if
-	 *    no negative sequence set is given,
+	 *    no negative sequence set is given;
 	 * 3. calculate true positives(TP), false positives(FP), false
-	 *    discovery rate(FDR) and recall values,
+	 *    discovery rate(FDR) and recall values;
 	 * 4. calculate p-values due to log odds scores, in order to use
-	 *    fdrtool R package for further estimation
+	 *    fdrtool R package for further estimation.
 	 */
+
 public:
 
 	FDR( Motif* motif );
@@ -40,9 +42,6 @@ public:
 private:
 
 	Motif*				motif_;				// initial motif
-
-	float**				testsetV_;			// k-mer frequencies in the test set
-	int** 				testsetN_;			// k-mer counts in the test set
 
 	std::vector<float> 	posScoreAll_;		// store log odds scores over all positions on the sequences
 	std::vector<float> 	posScoreMax_;		// store maximal log odds score from each sequence
@@ -70,12 +69,6 @@ private:
 											// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
 											// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
 
-							// generate background sample sequence set based on each test set
-	std::vector<std::unique_ptr<Sequence>>	sampleSequenceSet( std::vector<Sequence*> seqSet );
-
-							// generate negative sequence based on each sequence in the test set
-	std::unique_ptr<Sequence> sampleSequence( int length, float** freq );
-
 							// score sequences for both positive and negative sets
 	std::vector<std::vector<float>>	scoreSequenceSet( Motif* motif, BackgroundModel* bg, const std::vector<std::unique_ptr<Sequence>> & seqSet );
 
@@ -87,9 +80,6 @@ private:
 
 							// calculate P-values for log odds scores of positive sequences
 	void					calculatePvalues();
-
-							// calculate trimer conditional probabilities for the test set
-	void					calcKmerFreq( std::vector<Sequence*> seqSet );
 
 };
 

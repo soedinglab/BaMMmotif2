@@ -10,13 +10,6 @@ FDR::FDR( Motif* motif ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 
-	testsetV_ = ( float** )calloc( Global::sOrder+1, sizeof( float* ) );
-	testsetN_ = ( int** )calloc( Global::sOrder+1, sizeof( int* ) );
-	for( int k = 0; k < Global::sOrder+1; k++ ){
-		testsetV_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
-		testsetN_[k] = ( int* )calloc( Y_[k+1], sizeof( int ) );
-	}
-
 	occ_frac_ = 0.0f;
 
 	occ_mult_ = 0.0f;
@@ -25,12 +18,6 @@ FDR::FDR( Motif* motif ){
 
 FDR::~FDR(){
 
-	for( int k = 0; k < Global::sOrder+1; k++ ){
-		free( testsetV_[k] );
-		free( testsetN_[k] );
-	}
-	free( testsetV_ );
-	free( testsetN_ );
 }
 
 void FDR::evaluateMotif( int n ){
@@ -83,7 +70,7 @@ void FDR::evaluateMotif( int n ){
 			model.GibbsSampling();
 		}
 
-		// score positive test sequences on optimized motif
+		// score positive test sequences with the (learned) motif
 		scores = scoreSequenceSet( motif, bgModel, testSet );
 		posScoreAll_.insert( std::end( posScoreAll_ ), std::begin( scores[0] ), std::end( scores[0] ) );
 		posScoreMax_.insert( std::end( posScoreMax_ ), std::begin( scores[1] ), std::end( scores[1] ) );
@@ -91,7 +78,8 @@ void FDR::evaluateMotif( int n ){
 		if( !Global::negSeqGiven ){
 			std::vector<std::unique_ptr<Sequence>> negSet;
 			// generate negative sequence set
-			negSet = sampleSequenceSet( testSet );
+			SeqGenerator seqs( testSet );
+			negSet = seqs.sample_negative_seqset();
 			// score negative sequence set
 			scores = scoreSequenceSet( motif, bgModel, negSet );
 		} else {
@@ -229,68 +217,6 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 
 	}
 	return scores;
-}
-
-// generate negative sequences based on each test set
-std::vector<std::unique_ptr<Sequence>> FDR::sampleSequenceSet( std::vector<Sequence*> seqs ){
-
-	std::vector<std::unique_ptr<Sequence>> sampleSet;
-
-	calcKmerFreq( seqs );
-
-	for( size_t i = 0; i < seqs.size(); i++ ){
-		int L = seqs[i]->getL();
-		for( int n = 0; n < Global::mFold; n++ ){
-			sampleSet.push_back( sampleSequence( L, testsetV_ ) );
-		}
-	}
-	return sampleSet;
-}
-
-// generate sample sequence based on k-mer frequencies from positive set
-std::unique_ptr<Sequence> FDR::sampleSequence( int L, float** v ){
-
-	uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
-	std::string header = "sample sequence";
-
-	// get a random number for the first nucleotide
-	double random = ( double )rand() / ( double )RAND_MAX;
-	double f = 0.0f;
-	for( uint8_t a = 1; a <= Y_[1]; a++ ){
-		f += v[0][a-1];
-		if( random <= f ){
-			sequence[0] = a;
-			break;
-		}
-		if( sequence[0] == 0 )	sequence[0] = a;		// Trick: this is to solve the numerical problem
-	}
-
-	for( int i = 1; i < L; i++ ){
-		random = ( double )rand() / ( double )RAND_MAX;	// get another random double number
-		// calculate y of K-mer
-		int yk = 0;
-		for( int k = ( i < Global::sOrder ) ? i : Global::sOrder; k > 0; k-- ){
-			yk += ( sequence[i-k] - 1 ) * Y_[k];
-		}
-
-		// assign a nucleotide based on k-mer frequency
-		f = 0.0f;
-		for( uint8_t a = 1; a <= Y_[1]; a++ ){
-			f += v[std::min( i, Global::sOrder )][yk+a-1];
-			if( random <= f ){
-				sequence[i] = a;
-				break;
-			}
-			if( sequence[i] == 0 )	sequence[i] = a;	// Trick: this is to solve the numerical problem
-		}
-	}
-
-	std::unique_ptr<Sequence> seq( new Sequence( sequence, L, header, Y_, Global::revcomp ) );
-
-	free( sequence );
-
-	return seq;
-
 }
 
 void FDR::calculatePR(){
@@ -478,60 +404,6 @@ void FDR::calculatePvalues(){
 		}
 	}
 */
-}
-
-void FDR::calcKmerFreq( std::vector<Sequence*> seqs ){
-
-	// reset counts for k-mers
-	for( int k = 0; k < Global::sOrder+1; k++ ){
-		for( int y = 0; y < Y_[k+1]; y++ ){
-			testsetN_[k][y] = 0;
-		}
-	}
-
-	// count k-mers
-	for( size_t i = 0; i < seqs.size(); i++ ){
-		int L = seqs[i]->getL();
-		for( int k = 0; k < Global::sOrder+1; k++ ){
-			// loop over sequence positions
-			for( int j = k; j < L; j++ ){
-				// extract (k+1)-mer
-				int y = seqs[i]->extractKmer( j, k );
-				// skip non-defined alphabet letters
-				if( y >= 0 ){
-					// count (k+1)mer
-					testsetN_[k][y]++;
-				}
-			}
-		}
-	}
-
-	// calculate frequencies
-	int normFactor = 0;
-	for( int y = 0; y < Y_[1]; y++ )	normFactor += testsetN_[0][y];
-	for( int y = 0; y < Y_[1]; y++ )	testsetV_[0][y] = ( float )testsetN_[0][y] / ( float )normFactor;
-	for( int k = 1; k < Global::sOrder+1; k++ ){
-		for( int y = 0; y < Y_[k+1]; y++ ){
-			int yk = y / Y_[1];
-			testsetV_[k][y] = ( float )testsetN_[k][y] / ( float )testsetN_[k-1][yk];
-		}
-	}
-
-/*	// correct k-mer frequencies
-//	float eta0 = 0.9945f;
-	float eta0 = 0.1f;
-	int W = motif_->getW();
-	int K = Global::modelOrder;
-	for( int k = 0; k < K; k++ ){
-		for( int y = 0; y < Y_[k+1]; y++ ){
-			float corr = 0.0f;
-			for( int j = K; j < W; j++){
-				corr += motif_->getV()[k][y][j];
-			}
-			testsetV_[k][y] = ( 1 - ( 1 - eta0 ) * ( float )( W - K ) ) * testsetV_[k][y] + ( 1 - eta0 ) * corr;
-		}
-	}
-	*/
 }
 
 void FDR::print(){

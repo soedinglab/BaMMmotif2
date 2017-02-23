@@ -96,6 +96,7 @@ public:
 	static bool			saveLogOdds;						// write the log odds of positive and negative sets to disk
 	static bool			saveInitialModel;					// write out the initial model to disk
 	static int			Yk;									// the counts of numbers in Y_ array
+	static bool			testAlphas;							// test for alpha learning
 
 	static void         init( int nargs, char* args[] );
 	static void         destruct();

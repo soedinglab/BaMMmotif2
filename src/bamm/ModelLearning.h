@@ -22,7 +22,8 @@ public:
 	void 					GibbsSampling();
 
 	void					print();
-	void					write( int n);
+	void					write( int n );
+	Motif*					getMotif();
 
 
 private:

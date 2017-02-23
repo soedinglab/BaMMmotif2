@@ -7,6 +7,8 @@
 #include "MotifSet.h"
 #include "ModelLearning.h"
 #include "ScoreSeqSet.h"
+#include "SeqGenerator.h"
+
 #include "FDR.h"
 
 int main( int nargs, char* args[] ){
@@ -48,6 +50,7 @@ int main( int nargs, char* args[] ){
 
 		// train the model with either EM or Gibbs sampling
 		ModelLearning model( motif, bgModel );
+
 		if( Global::EM ){
 
 			// learn motifs by EM
@@ -63,6 +66,20 @@ int main( int nargs, char* args[] ){
 			std::cout << "Model is not optimized!\n";
 
 			//exit( -1 );	// allow to do FDR on Initial Model i.e. for PWMs or precalculated BaMMs
+
+		}
+
+		if( Global::testAlphas ){
+
+			// optimize motifs by EM
+			model.EM();
+
+			// generate pesudo positive sequence set based on the learned motif
+			SeqGenerator seqset( Global::posSequenceSet->getSequences(), model.getMotif() );
+
+			seqset.sample_pseudo_seqset();
+
+			seqset.write( seqset.sample_pseudo_seqset() );
 
 		}
 
