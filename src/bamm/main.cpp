@@ -37,6 +37,9 @@ int main( int nargs, char* args[] ){
 													Global::bgModelOrder,
 													Global::bgModelAlpha,
 													Global::interpolateBG );
+	if( Global::saveBgModel ){
+		bgModel->write( Global::outputDirectory );
+	}
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "*********************\n" );
