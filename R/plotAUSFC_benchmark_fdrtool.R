@@ -27,7 +27,9 @@ if (!require("zoo")){
 
 # fdrtool function from the same folder as this script
 RDir <- file.path( "","home","wanwan","projectspace","bammmotif_development","R")
-source( file.path(RDir, "fdrtool.R") )
+#RDir <- dirname(sys.frame(1)$ofile)
+#source( file.path(RDir, "fdrtool.R") )
+source( "fdrtool.R", chdir = TRUE )
 
 #-----------------------------
 #
