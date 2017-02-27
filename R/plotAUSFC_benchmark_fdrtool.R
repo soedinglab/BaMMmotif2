@@ -26,9 +26,6 @@ if (!require("zoo")){
 }
 
 # fdrtool function from the same folder as this script
-RDir <- file.path( "","home","wanwan","projectspace","bammmotif_development","R")
-#RDir <- dirname(sys.frame(1)$ofile)
-#source( file.path(RDir, "fdrtool.R") )
 source( "fdrtool.R", chdir = TRUE )
 
 #-----------------------------
@@ -144,7 +141,7 @@ for(i in seq(1,length(FP))){
 }
 png( file = paste( dir, dataname, '_pTFCurve.png', sep = "" ) )
 plot(FPR[1:rbound], TPR[1:rbound],
-     main=paste(dataname, " vs. ", sep="\n\n"),
+     main=paste(dataname, " FPR vs. TPR ", sep="\n\n"),
      xlab="FPR", ylab="TPR", xlim=c(0,0.05), ylim=c(0,1),
      type='l', lwd=2.5, col="deepskyblue")
 # compute the area under the partical TP-FP curve(AUC5):
