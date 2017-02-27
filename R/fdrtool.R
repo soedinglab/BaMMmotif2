@@ -32,7 +32,8 @@ fdrtool = function(x,
   #statistic=c("normal", "correlation", "pvalue", "studentt"),
   plot=TRUE, color.figure=TRUE, verbose=TRUE, 
   cutoff.method=c("fndr", "pct0", "locfdr"),
-  pct0=0.75)
+  pct0=0.75,
+  eta0set=0.9091)
 {
   statistic = match.arg(statistic)
   cutoff.method = match.arg(cutoff.method)
@@ -105,7 +106,7 @@ fdrtool = function(x,
   else
     scale.param <- cf.out[1,5] # variance parameter
 
-  cf.out[1,3] <- 10/11		# <---- Here is what is changed by the modified version
+  cf.out[1,3] <- eta0set		# <---- Here is what is changed by the modified version
   eta0 = cf.out[1,3]          
   
  

@@ -40,10 +40,12 @@ args <- commandArgs(trailingOnly=TRUE)
 # get the directory of the p-value files
 dir <- args[1]
 dataname <- args[2]
+mfold <- as.numeric(args[3])
 
 # local test:
 #dir = c("/home/wanwan/benchmark/testcaseForPeng/badwolf/peng_out_new/")
-#dataname = c("testset_motif_1")
+# dataname = c("testset_motif_1")
+# mfold = 10/11
 
 # read in p-values from file
 stats <- read.table(paste(dir, dataname, ".zoops.stats", sep = "" ), skip=1 )
@@ -57,9 +59,10 @@ for(i in seq(1, length(pvalues))){
 }
 
 # estimate False Discovery Rates for Diverse Test Statistics
+eta0set = mfold/(1+mfold)
 png( file = paste( dir, dataname, '_FDRstat.png', sep = "" ) )
 result = fdrtool( pvalues, statistic="pvalue",
-                  plot=TRUE, color.figure=TRUE, verbose=TRUE )
+                  plot=TRUE, color.figure=TRUE, verbose=TRUE, eta0set=eta0set )
 dev.off()
 
 # get the global fdr values and estimate of the weight eta0 of 
