@@ -72,7 +72,7 @@ bool				Global::saveLogOdds = false;			// write the log odds of positive and neg
 bool				Global::saveInitialModel = false;		// write out the initial model to disk
 bool				Global::saveBgModel = false;			// write out the background model to disk
 int					Global::Yk = 10;						// the counts of numbers in Y_ array
-bool				Global::testAlphas = false;				// test for alpha learning
+bool				Global::generatePseudoSet = false;				// test for alpha learning
 
 void Global::init( int nargs, char* args[] ){
 
@@ -187,6 +187,8 @@ int Global::readArguments( int nargs, char* args[] ){
 				modelAlpha.resize( modelOrder+1, modelAlpha.back() );
 			}
 		}
+		opt >> GetOpt::Option( 'b', "beta", modelBeta );
+		opt >> GetOpt::Option( 'r', "gamma", modelGamma );
 		if( modelOrder > 0 ){
 			for( int k = 1; k < modelOrder + 1; k++ ){
 				modelAlpha[k] = modelBeta * powf( modelGamma, static_cast<float>( k ) - 1.0f );
@@ -251,7 +253,7 @@ int Global::readArguments( int nargs, char* args[] ){
 		opt >> GetOpt::Option( "eta", eta );
 		opt >> GetOpt::Option( "interval", interval );
 	}
-	opt >> GetOpt::OptionPresent( "testAlphas", testAlphas );
+	opt >> GetOpt::OptionPresent( "generatePseudoSet", generatePseudoSet );
 
 	// FDR options
 	if( opt >> GetOpt::OptionPresent( "FDR", FDR ) ){

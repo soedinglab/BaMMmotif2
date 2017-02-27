@@ -100,27 +100,16 @@ void FDR::evaluateMotif( int n ){
 
 	if( Global::saveLogOdds ) 	writeLogOdds( n );
 
-	if( Global::savePRs ){
-		if( Global::verbose ){
-			fprintf(stderr, " __________________________________\n"
-							"|                                  |\n"
-							"|  calculate precision and recall  |\n"
-							"|__________________________________|\n\n" );
-		}
-		calculatePR();
-		writePR( n );
+	if( Global::verbose ){
+		fprintf(stderr, " __________________________________\n"
+						"|                                  |\n"
+						"|  calculate precision and recall  |\n"
+						"|__________________________________|\n\n" );
 	}
+	calculatePR();
+	writePR( n );
+	writePvalues( n );
 
-	if( Global::savePvalues ){
-		if( Global::verbose ){
-			fprintf(stderr, " ______________________\n"
-							"|                      |\n"
-							"|  calculate P-values  |\n"
-							"|______________________|\n\n" );
-		}
-		calculatePvalues();
-		writePvalues( n );
-	}
 }
 
 // score sequences for the positive sequence set
@@ -243,11 +232,14 @@ void FDR::calculatePR(){
 	float E_TP_MOPS = 0.0f;								// maximal distance between TFP and FP = expectation value of TP
 	size_t idx_max = posN+negN;							// index when the distance between TFP and FP reaches maximum
 														// otherwise, set total number as initial cutoff
+	size_t len_all = posScoreAll_.size() + negScoreAll_.size();
 
-	for( size_t i = 0; i < posScoreAll_.size() + negScoreAll_.size(); i++ ){
-		if( posScoreAll_[idx_posAll] >= negScoreAll_[idx_negAll] || idx_posAll == 0 ||
-				idx_negAll == posScoreAll_.size() + negScoreAll_.size()-1 ){
+	for( size_t i = 0; i < len_all; i++ ){
+		if( posScoreAll_[idx_posAll] >= negScoreAll_[idx_negAll] ||
+				idx_posAll == 0 || idx_negAll == len_all-1 ){
 			idx_posAll++;
+			MOPS_Pvalue_.push_back( ( ( float )idx_negAll + 0.5f )
+						/ ( ( float ) negScoreAll_.size()  + 1.0f ) );
 		} else {
 			idx_negAll++;
 		}
@@ -287,6 +279,8 @@ void FDR::calculatePR(){
 		if( posScoreMax_[idx_posMax] >= negScoreMax_[idx_negMax] ||
 			idx_posMax == 0 ||  idx_negMax == posN+negN-1 ){
 			idx_posMax++;
+			ZOOPS_Pvalue_.push_back( ( ( float )idx_negMax + 0.5f )
+					/ ( ( float )( M * posScoreMax_.size() ) + 1.0f ) );
 		} else {
 			idx_negMax++;
 		}
@@ -317,7 +311,6 @@ void FDR::calculatePvalues(){
 	 *  calculate p-values for the log odds scores from positive sequence set
 	 * 	later used for evaluating models using fdrtool R package
 	 */
-
 
 	// Method 1:
 	// for MOPS model:
@@ -352,9 +345,7 @@ void FDR::calculatePvalues(){
 		ZOOPS_Pvalue_.push_back( p );
 	}
 
-
-/*
-	// Method 2:
+/*	// Method 2:
 	int M;
 	if( Global::negSeqGiven ){
 		M = Global::negSequenceSet->getN() / Global::posSequenceSet->getN();
@@ -402,8 +393,8 @@ void FDR::calculatePvalues(){
 		} else {
 			idx_negMax++;
 		}
-	}
-*/
+	}*/
+
 }
 
 void FDR::print(){

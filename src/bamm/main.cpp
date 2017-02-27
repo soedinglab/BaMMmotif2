@@ -72,7 +72,7 @@ int main( int nargs, char* args[] ){
 
 		}
 
-		if( Global::testAlphas ){
+		if( Global::generatePseudoSet ){
 
 			// optimize motifs by EM
 			model.EM();

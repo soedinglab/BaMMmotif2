@@ -74,7 +74,7 @@ left = 1
 right = len+1
 
 for(i in list){
-  if( fdr[i] >= 0.00009 ){
+  if( fdr[i] >= 0.0001 ){
     left = i
     break
   }

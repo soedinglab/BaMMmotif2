@@ -97,7 +97,7 @@ public:
 	static bool			saveInitialModel;					// write out the initial model to disk
 	static bool 		saveBgModel;						// write out background model to disk
 	static int			Yk;									// the counts of numbers in Y_ array
-	static bool			testAlphas;							// test for alpha learning
+	static bool			generatePseudoSet;					// test for alpha learning
 
 	static void         init( int nargs, char* args[] );
 	static void         destruct();

@@ -162,6 +162,7 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_pseudo_seqset( ){
 
 	for( size_t i = 0; i < seqs_.size(); i++ ){
 		int L = seqs_[i]->getL();
+//		int L = 20;
 		for( int n = 0; n < Global::mFold; n++ ){
 			sampleSet.push_back( sample_pseudo_sequence( L ) );
 		}

@@ -14,6 +14,7 @@
 #include <boost/math/special_functions.hpp>		/* gamma function and digamma function */
 #include <boost/math/special_functions/digamma.hpp>
 #include <boost/random.hpp>
+#include <cassert>
 
 ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 
@@ -384,7 +385,8 @@ void ModelLearning::GibbsSampling(){
 	while( iterate && iteration < Global::maxCGSIterations ){
 
 		iteration++;
-		std::cout << std::scientific << std::setprecision(2);
+
+		std::cout << std::scientific << std::setprecision( 2 );
 
 		// sampling z and q
 		if( !Global::noZQSampling )		CGS_sampling_z_q();
@@ -463,8 +465,7 @@ void ModelLearning::CGS_sampling_z_q(){
 		LW1 = posSeqs_[n]->getL() - W + 1;
 
 		// get the index of the previous sequence
-//		n_prev = ( n > 0) ? n-1 : N-1;
-		n_prev = ( n - 1 ) % N;
+		n_prev = ( n > 0) ? n-1 : N-1;
 
 		// calculate positional prior:
 		pos_[n][0] = 1.0f - q_;
@@ -534,6 +535,8 @@ void ModelLearning::CGS_sampling_z_q(){
 		// draw a new position z from discrete posterior distribution
 		std::discrete_distribution<> posterior_dist( posterior_array.begin(), posterior_array.end() );
 
+		rng();
+
 		z_[n] = posterior_dist( rng );					// draw a sample z
 
 		if( z_[n] == 0 ) N_0++;
@@ -543,17 +546,13 @@ void ModelLearning::CGS_sampling_z_q(){
 	// draw two random numbers Q and P from Gamma distribution
 	std::gamma_distribution<> P_Gamma_dist( N_0 + 1, 1 );
 	std::gamma_distribution<> Q_Gamma_dist( N - N_0 + 1, 1 );
+	rng();
 	double P = P_Gamma_dist( rng );						// draw a sample for P
+	rng();
 	double Q = Q_Gamma_dist( rng );						// draw a sample for Q
 
 	q_ = ( float ) Q / ( float )( Q + P );				// calculate q_
-//	q_ = ( float )( N - N_0 ) / ( float )N;
 
-/*	if( Global::verbose ){
-		// checking z values from the first 20 sequences
-		for( int m = 0; m < 20; m++ ) std::cout << z_[m] << '\t';
-		std::cout << N_0 << " sequences do not have motif. q = " << q_ << "\n";
-	}*/
 }
 
 void ModelLearning::CGS_updateAlphas( int K, int W, float eta ){
@@ -580,8 +579,11 @@ void ModelLearning::CGS_updateAlphas( int K, int W, float eta ){
 
 		for( j = k; j < W; j++ ){
 
+			// reparameter alpha on log scale
+			float a  = logf( alpha_[k][j] );
+
 			// get gradients w.r.t. stochastic objective at timestep t
-			gradient = calc_gradient_alphas( alpha_, k, j );
+			gradient = alpha_[k][j] * calc_gradient_alphas( alpha_, k, j );
 
 			// update biased first moment estimate
 			m1_i = beta1 * m1_i + ( 1 - beta1 ) * gradient;
@@ -597,8 +599,9 @@ void ModelLearning::CGS_updateAlphas( int K, int W, float eta ){
 
 			// update parameter a due to alphas
 			// Note: here change the sign in front of eta from '-' to '+'
-			alpha_[k][j] = alpha_[k][j] + eta * m1[k][j] / ( sqrtf( m2[k][j] ) + epsilon );
+			a += eta * m1[k][j] / ( sqrtf( m2[k][j] ) + epsilon );
 
+			alpha_[k][j] = expf( a );
 		}
 
 	}
