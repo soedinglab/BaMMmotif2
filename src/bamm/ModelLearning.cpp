@@ -577,8 +577,8 @@ void ModelLearning::CGS_updateAlphas( int K, int W, float eta ){
 
 	for( k = 0; k < K+1; k++ ){
 
-		for( j = k; j < W; j++ ){
-
+		for( j = 0; j < W; j++ ){
+//		for( j = k; j < W; j++ ){
 			// reparameter alpha on log scale
 			float a  = logf( alpha_[k][j] );
 
@@ -758,8 +758,11 @@ float ModelLearning::calc_gradient_alphas( float** alpha, int k, int j ){
 			gradient -= v[k-1][y2][j] * boost::math::digamma( alpha[k][j] * v[k-1][y2][j] );
 
 			// the third part
-			gradient -= boost::math::digamma( ( float )n_z_[k][y][j-1] + alpha[k][j] );
-
+			if( j == 0 ){
+				gradient -= boost::math::digamma( ( float)N + alpha[k][j] );
+			} else {
+				gradient -= boost::math::digamma( ( float )n_z_[k][y][j-1] + alpha[k][j] );
+			}
 		}
 	}
 

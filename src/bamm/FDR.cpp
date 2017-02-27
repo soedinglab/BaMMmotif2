@@ -100,15 +100,27 @@ void FDR::evaluateMotif( int n ){
 
 	if( Global::saveLogOdds ) 	writeLogOdds( n );
 
-	if( Global::verbose ){
-		fprintf(stderr, " __________________________________\n"
-						"|                                  |\n"
-						"|  calculate precision and recall  |\n"
-						"|__________________________________|\n\n" );
+	if( Global::savePRs ){
+		if( Global::verbose ){
+			fprintf(stderr, " __________________________________\n"
+							"|                                  |\n"
+							"|  calculate precision and recall  |\n"
+							"|__________________________________|\n\n" );
+		}
+		calculatePR();
+		writePR( n );
 	}
-	calculatePR();
-	writePR( n );
-	writePvalues( n );
+
+	if( Global::savePvalues ){
+		if( Global::verbose ){
+			fprintf(stderr, " ______________________\n"
+							"|                      |\n"
+							"|  calculate P-values  |\n"
+							"|______________________|\n\n" );
+		}
+		calculatePvalues();
+		writePvalues( n );
+	}
 
 }
 
@@ -221,6 +233,9 @@ void FDR::calculatePR(){
 		negN = posN * M;
 
 	}
+
+	PN_Pvalue_.clear();
+
 	// for MOPS model:
 	// Sort log odds scores in descending order
 	std::sort( posScoreAll_.begin(), posScoreAll_.end(), std::greater<float>() );
@@ -238,8 +253,6 @@ void FDR::calculatePR(){
 		if( posScoreAll_[idx_posAll] >= negScoreAll_[idx_negAll] ||
 				idx_posAll == 0 || idx_negAll == len_all-1 ){
 			idx_posAll++;
-			MOPS_Pvalue_.push_back( ( ( float )idx_negAll + 0.5f )
-						/ ( ( float ) negScoreAll_.size()  + 1.0f ) );
 		} else {
 			idx_negAll++;
 		}
@@ -279,14 +292,14 @@ void FDR::calculatePR(){
 		if( posScoreMax_[idx_posMax] >= negScoreMax_[idx_negMax] ||
 			idx_posMax == 0 ||  idx_negMax == posN+negN-1 ){
 			idx_posMax++;
-			ZOOPS_Pvalue_.push_back( ( ( float )idx_negMax + 0.5f )
-					/ ( ( float )( M * posScoreMax_.size() ) + 1.0f ) );
 		} else {
 			idx_negMax++;
 		}
 
 		ZOOPS_TP_.push_back( ( float )idx_posMax );
 		ZOOPS_FP_.push_back( ( float )idx_negMax / ( float )M );
+		PN_Pvalue_.push_back( ( ( float )idx_negMax + 0.5f )
+				/ ( ( float )( M * posScoreMax_.size() ) + 1.0f ) );
 
 		// take the faction of q sequences as real positives
 		if( idx_posMax == posN_est ){
@@ -311,6 +324,9 @@ void FDR::calculatePvalues(){
 	 *  calculate p-values for the log odds scores from positive sequence set
 	 * 	later used for evaluating models using fdrtool R package
 	 */
+
+	MOPS_Pvalue_.clear();
+	ZOOPS_Pvalue_.clear();
 
 	// Method 1:
 	// for MOPS model:
@@ -424,13 +440,15 @@ void FDR::writePR( int n ){
 	ofile_zoops << "TP" << '\t'
 				<< "FP" << '\t'
 				<< "FDR" << '\t'
-				<< "Recall" << std::endl;
+				<< "Recall" << '\t'
+				<< "p-value" << std::endl;
 
 	for( i = 0; i < ZOOPS_FDR_.size(); i++ ){
 		ofile_zoops << ZOOPS_TP_[i]  << '\t'
 					<< ZOOPS_FP_[i]  << '\t'
 					<< ZOOPS_FDR_[i] << '\t'
-					<< ZOOPS_Rec_[i] << std::endl;
+					<< ZOOPS_Rec_[i] << '\t'
+					<< PN_Pvalue_[i] << std::endl;
 	}
 
 	// for MOPS model:

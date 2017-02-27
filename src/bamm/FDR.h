@@ -62,8 +62,10 @@ private:
 	float				occ_frac_;			// the fraction of motif occurrence
 	float				occ_mult_;			// the number of motif occurrences per sequence
 
-	std::vector<float>	ZOOPS_Pvalue_;
-	std::vector<float>	MOPS_Pvalue_;
+	std::vector<float>	PN_Pvalue_;			// p-values for scores from both positive and negative set with ZOOPS model
+											// used for benchmarking
+	std::vector<float>	ZOOPS_Pvalue_;		// p-values for scores from positive set with ZOOPS model
+	std::vector<float>	MOPS_Pvalue_;		// p-values for scores from positive set with MOPS model
 
 	std::vector<int>	Y_;					// contains 1 at position 0
 											// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
