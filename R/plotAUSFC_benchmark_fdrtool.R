@@ -15,8 +15,8 @@
 # results are saved in a .bmscore file.
 
 # examples for running this script:
-# ./plotAUSFC_benchmark_fdrtool.R PATH_TO_zoops.stats_FILE BASENAME_OF_THE_FILE FACTOR
-# ./plotAUSFC_benchmark_fdrtool.R /home/bamm_result/ JunD_motif_1 10
+# ./plotAUSFC_benchmark_fdrtool.R PATH_TO_zoops.stats_FILE BASENAME_OF_THE_FILE
+# ./plotAUSFC_benchmark_fdrtool.R /home/bamm_result/ JunD_motif_1
 
 #-----------------------------
 #
@@ -24,9 +24,10 @@
 #
 #-----------------------------
 
-# load "zoo" package for calculating AUPRC
+# load "zoo" library for calculating AUPRC
 library( zoo )
-require(argparse)
+# load "argparse" library for parsing arguments
+library( argparse )
 
 ###########################
 ## For this script we need a slightly modified version of the fdrtool function.
@@ -84,7 +85,6 @@ fdrtool = function(x,
       stop("input p-values must all be in the range 0 to 1!")
   }
 
-
 #### step 1 ####
 
   if(verbose) cat("Step 1... determine cutoff point\n")
@@ -124,8 +124,6 @@ fdrtool = function(x,
 
     x0 = fndr.cutoff(x, statistic)
   }
-
-
 
 #### step 2 ####
 
@@ -186,10 +184,7 @@ fdrtool = function(x,
   qval <- Fdr.pval(pval)
   lfdr <- fdr.pval(pval)
 
-
-
 #### return results ####
-
 
   result = list(pval=pval, qval=qval, lfdr=lfdr,
              statistic=statistic, param=cf.out)
@@ -200,9 +195,6 @@ fdrtool = function(x,
 
     ##############
     # zeta > 0 in the following
-
-
-
 
     if(statistic=="pvalue")
     {
@@ -226,7 +218,6 @@ fdrtool = function(x,
 
     f   = function(zeta)  eta0*(f0(zeta))/fdr(zeta)
     fA  = function(zeta)  (f(zeta)-eta0*f0(zeta))/(1-eta0)
-
 
     ##############
 
@@ -286,7 +277,6 @@ fdrtool = function(x,
   return(result)
 }
 
-
 #####
 
 ## create labels for plots
@@ -334,7 +324,6 @@ pvt.plotlabels <- function(statistic, scale.param, eta0)
 parser <- ArgumentParser(description='benchmark motif finder')
 parser$add_argument('target_directory', help='directory that contains the target file')
 parser$add_argument('target_file', help='basename of the target file')
-parser$add_argument('bg_folds', help='number of folds for the background sequences', type='integer')
 args <- parser$parse_args()
 
 # default args for ArgumentParser()$parse_args are commandArgs(TRUE)
@@ -343,11 +332,12 @@ args <- parser$parse_args()
 # get the directory of the p-value files
 dir <- args$target_directory
 dataname <- args$target_file
-mfold <- as.numeric(args$bg_folds)
 
 # read in p-values from file
+first_row <- read.table(paste(dir, '/', dataname, ".zoops.stats", sep = "" ), nrows = 1 )
 stats <- read.table(paste(dir, '/', dataname, ".zoops.stats", sep = "" ), skip=1 )
 pvalues <- stats$V5
+mfold <- as.numeric( first_row[6] )
 
 # avoid the rounding errors when p-value = 0 or p-value > 1
 for(i in seq(1, length(pvalues))){
@@ -358,15 +348,16 @@ for(i in seq(1, length(pvalues))){
 
 # estimate False Discovery Rates for Diverse Test Statistics
 eta0set = mfold/(1+mfold)
-pdf( file = paste( dir, dataname, '_FDRstat.pdf', sep = "" ) )
+pdf( file = paste( dir, '/', dataname, '_FDRstat.pdf', sep = "" ) )
 result = fdrtool( pvalues, statistic="pvalue",
                   plot=TRUE, color.figure=TRUE, verbose=TRUE, eta0set=eta0set )
 dev.off()
 
 # get the global fdr values and estimate of the weight eta0 of
 # the null component
-fdr <- result$qval
+fdr_m <- result$qval
 eta0 <- result$param[3]
+fdr <- 1 / ( 1 + mfold * ( 1 / fdr_m - 1 ) )
 
 # calculate recall
 len = length(fdr)
@@ -411,7 +402,7 @@ range <- seq(left, right)
 
 # plot fdr vs. recall curve
 sum_area = log10(0.5) + 4
-pdf( file = paste( dir, dataname, '_SFCurve.pdf', sep = "" ) )
+pdf( file = paste( dir, '/', dataname, '_SFCurve.pdf', sep = "" ) )
 plot(fdr[range], recall[range], log="x",
      main=paste(dataname, "Sensitivity vs. FDR", sep="\n\n"),
      xlab="FDR", ylab="Sensitivity", xlim=c(0.0001,0.5), ylim=c(0,1),
@@ -438,7 +429,7 @@ for(i in seq(1,length(FP))){
     break
   }
 }
-pdf( file = paste( dir, dataname, '_pTFCurve.pdf', sep = "" ) )
+pdf( file = paste( dir, '/', dataname, '_pROC.pdf', sep = "" ) )
 plot(FPR[1:rbound], TPR[1:rbound],
      main=paste(dataname, " FPR vs. TPR ", sep="\n\n"),
      xlab="FPR", ylab="TPR", xlim=c(0,0.05), ylim=c(0,1),
@@ -452,6 +443,6 @@ dev.off()
 
 
 # write paramaters to a file
-ofile = paste( dir, dataname, '.bmscore', sep = "" )
+ofile = paste( dir, '/', dataname, '.bmscore', sep = "" )
 writeLines( c( "AUSFC: ", ausfc,
                "pAUC: ", auc5), ofile )
