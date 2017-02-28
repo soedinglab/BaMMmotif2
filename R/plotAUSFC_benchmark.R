@@ -5,11 +5,15 @@
 #
 #-----------------------------------------------------------------
 
-# read in FDR and Sensitivity values from .zoops.stats file 
-# plot FDR vs. Sensitivity curve
-# caluclate area under the sensitivity-FDR curve(AUSFC)
-# AUSFC can be used for scoring large datasets for benchmarking
-# AUSFC is saved in a .ausfc file
+# read in FDR and Sensitivity values from .zoops.stats file;
+# plot FDR vs. Sensitivity curve;
+# caluclate area under the sensitivity-FDR curve(AUSFC);
+# AUSFC can be used for scoring large datasets for benchmarking;
+# AUSFC is saved in a .ausfc file;
+
+# examples for running this script:
+# ./plotAUSFC_benchmark_fdrtool.R PATH_TO_zoops.stats_FILE BASENAME_OF_THE_FILE
+# ./plotAUSFC_benchmark_fdrtool.R /home/bamm_result/ JunD_motif_1
 
 #-----------------------------
 #
@@ -18,9 +22,7 @@
 #-----------------------------
 
 # load "zoo" package for calculating AUSFC
-if (!require("zoo")){
-  install.packages("zoo", repos="http://cran.rstudio.com/")
-}
+library( zoo )
 
 #-----------------------------
 #

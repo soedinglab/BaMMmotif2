@@ -5,12 +5,19 @@
 #
 #-----------------------------------------------------------------
 
-# calculate FDR, precision, recall and occurrences for both MOPS 
-# and ZOOPS models by taking p-values of log odds scores froom 
-# positive sequences and using "fdrtool" library
-# plot FDR vs. recall(sensitivity) curve
+# get the p-values for both positives and negatives from the
+# .zoops.stats file;
+# calculate false-discovery-rate (FDR) using modified fdrtool
+# with a fixed eta0, which equals fold/(1+fold);
+# plot the FDR vs. recall(sensitivity) curve;
 # caluclate the area under the sensitivity-FDR curve (AUSFC)
-# results are saved in a .rankscore file
+# and plot the true-positive-rate(TPR) vs. false-positive-rate(FPR)
+# curve and calculate the partial AUC from this curve;
+# results are saved in a .bmscore file.
+
+# examples for running this script:
+# ./plotAUSFC_benchmark_fdrtool.R PATH_TO_zoops.stats_FILE BASENAME_OF_THE_FILE FACTOR
+# ./plotAUSFC_benchmark_fdrtool.R /home/bamm_result/ JunD_motif_1 10
 
 #-----------------------------
 #
@@ -18,12 +25,8 @@
 #
 #-----------------------------
 
-# load "fdrtool" library
-
 # load "zoo" package for calculating AUPRC
-if (!require("zoo")){
-  install.packages("zoo", repos="http://cran.rstudio.com/")
-}
+library( zoo )
 
 # fdrtool function from the same folder as this script
 source( "fdrtool.R", chdir = TRUE )
@@ -40,11 +43,6 @@ args <- commandArgs(trailingOnly=TRUE)
 dir <- args[1]
 dataname <- args[2]
 mfold <- as.numeric(args[3])
-
-# local test:
-#dir = c("/home/wanwan/benchmark/testcaseForPeng/badwolf/peng_out_new/")
-# dataname = c("testset_motif_1")
-# mfold = 10/11
 
 # read in p-values from file
 stats <- read.table(paste(dir, dataname, ".zoops.stats", sep = "" ), skip=1 )

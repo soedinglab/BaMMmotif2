@@ -6,11 +6,15 @@
 #-----------------------------------------------------------------
 
 # calculate FDR, precision, recall and occurrences for both MOPS 
-# and ZOOPS models by taking p-values of log odds scores froom 
-# positive sequences and using "fdrtool" library
-# plot FDR vs. recall(sensitivity) curve
-# caluclate the area under the sensitivity-FDR curve (AUSFC)
-# results are saved in a .rankscore file
+# and ZOOPS models by taking p-values of log odds scores from 
+# positive sequences and using "fdrtool" library;
+# plot FDR vs. recall(sensitivity) curve;
+# caluclate the area under the sensitivity-FDR curve (AUSFC);
+# results are saved in a .rankscore file;
+
+# examples for running this script:
+# ./plotAUSFC_benchmark_fdrtool.R PATH_TO_zoops.stats_FILE BASENAME_OF_THE_FILE
+# ./plotAUSFC_benchmark_fdrtool.R /home/bamm_result/ JunD_motif_1
 
 #-----------------------------
 #
@@ -18,15 +22,11 @@
 #
 #-----------------------------
 
-# load "fdrtool" library
-if (!require("fdrtool")){
-  install.packages("fdrtool", repos="http://cran.rstudio.com/")
-}
+# load "fdrtool" library for calculating FDR and recall
+library( fdrtool )
 
 # load "zoo" package for calculating AUPRC
-if (!require("zoo")){
-  install.packages("zoo", repos="http://cran.rstudio.com/")
-}
+library( zoo )
 
 #-----------------------------
 #
@@ -39,13 +39,6 @@ args <- commandArgs(trailingOnly=TRUE)
 # get the directory of the p-value files
 dir <- args[1]
 dataname <- args[2]
-
-# local test:
-#dir = c("/home/wanwan/benchmark/MafK/EM_FDR_new/")
-#dataname = c("MafK_motif_1")
-
-#dir = c("/home/wanwan/benchmark/testcaseForPeng/badwolf/PWM_FDR_benchmark/")
-#dataname = c("badwolf_motif_10")
 
 # read in p-values from the files
 pvalues_zoops <- unlist( read.table(paste(dir, dataname, ".zoops.pvalues", sep = "" )))
