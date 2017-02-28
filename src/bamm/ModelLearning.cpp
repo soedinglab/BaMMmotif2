@@ -349,9 +349,11 @@ void ModelLearning::GibbsSampling(){
 	// 2. count k-mers for the highest order K
 	for( i = 0; i < ( int )posSeqs_.size(); i++ ){
 		for( j = 0; j < W; j++ ){
-			y = posSeqs_[i]->extractKmer( z_[i]-1+j, ( z_[i]-1+j < K ) ?  z_[i]-1+j : K );
-			if( y >= 0 ){
-				n_z_[K][y][j]++;
+			if( z_[i] > 0 ){
+				y = posSeqs_[i]->extractKmer( z_[i]-1+j, ( z_[i]-1+j < K ) ?  z_[i]-1+j : K );
+				if( y >= 0 ){
+					n_z_[K][y][j]++;
+				}
 			}
 		}
 	}
@@ -477,7 +479,7 @@ void ModelLearning::CGS_sampling_z_q(){
 		for( k = 0; k < K+1; k++ ){
 			for( j = 0; j < W; j++ ){
 				if( z_[n] != 0 ){
-					// remove the k-mer counts for the current sequence with old z
+					// remove the k-mer counts from the current sequence with old z
 					y = posSeqs_[n]->extractKmer( z_[n]-1+j, ( z_[n]-1+j < k ) ? z_[n]-1+j : k );
 					if( y >= 0 ){
 						n_z_[k][y][j]--;
@@ -485,7 +487,7 @@ void ModelLearning::CGS_sampling_z_q(){
 				}
 
 				if( z_[n_prev] != 0 ){
-					// add the k-mer counts for the previous sequence with updated z
+					// add the k-mer counts from the previous sequence with updated z
 					y_prev = posSeqs_[n_prev]->extractKmer( z_[n_prev]-1+j, ( z_[n_prev]-1+j < k ) ? z_[n_prev]-1+j : k );
 					if( y_prev >= 0 ){
 						n_z_[k][y_prev][j]++;
