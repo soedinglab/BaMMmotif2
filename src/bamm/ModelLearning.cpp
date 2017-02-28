@@ -15,6 +15,7 @@
 #include <boost/math/special_functions/digamma.hpp>
 #include <boost/random.hpp>
 #include <cassert>
+#include <stdlib.h>
 
 ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
 
@@ -328,14 +329,45 @@ void ModelLearning::GibbsSampling(){
 					"|___________________________|\n\n" );
 
 	clock_t t0 = clock();
-	bool iterate = true;								// flag for iterating before convergence
+	bool iterate = true;							// flag for iterating before convergence
+	int iteration = 0;
 
 	int K = Global::modelOrder;
 	int W = motif_->getW();
 
+	int k, y, y2, j, i;
+
+	float** eta = new float*[K+1];					// learning rate for alpha learning
+	for( k = 0; k < K+1; k++ ){
+		eta[k] = new float[W];
+		for( j = 0; j < W; j++ ){
+			eta[k][j] = Global::eta;
+		}
+	}
+
+	// ToDo: write down log posterior after each alpha updating step
+	std::string opath = std::string( Global::outputDirectory ) + '/'
+						+ Global::posSequenceBasename;
+	std::string opath_log = opath + ".logposterior";
+	std::string opath_vdiff = opath + ".vdiff";
+	std::ofstream ofile_log( opath_log.c_str() );
+	std::ofstream ofile_vdiff( opath_vdiff.c_str() );
+
 	float lposterior_prev = 0.0f, lposterior_new = 0.0f, lposterior_diff = 0.0f;
 
-	int k, y, y2, j, i;
+	float*** v_prev = ( float*** )calloc( K+1, sizeof(float**) );
+
+	for( k = 0; k < K+1; k++ ){
+
+		v_prev[k] = ( float** )calloc( Y_[k+1], sizeof( float* ) );
+
+		for( y = 0; y < Y_[k+1]; y++ ){
+
+			v_prev[k][y] = ( float* )calloc( W, sizeof( float ) );
+
+		}
+	}
+
 
 	// count the k-mers
 	// 1. reset n_z_[k][y][j]
@@ -367,22 +399,6 @@ void ModelLearning::GibbsSampling(){
 		}
 	}
 
-	// parameters for alpha learning
-	int iteration = 0;
-
-	float** eta = new float*[K+1];					// learning rate for alpha learning
-	for( int k = 0; k < K+1; k++ ){
-		eta[k] = new float[W];
-		for( int j = 0; j < W; j++ ){
-			eta[k][j] = Global::eta;
-		}
-	}
-
-	// write down log posterior after each alpha updating step
-	std::string opath = std::string( Global::outputDirectory ) + '/'
-						+ Global::posSequenceBasename + ".logposterior";
-	std::ofstream ofile_lposterior( opath.c_str() );
-
 	// iterate over
 	while( iterate && iteration < Global::maxCGSIterations ){
 
@@ -390,11 +406,36 @@ void ModelLearning::GibbsSampling(){
 
 		std::cout << std::scientific << std::setprecision( 2 );
 
+		// get the previous v before updating alphas and z and q
+		for( k = 0; k < K+1; k++ ){
+			for( y = 0; y < Y_[k+1]; y++ ){
+				for( j = 0; j < W; j++ ){
+					v_prev[k][y][j] = motif_->getV()[k][y][j];
+				}
+			}
+		}
+
 		// sampling z and q
 		if( !Global::noZQSampling )		CGS_sampling_z_q();
 
 		// update model parameter v
-		motif_->updateV( n_z_, alpha_, K );
+//		motif_->updateV( n_z_, alpha_, K );
+
+		// todo: write out the difference of v's for comparison
+		for( k = 0; k < K+1; k++ ){
+
+			float v_diff = 0.0f;
+
+			for( y = 0; y < Y_[k+1]; y++ ){
+				for( j = 0; j < W; j++ ){
+					v_diff += fabsf( motif_->getV()[k][y][j] - v_prev[k][y][j] );
+				}
+			}
+
+			ofile_vdiff << v_diff << '\t';
+
+		}
+		ofile_vdiff << std::endl;
 
 		// update alphas:
 		if( !Global::noAlphaUpdating ){
@@ -428,7 +469,7 @@ void ModelLearning::GibbsSampling(){
 				std::cout << "diff= " << lposterior_diff << std::endl;
 
 				// write the log posterior into a file
-				ofile_lposterior << lposterior_new << std::endl;
+				ofile_log << lposterior_new << std::endl;
 
 			}
 		}
@@ -444,6 +485,16 @@ void ModelLearning::GibbsSampling(){
 	motif_->calculateP();
 
 	fprintf( stdout, "\n--- Runtime for Collapsed Gibbs sampling: %.4f seconds ---\n", ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );
+
+	// free the memory:
+	for( k = 0; k < K+1; k++ ){
+		for( y = 0; y < Y_[k+1]; y++ ){
+			free( v_prev[k][y] );
+		}
+		free( v_prev[k] );
+	}
+	free( v_prev );
+
 }
 
 void ModelLearning::CGS_sampling_z_q(){
