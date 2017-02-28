@@ -27,6 +27,11 @@ void FDR::evaluateMotif( int n ){
 
 	std::vector<std::vector<float>> scores;
 
+	int num = Global::posSequenceSet->getN();
+	if( num < 5000 ){
+		Global::mFold = 50000 / num;
+	}
+
 	for( int fold = 0; fold < Global::cvFold; fold++ ){
 
 		if( Global::verbose ){
@@ -441,7 +446,8 @@ void FDR::writePR( int n ){
 				<< "FP" << '\t'
 				<< "FDR" << '\t'
 				<< "Recall" << '\t'
-				<< "p-value" << std::endl;
+				<< "p-value" << '\t'
+				<< Global::mFold << std::endl;
 
 	for( i = 0; i < ZOOPS_FDR_.size(); i++ ){
 		ofile_zoops << ZOOPS_TP_[i]  << '\t'
