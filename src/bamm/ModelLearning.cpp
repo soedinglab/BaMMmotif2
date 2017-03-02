@@ -62,7 +62,8 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int
 		LW2 = posSeqs_[n]->getL() - W + 2;
 		r_[n] = ( float* )calloc( LW2, sizeof( float ) );
 		pos_[n] = ( float* )calloc( LW2, sizeof( float ) );
-		z_[n] = rand() % LW2;
+//		z_[n] = rand() % LW2;
+		z_[n] = 103; //todo: fix z for testing
 	}
 
 	// allocate memory for n_[k][y][j] and probs_[k][y][j] and initialize them
@@ -86,6 +87,9 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int
 //			alpha_[k][j] = 10.0f;
 		}
 	}
+
+	m1_t_ = 0.0f;
+	m2_t_ = 0.0f;
 }
 
 ModelLearning::~ModelLearning(){
@@ -337,15 +341,9 @@ void ModelLearning::GibbsSampling(){
 
 	int k, y, y2, j, i;
 
-	float** eta = new float*[K+1];					// learning rate for alpha learning
-	for( k = 0; k < K+1; k++ ){
-		eta[k] = new float[W];
-		for( j = 0; j < W; j++ ){
-			eta[k][j] = Global::eta;
-		}
-	}
+	float eta = Global::eta;					// learning rate for alpha learning
 
-	// ToDo: write down log posterior after each alpha updating step
+	// ToDo: write down log posterior and model v after each alpha updating step
 	std::string opath = std::string( Global::outputDirectory ) + '/'
 						+ Global::posSequenceBasename;
 	std::string opath_log = opath + ".logposterior";
@@ -356,18 +354,12 @@ void ModelLearning::GibbsSampling(){
 	float lposterior_prev = 0.0f, lposterior_new = 0.0f, lposterior_diff = 0.0f;
 
 	float*** v_prev = ( float*** )calloc( K+1, sizeof(float**) );
-
 	for( k = 0; k < K+1; k++ ){
-
 		v_prev[k] = ( float** )calloc( Y_[k+1], sizeof( float* ) );
-
 		for( y = 0; y < Y_[k+1]; y++ ){
-
 			v_prev[k][y] = ( float* )calloc( W, sizeof( float ) );
-
 		}
 	}
-
 
 	// count the k-mers
 	// 1. reset n_z_[k][y][j]
@@ -379,7 +371,9 @@ void ModelLearning::GibbsSampling(){
 		}
 	}
 	// 2. count k-mers for the highest order K
-	for( i = 0; i < ( int )posSeqs_.size(); i++ ){
+	// note: the last sequence is not counted, since during the first step
+	// of iteration, it is added back.
+	for( i = 0; i < ( int )posSeqs_.size()-1; i++ ){
 		for( j = 0; j < W; j++ ){
 			if( z_[i] > 0 ){
 				y = posSeqs_[i]->extractKmer( z_[i]-1+j, ( z_[i]-1+j < K ) ?  z_[i]-1+j : K );
@@ -404,8 +398,8 @@ void ModelLearning::GibbsSampling(){
 
 		iteration++;
 
-		std::cout << std::scientific << std::setprecision( 2 );
-
+		std::cout << std::setprecision( 6 );
+		std::cout << iteration << " iter:	" << std::endl;
 		// get the previous v before updating alphas and z and q
 		for( k = 0; k < K+1; k++ ){
 			for( y = 0; y < Y_[k+1]; y++ ){
@@ -416,37 +410,32 @@ void ModelLearning::GibbsSampling(){
 		}
 
 		// sampling z and q
-		if( !Global::noZQSampling )		CGS_sampling_z_q();
-
-		// update model parameter v
-//		motif_->updateV( n_z_, alpha_, K );
-
-		// todo: write out the difference of v's for comparison
-		for( k = 0; k < K+1; k++ ){
-
-			float v_diff = 0.0f;
-
-			for( y = 0; y < Y_[k+1]; y++ ){
-				for( j = 0; j < W; j++ ){
-					v_diff += fabsf( motif_->getV()[k][y][j] - v_prev[k][y][j] );
-				}
-			}
-
-			ofile_vdiff << v_diff << '\t';
-
-		}
-		ofile_vdiff << std::endl;
+//		if( !Global::noZQSampling )		CGS_sampling_z_q();
 
 		// update alphas:
-		if( !Global::noAlphaUpdating ){
+//		if( !Global::noAlphaUpdating ){
 
-			if( iteration % Global::interval == 0 ){
+//			if( iteration % Global::interval == 0 ){
 
 				lposterior_prev = calc_logPosterior_alphas( alpha_, K );
 
 				// update alphas by stochastic optimization
-				CGS_updateAlphas( K, W, Global::eta );
+				CGS_updateAlphas( K, W, eta, iteration );
 
+				// update model parameter v
+				motif_->updateVz_n( n_z_, alpha_, K );
+
+				// todo: write out the difference of v's for comparison
+				for( k = 0; k < K+1; k++ ){
+					float v_diff = 0.0f;
+					for( y = 0; y < Y_[k+1]; y++ ){
+						for( j = 0; j < W; j++ ){
+							v_diff += fabsf( motif_->getV()[k][y][j] - v_prev[k][y][j] );
+						}
+					}
+					ofile_vdiff << std::setprecision(6) << v_diff << '\t';
+				}
+				ofile_vdiff << std::endl;
 /*
 				// update alphas by fixed learning rate
 				for( int k = 0; k < K+1; k++ ){
@@ -463,16 +452,16 @@ void ModelLearning::GibbsSampling(){
 				lposterior_new = calc_logPosterior_alphas( alpha_, K );
 				lposterior_diff = lposterior_new - lposterior_prev;
 
-				std::cout << iteration << " iter:	";
-				std::cout << "old lpos= " << lposterior_prev << '\t';
-				std::cout << "new lpos= " << lposterior_new << '\t';
-				std::cout << "diff= " << lposterior_diff << std::endl;
+//				std::cout << "old lpos= " << lposterior_prev << '\t';
+//				std::cout << "new lpos= " << lposterior_new << '\t';
+//				std::cout << "diff= " << lposterior_diff << std::endl;
 
 				// write the log posterior into a file
 				ofile_log << lposterior_new << std::endl;
 
-			}
-		}
+//			}
+
+//		}
 
 		// only for writing out model after each iteration:
 /*		motif_->calculateP();
@@ -544,12 +533,11 @@ void ModelLearning::CGS_sampling_z_q(){
 						n_z_[k][y_prev][j]++;
 					}
 				}
-
 			}
 		}
 
 		// updated model parameters v excluding the n'th sequence
-		motif_->updateV( n_z_, alpha_, K );
+		motif_->updateVz_n( n_z_, alpha_, K );
 
 		// compute log odd scores s[y][j], log likelihoods of the highest order K
 		for( y = 0; y < Y_[K+1]; y++ ){
@@ -559,8 +547,9 @@ void ModelLearning::CGS_sampling_z_q(){
 			}
 		}
 
-		// sampling equation: calculate responsibilities over all LW1 positions on n'th sequence
-		std::vector<float> posterior_array;
+		// sampling equation:
+		// calculate responsibilities over all LW1 positions on n'th sequence
+		std::vector<float> posteriors;
 		float normFactor = 0.0f;
 		for( i = 1; i <= LW1; i++ ){
 			r_[n][i] = 1.0f;
@@ -569,29 +558,21 @@ void ModelLearning::CGS_sampling_z_q(){
 				y = posSeqs_[n]->extractKmer( i-1+j, ( i-1+j < K ) ? i-1+j : K );
 				if( y >= 0 ){
 					r_[n][i] *= s_[y][j];
-
 				}
 			}
 			r_[n][i] *= pos_[n][i];
 			normFactor += r_[n][i];
 		}
-
 		// for sequences that do not contain motif
 		r_[n][0] = pos_[n][0];
 		normFactor += r_[n][0];
-
 		for( i = 0; i <= LW1; i++ ){
 			r_[n][i] /= normFactor;
-			posterior_array.push_back( r_[n][i] );
+			posteriors.push_back( r_[n][i] );
 		}
-
 		// draw a new position z from discrete posterior distribution
-		std::discrete_distribution<> posterior_dist( posterior_array.begin(), posterior_array.end() );
-
-		rng();
-
-		z_[n] = posterior_dist( rng );					// draw a sample z
-
+		std::discrete_distribution<> posterior_dist( posteriors.begin(), posteriors.end() );
+		z_[n] = posterior_dist( rng );					// draw a sample z randomly
 		if( z_[n] == 0 ) N_0++;
 	}
 
@@ -599,73 +580,62 @@ void ModelLearning::CGS_sampling_z_q(){
 	// draw two random numbers Q and P from Gamma distribution
 	std::gamma_distribution<> P_Gamma_dist( N_0 + 1, 1 );
 	std::gamma_distribution<> Q_Gamma_dist( N - N_0 + 1, 1 );
-	rng();
 	double P = P_Gamma_dist( rng );						// draw a sample for P
-	rng();
 	double Q = Q_Gamma_dist( rng );						// draw a sample for Q
 
 	q_ = ( float ) Q / ( float )( Q + P );				// calculate q_
 
 }
 
-void ModelLearning::CGS_updateAlphas( int K, int W, float eta ){
+void ModelLearning::CGS_updateAlphas( int K, int W, float eta, int iter ){
 	// update alphas using stochastic optimization algorithm ADAM (DP Kingma & JL Ba 2015)
 
 	int k, j;
 	float beta1 = 0.9f;									// exponential decay rate for the moment estimates
-	float beta2 = 0.999f;								// exponential decay rate for the moment estimates
-	float epsilon = 0.00000001f;						// cutoff
+//	float beta2 = 0.999f;								// exponential decay rate for the moment estimates
+	float beta2 = 0.99f;
+	float epsilon = 1e-8f;								// cutoff
 	float gradient;										// gradient of log posterior of alpha
-	float** m1;											// first moment vector (the mean)
-	float** m2;											// second moment vector (the uncentered variance)
+	float m1;											// first moment vector (the mean)
+	float m2;											// second moment vector (the uncentered variance)
 
-	m1 = ( float** )calloc( K+1, sizeof( float* ) );
-	m2 = ( float** )calloc( K+1, sizeof( float* ) );
-	for( k = 0; k < K+1; k++ ){
-		m1[k] = ( float* )calloc( W, sizeof( float ) );
-		m2[k] = ( float* )calloc( W, sizeof( float ) );
-	}
-	float m1_i = 0.0f;
-	float m2_i = 0.0f;
+	float t = ( float )iter;
 
 	for( k = 0; k < K+1; k++ ){
 
 		for( j = 0; j < W; j++ ){
 //		for( j = k; j < W; j++ ){
-			// reparameter alpha on log scale
+			// reparameterise alpha on log scale: alpha = e^a
 			float a  = logf( alpha_[k][j] );
 
 			// get gradients w.r.t. stochastic objective at timestep t
 			gradient = alpha_[k][j] * calc_gradient_alphas( alpha_, k, j );
 
+			// print gradient for checking:
+			if( k == K ) std::cout << gradient << '\t';
+
 			// update biased first moment estimate
-			m1_i = beta1 * m1_i + ( 1 - beta1 ) * gradient;
+			m1_t_ = beta1 * m1_t_ + ( 1 - beta1 ) * gradient;
 
 			// update biased second raw moment estimate
-			m2_i = beta2 * m2_i + ( 1 - beta2 ) * gradient * gradient;
+			m2_t_ = beta2 * m2_t_ + ( 1 - beta2 ) * gradient * gradient;
 
 			// compute bias-corrected first moment estimate
-			m1[k][j] = m1_i / ( 1 - beta1 );
+			m1 = m1_t_ / ( 1 - powf( beta1, t ) );
 
 			// compute bias-corrected second raw moment estimate
-			m2[k][j] = m2_i / ( 1 - beta2 );
+			m2 = m2_t_ / ( 1 - powf( beta2, t ) );
 
 			// update parameter a due to alphas
 			// Note: here change the sign in front of eta from '-' to '+'
-			a += eta * m1[k][j] / ( sqrtf( m2[k][j] ) + epsilon );
+			a += eta * m1 / ( ( sqrtf( m2 ) + epsilon ) * sqrtf( t ) );
 
 			alpha_[k][j] = expf( a );
 		}
 
-	}
+		if( k == K ) std::cout << std::endl;
 
-	// free memory
-	for( k = 0; k < K+1; k++ ){
-		free( m1[k] );
-		free( m2[k] );
 	}
-	free( m1 );
-	free( m2 );
 
 }
 
@@ -707,7 +677,7 @@ void ModelLearning::testAlphaUpdate( float** alphas, int K, int W ){
 }
 
 float ModelLearning::calc_logPosterior_alphas( float** alpha, int k ){
-	// calculate log posterior of alphas due to equation 46 in the theory
+	// calculate partial log posterior of alphas due to equation 46 in the theory
 
 	float logPosterior = 0.0f;
 	float*** v = motif_->getV();
@@ -767,7 +737,7 @@ float ModelLearning::calc_logPosterior_alphas( float** alpha, int k ){
 }
 
 float ModelLearning::calc_gradient_alphas( float** alpha, int k, int j ){
-	// calculate gradient of the log posterior of alphas due to equation 47 in the theory
+	// calculate partial gradient of the log posterior of alphas due to equation 47 in the theory
 	// Note that j >= k
 
 	float gradient = 0.0f;

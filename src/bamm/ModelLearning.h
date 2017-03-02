@@ -44,7 +44,8 @@ private:
 	float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif
 
 	float 					llikelihood_ = 0.0f;// log likelihood for each iteration
-
+	float					m1_t_;				// first moment for alpha optimizer
+	float					m2_t_;				// second moment for alpha optimizer
 	std::vector<Sequence*>	posSeqs_;			// copy positive sequences due to folds
 
 	void 					EM_EStep();			// E-step
@@ -53,7 +54,7 @@ private:
 	void 					EM_optimize_q();	// optimize hyper-parameter q
 
 	void					CGS_sampling_z_q();													// sample z and q by collapsed Gibbs sampling
-	inline void				CGS_updateAlphas( int order, int width, float learningrate );		// update alphas for all the orders up to K, given the learning rate
+	inline void				CGS_updateAlphas( int order, int width, float learningrate, int t );// update alphas for all the orders up to K, given the learning rate
 	float					calc_logPosterior_alphas( float** alphas, int order );				// calculate the log posterior of alphas
 	float					calc_gradient_alphas( float** alphas, int order, int position );	// calculate the gradient of the log posterior of alphas
 
