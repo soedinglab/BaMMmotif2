@@ -54,7 +54,7 @@ public:
 	// model options
 	static int			modelOrder;							// model order
 	static std::vector<float> modelAlpha;					// initial alphas
-	static float		modelBeta;							// alpha_k = beta x gamma^(k-1) for k > 0
+	static float		modelBeta;							// alpha_k = beta x gamma^k for k > 0
 	static float		modelGamma;
 	static std::vector<int>	addColumns;						// add columns to the left and right of models used to initialize Markov models
     static bool        interpolate;                         // calculate prior probabilities from lower-order probabilities
