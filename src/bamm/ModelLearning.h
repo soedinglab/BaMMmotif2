@@ -64,6 +64,11 @@ private:
 	double					calcLogPostAlphasD( double** alphas, int order );					// calculate the log posterior of alphas
 	double					calcGradLogPostAlphasD( double** alphas, int order, int position );	// calculate the gradient of the log posterior of alphas
 	void					testAlphaUpdateD( double** alphas, int order, int width );			// only for testing, will be removed afterwards
+
+	// test on the alpha optimization
+	void 					debug_first_term_of_derivative();
+	void 					debug_second_term_plus_prior_of_derivative();
+
 	std::vector<int>		Y_;					// contains 1 at position 0
 												// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
 												// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64

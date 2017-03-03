@@ -244,7 +244,7 @@ void ModelLearning::EM_EStep(){
 			int y = posSeqs_[n]->extractKmer( ij,( ij < K ) ? ij : K );
 
 			// j runs over all motif positions
-			for( int j = ( 0 > ( ij-L+W ) ? 0 :  ij-L+W ); j < ( W < (ij+1) ? W : ij+1 ); j++ ){
+			for( int j = ( 0 > ( ij-L+W ) ? 0 : ij-L+W ); j < ( W < (ij+1) ? W : ij+1 ); j++ ){
 
 				// skip 'N' and other unknown alphabets
 				if( y != -1 ){
@@ -939,6 +939,46 @@ double ModelLearning::calcGradLogPostAlphasD( double** alpha, int k, int j ){
 	return gradient;
 }
 
+void ModelLearning::debug_first_term_of_derivative(){
+
+	float*** v = motif_->getV();
+	for( int k = 0; k < Global::modelOrder + 1; k++ ){
+		for( int j = 0; j < motif_->getW(); j++ ){
+			float sum = 0.0f;
+			for( int y = 0; y < Y_[k+1]; y++ ){
+				int y2 = y % Y_[k];
+				sum += v[k-1][j][y2] * ( logf( v[k][y][j] ) - logf( v[k-1][y2][j] ) );
+			}
+		}
+	}
+
+}
+
+void ModelLearning::debug_second_term_plus_prior_of_derivative(){
+
+	float*** v = motif_->getV();
+	for( int k = 0; k < Global::modelOrder + 1; k++ ){
+		for( int j = 0; j < motif_->getW(); j++ ){
+			float sum = 0.0f;
+			// first sum up prior
+			float prior = -2 / alpha_[k][j] + Global::modelBeta *
+					powf( Global::modelGamma, (float)k ) / powf( alpha_[k][j], 2.0f);
+			float first_term = 0.0f;
+			float second_term = 0.0f;
+			for( int y = 0; y < Y_[k]; y++ ){
+				first_term = 1.5f * n_z_[k][y][j-1] / ( ( n_z_[k][y][j-1] + alpha_[k][j] ) * alpha_[k][j] );
+			}
+			for( int y = 0; y < Y_[k+1]; y++ ){
+				int y2 = y % Y_[k];
+				int yk = y / Y_[1];
+				sum += 0.5f * ( v[k][y][j] - v[k-1][y2][j] ) / ( v[k][y][j] * n_z_[k][yk][j-1] ) ;
+			}
+			sum /= 2.0f;
+		}
+
+	}
+}
+
 Motif* ModelLearning::getMotif(){
 	return motif_;
 }
@@ -998,7 +1038,7 @@ void ModelLearning::write( int N ){
 			for( i = LW1; i > 0; i-- ){
 				ofile_r << std::setprecision( 2 ) << r_[n][i] << ' ';
 				if( r_[n][i] >= cutoff ){
-					ofile_pos << LW1-i << '\t';
+					ofile_pos << LW1-i+1 << '\t';
 				}
 			}
 			ofile_r << std::endl;
