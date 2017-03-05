@@ -55,6 +55,8 @@ bool				Global::noAlphaUpdating = false;		// disable alpha sampling in CGS
 bool				Global::noZQSampling = false;			// disable q sampling in CGS
 float				Global::eta = 0.01f;					// learning rate for Gibbs sampling, only for tuning
 int					Global::interval = 10;					// interval for sampling z and q, only for tuning
+bool				Global::debugAlphas = false;
+
 
 // FDR options
 bool                Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
@@ -254,6 +256,7 @@ int Global::readArguments( int nargs, char* args[] ){
 		opt >> GetOpt::Option( "eta", eta );
 		opt >> GetOpt::Option( "interval", interval );
 	}
+	opt >> GetOpt::OptionPresent( "debugAlphas", debugAlphas );
 	opt >> GetOpt::OptionPresent( "generatePseudoSet", generatePseudoSet );
 
 	// FDR options

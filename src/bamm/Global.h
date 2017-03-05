@@ -80,6 +80,7 @@ public:
 	static bool			noZQSampling;						// disable q sampling in CGS
 	static float		eta;								// learning rate for optimizing alphas, only for tuning
 	static int			interval;							// interval for sampling z and q, only for tuning
+	static bool			debugAlphas;
 
 	// FDR options
 	static bool			FDR;								// triggers False-Discovery-Rate (FDR) estimation
