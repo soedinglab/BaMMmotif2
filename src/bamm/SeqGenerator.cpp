@@ -154,7 +154,7 @@ std::unique_ptr<Sequence> SeqGenerator::sample_negative_sequence( int L ){
 }
 
 // generate pseudo-positive sequences based on each test set
-std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_pseudo_seqset( ){
+std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_pseudo_seqset(){
 
 	std::vector<std::unique_ptr<Sequence>> sampleSet;
 
@@ -176,10 +176,15 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( int L ){
 	uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
 	std::string header = "pseudo sequence";
 
+	int K = Global::modelOrder;
+
+	uint8_t a;
+	int i,j, k, yk;
+
 	// sample the first nucleotide
 	double random = ( double )rand() / ( double )RAND_MAX;
 	double f = 0.0f;
-	for( uint8_t a = 1; a <= Y_[1]; a++ ){
+	for( a = 1; a <= Y_[1]; a++ ){
 		f += freqs_[0][a-1];
 		if( random <= f ){
 			sequence[0] = a;
@@ -188,19 +193,19 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( int L ){
 		if( sequence[0] == 0 )	sequence[0] = a;		// Trick: this is to solve the numerical problem
 	}
 
-	// sample the next ( sOrder-1 ) nucleotides
-	for( int i = 1; i < Global::sOrder; i++ ){
+	// sample the next ( K-1 ) nucleotides
+	for( i = 1; i < K; i++ ){
 
 		// extract y from k-mer
-		int yk = 0;
-		for( int k = i; k > 0; k-- ){
+		yk = 0;
+		for( k = i; k > 0; k-- ){
 			yk += ( sequence[i-k] - 1 ) * Y_[k];
 		}
 
 		// sample a nucleotide based on k-mer frequency
 		random = ( double )rand() / ( double )RAND_MAX;	// get another random double number
 		f = 0.0f;
-		for( uint8_t a = 1; a <= Y_[1]; a++ ){
+		for( a = 1; a <= Y_[1]; a++ ){
 			f += freqs_[i][yk+a-1];
 			if( random <= f ){
 				sequence[i] = a;
@@ -211,19 +216,19 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( int L ){
 	}
 	// sample nucleotides till the half length of the sequence, due to k-mer frequencies
 	int mid = L / 2;
-	for( int i = Global::sOrder; i < mid; i++ ){
+	for( i = K; i < mid; i++ ){
 
 		// extract y from K-mer
-		int yk = 0;
-		for( int k = Global::sOrder; k > 0; k-- ){
+		yk = 0;
+		for( k = K; k > 0; k-- ){
 			yk += ( sequence[i-k] - 1 ) * Y_[k];
 		}
 
 		// sample a nucleotide based on k-mer frequency
 		random = ( double )rand() / ( double )RAND_MAX;	// get another random double number
 		f = 0.0f;
-		for( uint8_t a = 1; a <= Y_[1]; a++ ){
-			f += freqs_[Global::sOrder][yk+a-1];
+		for( a = 1; a <= Y_[1]; a++ ){
+			f += freqs_[K][yk+a-1];
 			if( random <= f ){
 				sequence[i] = a;
 				break;
@@ -235,17 +240,17 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( int L ){
 	// sample W-length nucleotides based on conditional probabilities of the motif
 	int W = motif_->getW();
 	float*** v = motif_->getV();
-	for( int j = 0; j < W; j++ ){
+	for( j = 0; j < W; j++ ){
 		// extract y from K-mer
-		int yk = 0;
-		for( int k = Global::sOrder; k > 0; k-- ){
+		yk = 0;
+		for( k = K; k > 0; k-- ){
 			yk += ( sequence[j+mid-k] - 1 ) * Y_[k];
 		}
 		// sample a nucleotide based on k-mer frequency
 		random = ( double )rand() / ( double )RAND_MAX;	// get another random double number
 		f = 0.0f;
-		for( uint8_t a = 1; a <= Y_[1]; a++ ){
-			f += v[Global::sOrder][yk+a-1][j];
+		for( a = 1; a <= Y_[1]; a++ ){
+			f += v[K][yk+a-1][j];
 			if( random <= f ){
 				sequence[j+mid] = a;
 				break;
@@ -256,18 +261,18 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( int L ){
 	}
 
 	// sample the rest of the sequence till it reaches the length of L
-	for( int i = mid + W; i < L; i++ ){
+	for( i = mid + W; i < L; i++ ){
 		// extract y from K-mer
-		int yk = 0;
-		for( int k = Global::sOrder; k > 0; k-- ){
+		yk = 0;
+		for( k = K; k > 0; k-- ){
 			yk += ( sequence[i-k] - 1 ) * Y_[k];
 		}
 
 		// sample a nucleotide based on k-mer frequency
 		random = ( double )rand() / ( double )RAND_MAX;	// get another random double number
 		f = 0.0f;
-		for( uint8_t a = 1; a <= Y_[1]; a++ ){
-			f += freqs_[Global::sOrder][yk+a-1];
+		for( a = 1; a <= Y_[1]; a++ ){
+			f += freqs_[K][yk+a-1];
 			if( random <= f ){
 				sequence[i] = a;
 				break;

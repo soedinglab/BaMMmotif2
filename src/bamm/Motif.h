@@ -30,7 +30,7 @@ public:
 	float***	getP();											// get probabilities p
 	int***		getN();											// get the counts of (k+1)-mer for all y at motif position j
 	void        updateV( float*** n, float** alpha, int order );// update v for EM
-	void        updateV( int*** n, float** alpha, int order );	// update v for Collapsed Gibbs sampling
+	void        updateVz_n( int*** n, float** alpha, int order );	// update v for Collapsed Gibbs sampling
 
 	void		calculateP();									// calculate probabilities p
 

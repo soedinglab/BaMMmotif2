@@ -362,7 +362,7 @@ void Motif::updateV( float*** n, float** alpha, int K ){
 
 
 // update v from integral k-mer counts n and current alphas (e.g for CGS)
-void Motif::updateV( int*** n, float** alpha, int K ){
+void Motif::updateVz_n( int*** n, float** alpha, int K ){
 
 	assert( isInitialized_ );
 

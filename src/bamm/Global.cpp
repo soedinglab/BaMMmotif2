@@ -30,7 +30,7 @@ std::string			Global::initialModelBasename;			// basename of initial model
 // model options
 int        			Global::modelOrder = 2;					// model order
 std::vector<float> 	Global::modelAlpha( modelOrder+1, 1.0f );	// initial alphas
-float				Global::modelBeta = 20.0f;				// alpha_k = beta x gamma^(k-1) for k > 0
+float				Global::modelBeta = 20.0f;				// alpha_k = beta x gamma^k for k > 0
 float				Global::modelGamma = 3.0f;
 std::vector<int>    Global::addColumns( 2 );				// add columns to the left and right of initial model
 bool                Global::interpolate = true;             // calculate prior probabilities from lower-order probabilities
@@ -55,6 +55,8 @@ bool				Global::noAlphaUpdating = false;		// disable alpha sampling in CGS
 bool				Global::noZQSampling = false;			// disable q sampling in CGS
 float				Global::eta = 0.01f;					// learning rate for Gibbs sampling, only for tuning
 int					Global::interval = 10;					// interval for sampling z and q, only for tuning
+bool				Global::debugAlphas = false;
+
 
 // FDR options
 bool                Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
@@ -191,7 +193,8 @@ int Global::readArguments( int nargs, char* args[] ){
 		opt >> GetOpt::Option( 'r', "gamma", modelGamma );
 		if( modelOrder > 0 ){
 			for( int k = 1; k < modelOrder + 1; k++ ){
-				modelAlpha[k] = modelBeta * powf( modelGamma, static_cast<float>( k ) - 1.0f );
+				// alpha = beta * gamma^k
+				modelAlpha[k] = modelBeta * powf( modelGamma, static_cast<float>( k ) );
 			}
 		}
 	}
@@ -253,6 +256,7 @@ int Global::readArguments( int nargs, char* args[] ){
 		opt >> GetOpt::Option( "eta", eta );
 		opt >> GetOpt::Option( "interval", interval );
 	}
+	opt >> GetOpt::OptionPresent( "debugAlphas", debugAlphas );
 	opt >> GetOpt::OptionPresent( "generatePseudoSet", generatePseudoSet );
 
 	// FDR options
@@ -319,7 +323,13 @@ void Global::printHelp(){
 			"				model Order. The default is 2. \n\n");
 	printf("\n 			-a, --alpha <FLOAT> [<FLOAT>...] \n"
 			"				Order-specific prior strength. The default is 1.0 (for k = 0) and\n"
-			"				20 x 3^(k-1) (for k > 0). The options -b and -g are ignored.\n\n");
+			"				beta x gamma^k (for k > 0). The options -b and -r are ignored.\n\n");
+	printf("\n 			-b, --beta <FLOAT> \n"
+			"				parameter for calculating alphas: beta x gamma^k (for k > 0). \n"
+			"				The default is 20 (for k > 0) \n");
+	printf("\n 			-r, --gamma <FLOAT> \n"
+			"				parameter for calculating alphas: beta x gamma^k (for k > 0). \n"
+			"				The default is 3 (for k > 0) \n");
 	printf("\n 			--extend <INTEGER>{1, 2} \n"
 			"				Extend BaMMs by adding uniformly initialized positions to the left\n"
 			"				and/or right of initial BaMMs. e.g. invoking with --extend 0 2 adds\n"
