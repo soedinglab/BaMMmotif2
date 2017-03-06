@@ -323,7 +323,8 @@ pvt.plotlabels <- function(statistic, scale.param, eta0)
 #-----------------------------
 parser <- ArgumentParser(description='benchmark motif finder')
 parser$add_argument('target_directory', help='directory that contains the target file')
-parser$add_argument('target_file', help='basename of the target file')
+parser$add_argument('prefix', help='prefix of the target file')
+parser$add_argument('output_file', help='file to print the benchmark results')
 args <- parser$parse_args()
 
 # default args for ArgumentParser()$parse_args are commandArgs(TRUE)
@@ -331,118 +332,127 @@ args <- parser$parse_args()
 
 # get the directory of the p-value files
 dir <- args$target_directory
-dataname <- args$target_file
+prefix <- args$prefix
+output <- args$output_file
 
-# read in p-values from file
-first_row <- read.table(paste(dir, '/', dataname, ".zoops.stats", sep = "" ), nrows = 1 )
-stats <- read.table(paste(dir, '/', dataname, ".zoops.stats", sep = "" ), skip=1 )
-pvalues <- stats$V5
-mfold <- as.numeric( first_row[6] )
+results = c()
+for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))) {
+  motifNumber <- sub(paste(c(dir, "/", prefix, "_motif_"), collapse=""), "", f)
+  motifNumber <- sub(".zoops.stats", "", motifNumber)
 
-# avoid the rounding errors when p-value = 0 or p-value > 1
-for(i in seq(1, length(pvalues))){
-  if( pvalues[i] > 1 ){
-    pvalues[i] = 1
-  }
-}
+  # read in p-values from file
+  first_row <- read.table(f, nrows = 1 )
+  stats <- read.table(f, skip=1 )
+  pvalues <- stats$V5
+  mfold <- as.numeric( first_row[6] )
 
-# estimate False Discovery Rates for Diverse Test Statistics
-eta0set = mfold/(1+mfold)
-pdf( file = paste( dir, '/', dataname, '_FDRstat.pdf', sep = "" ) )
-result = fdrtool( pvalues, statistic="pvalue",
-                  plot=TRUE, color.figure=TRUE, verbose=TRUE, eta0set=eta0set )
-dev.off()
-
-# get the global fdr values and estimate of the weight eta0 of
-# the null component
-fdr_m <- result$qval
-eta0 <- result$param[3]
-fdr <- 1 / ( 1 + mfold * ( 1 / fdr_m - 1 ) )
-
-# calculate recall
-len = length(fdr)
-list <- seq(1, len )
-recall <- ( 1 - fdr ) * list / ( 1 - eta0 ) / len
-
-# modify the SF curve:
-# reset recall to 1 when it is larger than 1
-for(i in list){
-  if( recall[i] > 1 ){
-    for(rest in i:len){
-      recall[rest] = 1
+  # avoid the rounding errors when p-value = 0 or p-value > 1
+  for(i in seq(1, length(pvalues))){
+    if( pvalues[i] > 1 ){
+      pvalues[i] = 1
     }
-    break
   }
-}
 
-# extend the SF curve till FDR reaches 0.5
-recall <- append(recall, 1)
-fdr <- append(fdr, 0.5)
-range <- seq(1, len+1)
+  # estimate False Discovery Rates for Diverse Test Statistics
+  eta0set = mfold/(1+mfold)
+  pdf( file = paste(dir, '/', prefix, "_motif_", motifNumber, '_FDRstat.pdf', sep = "" ) )
+  result = fdrtool( pvalues, statistic="pvalue",
+                    plot=TRUE, color.figure=TRUE, verbose=TRUE, eta0set=eta0set )
+  dev.off()
 
-# limit the frame of the curve
-left = 1
-right = len+1
-for(i in range){
-  if( fdr[i] >= 0.0001 ){
-    left = i
-    recall[i] = 0
-    break
+  # get the global fdr values and estimate of the weight eta0 of
+  # the null component
+  fdr_m <- result$qval
+  eta0 <- result$param[3]
+  fdr <- 1 / ( 1 + mfold * ( 1 / fdr_m - 1 ) )
+
+  # calculate recall
+  len = length(fdr)
+  list <- seq(1, len )
+  recall <- ( 1 - fdr ) * list / ( 1 - eta0 ) / len
+
+  # modify the SF curve:
+  # reset recall to 1 when it is larger than 1
+  for(i in list){
+    if( recall[i] > 1 ){
+      for(rest in i:len){
+        recall[rest] = 1
+      }
+      break
+    }
   }
-}
 
-for(i in range){
-  if(fdr[i] >= 0.5 ){
-    right = i
-    break
+  # extend the SF curve till FDR reaches 0.5
+  recall <- append(recall, 1)
+  fdr <- append(fdr, 0.5)
+  range <- seq(1, len+1)
+
+  # limit the frame of the curve
+  left = 1
+  right = len+1
+  for(i in range){
+    if( fdr[i] >= 0.0001 ){
+      left = i
+      recall[i] = 0
+      break
+    }
   }
-}
 
-range <- seq(left, right)
-
-# plot fdr vs. recall curve
-sum_area = log10(0.5) + 4
-pdf( file = paste( dir, '/', dataname, '_SFCurve.pdf', sep = "" ) )
-plot(fdr[range], recall[range], log="x",
-     main=paste(dataname, "Sensitivity vs. FDR", sep="\n\n"),
-     xlab="FDR", ylab="Sensitivity", xlim=c(0.0001,0.5), ylim=c(0,1),
-     type='l', lwd=2.5,
-     col="deepskyblue")
-# compute  the area under the sensitivity-FDR curve(AUSFC):
-if(right == left){
-  ausfc = 0
-} else {
-  ausfc = sum(diff(log10(fdr[range]))*rollmean(recall[range],2)) / sum_area
-}
-# write the AUSFC on the plot with the precision of 4 digits:
-text(0.0005, 0.95, paste( "AUSFC: ", round(ausfc, digits=4) ))
-dev.off()
-
-# plot TPR vs FPR
-TP <- stats$V1
-FP <- stats$V2
-TPR <- TP / TP[length(TP)]
-FPR <- FP / FP[length(FP)]
-for(i in seq(1,length(FP))){
-  if( FPR[i] >= 0.05 ){
-    rbound = i
-    break
+  for(i in range){
+    if(fdr[i] >= 0.5 ){
+      right = i
+      break
+    }
   }
+
+  range <- seq(left, right)
+
+  # plot fdr vs. recall curve
+  sum_area = log10(0.5) + 4
+  pdf( file = paste(dir, '/', prefix, "_motif_", motifNumber, '_SFCurve.pdf', sep = "" ) )
+  plot(fdr[range], recall[range], log="x",
+       main=paste(prefix, "_motif_", motifNumber, "Sensitivity vs. FDR", sep="\n\n"),
+       xlab="FDR", ylab="Sensitivity", xlim=c(0.0001,0.5), ylim=c(0,1),
+       type='l', lwd=2.5,
+       col="deepskyblue")
+  # compute  the area under the sensitivity-FDR curve(AUSFC):
+  if(right == left){
+    ausfc = 0
+  } else {
+    ausfc = sum(diff(log10(fdr[range]))*rollmean(recall[range],2)) / sum_area
+  }
+  # write the AUSFC on the plot with the precision of 4 digits:
+  text(0.0005, 0.95, paste( "AUSFC: ", round(ausfc, digits=4) ))
+  dev.off()
+
+  # plot TPR vs FPR
+  TP <- stats$V1
+  FP <- stats$V2
+  TPR <- TP / TP[length(TP)]
+  FPR <- FP / FP[length(FP)]
+  for(i in seq(1,length(FP))){
+    if( FPR[i] >= 0.05 ){
+      rbound = i
+      break
+    }
+  }
+  pdf( file = paste(dir, '/', prefix, "_motif_", motifNumber, '_pROC.pdf', sep = "" ) )
+  plot(FPR[1:rbound], TPR[1:rbound],
+       main=paste(prefix, "_motif_", motifNumber, " FPR vs. TPR ", sep="\n\n"),
+       xlab="FPR", ylab="TPR", xlim=c(0,0.05), ylim=c(0,1),
+       type='l', lwd=2.5, col="deepskyblue")
+  # compute the area under the partical TP-FP curve(AUC5):
+  auc5 = sum(diff(FPR[1:rbound])*rollmean(TPR[1:rbound],2)) / 0.05
+
+  # write the AUC on the plot with the precision of 4 digits:
+  text(0.03, 0.1, paste( "pAUC: ", round(auc5, digits=4) ))
+  dev.off()
+
+  resultString = paste(c(prefix, motifNumber, ausfc, auc5), collapse="\t")
+  print(resultString)
+  results = c(results, resultString)
 }
-pdf( file = paste( dir, '/', dataname, '_pROC.pdf', sep = "" ) )
-plot(FPR[1:rbound], TPR[1:rbound],
-     main=paste(dataname, " FPR vs. TPR ", sep="\n\n"),
-     xlab="FPR", ylab="TPR", xlim=c(0,0.05), ylim=c(0,1),
-     type='l', lwd=2.5, col="deepskyblue")
-# compute the area under the partical TP-FP curve(AUC5):
-auc5 = sum(diff(FPR[1:rbound])*rollmean(TPR[1:rbound],2)) / 0.05
 
-# write the AUC on the plot with the precision of 4 digits:
-text(0.03, 0.1, paste( "pAUC: ", round(auc5, digits=4) ))
-dev.off()
-
-
-# write paramaters to a file
-ofile = paste( dir, '/', dataname, '.bmscore', sep = "" )
-writeLines( c( "AUSFC: ", ausfc,
-               "pAUC: ", auc5), ofile )
+outConn <- file(output)
+writeLines(results, outConn)
+close(outConn)
