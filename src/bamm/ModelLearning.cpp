@@ -63,7 +63,7 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int
 		r_[n] = ( float* )calloc( LW2, sizeof( float ) );
 		pos_[n] = ( float* )calloc( LW2, sizeof( float ) );
 //		z_[n] = rand() % LW2;
-		z_[n] = 103; //todo: fix z for testing
+		z_[n] = 97; //todo: fix z for testing
 	}
 
 	// allocate memory for n_[k][y][j] and probs_[k][y][j] and initialize them
@@ -353,13 +353,15 @@ void ModelLearning::GibbsSampling(){
 	std::string opath = std::string( Global::outputDirectory ) + '/'
 						+ Global::posSequenceBasename;
 	std::string opath_log = opath + ".logposterior";
+	std::string opath_condProb = opath + ".condProb";
 	std::string opath_vdiff = opath + ".vdiff";
 	std::ofstream ofile_log( opath_log.c_str() );
 	std::ofstream ofile_vdiff( opath_vdiff.c_str() );
+	std::ofstream ofile_condProb( opath_condProb.c_str() );
 
-	float lposterior_prev = 0.0f;
+//	float lposterior_prev = 0.0f;
 	float lposterior_new = 0.0f;
-	float lposterior_diff = 0.0f;
+//	float lposterior_diff = 0.0f;
 
 	float*** v_prev = ( float*** )calloc( K+1, sizeof(float**) );
 	for( k = 0; k < K+1; k++ ){
@@ -431,7 +433,7 @@ void ModelLearning::GibbsSampling(){
 
 //			if( iteration % Global::interval == 0 ){
 
-				lposterior_prev = calc_logPosterior_alphas( alpha_, K );
+//				lposterior_prev = calc_logPosterior_alphas( alpha_, K );
 
 				// update alphas by stochastic optimization
 				stochastic_optimize_alphas( K, W, eta, iteration );
@@ -472,7 +474,7 @@ void ModelLearning::GibbsSampling(){
 
 				// write the log posterior into a file
 				ofile_log << lposterior_new << std::endl;
-
+				ofile_condProb << expf( lposterior_new ) << std::endl;
 //			}
 
 		}
@@ -692,8 +694,10 @@ float ModelLearning::calc_logPosterior_alphas( float** alpha, int k ){
 		logPosterior += ( float )ipow( Y_[1], k ) * boost::math::lgamma( alpha[k][j] );
 
 		// the forth term of equation 46
-		for( y = 0; y < Y_[k+1]; y++ ){
+		for( y = 0; y < Y_[k]; y++ ){
+
 			y2 = y % Y_[k];									// cutoff the first nucleotide in the (k+1)-mer
+
 			if( k == 0 ){
 				// the first part
 				logPosterior += boost::math::lgamma( ( float )n_z_[k][y][j] + alpha[k][j] * v_bg[k][y] );
