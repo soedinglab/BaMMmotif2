@@ -391,7 +391,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
   left = 1
   right = len+1
   for(i in range){
-    if( fdr[i] >= 0.0001 ){
+    if( fdr[i] >= 0.01 ){
       left = i
       recall[i] = 0
       break
@@ -408,11 +408,11 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
   range <- seq(left, right)
 
   # plot fdr vs. recall curve
-  sum_area = log10(0.5) + 4
+  sum_area = log10(0.5) + 2
   pdf( file = paste(dir, '/', prefix, "_motif_", motifNumber, '_SFCurve.pdf', sep = "" ) )
   plot(fdr[range], recall[range], log="x",
-       main=paste(prefix, "_motif_", motifNumber, "Sensitivity vs. FDR", sep="\n\n"),
-       xlab="FDR", ylab="Sensitivity", xlim=c(0.0001,0.5), ylim=c(0,1),
+       main=paste(prefix, "_motif_", motifNumber, "Sensitivity vs. FDR", sep=""),
+       xlab="FDR", ylab="Sensitivity", xlim=c(0.01,0.5), ylim=c(0,1),
        type='l', lwd=2.5,
        col="deepskyblue")
   # compute  the area under the sensitivity-FDR curve(AUSFC):
@@ -422,7 +422,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     ausfc = sum(diff(log10(fdr[range]))*rollmean(recall[range],2)) / sum_area
   }
   # write the AUSFC on the plot with the precision of 4 digits:
-  text(0.0005, 0.95, paste( "AUSFC: ", round(ausfc, digits=4) ))
+  text(0.05, 0.95, paste( "AUSFC: ", round(ausfc, digits=4) ))
   dev.off()
 
   # plot TPR vs FPR
@@ -438,7 +438,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
   }
   pdf( file = paste(dir, '/', prefix, "_motif_", motifNumber, '_pROC.pdf', sep = "" ) )
   plot(FPR[1:rbound], TPR[1:rbound],
-       main=paste(prefix, "_motif_", motifNumber, " FPR vs. TPR ", sep="\n\n"),
+       main=paste(prefix, "_motif_", motifNumber, " FPR vs. TPR ", sep=""),
        xlab="FPR", ylab="TPR", xlim=c(0,0.05), ylim=c(0,1),
        type='l', lwd=2.5, col="deepskyblue")
   # compute the area under the partical TP-FP curve(AUC5):
