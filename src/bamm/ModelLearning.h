@@ -66,8 +66,8 @@ private:
 
 	// test on the alpha optimization
 	void					debug_optimization_alphas( float** alphas, int order, int width );	// only for testing, will be removed afterwards
-	std::vector<float> 		debug_first_term_of_derivative_with_prior( int K );
-	std::vector<float> 		debug_second_term_of_derivative( int K );
+	float 					debug_first_term_of_derivative_with_prior( int order, int position );
+	float 					debug_second_term_of_derivative( int order, int position );
 
 	// calculate the prior of alphas
 	float					calc_prior_alphas( float** alphas, int order );
