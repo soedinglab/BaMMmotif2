@@ -58,11 +58,11 @@ private:
 							// update alphas for all the orders up to K, given the learning rate
 	inline void				stochastic_optimize_alphas( int order, int width, float learningrate, int t );
 
-							// calculate the log posterior of alphas
-	float					calc_logPosterior_alphas( float** alphas, int order );
-
 							// calculate the gradient of the log posterior of alphas
 	float					calc_gradient_alphas( float** alphas, int order, int position );
+
+	// calculate the log posterior of alphas
+	float					calc_logCondProb_alphas( float** alphas, int order, int position );
 
 	// test on the alpha optimization
 	void					debug_optimization_alphas( float** alphas, int order, int width );	// only for testing, will be removed afterwards
