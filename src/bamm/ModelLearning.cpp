@@ -355,6 +355,7 @@ void ModelLearning::GibbsSampling(){
 	std::string opath_log = opath + ".logposterior";
 	std::string opath_condProb = opath + ".condProb";
 	std::string opath_alphas = opath + ".alphas";
+	std::string opath_gradient = opath + ".gradient";
 	std::string opath_vdiff = opath + ".vdiff";
 	std::string opath_first = opath + "_debug.first";
 	std::string opath_second = opath + "_debug.second";
@@ -363,6 +364,7 @@ void ModelLearning::GibbsSampling(){
 	std::ofstream ofile_vdiff( opath_vdiff.c_str() );
 	std::ofstream ofile_condProb( opath_condProb.c_str() );
 	std::ofstream ofile_alphas( opath_alphas.c_str() );
+	std::ofstream ofile_gradient( opath_gradient.c_str() );
 	std::ofstream ofile_first( opath_first );
 	std::ofstream ofile_second( opath_second );
 
@@ -448,6 +450,12 @@ void ModelLearning::GibbsSampling(){
 				}
 				ofile_vdiff << std::endl;
 
+				for( j = 0; j < W; j++ ){
+					ofile_alphas << std::setprecision(3) << alpha_[K][j] << '\t';
+					ofile_gradient << calc_gradient_alphas( alpha_, K, j ) << '\t';
+				}
+				ofile_alphas << std::endl;
+				ofile_gradient << std::endl;
 //			}
 
 		}
@@ -465,20 +473,34 @@ void ModelLearning::GibbsSampling(){
 			motif_->updateVz_n( n_z_, alpha_, K );
 
 //			std::vector<float> first_term = debug_first_term_of_derivative( K );
-			std::vector<float> second_term = debug_second_term_plus_prior_of_derivative( K );
+//			std::vector<float> second_term = debug_second_term_plus_prior_of_derivative( K );
 
 			for( j = 0; j < W; j++ ){
 //				ofile_first << first_term[j] << '\t';
-				ofile_second << second_term[j] << '\t';
-				ofile_condProb << std::setprecision(3) << expf( calc_logCondProb_alphas( alpha_, K, j ) ) << '\t';
-				ofile_log << calc_logCondProb_alphas( alpha_, K, j ) << '\t';
+//				ofile_second << second_term[j] << '\t';
 				ofile_alphas << std::setprecision(3) << alpha_[K][j] << '\t';
+				ofile_gradient << calc_gradient_alphas( alpha_, K, j ) << '\t';
 			}
+
+/*			float sum_gradient = 0.0f;
+			for( k = 0; k < K + 1; k++ ){
+				for( j = 0; j < W; j++ ){
+					sum_gradient += calc_gradient_alphas( alpha_, k, j );
+				}
+			}
+			ofile_gradient << sum_gradient << std::endl;*/
+
+			ofile_condProb << std::setprecision(3) << expf( calc_logCondProb_alphas( alpha_, K ) ) << '\t';
+			ofile_log << calc_logCondProb_alphas( alpha_, K ) << '\t'
+					<< calc_prior_alphas( alpha_, K ) << '\t'
+					<< calc_likelihood_alphas( alpha_, K ) << '\t';
+
 			ofile_first << std::endl;
 			ofile_second << std::endl;
 			ofile_condProb << std::endl;
 			ofile_log << std::endl;
 			ofile_alphas << std::endl;
+			ofile_gradient << std::endl;
 		}
 
 
@@ -642,7 +664,7 @@ void ModelLearning::stochastic_optimize_alphas( int K, int W, float eta, int ite
 			m2 = m2_t_[k][j] / ( 1 - powf( beta2, t ) );
 
 			// update parameter a due to alphas
-			a -= eta * m1 / ( ( sqrtf( m2 ) + epsilon ) * sqrtf( t ) );
+			a += eta * m1 / ( ( sqrtf( m2 ) + epsilon ) * sqrtf( t ) );
 
 			alpha_[k][j] = expf( a );
 		}
@@ -706,56 +728,61 @@ float ModelLearning::calc_gradient_alphas( float** alpha, int k, int j ){
 	return gradient;
 }
 
-float ModelLearning::calc_logCondProb_alphas( float** alpha, int k, int j ){
+float ModelLearning::calc_logCondProb_alphas( float** alpha, int k ){
 	// calculate partial log conditional probabilities of alphas due to equation 46 in the theory
 
-	float logPosterior = 0.0f;
+	float logCondProb = 0.0f;
 	float*** v = motif_->getV();
 	float** v_bg = bg_->getV();
 	int N = static_cast<int>( posSeqs_.size() ) - 1;
-	int y, y2;
+	int W = motif_->getW();
+	int y, y2, j;
 
-	// the first term of equation 46
-	logPosterior -= 2.0f * logf( alpha[k][j] );
+	for( j = 0; j < W; j++ ){
 
-	// the second term of equation 46
-	logPosterior -= Global::modelBeta * powf( Global::modelGamma, ( float )k ) / alpha[k][j];
+		// the first term of equation 46
+		logCondProb -= 2.0f * logf( alpha[k][j] );
 
-	// the third term of equation 46
-	logPosterior += ( float )ipow( Y_[1], k ) * boost::math::lgamma( alpha[k][j] );
+		// the second term of equation 46
+		logCondProb -= Global::modelBeta * powf( Global::modelGamma, ( float )k ) / alpha[k][j];
 
-	// the forth term of equation 46
-	for( y = 0; y < Y_[k+1]; y++ ){
+		// the third term of equation 46
+		logCondProb += ( float )ipow( Y_[1], k ) * boost::math::lgamma( alpha[k][j] );
 
-		y2 = y % Y_[k];									// cutoff the first nucleotide in the (k+1)-mer
+		// the forth term of equation 46
+		for( y = 0; y < Y_[k+1]; y++ ){
 
-		if( k == 0 ){
-			// the first part
-			logPosterior += boost::math::lgamma( ( float )n_z_[k][y][j] + alpha[k][j] * v_bg[k][y] );
+			y2 = y % Y_[k];									// cutoff the first nucleotide in the (k+1)-mer
 
-			// the second part
-			logPosterior -= boost::math::lgamma( alpha[k][j] * v_bg[k][y] );
+			if( k == 0 ){
+				// the first part
+				logCondProb += boost::math::lgamma( ( float )n_z_[k][y][j] + alpha[k][j] * v_bg[k][y] );
 
-		} else {
-			// the first part
-			logPosterior += boost::math::lgamma( ( float )n_z_[k][y][j] + alpha[k][j] * v[k-1][y2][j] );
+				// the second part
+				logCondProb -= boost::math::lgamma( alpha[k][j] * v_bg[k][y] );
 
-			// the second part
-			logPosterior -= boost::math::lgamma( alpha[k][j] * v[k-1][y2][j] );
+			} else {
+				// the first part
+				logCondProb += boost::math::lgamma( ( float )n_z_[k][y][j] + alpha[k][j] * v[k-1][y2][j] );
 
+				// the second part
+				logCondProb -= boost::math::lgamma( alpha[k][j] * v[k-1][y2][j] );
+
+			}
 		}
+
+		// the last term of equation 46
+		for( y = 0; y < Y_[k]; y++ ){
+			if( j == 0 ){
+				logCondProb -= boost::math::lgamma( /*( float )N / ( float )Y_[k]*/ + alpha[k][j] );
+			} else {
+				logCondProb -= boost::math::lgamma( ( float )n_z_[k][y][j-1] + alpha[k][j] );
+			}
+		}
+
 	}
 
-	// the last term of equation 46
-	for( y = 0; y < Y_[k]; y++ ){
-		if( j == 0 ){
-			logPosterior -= boost::math::lgamma( ( float )N / ( float )Y_[k] + alpha[k][j] );
-		} else {
-			logPosterior -= boost::math::lgamma( ( float )n_z_[k][y][j-1] + alpha[k][j] );
-		}
-	}
-
-	return logPosterior;
+	return logCondProb;
 }
 
 void ModelLearning::debug_optimization_alphas( float** alphas, int K, int W ){
@@ -774,10 +801,10 @@ void ModelLearning::debug_optimization_alphas( float** alphas, int K, int W ){
 			std::cout << std::setprecision(8) << "alpha = " << alphas[k][j] << '\t';
 			// calculate the delta of log posterior
 			alphas[k][j] += stepsize;
-			diff = calc_logCondProb_alphas( alphas, k, j );
+			diff = calc_logCondProb_alphas( alphas, k );
 
 			alphas[k][j] -= 2.0f * stepsize;
-			diff -= calc_logCondProb_alphas( alphas, k, j );
+			diff -= calc_logCondProb_alphas( alphas, k );
 
 			diff /= ( 2.0f * stepsize );
 
@@ -795,19 +822,37 @@ void ModelLearning::debug_optimization_alphas( float** alphas, int K, int W ){
 	std::cout << std::endl;
 }
 
-std::vector<float> ModelLearning::debug_first_term_of_derivative( int k ){
+std::vector<float> ModelLearning::debug_first_term_of_derivative_with_prior( int k ){
 
 	float*** v = motif_->getV();
 	std::vector<float> sum;
 
-	size_t count = 0;
 	for( int j = 0; j < motif_->getW(); j++ ){
 		float s = 0.0f;
+		// calculate the prior
+		float prior = -2 / alpha_[k][j] + Global::modelBeta *
+				powf( Global::modelGamma, ( float )k ) / powf( alpha_[k][j], 2.0f );
 		for( int y = 0; y < Y_[k+1]; y++ ){
-			count++;
 			int y2 = y % Y_[k];
+
 			s += v[k-1][j][y2] * ( logf( v[k][y][j] / v[k-1][y2][j] ) );
 		}
+
+		float second_term = 0.0f;
+		float N = ( float )posSeqs_.size();
+		for( int y = 0; y < Y_[k+1]; y++ ){
+			int y2 = y % Y_[k];
+			int yk = y / Y_[1];
+			if( j > 0 ){
+				second_term = 0.5f * ( v[k][y][j] - v[k-1][y2][j] ) / ( v[k][y][j] * ( ( float )n_z_[k][yk][j-1] + 1.0e-8 ) );
+			} else {
+				second_term = 0.5f * ( v[k][y][j] - v[k-1][y2][j] ) / ( v[k][y][j] * N );
+			}
+		}
+		s -= prior;
+
+		s -= second_term;
+
 		sum.push_back( s );
 	}
 
@@ -815,7 +860,7 @@ std::vector<float> ModelLearning::debug_first_term_of_derivative( int k ){
 
 }
 
-std::vector<float> ModelLearning::debug_second_term_plus_prior_of_derivative( int k ){
+std::vector<float> ModelLearning::debug_second_term_of_derivative( int k ){
 
 	float*** v = motif_->getV();
 	std::vector<float> sum;
@@ -824,33 +869,94 @@ std::vector<float> ModelLearning::debug_second_term_plus_prior_of_derivative( in
 
 	for( int j = 0; j < motif_->getW(); j++ ){
 		float s = 0.0f;
-		// first sum up prior
-		float prior = -2.0f / alpha_[k][j] + Global::modelBeta *
-				powf( Global::modelGamma, ( float )k ) / powf( alpha_[k][j], 2.0f );
-		float first_term = 0.0f;
-		float second_term = 0.0f;
+
 		for( int y = 0; y < Y_[k]; y++ ){
 			if( j > 0 ){
-				first_term = 1.5f * ( float )n_z_[k][y][j-1] / ( ( ( float )n_z_[k][y][j-1] + alpha_[k][j] ) * alpha_[k][j] );
+				s = 1.5f * ( float )n_z_[k][y][j-1] / ( ( ( float )n_z_[k][y][j-1] + alpha_[k][j] ) * alpha_[k][j] );
 			} else {
-				first_term = 1.5f * ( float )n_z_[k][y][j-1] / ( ( N + alpha_[k][j] ) * alpha_[k][j] );
+				s = 1.5f * ( float )n_z_[k][y][j-1] / ( ( N + alpha_[k][j] ) * alpha_[k][j] );
 			}
 		}
-		for( int y = 0; y < Y_[k+1]; y++ ){
-			int y2 = y % Y_[k];
-			int yk = y / Y_[1];
-			if( j > 0 ){
-				second_term = 0.5f * ( v[k][y][j] - v[k-1][y2][j] ) / ( v[k][y][j] * ( ( float )n_z_[k][yk][j-1] + 1.0e-8f ) );
-			} else {
-				second_term = 0.5f * ( v[k][y][j] - v[k-1][y2][j] ) / ( v[k][y][j] * N );
-			}
-		}
-		s = prior + first_term + second_term;
 
 		sum.push_back( s );
 	}
 	return sum;
 }
+
+float ModelLearning::calc_prior_alphas( float** alpha, int k ){
+	// calculate partial log conditional probabilities of alphas due to equation 46 in the theory
+
+	float logCondProb = 0.0f;
+	int W = motif_->getW();
+
+	for( int j = 0; j < W; j++ ){
+
+		// the first term of equation 46
+		logCondProb -= 2.0f * logf( alpha[k][j] );
+
+		// the second term of equation 46
+		logCondProb -= Global::modelBeta * powf( Global::modelGamma, ( float )k ) / alpha[k][j];
+
+	}
+
+	return logCondProb;
+}
+
+float ModelLearning::calc_likelihood_alphas( float** alpha, int k ){
+	// calculate partial log conditional probabilities of alphas due to equation 46 in the theory
+
+	float logLikelihood = 0.0f;
+	float*** v = motif_->getV();
+	float** v_bg = bg_->getV();
+	int N = static_cast<int>( posSeqs_.size() ) - 1;
+	int W = motif_->getW();
+	int y, y2, j;
+
+	for( j = 0; j < W; j++ ){
+
+		// the third term of equation 46
+		logLikelihood += ( float )ipow( Y_[1], k ) * boost::math::lgamma( alpha[k][j] );
+
+		// the forth term of equation 46
+		for( y = 0; y < Y_[k+1]; y++ ){
+
+			y2 = y % Y_[k];									// cutoff the first nucleotide in the (k+1)-mer
+
+			if( k == 0 ){
+				// the first part
+				logLikelihood += boost::math::lgamma( ( float )n_z_[k][y][j] + alpha[k][j] * v_bg[k][y] );
+
+				// the second part
+				logLikelihood -= boost::math::lgamma( alpha[k][j] * v_bg[k][y] );
+
+			} else {
+				// the first part
+				logLikelihood += boost::math::lgamma( ( float )n_z_[k][y][j] + alpha[k][j] * v[k-1][y2][j] );
+
+				// the second part
+				logLikelihood -= boost::math::lgamma( alpha[k][j] * v[k-1][y2][j] );
+
+			}
+
+			// the missing part for v_bg
+//			logLikelihood -= ( float )n_z_[k][y][j] * logf( v_bg[k][y] );
+
+		}
+
+		// the last term of equation 46
+		for( y = 0; y < Y_[k]; y++ ){
+			if( j == 0 ){
+				logLikelihood -= boost::math::lgamma( /*( float )N / ( float )Y_[k] + */alpha[k][j] );
+			} else {
+				logLikelihood -= boost::math::lgamma( ( float )n_z_[k][y][j-1] + alpha[k][j] );
+			}
+		}
+
+	}
+
+	return logLikelihood;
+}
+
 
 Motif* ModelLearning::getMotif(){
 	return motif_;

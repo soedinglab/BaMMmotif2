@@ -62,12 +62,18 @@ private:
 	float					calc_gradient_alphas( float** alphas, int order, int position );
 
 	// calculate the log posterior of alphas
-	float					calc_logCondProb_alphas( float** alphas, int order, int position );
+	float					calc_logCondProb_alphas( float** alphas, int order );
 
 	// test on the alpha optimization
 	void					debug_optimization_alphas( float** alphas, int order, int width );	// only for testing, will be removed afterwards
-	std::vector<float> 		debug_first_term_of_derivative( int K );
-	std::vector<float> 		debug_second_term_plus_prior_of_derivative( int K );
+	std::vector<float> 		debug_first_term_of_derivative_with_prior( int K );
+	std::vector<float> 		debug_second_term_of_derivative( int K );
+
+	// calculate the prior of alphas
+	float					calc_prior_alphas( float** alphas, int order );
+
+	// calculate the likelihood of alphas
+	float					calc_likelihood_alphas( float** alphas, int order );
 
 	std::vector<int>		Y_;					// contains 1 at position 0
 												// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
