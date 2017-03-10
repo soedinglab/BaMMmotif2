@@ -51,7 +51,8 @@ float				Global::q = 0.9f;						// prior probability for a positive sequence to 
 // CGS (Collapsed Gibbs sampling) options
 bool				Global::CGS = false;					// flag to trigger Collapsed Gibbs sampling
 int 				Global::maxCGSIterations = 200;			// maximum number of iterations for CGS
-bool				Global::noAlphaUpdating = false;		// disable alpha sampling in CGS
+bool				Global::noAlphaOptimization = false;	// disable alpha optimization in CGS
+bool				Global::alphaSampling = false;			// enable alpha sampling in CGS
 bool				Global::noZQSampling = false;			// disable q sampling in CGS
 float				Global::eta = 0.01f;					// learning rate for Gibbs sampling, only for tuning
 int					Global::interval = 10;					// interval for sampling z and q, only for tuning
@@ -251,7 +252,8 @@ int Global::readArguments( int nargs, char* args[] ){
 	// CGS options
 	if( opt >> GetOpt::OptionPresent( "CGS", CGS ) ){
 		opt >> GetOpt::Option( "maxCGSIterations", maxCGSIterations );
-		opt >> GetOpt::OptionPresent( "noAlphaUpdating", noAlphaUpdating );
+		opt >> GetOpt::OptionPresent( "noAlphaOptimization", noAlphaOptimization );
+		opt >> GetOpt::OptionPresent( "AlphaSampling", alphaSampling );
 		opt >> GetOpt::OptionPresent( "noZQSampling", noZQSampling );
 		opt >> GetOpt::Option( "eta", eta );
 		opt >> GetOpt::Option( "interval", interval );
