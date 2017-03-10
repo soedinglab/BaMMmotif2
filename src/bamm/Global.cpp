@@ -259,6 +259,9 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "debugAlphas", debugAlphas );
 	opt >> GetOpt::OptionPresent( "generatePseudoSet", generatePseudoSet );
 
+	// saturation options
+	opt >> GetOpt::Option( 'q', q );
+
 	// FDR options
 	if( opt >> GetOpt::OptionPresent( "FDR", FDR ) ){
 		opt >> GetOpt::Option( 'm', "mFold", mFold  );
