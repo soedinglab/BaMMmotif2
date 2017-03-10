@@ -36,16 +36,16 @@ private:
 	float**					s_;					// log scores of each (K+1)-mer at each position
 	float** 				r_;		        	// responsibilities at position i in sequence n
 	float*** 				n_;	            	// fractional counts n for (k+1)-mers y at motif position j
-	int***					n_z_;				// n^z_j(y_1:k), the k-mer counts(for 0<k<K+2 ) with y_k's rightmost nucleotide at position j
-
+	int***					n_z_;				// n^z_j(y_1:k), the k-mer counts(for 0<k<K+2 ) with y_k's
+												// rightmost nucleotide at position j
 	int*					z_;					// observed position of motif in each sequence
 	float**					pos_;				// positional prior, pos[i]=0 means no motif is found on the sequence
 	float** 				alpha_;	        	// pseudo-count hyper-parameter for order k and motif position j
 	float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif
-
 	float 					llikelihood_ = 0.0f;// log likelihood for each iteration
-	float**					m1_t_;				// first moment for alpha optimizer
-	float**					m2_t_;				// second moment for alpha optimizer
+	float**					m1_t_;				// first moment for alpha optimizer (ADAM)
+	float**					m2_t_;				// second moment for alpha optimizer (ADAM)
+	float**					prob_a_;			// log conditional probabilities for a ( a = log(alpha) )
 	std::vector<Sequence*>	posSeqs_;			// copy positive sequences due to folds
 
 	void 					EStep();			// E-step
@@ -56,13 +56,19 @@ private:
 	void					Gibbs_sampling_z_q();
 
 							// update alphas for all the orders up to K, given the learning rate
-	inline void				stochastic_optimize_alphas( int order, int width, float learningrate, int t );
+	void				stochastic_optimize_alphas( int order, int width, float learningrate, int t );
 
 							// calculate the gradient of the log posterior of alphas
 	float					calc_gradient_alphas( float** alphas, int order, int position );
 
-	// calculate the log posterior of alphas
+							// calculate the log posterior of alphas
 	float					calc_logCondProb_alphas( float** alphas, int order );
+
+							// calculate the log posterior of a's
+	float					calc_logCondProb_a( float** alphas, int order, int position );
+
+							// Gibbs sampling alphas with Metropolis-Hastings algorithm
+	void					GibbsMH_sampling_alphas();
 
 	// test on the alpha optimization
 	void					debug_optimization_alphas( float** alphas, int order, int width );	// only for testing, will be removed afterwards

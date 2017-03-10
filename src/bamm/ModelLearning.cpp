@@ -63,8 +63,6 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int
 		r_[n] = ( float* )calloc( LW2, sizeof( float ) );
 		pos_[n] = ( float* )calloc( LW2, sizeof( float ) );
 		z_[n] = rand() % LW2;
-//		z_[n] = 103; //todo: fix z for testing
-//		z_[n] = 97; //todo: fix z for testing
 	}
 
 	// allocate memory for n_[k][y][j] and probs_[k][y][j] and initialize them
@@ -83,10 +81,12 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int
 	alpha_ = ( float** )malloc( ( K+1 ) * sizeof( float* ) );
 	m1_t_ = ( float** )calloc( K+1, sizeof( float* ) );
 	m2_t_ = ( float** )calloc( K+1, sizeof( float* ) );
+	prob_a_ = ( float** )calloc( K+1, sizeof( float* ) );
 	for( k = 0; k < K+1; k++ ){
 		alpha_[k] = ( float* )malloc( W * sizeof( float ) );
 		m1_t_[k] = ( float* )calloc( W, sizeof( float ) );
 		m2_t_[k] = ( float* )calloc( W, sizeof( float ) );
+		prob_a_[k] = ( float* )calloc( W, sizeof( float ) );
 		for( j = 0; j < W; j++ ){
 			alpha_[k][j] = Global::modelAlpha[k];
 		}
@@ -198,7 +198,7 @@ int ModelLearning::EM(){
 			std::cout << EMIterations << " iteration:	";
 			std::cout << "para_diff = " << v_diff << ",	";
 			std::cout << "log likelihood = " << llikelihood_ << " 	";
-			if( llikelihood_diff < 0 && EMIterations > 1) std::cout << " decreasing... ";
+			if( llikelihood_diff < 0 && EMIterations > 1 ) std::cout << " decreasing... ";
 			std::cout << std::endl;
 		}
 
@@ -358,13 +358,14 @@ void ModelLearning::GibbsSampling(){
 	std::string opath_alphas = opath + ".alphas";
 	std::string opath_gradient = opath + ".gradient";
 	std::string opath_vdiff = opath + ".vdiff";
+	std::string opath_logAs = opath + ".logAs";
 
 	std::ofstream ofile_log( opath_log.c_str() );
 	std::ofstream ofile_vdiff( opath_vdiff.c_str() );
 	std::ofstream ofile_condProb( opath_condProb.c_str() );
 	std::ofstream ofile_alphas( opath_alphas.c_str() );
 	std::ofstream ofile_gradient( opath_gradient.c_str() );
-
+	std::ofstream ofile_logAs( opath_logAs.c_str() );
 
 	float*** v_prev = ( float*** )calloc( K+1, sizeof(float**) );
 	for( k = 0; k < K+1; k++ ){
@@ -411,7 +412,6 @@ void ModelLearning::GibbsSampling(){
 
 		iteration++;
 
-//		std::cout << iteration << " iter:	" << std::endl;
 		// get the previous v before updating alphas and z and q
 		for( k = 0; k < K+1; k++ ){
 			for( y = 0; y < Y_[k+1]; y++ ){
@@ -422,10 +422,10 @@ void ModelLearning::GibbsSampling(){
 		}
 
 		// sampling z and q
-//		if( !Global::noZQSampling )		Gibbs_sampling_z_q();
+		if( !Global::noZQSampling )		Gibbs_sampling_z_q();
 
 		// update alphas:
-		if( !Global::noAlphaUpdating ){
+		if( !Global::noAlphaOptimization ){
 
 //			if( iteration % Global::interval == 0 ){
 
@@ -435,7 +435,41 @@ void ModelLearning::GibbsSampling(){
 			// update model parameter v
 			motif_->updateVz_n( n_z_, alpha_, K );
 
+			// todo: write out the difference of v's for comparison
+			for( k = 0; k < K+1; k++ ){
+				float v_diff = 0.0f;
+				for( y = 0; y < Y_[k+1]; y++ ){
+					for( j = 0; j < W; j++ ){
+						v_diff += fabsf( motif_->getV()[k][y][j] - v_prev[k][y][j] );
+					}
+				}
+				ofile_vdiff << v_diff << '\t';
+			}
+			ofile_vdiff << std::endl;
+
+			for( j = 0; j < W; j++ ){
+				ofile_alphas << alpha_[K][j] << '\t';
+				ofile_gradient << calc_gradient_alphas( alpha_, K, j ) << '\t';
+				ofile_logAs << calc_logCondProb_a( alpha_, K, j ) << '\t';
+
+			}
+			ofile_alphas << std::endl;
+			ofile_gradient << std::endl;
+			ofile_logAs << std::endl;
+
+			ofile_condProb << expf( calc_logCondProb_alphas( alpha_, K ) ) << '\t';
+			ofile_log << calc_logCondProb_alphas( alpha_, K ) << '\t'
+					<< calc_prior_alphas( alpha_, K ) << '\t'
+					<< calc_likelihood_alphas( alpha_, K ) << '\t';
+			ofile_log << std::endl;
+			ofile_condProb << std::endl;
+
+		} else if( Global::alphaSampling ){
+			// sample alpha in the exponential space using Metreopolis-Hastings algorithm
+			GibbsMH_sampling_alphas();
+
 		} else if( Global::debugAlphas ){
+
 			// debug the optimization of alphas
 			if( iteration <= 150 ){
 				// update alphas by stochastic optimization
@@ -469,10 +503,12 @@ void ModelLearning::GibbsSampling(){
 				for( j = 0; j < W; j++ ){
 					ofile_alphas << alpha_[K][j] << '\t';
 					ofile_gradient << calc_gradient_alphas( alpha_, K, j ) << '\t';
+					ofile_logAs << calc_logCondProb_a( alpha_, K, j ) << '\t';
 
 				}
 				ofile_alphas << std::endl;
 				ofile_gradient << std::endl;
+				ofile_logAs << std::endl;
 
 				ofile_condProb << expf( calc_logCondProb_alphas( alpha_, K ) ) << '\t';
 				ofile_log << calc_logCondProb_alphas( alpha_, K ) << '\t'
@@ -633,9 +669,6 @@ void ModelLearning::stochastic_optimize_alphas( int K, int W, float eta, int ite
 			// get gradients w.r.t. stochastic objective at timestep t
 			gradient = alpha_[k][j] * calc_gradient_alphas( alpha_, k, j );
 
-			// print gradient for checking:
-			if( k == K ) std::cout << gradient << '\t';
-
 			// update biased first moment estimate
 			m1_t_[k][j] = beta1 * m1_t_[k][j] + ( 1 - beta1 ) * gradient;
 
@@ -655,8 +688,31 @@ void ModelLearning::stochastic_optimize_alphas( int K, int W, float eta, int ite
 			alpha_[k][j] = expf( a );
 		}
 
-		if( k == K ) std::cout << std::endl;
+	}
 
+}
+
+void ModelLearning::GibbsMH_sampling_alphas(){
+	// Gibbs sampling alphas in exponential space with Metropolis-Hastings algorithm
+
+	// generated a random number, which is seeded by 42
+	std::mt19937 rng( 42 );
+
+	int K = Global::modelOrder;
+	int W = motif_->getW();
+	for( int k = 0; k < K+1; k++ ){
+		for( int j = 0; j < W; j++ ){
+			float prob_a_prev = calc_logCondProb_a( alpha_, k, j );
+			// draw a new a from N(a, 1)
+			std::normal_distribution<float> norm_dist( logf( alpha_[k][j] ), 1.0f );
+			alpha_[k][j] = expf( norm_dist( rng ) );
+
+			// accept this trial sample with a probability
+			float prob_a_new = calc_logCondProb_a( alpha_, k, j );
+
+			float ratio = prob_a_new / prob_a_prev;
+			prob_a_[k][j] = ( ratio < 1 ) ? ratio : 1;
+		}
 	}
 
 }
@@ -707,7 +763,7 @@ float ModelLearning::calc_gradient_alphas( float** alpha, int k, int j ){
 
 		if( j == 0 || k == 0 ){
 
-			gradient -= boost::math::digamma( ( float )N / ( float )Y_[k] + alpha[k][j] );
+			gradient -= boost::math::digamma( ( float )N + alpha[k][j] );
 
 		} else {
 
@@ -776,6 +832,64 @@ float ModelLearning::calc_logCondProb_alphas( float** alpha, int k ){
 	}
 
 	return logCondProb;
+}
+
+float ModelLearning::calc_logCondProb_a( float** alpha, int k, int j ){
+	// calculate partial log conditional probabilities of a's due to equation 50 in the theory
+
+	float logCondProbA = 0.0f;
+	float*** v = motif_->getV();
+	float** v_bg = bg_->getV();
+	int N = static_cast<int>( posSeqs_.size() ) - 1;
+	int y, y2;
+
+
+	// the first term of equation 46
+	logCondProbA -= logf( alpha[k][j] );
+
+	// the second term of equation 46
+	logCondProbA -= Global::modelBeta * powf( Global::modelGamma, ( float )k ) / alpha[k][j];
+
+	// the third term of equation 46
+	logCondProbA += ( float )ipow( Y_[1], k ) * boost::math::lgamma( alpha[k][j] );
+
+	// the forth term of equation 46
+	for( y = 0; y < Y_[k+1]; y++ ){
+
+		y2 = y % Y_[k];									// cut off the first nucleotide in the (k+1)-mer
+
+		if( k == 0 ){
+			// the first part
+			logCondProbA += boost::math::lgamma( ( float )n_z_[k][y][j] + alpha[k][j] * v_bg[k][y] );
+
+			// the second part
+			logCondProbA -= boost::math::lgamma( alpha[k][j] * v_bg[k][y] );
+
+		} else {
+			// the first part
+			logCondProbA += boost::math::lgamma( ( float )n_z_[k][y][j] + alpha[k][j] * v[k-1][y2][j] );
+
+			// the second part
+			logCondProbA -= boost::math::lgamma( alpha[k][j] * v[k-1][y2][j] );
+
+		}
+	}
+
+	// the last term of equation 46
+	for( y = 0; y < Y_[k]; y++ ){
+
+		if( j == 0 || k == 0 ){
+
+			logCondProbA -= boost::math::lgamma( ( float )N + alpha[k][j] );
+
+		} else {
+
+			logCondProbA -= boost::math::lgamma( ( float )n_z_[k-1][y][j-1] + alpha[k][j] );
+
+		}
+	}
+
+	return logCondProbA;
 }
 
 float ModelLearning::calc_prior_alphas( float** alpha, int k ){
@@ -866,7 +980,7 @@ void ModelLearning::debug_optimization_alphas( float** alphas, int K, int W ){
 		float diff;
 		for( j = 0; j < W; j++ ){
 			std::cout << "j = " << j << '\t';
-			std::cout << std::setprecision(8) << "alpha = " << alphas[k][j] << '\t';
+			std::cout << "alpha = " << alphas[k][j] << '\t';
 			// calculate the delta of log posterior
 			alphas[k][j] += stepsize;
 			diff = calc_logCondProb_alphas( alphas, k );
@@ -918,15 +1032,6 @@ float ModelLearning::debug_first_term_of_derivative_with_prior( int k, int j ){
 		if( j > 0 ){
 			third_term = 0.5f * ( v[k][y][j] - v[k-1][y2][j] ) / ( v[k][y][j] * ( ( float )n_z_[k-1][yk][j-1] + 1.0e-8f ) );
 
-/*
-			if( ( third_term - prior ) < 0 ){
-				std::cout << "v[" << k << "][" << y << "][" << j << "] = " << v[k][y][j] << '\t';
-				std::cout << "v[" << k-1 << "][" << y2 << "][" << j << "] = " << v[k-1][y2][j] << '\t';
-				std::cout << "n_z_[" << k-1 << "][" << yk << "][" << j-1 << "] = " << n_z_[k-1][yk][j-1]  << '\t'
-						<< "third_term = " << third_term << std::endl;
-			}
-*/
-
 		} else {
 			third_term = 0.5f * ( v[k][y][j] - v[k-1][y2][j] ) / ( v[k][y][j] * N );
 		}
@@ -935,12 +1040,6 @@ float ModelLearning::debug_first_term_of_derivative_with_prior( int k, int j ){
 	s -= prior;
 
 	s -= third_term;
-
-/*
-	if( s < 0 ){
-		std::cout << s << '\t' << prior << '\t' << third_term << std::endl;
-	}
-*/
 
 	return s;
 
