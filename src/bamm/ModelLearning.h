@@ -43,6 +43,7 @@ private:
 	float** 				alpha_;	        	// pseudo-count hyper-parameter for order k and motif position j
 	float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif
 	float 					llikelihood_ = 0.0f;// log likelihood for each iteration
+	float* 					normFactor_;		// log likelihood for each iteration
 	float**					m1_t_;				// first moment for alpha optimizer (ADAM)
 	float**					m2_t_;				// second moment for alpha optimizer (ADAM)
 	float**					prob_a_;			// log conditional probabilities for a ( a = ln(alpha) )

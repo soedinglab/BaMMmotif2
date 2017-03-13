@@ -54,10 +54,11 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int
 		s_[y] = ( float* )calloc( W, sizeof( float ) );
 	}
 
-	// allocate memory for r_[n][i], pos_[n][i], z_[n] and initialize them
+	// allocate memory for r_[n][i], pos_[n][i], z_[n], normFactor_[n] and initialize them
 	r_ = ( float** )calloc( posSeqs_.size(), sizeof( float* ) );
 	pos_ = ( float** )calloc( posSeqs_.size(), sizeof( float* ) );
 	z_ = ( int* )calloc( posSeqs_.size(), sizeof( int ) );
+	normFactor_ = ( float* )calloc( posSeqs_.size(), sizeof( float ) );
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 		LW2 = posSeqs_[n]->getL() - W + 2;
 		r_[n] = ( float* )calloc( LW2, sizeof( float ) );
@@ -108,6 +109,7 @@ ModelLearning::~ModelLearning(){
 	free( r_ );
 	free( pos_ );
 	free( z_ );
+	free( normFactor_ );
 
 	for( int k = 0; k < Global::modelOrder+1; k++ ){
 		for( int y = 0; y < Y_[k+1]; y++ ){
@@ -226,17 +228,19 @@ void ModelLearning::EStep(){
 	int W = motif_->getW();
 	llikelihood_ = 0.0f;										// reset log likelihood
 
+	for( size_t n = 0; n < posSeqs_.size(); n++ ){
+		normFactor_[n] = 0.0f;
+	}
 	// calculate responsibilities r_[n][i] at position i in sequence n
 	// n runs over all sequences
 	// and parallel the code
-//	#pragma omp parallel for
+	#pragma omp parallel for
 
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 
 		int L = posSeqs_[n]->getL();
 		int LW1 = L - W + 1;
 		int LW2 = L - W + 2;
-		float normFactor = 0.0f;								// reset normalization factor
 
 		// reset r_[n][i] and pos_[n][i]
 		for( int i = 0; i < LW2; i++ ){
@@ -270,14 +274,17 @@ void ModelLearning::EStep(){
 			if( r_[n][i] != 0.0f ){
 				r_[n][i] *= pos_[n][i];
 			}
-			normFactor += r_[n][i];
+			normFactor_[n] += r_[n][i];
 		}
 
 		// normalize responsibilities
 		for( int i = 0; i < LW2; i++ ){
-			r_[n][i] /= normFactor;
+			r_[n][i] /= normFactor_[n];
 		}
-		llikelihood_ += logf( normFactor );
+	}
+
+	for( size_t n = 0; n < posSeqs_.size(); n++ ){
+		llikelihood_ += logf( normFactor_[n] );
 	}
 }
 
@@ -1100,6 +1107,7 @@ void ModelLearning::write( int N ){
 						+ Global::posSequenceBasename + "_motif_" + std::to_string( N+1 );
 
 	if( Global::EM ){
+/*
 		// output (k+1)-mer counts n[k][y][j]
 		std::string opath_n = opath + ".EMcount";
 		std::ofstream ofile_n( opath_n.c_str() );
@@ -1112,28 +1120,30 @@ void ModelLearning::write( int N ){
 			}
 			ofile_n << std::endl;
 		}
+*/
 
 		// output responsibilities r[n][i] and position(s) of motif(s) pos_[n][i]
-		std::string opath_r = opath + ".EMweight";
+//		std::string opath_r = opath + ".EMweight";
 		std::string opath_pos = opath + ".EMposition";
-		std::ofstream ofile_r( opath_r.c_str() );
+//		std::ofstream ofile_r( opath_r.c_str() );
 		std::ofstream ofile_pos( opath_pos.c_str() );
 		ofile_pos << "seq" << '\t' << "positions" << std::endl;
 		float cutoff = 0.3f;									// threshold for having a motif on the sequence in term of responsibilities
 		for( size_t n = 0; n < posSeqs_.size(); n++ ){
 			int LW1 = posSeqs_[n]->getL() - W + 1;
-			ofile_r << std::scientific << std::setprecision( 2 ) << r_[n][0] << ' ';	// print out the responsibility of not having a motif on the sequence
+//			ofile_r << std::scientific << std::setprecision( 2 ) << r_[n][0] << ' ';	// print out the responsibility of not having a motif on the sequence
 			ofile_pos << n+1 << '\t';							// print out the sequence number
 			for( i = LW1; i > 0; i-- ){
-				ofile_r << std::setprecision( 2 ) << r_[n][i] << ' ';
+//				ofile_r << std::setprecision( 2 ) << r_[n][i] << ' ';
 				if( r_[n][i] >= cutoff ){
 					ofile_pos << LW1-i << '\t';
 				}
 			}
-			ofile_r << std::endl;
+//			ofile_r << std::endl;
 			ofile_pos << std::endl;
 		}
 
+/*
 		// output parameter alphas alpha[k][j]
 		std::string opath_alpha = opath + ".EMalpha";
 		std::ofstream ofile_alpha( opath_alpha.c_str() );
@@ -1144,6 +1154,7 @@ void ModelLearning::write( int N ){
 			}
 			ofile_alpha << std::endl;
 		}
+*/
 
 	} else if( Global::CGS ){
 		// output (k+1)-mer integral counts nz[k][y][j]
