@@ -114,6 +114,7 @@ int main( int nargs, char* args[] ){
 			Motif* motif = new Motif( *motifs.getMotifs()[n] );
 			FDR fdr( motif );
 			fdr.evaluateMotif( n );
+			fdr.write( n );
 			delete motif;
 		}
 	}

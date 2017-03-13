@@ -31,13 +31,7 @@ public:
 	float 	getPrec_middle_ZOOPS();			// get precision when recall = 0.5 for ZOOPS model
 	float 	getPrec_middle_MOPS();			// get precision when recall = 0.5 for MOPS model
 	void 	print();
-	void 	writePR( int n );
-	void	writePvalues( int n );
-	void 	writeLogOdds( int n );			// print out log odds scores for both positive and negative set
-											// for both MOPS and ZOOPS models
-
-											// generate a sample sequence set for simulation
-											// can be separated in a different class
+	void	write( int n );
 
 private:
 

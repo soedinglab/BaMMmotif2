@@ -75,7 +75,7 @@ bool				Global::saveLogOdds = false;			// write the log odds of positive and neg
 bool				Global::saveInitialModel = false;		// write out the initial model to disk
 bool				Global::saveBgModel = false;			// write out the background model to disk
 int					Global::Yk = 10;						// the counts of numbers in Y_ array
-bool				Global::generatePseudoSet = false;				// test for alpha learning
+bool				Global::generatePseudoSet = false;		// test for alpha learning
 
 void Global::init( int nargs, char* args[] ){
 
@@ -195,7 +195,7 @@ int Global::readArguments( int nargs, char* args[] ){
 		if( modelOrder > 0 ){
 			for( int k = 1; k < modelOrder + 1; k++ ){
 				// alpha = beta * gamma^k
-				modelAlpha[k] = modelBeta * powf( modelGamma, static_cast<float>( k ) );
+				modelAlpha[k] = modelBeta * powf( modelGamma, static_cast<float>( k-1 ) );
 			}
 		}
 	}
@@ -393,7 +393,7 @@ void Global::printHelp(){
 	printf("\n 			--saveLogOdds\n"
 			"				Write log odds scores from positive and negative sets to disk.\n\n");
 	printf("\n 			--saveBgModel\n"
-				"				Write background model to disk.\n\n");
+				"			Write background model to disk.\n\n");
 	printf("\n 			-h, --help\n"
 			"				Printout this help function.\n\n");
 	printf("\n============================================================================================\n");
