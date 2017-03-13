@@ -45,7 +45,7 @@ private:
 	float 					llikelihood_ = 0.0f;// log likelihood for each iteration
 	float**					m1_t_;				// first moment for alpha optimizer (ADAM)
 	float**					m2_t_;				// second moment for alpha optimizer (ADAM)
-	float**					prob_a_;			// log conditional probabilities for a ( a = log(alpha) )
+	float**					prob_a_;			// log conditional probabilities for a ( a = ln(alpha) )
 	std::vector<Sequence*>	posSeqs_;			// copy positive sequences due to folds
 
 	void 					EStep();			// E-step
@@ -56,7 +56,7 @@ private:
 	void					Gibbs_sampling_z_q();
 
 							// update alphas for all the orders up to K, given the learning rate
-	void				stochastic_optimize_alphas( int order, int width, float learningrate, int t );
+	void					stochastic_optimize_alphas( int order, int width, float learningrate, int t );
 
 							// calculate the gradient of the log posterior of alphas
 	float					calc_gradient_alphas( float** alphas, int order, int position );

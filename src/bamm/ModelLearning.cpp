@@ -126,7 +126,6 @@ ModelLearning::~ModelLearning(){
 	free( m1_t_ );
 	free( m2_t_ );
 
-
 }
 
 int ModelLearning::EM(){
@@ -245,6 +244,9 @@ void ModelLearning::EStep(){
 
 		// when p(z_n > 0)
 		// ij = i+j runs over all positions in sequence
+		// and parallel the code
+		#pragma omp parallel for
+
 		for( int ij = 0; ij < L; ij++ ){
 
 			// extract (k+1)-mer y from positions (i-k,...,i)
@@ -300,6 +302,9 @@ void ModelLearning::MStep(){
 		int LW1 = L - W + 1;
 
 		// ij = i+j runs over all positions in x
+		// and parallel the code
+		#pragma omp parallel for
+
 		for( int ij = 0; ij < L; ij++ ){
 			int y = posSeqs_[n]->extractKmer( ij, ( ij < K ) ? ij : K );
 			for( int j = ( 0 > ( ij-L+W ) ? 0 :  ij-L+W ); j < ( W < (ij+1) ? W : ij+1 ); j++ ){
