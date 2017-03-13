@@ -377,7 +377,7 @@ void ModelLearning::GibbsSampling(){
 	std::ofstream ofile_gradient( opath_gradient.c_str() );
 	std::ofstream ofile_logAs( opath_logAs.c_str() );
 
-	float*** v_prev = ( float*** )calloc( K+1, sizeof(float**) );
+	float*** v_prev = ( float*** )calloc( K+1, sizeof( float** ) );
 	for( k = 0; k < K+1; k++ ){
 		v_prev[k] = ( float** )calloc( Y_[k+1], sizeof( float* ) );
 		for( y = 0; y < Y_[k+1]; y++ ){
@@ -394,25 +394,18 @@ void ModelLearning::GibbsSampling(){
 			}
 		}
 	}
-	// 2. count k-mers for the highest order K
-	// note: the last sequence is not counted, since during the first step
+	// 2. count k-mers for all the orders
+	// note: the last sequence is not counted, since during the first iteration
 	// of iteration, it is added back.
 	for( i = 0; i < ( int )posSeqs_.size()-1; i++ ){
-		for( j = 0; j < W; j++ ){
-			if( z_[i] > 0 ){
-				y = posSeqs_[i]->extractKmer( z_[i]-1+j, ( z_[i]-1+j < K ) ?  z_[i]-1+j : K );
-				if( y >= 0 ){
-					n_z_[K][y][j]++;
+		if( z_[i] > 0 ){
+			for( k = 0; k < K+1; k++ ){
+				for( j = 0; j < W; j++ ){
+					y = posSeqs_[i]->extractKmer( z_[i]-1+j, ( z_[i]-1+j < k ) ?  z_[i]-1+j : k );
+					if( y >= 0 ){
+						n_z_[k][y][j]++;
+					}
 				}
-			}
-		}
-	}
-	// 3. calculate nz for lower order k
-	for( k = K; k > 0; k-- ){						// k runs over all lower orders
-		for( y = 0; y < Y_[k+1]; y++ ){
-			y2 = y % Y_[k];							// cut off the first nucleotide in (k+1)-mer
-			for( j = 0; j < W; j++ ){
-				n_z_[k-1][y2][j] += n_z_[k][y][j];
 			}
 		}
 	}
@@ -538,6 +531,7 @@ void ModelLearning::GibbsSampling(){
 
 	// obtaining a motif model
 
+
 	// calculate probabilities
 	motif_->calculateP();
 
@@ -584,22 +578,31 @@ void ModelLearning::Gibbs_sampling_z_q(){
 		}
 
 		// count k-mers at position z[i]+j except the n'th sequence
-		for( k = 0; k < K+1; k++ ){
-			for( j = 0; j < W; j++ ){
-				if( z_[n] != 0 ){
-					// remove the k-mer counts from the current sequence with old z
-					y = posSeqs_[n]->extractKmer( z_[n]-1+j, ( z_[n]-1+j < k ) ? z_[n]-1+j : k );
+
+		// remove the k-mer counts from the current sequence with old z
+		if( z_[n] > 0 ){
+			for( k = 0; k < K+1; k++ ){
+				for( j = 0; j < W; j++ ){
+					y = posSeqs_[n]->extractKmer( z_[n]-1+j, ( ( z_[n]-1+j ) < k ) ? z_[n]-1+j : k );
 					if( y >= 0 ){
 						n_z_[k][y][j]--;
-					}
+					} /*else {
+						;
+					}*/
 				}
+			}
+		}
 
-				if( z_[n_prev] != 0 ){
-					// add the k-mer counts from the previous sequence with updated z
-					y_prev = posSeqs_[n_prev]->extractKmer( z_[n_prev]-1+j, ( z_[n_prev]-1+j < k ) ? z_[n_prev]-1+j : k );
+		// add the k-mer counts from the previous sequence with updated z
+		if( z_[n_prev] > 0 ){
+			for( k = 0; k < K+1; k++ ){
+				for( j = 0; j < W; j++ ){
+					y_prev = posSeqs_[n_prev]->extractKmer( z_[n_prev]-1+j, ( ( z_[n_prev]-1+j ) < k ) ? z_[n_prev]-1+j : k );
 					if( y_prev >= 0 ){
 						n_z_[k][y_prev][j]++;
-					}
+					} /*else {
+						;
+					}*/
 				}
 			}
 		}
@@ -651,7 +654,7 @@ void ModelLearning::Gibbs_sampling_z_q(){
 	double P = P_Gamma_dist( rng );						// draw a sample for P
 	double Q = Q_Gamma_dist( rng );						// draw a sample for Q
 
-	q_ = ( float ) Q / ( float )( Q + P );				// calculate q_
+//	q_ = ( float ) Q / ( float )( Q + P );				// calculate q_
 
 }
 
