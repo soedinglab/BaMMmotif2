@@ -228,6 +228,9 @@ void ModelLearning::EStep(){
 
 	// calculate responsibilities r_[n][i] at position i in sequence n
 	// n runs over all sequences
+	// and parallel the code
+//	#pragma omp parallel for
+
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 
 		int L = posSeqs_[n]->getL();
@@ -244,16 +247,13 @@ void ModelLearning::EStep(){
 
 		// when p(z_n > 0)
 		// ij = i+j runs over all positions in sequence
-		// and parallel the code
-		#pragma omp parallel for
-
 		for( int ij = 0; ij < L; ij++ ){
 
 			// extract (k+1)-mer y from positions (i-k,...,i)
 			int y = posSeqs_[n]->extractKmer( ij,( ij < K ) ? ij : K );
 
 			// j runs over all motif positions
-			for( int j = ( 0 > ( ij-L+W ) ? 0 :  ij-L+W ); j < ( W < (ij+1) ? W : ij+1 ); j++ ){
+			for( int j = ( 0 > ( ij-L+W ) ? 0 : ij-L+W ); j < ( W < (ij+1) ? W : ij+1 ); j++ ){
 
 				// skip 'N' and other unknown alphabets
 				if( y != -1 ){
@@ -297,14 +297,12 @@ void ModelLearning::MStep(){
 
 	// compute fractional occurrence counts for the highest order K
 	// n runs over all sequences
+
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 		int L = posSeqs_[n]->getL();
 		int LW1 = L - W + 1;
 
 		// ij = i+j runs over all positions in x
-		// and parallel the code
-		#pragma omp parallel for
-
 		for( int ij = 0; ij < L; ij++ ){
 			int y = posSeqs_[n]->extractKmer( ij, ( ij < K ) ? ij : K );
 			for( int j = ( 0 > ( ij-L+W ) ? 0 :  ij-L+W ); j < ( W < (ij+1) ? W : ij+1 ); j++ ){
