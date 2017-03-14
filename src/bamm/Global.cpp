@@ -195,7 +195,7 @@ int Global::readArguments( int nargs, char* args[] ){
 		if( modelOrder > 0 ){
 			for( int k = 1; k < modelOrder + 1; k++ ){
 				// alpha = beta * gamma^k
-				modelAlpha[k] = modelBeta * powf( modelGamma, static_cast<float>( k ) );
+				modelAlpha[k] = modelBeta * powf( modelGamma, static_cast<float>( k-1 ) );
 			}
 		}
 	}

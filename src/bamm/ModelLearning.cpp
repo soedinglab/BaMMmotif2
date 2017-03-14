@@ -358,7 +358,12 @@ void ModelLearning::GibbsSampling(){
 
 	int k, y, j, i;
 
-	float eta = Global::eta;					// learning rate for alpha learning
+	float eta = Global::eta;						// learning rate for alpha learning
+
+	float** alpha_avg = ( float** )calloc( K+1, sizeof( float* ) );
+	for( k = 0; k < K+1; k++ ){
+		alpha_avg[k] = ( float* )calloc( W, sizeof( float ) );
+	}
 
 	// ToDo: write down log posterior and model v after each alpha updating step
 	std::string opath = std::string( Global::outputDirectory ) + '/'
@@ -430,8 +435,6 @@ void ModelLearning::GibbsSampling(){
 		// update alphas:
 		if( !Global::noAlphaOptimization ){
 
-//			if( iteration % Global::interval == 0 ){
-
 			// update alphas by stochastic optimization
 			stochastic_optimize_alphas( K, W, eta, iteration );
 
@@ -467,11 +470,11 @@ void ModelLearning::GibbsSampling(){
 			ofile_log << std::endl;
 			ofile_condProb << std::endl;
 
-		} else if( Global::alphaSampling ){
+		} else if ( Global::alphaSampling ){
 			// sample alpha in the exponential space using Metreopolis-Hastings algorithm
 			GibbsMH_sampling_alphas();
 
-		} else if( Global::debugAlphas ){
+		} else if ( Global::debugAlphas ){
 
 			// debug the optimization of alphas
 			if( iteration <= 150 ){
@@ -526,10 +529,42 @@ void ModelLearning::GibbsSampling(){
 		// only for writing out model after each iteration:
 /*		motif_->calculateP();
 		motif_->write( CGSIterations_ );*/
+
+		// get the sum of alpha[k][j] at the last five iterations
+		if( iteration > Global::maxCGSIterations - 5 ){
+			for( k = 0; k < K+1; k++ ){
+				for( j = 0; j < W; j++ ){
+					alpha_avg[k][j] += alpha_[k][j];
+				}
+			}
+		}
+
 	}
 
 	// obtaining a motif model
+	// get the average alpha[k][j] from the last five iterations
+	for( k = 0; k < K+1; k++ ){
+		for( j = 0; j < W; j++ ){
+			alpha_avg[k][j] /= 5.0f;
+		}
+	}
+	// run five steps of EM to optimize the final model
+	int K_bg = ( Global::bgModelOrder < K ) ? Global::bgModelOrder : K;
+	for( size_t step = 0; step < 5; step++ ){
+		// compute log odd scores s[y][j], log likelihoods of the highest order K
+		for( y = 0; y < Y_[K+1]; y++ ){
+			for( j = 0; j < W; j++ ){
+				int y_bg = y % Y_[K_bg+1];
+				s_[y][j] = motif_->getV()[K][y][j] / bg_->getV()[K_bg][y_bg];
+			}
+		}
 
+		// E-step: calculate posterior
+		EStep();
+
+		// M-step: update model parameters
+		MStep();
+	}
 
 	// calculate probabilities
 	motif_->calculateP();
@@ -542,8 +577,10 @@ void ModelLearning::GibbsSampling(){
 			free( v_prev[k][y] );
 		}
 		free( v_prev[k] );
+		free( alpha_avg[k] );
 	}
 	free( v_prev );
+	free( alpha_avg );
 
 }
 
@@ -642,6 +679,7 @@ void ModelLearning::Gibbs_sampling_z_q(){
 		if( z_[n] == 0 ) N_0++;
 	}
 
+/*
 	// sampling q:
 	// draw two random numbers Q and P from Gamma distribution
 	std::gamma_distribution<> P_Gamma_dist( N_0 + 1, 1 );
@@ -649,7 +687,8 @@ void ModelLearning::Gibbs_sampling_z_q(){
 	double P = P_Gamma_dist( rng );						// draw a sample for P
 	double Q = Q_Gamma_dist( rng );						// draw a sample for Q
 
-//	q_ = ( float ) Q / ( float )( Q + P );				// calculate q_
+	q_ = ( float ) Q / ( float )( Q + P );				// calculate q_
+*/
 
 }
 
@@ -1194,7 +1233,7 @@ void ModelLearning::write( int N ){
 		std::ofstream ofile_z( opath_z.c_str() );
 		ofile_z << "seq" << '\t' << "start" <<'\t' << "end" << std::endl;
 		for( size_t n = 0; n < posSeqs_.size(); n++ ){
-			ofile_z << n+1 << '\t' << z_[n] <<'\t' << z_[n]+W-1 << std::endl;
+			ofile_z << n+1 << '\t' << z_[n]+1 <<'\t' << z_[n]+W << std::endl;
 		}
 	}
 }
