@@ -356,7 +356,7 @@ void ModelLearning::GibbsSampling(){
 	int K = Global::modelOrder;
 	int W = motif_->getW();
 
-	int k, y, y2, j, i;
+	int k, y, j, i;
 
 	float eta = Global::eta;					// learning rate for alpha learning
 
@@ -401,7 +401,7 @@ void ModelLearning::GibbsSampling(){
 		if( z_[i] > 0 ){
 			for( k = 0; k < K+1; k++ ){
 				for( j = 0; j < W; j++ ){
-					y = posSeqs_[i]->extractKmer( z_[i]-1+j, ( z_[i]-1+j < k ) ?  z_[i]-1+j : k );
+					y = posSeqs_[i]->extractKmer( z_[i]-1+j, ( z_[i]-1+j < k ) ? z_[i]-1+j : k );
 					if( y >= 0 ){
 						n_z_[k][y][j]++;
 					}
@@ -523,7 +523,6 @@ void ModelLearning::GibbsSampling(){
 
 		}
 
-
 		// only for writing out model after each iteration:
 /*		motif_->calculateP();
 		motif_->write( CGSIterations_ );*/
@@ -569,7 +568,7 @@ void ModelLearning::Gibbs_sampling_z_q(){
 		LW1 = posSeqs_[n]->getL() - W + 1;
 
 		// get the index of the previous sequence
-		n_prev = ( n > 0) ? n-1 : N-1;
+		n_prev = ( n > 0 ) ? n-1 : N-1;
 
 		// calculate positional prior:
 		pos_[n][0] = 1.0f - q_;
@@ -586,9 +585,7 @@ void ModelLearning::Gibbs_sampling_z_q(){
 					y = posSeqs_[n]->extractKmer( z_[n]-1+j, ( ( z_[n]-1+j ) < k ) ? z_[n]-1+j : k );
 					if( y >= 0 ){
 						n_z_[k][y][j]--;
-					} /*else {
-						;
-					}*/
+					}
 				}
 			}
 		}
@@ -600,9 +597,7 @@ void ModelLearning::Gibbs_sampling_z_q(){
 					y_prev = posSeqs_[n_prev]->extractKmer( z_[n_prev]-1+j, ( ( z_[n_prev]-1+j ) < k ) ? z_[n_prev]-1+j : k );
 					if( y_prev >= 0 ){
 						n_z_[k][y_prev][j]++;
-					} /*else {
-						;
-					}*/
+					}
 				}
 			}
 		}
