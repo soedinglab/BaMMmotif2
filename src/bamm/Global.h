@@ -10,6 +10,7 @@
 #include <iomanip>											// std::setprecision
 #include <fstream>
 #include <limits>											// std::numeric_limits<int>::max();
+#include <random>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -107,6 +108,8 @@ public:
 
 	static char* 		String( const char *s );			// convert const char* to string, for GetOpt library
 
+	static std::mt19937	rngx;
+
 private:
 
 	static int	        readArguments( int nargs, char* args[] );
@@ -126,5 +129,6 @@ namespace GetOpt{
 		return ret;
 	}
 }
+
 
 #endif /* GLOBAL_H_ */

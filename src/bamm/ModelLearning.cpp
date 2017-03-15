@@ -8,7 +8,6 @@
 #include "ModelLearning.h"
 #include "SeqGenerator.h"
 
-#include <random>
 #include <cmath>
 
 #include <boost/math/special_functions.hpp>		/* gamma function and digamma function */
@@ -595,9 +594,6 @@ void ModelLearning::Gibbs_sampling_z_q(){
 
 	float** v_bg = bg_->getV();
 
-	// generated a random number, which is seeded by 42
-	std::mt19937 rng( 42 );
-
 	// sampling z:
 	// loop over all sequences and drop one sequence each time and update r
 	for( n = 0; n < N; n++ ){
@@ -676,7 +672,9 @@ void ModelLearning::Gibbs_sampling_z_q(){
 		}
 		// draw a new position z from discrete posterior distribution
 		std::discrete_distribution<> posterior_dist( posteriors.begin(), posteriors.end() );
-		z_[n] = posterior_dist( rng );					// draw a sample z randomly
+		// generate a random number
+		std::mt19937 rng;
+		z_[n] = posterior_dist( Global::rngx );					// draw a sample z randomly
 		if( z_[n] == 0 ) N_0++;
 	}
 
@@ -743,17 +741,14 @@ void ModelLearning::stochastic_optimize_alphas( int K, int W, float eta, int ite
 void ModelLearning::GibbsMH_sampling_alphas(){
 	// Gibbs sampling alphas in exponential space with Metropolis-Hastings algorithm
 
-	// generated a random number, which is seeded by 42
-	std::mt19937 rng( 42 );
-
 	int K = Global::modelOrder;
 	int W = motif_->getW();
 	for( int k = 0; k < K+1; k++ ){
 		for( int j = 0; j < W; j++ ){
 			float prob_a_prev = calc_logCondProb_a( alpha_, k, j );
 			// draw a new a from N(a, 1)
-			std::normal_distribution<float> norm_dist( logf( alpha_[k][j] ), 1.0f );
-			alpha_[k][j] = expf( norm_dist( rng ) );
+//			std::normal_distribution<float> norm_dist( logf( alpha_[k][j] ), 1.0f );
+//			alpha_[k][j] = expf( norm_dist( Global::rngx ) );
 
 			// accept this trial sample with a probability
 			float prob_a_new = calc_logCondProb_a( alpha_, k, j );

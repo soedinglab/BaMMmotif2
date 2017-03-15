@@ -29,6 +29,8 @@ int main( int nargs, char* args[] ){
 	// initialization
 	Global::init( nargs, args );
 
+	Global::rngx.seed( 42 );
+
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "************************\n" );
 	fprintf( stderr, "*   Background Model   *\n" );

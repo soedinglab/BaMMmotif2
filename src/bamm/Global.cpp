@@ -76,6 +76,7 @@ bool				Global::saveInitialModel = false;		// write out the initial model to dis
 bool				Global::saveBgModel = false;			// write out the background model to disk
 int					Global::Yk = 10;						// the counts of numbers in Y_ array
 bool				Global::generatePseudoSet = false;		// test for alpha learning
+std::mt19937		Global::rngx;
 
 void Global::init( int nargs, char* args[] ){
 
