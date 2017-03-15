@@ -654,6 +654,7 @@ void ModelLearning::Gibbs_sampling_z_q(){
 		// calculate responsibilities over all LW1 positions on n'th sequence
 		std::vector<float> posteriors;
 		float normFactor = 0.0f;
+		// todo: could be parallelized by extracting 8 sequences at once
 		for( i = 1; i <= LW1; i++ ){
 			r_[n][i] = 1.0f;
 			for( j = 0; j < W; j++ ){
