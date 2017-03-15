@@ -57,11 +57,16 @@ inline int Sequence::extractKmer( int i, int k ){
 	 */
 	int y = 0;
 
+
 	for( int j = k; j >= 0; j-- ){
-		// if unkown alphabets exist on the sequences, get a negative number for k-mer count y
-		y += sequence_[i-j] > 0 ? ( sequence_[i-j] -1 ) * Y_[j] : -Y_[k+3];
+		if( sequence_[i-j] > 0 ){
+			y += ( sequence_[i-j] -1 ) * Y_[j];
+		} else {
+			y = -1; 													// for non-defined alphabet letters
+			break;
+		}
 	}
-	return y;
+return y;
 }
 
 #endif /* SEQUENCE_H_ */
