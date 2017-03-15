@@ -260,7 +260,7 @@ void ModelLearning::EStep(){
 			for( int j = ( 0 > ( ij-L+W ) ? 0 : ij-L+W ); j < ( W < (ij+1) ? W : ij+1 ); j++ ){
 
 				// skip 'N' and other unknown alphabets
-				if( y != -1 ){
+				if( y >= 0 ){
 					r_[n][L-W+1-ij+j] *= s_[y][j];
 				} else {
 					r_[n][L-W+1-ij+j] = 0.0f;
@@ -314,7 +314,7 @@ void ModelLearning::MStep(){
 			int y = posSeqs_[n]->extractKmer( ij, ( ij < K ) ? ij : K );
 			for( int j = ( 0 > ( ij-L+W ) ? 0 :  ij-L+W ); j < ( W < (ij+1) ? W : ij+1 ); j++ ){
 				// skip 'N' and other unknown alphabets
-				if( y != -1 && ( ij-j ) < LW1 ){
+				if( y >= 0 && ( ij-j ) < LW1 ){
 					n_[K][y][j] += r_[n][L-W+1-ij+j];
 				}
 			}
