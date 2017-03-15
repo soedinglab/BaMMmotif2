@@ -60,9 +60,9 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int
 	normFactor_ = ( float* )calloc( posSeqs_.size(), sizeof( float ) );
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 		LW2 = posSeqs_[n]->getL() - W + 2;
+		z_[n] = rand() % LW2;
 		r_[n] = ( float* )calloc( LW2, sizeof( float ) );
 		pos_[n] = ( float* )calloc( LW2, sizeof( float ) );
-		z_[n] = rand() % LW2;
 	}
 
 	// allocate memory for n_[k][y][j] and probs_[k][y][j] and initialize them
@@ -353,6 +353,7 @@ void ModelLearning::GibbsSampling(){
 	int iteration = 0;
 
 	int K = Global::modelOrder;
+	int K_bg = ( Global::bgModelOrder < K ) ? Global::bgModelOrder : K;
 	int W = motif_->getW();
 
 	int k, y, j, i;
@@ -413,6 +414,34 @@ void ModelLearning::GibbsSampling(){
 			}
 		}
 	}
+
+/*
+	// to get the initial model
+	// run five steps of EM to get the right initial model
+	for( size_t step = 0; step < 5; step++ ){
+		// compute log odd scores s[y][j], log likelihoods of the highest order K
+		for( y = 0; y < Y_[K+1]; y++ ){
+			for( j = 0; j < W; j++ ){
+				int y_bg = y % Y_[K_bg+1];
+				s_[y][j] = motif_->getV()[K][y][j] / bg_->getV()[K_bg][y_bg];
+			}
+		}
+
+		// E-step: calculate posterior
+		EStep();
+
+		// M-step: update model parameters
+		MStep();
+	}
+	// extract initial z from the indices of the largest responsibilities
+	for( n = 0; n < ( int )posSeqs_.size(); n++ ){
+		int LW2 = posSeqs_[n]->getL() - motif_->getW() + 2;
+		for( i = 1; i < LW2; i++ ){
+			z_[n] = ( r_[n][i] > r_[n][i-1] ) ? i : i-1;
+		}
+		std::cout<< n << ": "<< z_[n] << std::endl << std::flush;
+	}
+*/
 
 	// iterate over
 	while( iterate && iteration < Global::maxCGSIterations ){
@@ -548,7 +577,6 @@ void ModelLearning::GibbsSampling(){
 		}
 	}
 	// run five steps of EM to optimize the final model
-	int K_bg = ( Global::bgModelOrder < K ) ? Global::bgModelOrder : K;
 	for( size_t step = 0; step < 5; step++ ){
 		// compute log odd scores s[y][j], log likelihoods of the highest order K
 		for( y = 0; y < Y_[K+1]; y++ ){

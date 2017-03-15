@@ -57,7 +57,6 @@ inline int Sequence::extractKmer( int i, int k ){
 	 */
 	int y = 0;
 
-
 	for( int j = k; j >= 0; j-- ){
 		if( sequence_[i-j] > 0 ){
 			y += ( sequence_[i-j] -1 ) * Y_[j];
@@ -66,7 +65,8 @@ inline int Sequence::extractKmer( int i, int k ){
 			break;
 		}
 	}
-return y;
+
+	return y;
 }
 
 #endif /* SEQUENCE_H_ */
