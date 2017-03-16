@@ -48,8 +48,8 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int
 	}
 
 	// allocate memory for s_[y][j] and initialize it
-	s_ = ( float** )calloc( Y_[K+1], sizeof( float* ) );
-	for( y = 0; y < Y_[K+1]; y++ ){
+	s_ = ( float** )calloc( Y_[K+1]+1, sizeof( float* ) ) + 1;
+	for( y = -1; y < Y_[K+1]; y++ ){
 		s_[y] = ( float* )calloc( W, sizeof( float ) );
 	}
 
@@ -69,9 +69,9 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int
 	n_ = ( float*** )calloc( K+1, sizeof( float** ) );
 	n_z_ = ( int*** )calloc( K+1, sizeof( int** ) );
 	for( k = 0; k < K+1; k++ ){
-		n_[k] = ( float** )calloc( Y_[k+1], sizeof( float* ) );
-		n_z_[k] = ( int** )calloc( Y_[k+1], sizeof( int* ) );
-		for( y = 0; y < Y_[k+1]; y++ ){
+		n_[k] = ( float** )calloc( Y_[k+1]+1, sizeof( float* ) )+1;
+		n_z_[k] = ( int** )calloc( Y_[k+1]+1, sizeof( int* ) )+1;
+		for( y = -1; y < Y_[k+1]; y++ ){
 			n_[k][y] = ( float* )calloc( W, sizeof( float ) );
 			n_z_[k][y] = ( int* )calloc( W, sizeof( int ) );
 		}
@@ -96,10 +96,10 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int
 
 ModelLearning::~ModelLearning(){
 
-	for( int y = 0; y < Y_[Global::modelOrder+1]; y++ ){
+	for( int y = -1; y < Y_[Global::modelOrder+1]; y++ ){
 		free( s_[y] );
 	}
-	free( s_ );
+	free( s_-1 );
 
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 		free( r_[n] );
@@ -111,12 +111,12 @@ ModelLearning::~ModelLearning(){
 	free( normFactor_ );
 
 	for( int k = 0; k < Global::modelOrder+1; k++ ){
-		for( int y = 0; y < Y_[k+1]; y++ ){
+		for( int y = -1; y < Y_[k+1]; y++ ){
 			free( n_[k][y] );
 			free( n_z_[k][y] );
 		}
-		free( n_[k] );
-		free( n_z_[k] );
+		free( n_[k]-1 );
+		free( n_z_[k]-1 );
 		free( alpha_[k] );
 		free( m1_t_[k] );
 		free( m2_t_[k] );
@@ -254,18 +254,11 @@ void ModelLearning::EStep(){
 		for( int ij = 0; ij < L; ij++ ){
 
 			// extract (K+1)-mer y from positions (i-k,...,i)
-			int y = kmer[ij] % Y_[K+1];
+			int y = ( kmer[ij] >= 0 ) ? kmer[ij] % Y_[K+1] : -1;
 
 			// j runs over all motif positions
 			for( int j = ( 0 > ( ij-L+W ) ? 0 : ij-L+W ); j < ( W < (ij+1) ? W : ij+1 ); j++ ){
-
-				// skip 'N' and other unknown alphabets
-				if( y >= 0 ){
-					r_[n][L-W+1-ij+j] *= s_[y][j];
-				} else {
-					r_[n][L-W+1-ij+j] = 0.0f;
-					break;
-				}
+				r_[n][L-W+1-ij+j] *= s_[y][j];
 			}
 		}
 
@@ -304,22 +297,17 @@ void ModelLearning::MStep(){
 
 	// compute fractional occurrence counts for the highest order K
 	// n runs over all sequences
-
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 		int L = posSeqs_[n]->getL();
-		int LW1 = L - W + 1;
 		int* kmer = posSeqs_[n]->getKmer();
 
 		// ij = i+j runs over all positions in x
 		for( int ij = 0; ij < L; ij++ ){
 
-			int y = kmer[ij] % Y_[K+1];
+			int y = ( kmer[ij] >= 0 ) ? kmer[ij] % Y_[K+1] : -1;
 
-			for( int j = ( 0 > ( ij-L+W ) ? 0 :  ij-L+W ); j < ( W < (ij+1) ? W : ij+1 ); j++ ){
-				// skip 'N' and other unknown alphabets
-				if( y >= 0 && ( ij-j ) < LW1 ){
-					n_[K][y][j] += r_[n][L-W+1-ij+j];
-				}
+			for( int j = ( 0 > ( ij-L+W ) ? 0 : ij-L+W ); j < ( W < (ij+1) ? W : ij+1 ); j++ ){
+				n_[K][y][j] += r_[n][L-W+1-ij+j];
 			}
 		}
 	}
@@ -411,10 +399,8 @@ void ModelLearning::GibbsSampling(){
 		if( z_[n] > 0 ){
 			for( k = 0; k < K+1; k++ ){
 				for( j = 0; j < W; j++ ){
-					y = kmer[z_[n]-1+j] % Y_[k+1];
-					if( y >= 0 ){
-						n_z_[k][y][j]++;
-					}
+					y = ( kmer[z_[n]-1+j] >= 0 ) ? kmer[z_[n]-1+j] % Y_[k+1] : -1;
+					n_z_[k][y][j]++;
 				}
 			}
 		}
@@ -641,11 +627,8 @@ void ModelLearning::Gibbs_sampling_z_q(){
 		if( z_[n] > 0 ){
 			for( k = 0; k < K+1; k++ ){
 				for( j = 0; j < W; j++ ){
-					y = kmer[z_[n]-1+j] % Y_[k+1];
-
-					if( y >= 0 ){
-						n_z_[k][y][j]--;
-					}
+					y = ( kmer[z_[n]-1+j] >= 0 ) ? kmer[z_[n]-1+j] % Y_[k+1] : -1;
+					n_z_[k][y][j]--;
 				}
 			}
 		}
@@ -658,11 +641,8 @@ void ModelLearning::Gibbs_sampling_z_q(){
 		if( z_[n_prev] > 0 ){
 			for( k = 0; k < K+1; k++ ){
 				for( j = 0; j < W; j++ ){
-					y_prev = kmer_prev[z_[n_prev]-1+j] % Y_[k+1];
-
-					if( y_prev >= 0 ){
-						n_z_[k][y_prev][j]++;
-					}
+					y_prev = ( kmer_prev[z_[n_prev]-1+j] >= 0 ) ? kmer_prev[z_[n_prev]-1+j] % Y_[k+1] : -1;
+					n_z_[k][y_prev][j]++;
 				}
 			}
 		}
@@ -687,10 +667,8 @@ void ModelLearning::Gibbs_sampling_z_q(){
 			r_[n][i] = 1.0f;
 			for( j = 0; j < W; j++ ){
 				// extract k-mers on the motif at position i over W of the n'th sequence
-				y = kmer[i-1+j] % Y_[( i+j < K+1 ) ? i+j : K+1];
-				if( y >= 0 ){
-					r_[n][i] *= s_[y][j];
-				}
+				y = ( kmer[i-1+j] >= 0 ) ? kmer[i-1+j] % Y_[( i+j < K+1 ) ? i+j : K+1] : -1;
+				r_[n][i] *= s_[y][j];
 			}
 			r_[n][i] *= pos_[n][i];
 			normFactor += r_[n][i];
