@@ -347,15 +347,32 @@ void ModelLearning::GibbsSampling(){
 	int K = Global::modelOrder;
 	int K_bg = ( Global::bgModelOrder < K ) ? Global::bgModelOrder : K;
 	int W = motif_->getW();
-
-	int k, y, j, n;
-
 	float eta = Global::eta;						// learning rate for alpha learning
-
+	int k, y, j, n;
 	float** alpha_avg = ( float** )calloc( K+1, sizeof( float* ) );
 	for( k = 0; k < K+1; k++ ){
 		alpha_avg[k] = ( float* )calloc( W, sizeof( float ) );
 	}
+
+/*
+	// initialize the model with one EStep
+	// compute log odd scores s[y][j], log likelihoods of the highest order K
+	for( y = 0; y < Y_[K+1]; y++ ){
+		for( j = 0; j < W; j++ ){
+			int y_bg = y % Y_[K_bg+1];
+			s_[y][j] = motif_->getV()[K][y][j] / bg_->getV()[K_bg][y_bg];
+		}
+	}
+	// E-step: calculate posterior
+	EStep();
+	// extract initial z from the indices of the largest responsibilities
+	for( n = 0; n < ( int )posSeqs_.size(); n++ ){
+		int LW2 = posSeqs_[n]->getL() - motif_->getW() + 2;
+		for( int i = 1; i < LW2; i++ ){
+			z_[n] = ( r_[n][i] > r_[n][i-1] ) ? i : i-1;
+		}
+	}
+*/
 
 	// ToDo: write down log posterior and model v after each alpha updating step
 	std::string opath = std::string( Global::outputDirectory ) + '/'
@@ -405,29 +422,6 @@ void ModelLearning::GibbsSampling(){
 			}
 		}
 	}
-
-/*
-	// initialize the model with one Estep
-
-	// compute log odd scores s[y][j], log likelihoods of the highest order K
-	for( y = 0; y < Y_[K+1]; y++ ){
-		for( j = 0; j < W; j++ ){
-			int y_bg = y % Y_[K_bg+1];
-			s_[y][j] = motif_->getV()[K][y][j] / bg_->getV()[K_bg][y_bg];
-		}
-	}
-
-	// E-step: calculate posterior
-	EStep();
-
-	// extract initial z from the indices of the largest responsibilities
-	for( n = 0; n < ( int )posSeqs_.size(); n++ ){
-		int LW2 = posSeqs_[n]->getL() - motif_->getW() + 2;
-		for( i = 1; i < LW2; i++ ){
-			z_[n] = ( r_[n][i] > r_[n][i-1] ) ? i : i-1;
-		}
-	}
-*/
 
 	// iterate over
 	while( iterate && iteration < Global::maxCGSIterations ){
@@ -484,11 +478,11 @@ void ModelLearning::GibbsSampling(){
 			ofile_log << std::endl;
 			ofile_condProb << std::endl;
 
-		} else if ( Global::alphaSampling ){
+		} else if( Global::alphaSampling ){
 			// sample alpha in the exponential space using Metreopolis-Hastings algorithm
 			GibbsMH_sampling_alphas();
 
-		} else if ( Global::debugAlphas ){
+		} else if( Global::debugAlphas ){
 
 			// debug the optimization of alphas
 			if( iteration <= 150 ){
@@ -563,7 +557,7 @@ void ModelLearning::GibbsSampling(){
 		}
 	}
 	// run five steps of EM to optimize the final model
-	for( size_t step = 0; step < 5; step++ ){
+	for( size_t step = 0; step < 3; step++ ){
 		// compute log odd scores s[y][j], log likelihoods of the highest order K
 		for( y = 0; y < Y_[K+1]; y++ ){
 			for( j = 0; j < W; j++ ){
@@ -757,8 +751,8 @@ void ModelLearning::GibbsMH_sampling_alphas(){
 		for( int j = 0; j < W; j++ ){
 			float prob_a_prev = calc_logCondProb_a( alpha_, k, j );
 			// draw a new a from N(a, 1)
-//			std::normal_distribution<float> norm_dist( logf( alpha_[k][j] ), 1.0f );
-//			alpha_[k][j] = expf( norm_dist( Global::rngx ) );
+			std::normal_distribution<float> norm_dist( logf( alpha_[k][j] ), 1.0f );
+			alpha_[k][j] = expf( norm_dist( Global::rngx ) );
 
 			// accept this trial sample with a probability
 			float prob_a_new = calc_logCondProb_a( alpha_, k, j );

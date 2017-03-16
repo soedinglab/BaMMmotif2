@@ -254,7 +254,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	if( opt >> GetOpt::OptionPresent( "CGS", CGS ) ){
 		opt >> GetOpt::Option( "maxCGSIterations", maxCGSIterations );
 		opt >> GetOpt::OptionPresent( "noAlphaOptimization", noAlphaOptimization );
-		opt >> GetOpt::OptionPresent( "AlphaSampling", alphaSampling );
+		opt >> GetOpt::OptionPresent( "alphaSampling", alphaSampling );
 		opt >> GetOpt::OptionPresent( "noZQSampling", noZQSampling );
 		opt >> GetOpt::Option( "eta", eta );
 		opt >> GetOpt::Option( "interval", interval );
