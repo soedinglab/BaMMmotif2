@@ -276,14 +276,6 @@ int Motif::getC(){
 	return C_;
 }
 
-int Motif::getW(){
-	return W_;
-}
-
-float*** Motif::getV(){
-	return v_;
-}
-
 float*** Motif::getP(){
 	return p_;
 }
@@ -325,9 +317,10 @@ void Motif::updateV( float*** n, float** alpha, int K ){
 	assert( isInitialized_ );
 
 	int y, j, k, y2, yk;
-
+	float* negBaseFreqs = Global::negSequenceSet->getBaseFrequencies();
 	// sum up the n over (k+1)-mers at different position of motif
-	float* sumN = ( float* )calloc( W_, sizeof( float ) );
+	std::vector<float> sumN;
+	sumN.resize( W_ );
 	for( j = 0; j < W_; j++ ){
 		for( y = 0; y < Y_[1]; y++ ){
 			sumN[j] += n[0][y][j];
@@ -337,12 +330,10 @@ void Motif::updateV( float*** n, float** alpha, int K ){
 	// for k = 0, v_ = freqs:
 	for( y = 0; y < Y_[1]; y++ ){
 		for( j = 0; j < W_; j++ ){
-			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * Global::negSequenceSet->getBaseFrequencies()[y] )
+			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * negBaseFreqs[y] )
 						/ ( sumN[j] + alpha[0][j] );
 		}
 	}
-
-	free( sumN );
 
 	// for k > 0:
 	for( k = 1; k < K+1; k++ ){
@@ -367,9 +358,11 @@ void Motif::updateVz_n( int*** n, float** alpha, int K ){
 	assert( isInitialized_ );
 
 	int y, j, k, y2, yk;
+	float* negBaseFreqs = Global::negSequenceSet->getBaseFrequencies();
 
 	// sum up the n over (k+1)-mers at different position of motif
-	int* sumN = ( int* )calloc( W_, sizeof( int ) );
+	std::vector<int> sumN;
+	sumN.resize( W_ );
 	for( j = 0; j < W_; j++ ){
 		for( y = 0; y < Y_[1]; y++ ){
 			sumN[j] += n[0][y][j];
@@ -379,12 +372,10 @@ void Motif::updateVz_n( int*** n, float** alpha, int K ){
 	// for k = 0, v_ = freqs:
 	for( y = 0; y < Y_[1]; y++ ){
 		for( j = 0; j < W_; j++ ){
-			v_[0][y][j] = ( ( float )n[0][y][j] + alpha[0][j] * Global::negSequenceSet->getBaseFrequencies()[y] )
+			v_[0][y][j] = ( ( float )n[0][y][j] + alpha[0][j] * negBaseFreqs[y] )
 						/ ( ( float )sumN[j] + alpha[0][j] );
 		}
 	}
-
-	free( sumN );
 
 	// for 1 <= k <= K:
 	for( k = 1; k < K+1; k++ ){

@@ -54,4 +54,12 @@ private:
 																// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
 };
 
+inline int Motif::getW(){
+	return W_;
+}
+
+inline float*** Motif::getV(){
+	return v_;
+}
+
 #endif /* MOTIF_H_ */

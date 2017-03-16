@@ -82,4 +82,8 @@ private:
 												// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
 };
 
+inline float** BackgroundModel::getV(){
+    return v_;
+}
+
 #endif /* BACKGROUNDMODEL_H_ */

@@ -28,12 +28,6 @@ Sequence::Sequence( uint8_t* sequence, int L, std::string header, std::vector<in
 	for( int i = 0; i < L_; i++ ){
 		for( int j = i < 8 ? i : 8; j >= 0; j-- ){
 			kmer_[i] += ( sequence_[i-j] > 0 ) ? ( sequence_[i-j] -1 ) * Y_[j] : -Y[10];
-/*			if( sequence_[i-j] > 0 ){
-				kmer_[i] += ( sequence_[i-j] -1 ) * Y_[j];
-			} else {
-				kmer_[i] = -1; 								// for non-defined alphabet letters
-				break;
-			}*/
 		}
 	}
 
@@ -66,9 +60,7 @@ float Sequence::getIntensity(){
 float Sequence::getWeight(){
 	return weight_;
 }
-int* Sequence::getKmer(){
-	return kmer_;
-}
+
 void Sequence::setIntensity( float intensity ){
 	intensity_ = intensity;
 }

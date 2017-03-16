@@ -187,10 +187,6 @@ int BackgroundModel::getOrder(){
     return K_;
 }
 
-float** BackgroundModel::getV(){
-    return v_;
-}
-
 void BackgroundModel::expV(){
 
 	for( int k = 0; k <= K_; k++ ){

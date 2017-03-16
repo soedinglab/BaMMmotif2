@@ -47,9 +47,8 @@ private:
 													// limits the length of oligomers to 15 (and the order to 14)
 };
 
-/*inline int* Sequence::getKmer(){
+inline int* Sequence::getKmer(){
 	return kmer_;
-}*/
-
+}
 
 #endif /* SEQUENCE_H_ */
