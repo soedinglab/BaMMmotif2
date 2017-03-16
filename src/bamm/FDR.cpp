@@ -138,6 +138,7 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 	for( size_t n = 0; n < seqSet.size(); n++ ){
 
 		int LW1 = seqSet[n]->getL() - W + 1;
+		int* kmer = seqSet[n]->getKmer();
 
 		maxScore = -FLT_MAX;
 
@@ -149,7 +150,7 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 
 			for( int j = 0; j < W; j++ ){
 
-				int y = seqSet[n]->extractKmer( i+j, std::min(i+j, K ) );
+				int y = kmer[i+j] % Y_[(i+j < K ) ? i+j+1 : K+1];
 
 				int y_bg = y % Y_[K_bg+1];
 
@@ -186,6 +187,7 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 	for( size_t n = 0; n < seqSet.size(); n++ ){
 
 		int LW1 = seqSet[n]->getL() - W + 1;
+		int* kmer = seqSet[n]->getKmer();
 
 		maxScore = -FLT_MAX;
 
@@ -196,9 +198,7 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 			logOdds[i] = 0.0f;
 
 			for( int j = 0; j < W; j++ ){
-
-				int y = seqSet[n]->extractKmer( i+j, std::min(i+j, K ) );
-
+				int y = kmer[i+j] % Y_[(i+j < K ) ? i+j+1 : K+1];
 				int y_bg = y % Y_[K_bg+1];
 
 				if( y >= 0 ){

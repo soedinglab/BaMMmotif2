@@ -39,6 +39,7 @@ void ScoreSeqSet::score(){
 	for( size_t n = 0; n < seqSet_.size(); n++ ){
 
 		int LW1 = seqSet_[n]->getL() - W + 1;
+		int* kmer = seqSet_[n]->getKmer();
 
 		maxScore = -FLT_MAX;
 
@@ -50,8 +51,7 @@ void ScoreSeqSet::score(){
 
 			for( int j = 0; j < W; j++ ){
 
-				int y = seqSet_[n]->extractKmer( i+j, std::min(i+j, K ) );
-
+				int y = kmer[i+j] % (i+j < K ) ? Y_[i+j+1] : Y_[K+1];
 				int y_bg = y % Y_[K_bg+1];
 
 				if( y >= 0 ){

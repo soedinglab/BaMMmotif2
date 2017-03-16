@@ -31,7 +31,7 @@ Motif::Motif( const Motif& other ){ 		// copy constructor
 
 	int k, y, j;
 
-	for( k = 0; k < std::max( Global::modelOrder+2, Global::bgModelOrder+2 ); k++ ){
+	for( k = 0; k < Global::Yk; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 

@@ -240,6 +240,7 @@ void ModelLearning::EStep(){
 		int L = posSeqs_[n]->getL();
 		int LW1 = L - W + 1;
 		int LW2 = L - W + 2;
+		int* kmer = posSeqs_[n]->getKmer();
 
 		// reset r_[n][i] and pos_[n][i]
 		for( int i = 0; i < LW2; i++ ){
@@ -252,8 +253,8 @@ void ModelLearning::EStep(){
 		// ij = i+j runs over all positions in sequence
 		for( int ij = 0; ij < L; ij++ ){
 
-			// extract (k+1)-mer y from positions (i-k,...,i)
-			int y = posSeqs_[n]->extractKmer( ij,( ij < K ) ? ij : K );
+			// extract (K+1)-mer y from positions (i-k,...,i)
+			int y = kmer[ij] % Y_[K+1];
 
 			// j runs over all motif positions
 			for( int j = ( 0 > ( ij-L+W ) ? 0 : ij-L+W ); j < ( W < (ij+1) ? W : ij+1 ); j++ ){
@@ -307,10 +308,13 @@ void ModelLearning::MStep(){
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 		int L = posSeqs_[n]->getL();
 		int LW1 = L - W + 1;
+		int* kmer = posSeqs_[n]->getKmer();
 
 		// ij = i+j runs over all positions in x
 		for( int ij = 0; ij < L; ij++ ){
-			int y = posSeqs_[n]->extractKmer( ij, ( ij < K ) ? ij : K );
+
+			int y = kmer[ij] % Y_[K+1];
+
 			for( int j = ( 0 > ( ij-L+W ) ? 0 :  ij-L+W ); j < ( W < (ij+1) ? W : ij+1 ); j++ ){
 				// skip 'N' and other unknown alphabets
 				if( y >= 0 && ( ij-j ) < LW1 ){
@@ -356,7 +360,7 @@ void ModelLearning::GibbsSampling(){
 	int K_bg = ( Global::bgModelOrder < K ) ? Global::bgModelOrder : K;
 	int W = motif_->getW();
 
-	int k, y, j, i;
+	int k, y, j, n;
 
 	float eta = Global::eta;						// learning rate for alpha learning
 
@@ -402,11 +406,12 @@ void ModelLearning::GibbsSampling(){
 	// 2. count k-mers for all the orders
 	// note: the last sequence is not counted, since during the first iteration
 	// of iteration, it is added back.
-	for( i = 0; i < ( int )posSeqs_.size()-1; i++ ){
-		if( z_[i] > 0 ){
+	for( n = 0; n < ( int )posSeqs_.size()-1; n++ ){
+		int* kmer = posSeqs_[n]->getKmer();
+		if( z_[n] > 0 ){
 			for( k = 0; k < K+1; k++ ){
 				for( j = 0; j < W; j++ ){
-					y = posSeqs_[i]->extractKmer( z_[i]-1+j, ( z_[i]-1+j < k ) ? z_[i]-1+j : k );
+					y = kmer[z_[n]-1+j] % Y_[k+1];
 					if( y >= 0 ){
 						n_z_[k][y][j]++;
 					}
@@ -416,30 +421,25 @@ void ModelLearning::GibbsSampling(){
 	}
 
 /*
-	// to get the initial model
-	// run five steps of EM to get the right initial model
-	for( size_t step = 0; step < 5; step++ ){
-		// compute log odd scores s[y][j], log likelihoods of the highest order K
-		for( y = 0; y < Y_[K+1]; y++ ){
-			for( j = 0; j < W; j++ ){
-				int y_bg = y % Y_[K_bg+1];
-				s_[y][j] = motif_->getV()[K][y][j] / bg_->getV()[K_bg][y_bg];
-			}
+	// initialize the model with one Estep
+
+	// compute log odd scores s[y][j], log likelihoods of the highest order K
+	for( y = 0; y < Y_[K+1]; y++ ){
+		for( j = 0; j < W; j++ ){
+			int y_bg = y % Y_[K_bg+1];
+			s_[y][j] = motif_->getV()[K][y][j] / bg_->getV()[K_bg][y_bg];
 		}
-
-		// E-step: calculate posterior
-		EStep();
-
-		// M-step: update model parameters
-		MStep();
 	}
+
+	// E-step: calculate posterior
+	EStep();
+
 	// extract initial z from the indices of the largest responsibilities
 	for( n = 0; n < ( int )posSeqs_.size(); n++ ){
 		int LW2 = posSeqs_[n]->getL() - motif_->getW() + 2;
 		for( i = 1; i < LW2; i++ ){
 			z_[n] = ( r_[n][i] > r_[n][i-1] ) ? i : i-1;
 		}
-		std::cout<< n << ": "<< z_[n] << std::endl << std::flush;
 	}
 */
 
@@ -593,6 +593,7 @@ void ModelLearning::GibbsSampling(){
 		MStep();
 	}
 
+
 	// calculate probabilities
 	motif_->calculateP();
 
@@ -627,9 +628,7 @@ void ModelLearning::Gibbs_sampling_z_q(){
 	for( n = 0; n < N; n++ ){
 
 		LW1 = posSeqs_[n]->getL() - W + 1;
-
-		// get the index of the previous sequence
-		n_prev = ( n > 0 ) ? n-1 : N-1;
+		int* kmer = posSeqs_[n]->getKmer();
 
 		// calculate positional prior:
 		pos_[n][0] = 1.0f - q_;
@@ -637,13 +636,13 @@ void ModelLearning::Gibbs_sampling_z_q(){
 			pos_[n][i] = q_ / ( float )LW1;
 		}
 
-		// count k-mers at position z[i]+j except the n'th sequence
-
+		// count k-mers at position z_i+j except the n'th sequence
 		// remove the k-mer counts from the current sequence with old z
 		if( z_[n] > 0 ){
 			for( k = 0; k < K+1; k++ ){
 				for( j = 0; j < W; j++ ){
-					y = posSeqs_[n]->extractKmer( z_[n]-1+j, ( ( z_[n]-1+j ) < k ) ? z_[n]-1+j : k );
+					y = kmer[z_[n]-1+j] % Y_[k+1];
+
 					if( y >= 0 ){
 						n_z_[k][y][j]--;
 					}
@@ -651,11 +650,16 @@ void ModelLearning::Gibbs_sampling_z_q(){
 			}
 		}
 
+		// get the index of the previous sequence
+		n_prev = ( n > 0 ) ? n-1 : N-1;
+
 		// add the k-mer counts from the previous sequence with updated z
+		int* kmer_prev = posSeqs_[n_prev]->getKmer();
 		if( z_[n_prev] > 0 ){
 			for( k = 0; k < K+1; k++ ){
 				for( j = 0; j < W; j++ ){
-					y_prev = posSeqs_[n_prev]->extractKmer( z_[n_prev]-1+j, ( ( z_[n_prev]-1+j ) < k ) ? z_[n_prev]-1+j : k );
+					y_prev = kmer_prev[z_[n_prev]-1+j] % Y_[k+1];
+
 					if( y_prev >= 0 ){
 						n_z_[k][y_prev][j]++;
 					}
@@ -683,7 +687,7 @@ void ModelLearning::Gibbs_sampling_z_q(){
 			r_[n][i] = 1.0f;
 			for( j = 0; j < W; j++ ){
 				// extract k-mers on the motif at position i over W of the n'th sequence
-				y = posSeqs_[n]->extractKmer( i-1+j, ( i-1+j < K ) ? i-1+j : K );
+				y = kmer[i-1+j] % Y_[( i+j < K+1 ) ? i+j : K+1];
 				if( y >= 0 ){
 					r_[n][i] *= s_[y][j];
 				}
@@ -1168,7 +1172,7 @@ void ModelLearning::write( int N ){
 						+ Global::posSequenceBasename + "_motif_" + std::to_string( N+1 );
 
 	if( Global::EM ){
-/*
+
 		// output (k+1)-mer counts n[k][y][j]
 		std::string opath_n = opath + ".EMcount";
 		std::ofstream ofile_n( opath_n.c_str() );
@@ -1181,7 +1185,6 @@ void ModelLearning::write( int N ){
 			}
 			ofile_n << std::endl;
 		}
-*/
 
 		// output responsibilities r[n][i] and position(s) of motif(s) pos_[n][i]
 //		std::string opath_r = opath + ".EMweight";
