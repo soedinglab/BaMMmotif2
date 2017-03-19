@@ -375,7 +375,7 @@ void ModelLearning::GibbsSampling(){
 */
 
 	// ToDo: write down log posterior and model v after each alpha updating step
-	std::string opath = std::string( Global::outputDirectory ) + '/'
+/*	std::string opath = std::string( Global::outputDirectory ) + '/'
 						+ Global::posSequenceBasename;
 	std::string opath_log = opath + ".logposterior";
 	std::string opath_condProb = opath + ".condProb";
@@ -389,7 +389,7 @@ void ModelLearning::GibbsSampling(){
 	std::ofstream ofile_condProb( opath_condProb.c_str() );
 	std::ofstream ofile_alphas( opath_alphas.c_str() );
 	std::ofstream ofile_gradient( opath_gradient.c_str() );
-	std::ofstream ofile_logAs( opath_logAs.c_str() );
+	std::ofstream ofile_logAs( opath_logAs.c_str() );*/
 
 	float*** v_prev = ( float*** )calloc( K+1, sizeof( float** ) );
 	for( k = 0; k < K+1; k++ ){
@@ -449,6 +449,7 @@ void ModelLearning::GibbsSampling(){
 			// update model parameter v
 			motif_->updateVz_n( n_z_, alpha_, K );
 
+/*
 			// todo: write out the difference of v's for comparison
 			for( k = 0; k < K+1; k++ ){
 				float v_diff = 0.0f;
@@ -477,6 +478,7 @@ void ModelLearning::GibbsSampling(){
 					<< calc_likelihood_alphas( alpha_, K ) << '\t';
 			ofile_log << std::endl;
 			ofile_condProb << std::endl;
+*/
 
 		} else if( Global::alphaSampling ){
 			// sample alpha in the exponential space using Metreopolis-Hastings algorithm
@@ -502,7 +504,7 @@ void ModelLearning::GibbsSampling(){
 				// update model parameter v
 				motif_->updateVz_n( n_z_, alpha_, K );
 
-				// todo: write out the difference of v's for comparison
+/*				// todo: write out the difference of v's for comparison
 				for( k = 0; k < K+1; k++ ){
 					float v_diff = 0.0f;
 					for( y = 0; y < Y_[k+1]; y++ ){
@@ -529,7 +531,7 @@ void ModelLearning::GibbsSampling(){
 						<< calc_prior_alphas( alpha_, K ) << '\t'
 						<< calc_likelihood_alphas( alpha_, K ) << '\t';
 				ofile_log << std::endl;
-				ofile_condProb << std::endl;
+				ofile_condProb << std::endl;*/
 			}
 
 		}
@@ -556,7 +558,8 @@ void ModelLearning::GibbsSampling(){
 			alpha_avg[k][j] /= 5.0f;
 		}
 	}
-	// run five steps of EM to optimize the final model
+	// run five steps of EM to optimize the final model with
+	// the optimum model parameters v's and the fixed alphas
 	for( size_t step = 0; step < 3; step++ ){
 		// compute log odd scores s[y][j], log likelihoods of the highest order K
 		for( y = 0; y < Y_[K+1]; y++ ){
@@ -661,7 +664,7 @@ void ModelLearning::Gibbs_sampling_z_q(){
 			r_[n][i] = 1.0f;
 			for( j = 0; j < W; j++ ){
 				// extract k-mers on the motif at position i over W of the n'th sequence
-				y = ( kmer[i-1+j] >= 0 ) ? kmer[i-1+j] % Y_[( i+j < K+1 ) ? i+j : K+1] : -1;
+				y = ( kmer[i-1+j] >= 0 ) ? kmer[i-1+j] % Y_[K+1] : -1;
 				r_[n][i] *= s_[y][j];
 			}
 			r_[n][i] *= pos_[n][i];
@@ -676,9 +679,12 @@ void ModelLearning::Gibbs_sampling_z_q(){
 		}
 		// draw a new position z from discrete posterior distribution
 		std::discrete_distribution<> posterior_dist( posteriors.begin(), posteriors.end() );
+
 		// generate a random number
 		std::mt19937 rng;
+
 		z_[n] = posterior_dist( Global::rngx );					// draw a sample z randomly
+
 		if( z_[n] == 0 ) N_0++;
 	}
 
@@ -747,18 +753,24 @@ void ModelLearning::GibbsMH_sampling_alphas(){
 
 	int K = Global::modelOrder;
 	int W = motif_->getW();
+
 	for( int k = 0; k < K+1; k++ ){
+
 		for( int j = 0; j < W; j++ ){
-			float prob_a_prev = calc_logCondProb_a( alpha_, k, j );
-			// draw a new a from N(a, 1)
-			std::normal_distribution<float> norm_dist( logf( alpha_[k][j] ), 1.0f );
-			alpha_[k][j] = expf( norm_dist( Global::rngx ) );
 
-			// accept this trial sample with a probability
-			float prob_a_new = calc_logCondProb_a( alpha_, k, j );
+			// draw 10 times in a row and take record of the last accepted sample
+			for( int step = 0; step < 10; step++ ){
 
-			float ratio = prob_a_new / prob_a_prev;
-			prob_a_[k][j] = ( ratio < 1 ) ? ratio : 1;
+				float lprob_a_prev = calc_logCondProb_a( alpha_, k, j );
+
+				// draw a new a from N(a, 1)
+				std::normal_distribution<float> norm_dist( logf( alpha_[k][j] ), 1.0f );
+				alpha_[k][j] = expf( norm_dist( Global::rngx ) );
+
+				// accept this trial sample with a probability
+				float lprob_a_new = calc_logCondProb_a( alpha_, k, j );
+				prob_a_[k][j] = ( lprob_a_new < lprob_a_prev ) ? expf( lprob_a_new - lprob_a_prev ) : 1;
+			}
 		}
 	}
 
@@ -891,19 +903,20 @@ float ModelLearning::calc_logCondProb_a( float** alpha, int k, int j ){
 	int y, y2;
 
 
-	// the first term of equation 46
+	// the first term of equation 50
 	logCondProbA -= logf( alpha[k][j] );
 
-	// the second term of equation 46
+	// the second term of equation 50
 	logCondProbA -= Global::modelBeta * powf( Global::modelGamma, ( float )k ) / alpha[k][j];
 
-	// the third term of equation 46
+	// the third term of equation 50
 	logCondProbA += ( float )ipow( Y_[1], k ) * boost::math::lgamma( alpha[k][j] );
 
-	// the forth term of equation 46
+	// the forth term of equation 50
 	for( y = 0; y < Y_[k+1]; y++ ){
 
-		y2 = y % Y_[k];									// cut off the first nucleotide in the (k+1)-mer
+		// cut off the first nucleotide in the (k+1)-mer
+		y2 = y % Y_[k];
 
 		if( k == 0 ){
 			// the first part
@@ -1206,7 +1219,7 @@ void ModelLearning::write( int N ){
 			ofile_n << std::endl;
 		}
 
-		// output responsibilities r[n][i]
+/*		// output responsibilities r[n][i]
 		std::string opath_r = opath + ".CGSweight";
 		std::ofstream ofile_r( opath_r.c_str() );
 		for( size_t n = 0; n < posSeqs_.size(); n++ ){
@@ -1214,7 +1227,7 @@ void ModelLearning::write( int N ){
 				ofile_r << std::scientific << std::setprecision( 2 ) << r_[n][i] << ' ';
 			}
 			ofile_r << std::endl;
-		}
+		}*/
 
 		// output parameter alphas alpha[k][j]
 		std::string opath_alpha = opath + ".CGSalpha";
@@ -1222,7 +1235,7 @@ void ModelLearning::write( int N ){
 		for( k = 0; k < K+1; k++ ){
 			ofile_alpha << "k = " << k << std::endl;
 			for( j = 0; j < W; j++ ){
-				ofile_alpha << std::setprecision( 3 ) << alpha_[k][j] << ' ';
+				ofile_alpha << std::setprecision( 3 ) << alpha_[k][j] << '\t';
 			}
 			ofile_alpha << std::endl;
 		}

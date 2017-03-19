@@ -62,4 +62,87 @@ inline float*** Motif::getV(){
 	return v_;
 }
 
+// update v from fractional k-mer counts n and current alphas (e.g for EM)
+inline void Motif::updateV( float*** n, float** alpha, int K ){
+
+	assert( isInitialized_ );
+
+	int y, j, k, y2, yk;
+	float* negBaseFreqs = Global::negSequenceSet->getBaseFrequencies();
+	// sum up the n over (k+1)-mers at different position of motif
+	std::vector<float> sumN;
+	sumN.resize( W_ );
+	for( j = 0; j < W_; j++ ){
+		for( y = 0; y < Y_[1]; y++ ){
+			sumN[j] += n[0][y][j];
+		}
+	}
+
+	// for k = 0, v_ = freqs:
+	for( y = 0; y < Y_[1]; y++ ){
+		for( j = 0; j < W_; j++ ){
+			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * negBaseFreqs[y] )
+						/ ( sumN[j] + alpha[0][j] );
+		}
+	}
+
+	// for k > 0:
+	for( k = 1; k < K+1; k++ ){
+		for( y = 0; y < Y_[k+1]; y++ ){
+			y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
+			yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer
+			for( j = 0; j < k; j++ ){						// when j < k, i.e. p(A|CG) = p(A|C)
+				v_[k][y][j] = v_[k-1][y2][j];
+			}
+			for( j = k; j < W_; j++ ){
+				v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
+							/ ( n[k-1][yk][j-1] + alpha[k][j] );
+			}
+		}
+	}
+}
+
+
+// update v from integral k-mer counts n and current alphas (e.g for CGS)
+inline void Motif::updateVz_n( int*** n, float** alpha, int K ){
+
+	assert( isInitialized_ );
+
+	int y, j, k, y2, yk;
+	float* negBaseFreqs = Global::negSequenceSet->getBaseFrequencies();
+
+	// sum up the n over (k+1)-mers at different position of motif
+	std::vector<int> sumN;
+	sumN.resize( W_ );
+	for( j = 0; j < W_; j++ ){
+		for( y = 0; y < Y_[1]; y++ ){
+			sumN[j] += n[0][y][j];
+		}
+	}
+
+	// for k = 0, v_ = freqs:
+	for( y = 0; y < Y_[1]; y++ ){
+		for( j = 0; j < W_; j++ ){
+			v_[0][y][j] = ( ( float )n[0][y][j] + alpha[0][j] * negBaseFreqs[y] )
+						/ ( ( float )sumN[j] + alpha[0][j] );
+		}
+	}
+
+	// for 1 <= k <= K:
+	for( k = 1; k < K+1; k++ ){
+		for( y = 0; y < Y_[k+1]; y++ ){
+			y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
+			yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer
+//todo: Merge first loop into second one (by allowing contexts to extend left of the motif)
+			for( j = 0; j < k; j++ ){						// when j < k, i.e. p(A|CG) = p(A|C)
+				v_[k][y][j] = v_[k-1][y2][j];
+			}
+//todo: Vectorize in AVX2 / SSE2
+			for( j = k; j < W_; j++ ){
+				v_[k][y][j] = ( ( float )n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
+							/ ( ( float )n[k-1][yk][j-1] + alpha[k][j] );
+			}
+		}
+	}
+}
 #endif /* MOTIF_H_ */
