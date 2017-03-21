@@ -96,7 +96,8 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int
 
 ModelLearning::~ModelLearning(){
 
-	for( int y = -1; y < Y_[Global::modelOrder+1]; y++ ){
+	int K = Global::modelOrder;
+	for( int y = -1; y < Y_[K+1]; y++ ){
 		free( s_[y] );
 	}
 	free( s_-1 );
@@ -110,7 +111,7 @@ ModelLearning::~ModelLearning(){
 	free( z_ );
 	free( normFactor_ );
 
-	for( int k = 0; k < Global::modelOrder+1; k++ ){
+	for( int k = 0; k < K+1; k++ ){
 		for( int y = -1; y < Y_[k+1]; y++ ){
 			free( n_[k][y] );
 			free( n_z_[k][y] );
@@ -354,26 +355,6 @@ void ModelLearning::GibbsSampling(){
 		alpha_avg[k] = ( float* )calloc( W, sizeof( float ) );
 	}
 
-/*
-	// initialize the model with one EStep
-	// compute log odd scores s[y][j], log likelihoods of the highest order K
-	for( y = 0; y < Y_[K+1]; y++ ){
-		for( j = 0; j < W; j++ ){
-			int y_bg = y % Y_[K_bg+1];
-			s_[y][j] = motif_->getV()[K][y][j] / bg_->getV()[K_bg][y_bg];
-		}
-	}
-	// E-step: calculate posterior
-	EStep();
-	// extract initial z from the indices of the largest responsibilities
-	for( n = 0; n < ( int )posSeqs_.size(); n++ ){
-		int LW2 = posSeqs_[n]->getL() - motif_->getW() + 2;
-		for( int i = 1; i < LW2; i++ ){
-			z_[n] = ( r_[n][i] > r_[n][i-1] ) ? i : i-1;
-		}
-	}
-*/
-
 	// ToDo: write down log posterior and model v after each alpha updating step
 /*	std::string opath = std::string( Global::outputDirectory ) + '/'
 						+ Global::posSequenceBasename;
@@ -398,6 +379,26 @@ void ModelLearning::GibbsSampling(){
 			v_prev[k][y] = ( float* )calloc( W, sizeof( float ) );
 		}
 	}
+
+/*
+	// initialize the model with one EStep
+	// compute log odd scores s[y][j], log likelihoods of the highest order K
+	for( y = 0; y < Y_[K+1]; y++ ){
+		for( j = 0; j < W; j++ ){
+			int y_bg = y % Y_[K_bg+1];
+			s_[y][j] = motif_->getV()[K][y][j] / bg_->getV()[K_bg][y_bg];
+		}
+	}
+	// E-step: calculate posterior
+	EStep();
+	// extract initial z from the indices of the largest responsibilities
+	for( n = 0; n < ( int )posSeqs_.size(); n++ ){
+		int LW2 = posSeqs_[n]->getL() - motif_->getW() + 2;
+		for( int i = 1; i < LW2; i++ ){
+			z_[n] = ( r_[n][i] > r_[n][i-1] ) ? i : i-1;
+		}
+	}
+*/
 
 	// count the k-mers
 	// 1. reset n_z_[k][y][j]
@@ -551,7 +552,7 @@ void ModelLearning::GibbsSampling(){
 
 	}
 
-	// obtaining a motif model
+/*	// obtaining a motif model
 	// get the average alpha[k][j] from the last five iterations
 	for( k = 0; k < K+1; k++ ){
 		for( j = 0; j < W; j++ ){
@@ -574,7 +575,7 @@ void ModelLearning::GibbsSampling(){
 
 		// M-step: update model parameters
 		MStep();
-	}
+	}*/
 
 
 	// calculate probabilities
@@ -680,24 +681,22 @@ void ModelLearning::Gibbs_sampling_z_q(){
 		// draw a new position z from discrete posterior distribution
 		std::discrete_distribution<> posterior_dist( posteriors.begin(), posteriors.end() );
 
-		// generate a random number
-		std::mt19937 rng;
-
-		z_[n] = posterior_dist( Global::rngx );					// draw a sample z randomly
+		// draw a sample z randomly
+		z_[n] = posterior_dist( Global::rngx );
 
 		if( z_[n] == 0 ) N_0++;
 	}
 
-/*
 	// sampling q:
 	// draw two random numbers Q and P from Gamma distribution
 	std::gamma_distribution<> P_Gamma_dist( N_0 + 1, 1 );
 	std::gamma_distribution<> Q_Gamma_dist( N - N_0 + 1, 1 );
-	double P = P_Gamma_dist( rng );						// draw a sample for P
-	double Q = Q_Gamma_dist( rng );						// draw a sample for Q
-
-	q_ = ( float ) Q / ( float )( Q + P );				// calculate q_
-*/
+	// draw a sample for P
+	double P = P_Gamma_dist( Global::rngx );
+	// draw a sample for Q
+	double Q = Q_Gamma_dist( Global::rngx );
+	// calculate q_
+	q_ = ( float )Q / ( float )( Q + P );
 
 }
 
@@ -820,9 +819,13 @@ float ModelLearning::calc_gradient_alphas( float** alpha, int k, int j ){
 	// the last term of equation 47
 	for( y = 0; y < Y_[k]; y++ ){
 
-		if( j == 0 || k == 0 ){
+		if( k == 0 ){
 
 			gradient -= boost::math::digamma( ( float )N + alpha[k][j] );
+
+		} else if( j == 0 ){
+
+			gradient -= boost::math::digamma( ( float )n_z_[k-1][y][j] / ( float )Y_[1] + alpha[k][j] );
 
 		} else {
 
