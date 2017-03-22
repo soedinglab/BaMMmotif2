@@ -380,7 +380,7 @@ void ModelLearning::GibbsSampling(){
 		}
 	}
 
-/*
+
 	// initialize the model with one EStep
 	// compute log odd scores s[y][j], log likelihoods of the highest order K
 	for( y = 0; y < Y_[K+1]; y++ ){
@@ -394,11 +394,16 @@ void ModelLearning::GibbsSampling(){
 	// extract initial z from the indices of the largest responsibilities
 	for( n = 0; n < ( int )posSeqs_.size(); n++ ){
 		int LW2 = posSeqs_[n]->getL() - motif_->getW() + 2;
+		float maxR = r_[n][0];
+		int maxIdx = 0;
 		for( int i = 1; i < LW2; i++ ){
-			z_[n] = ( r_[n][i] > r_[n][i-1] ) ? i : i-1;
+			if( r_[n][i] > maxR ){
+				maxR = r_[n][i];
+				maxIdx = LW2 - i;
+			}
 		}
+		z_[n] = maxIdx;
 	}
-*/
 
 	// count the k-mers
 	// 1. reset n_z_[k][y][j]
@@ -423,6 +428,8 @@ void ModelLearning::GibbsSampling(){
 			}
 		}
 	}
+	// todo: delete afterwards! updated model parameters v excluding the n'th sequence
+	motif_->updateVz_n( n_z_, alpha_, K );
 
 	// iterate over
 	while( iterate && iteration < Global::maxCGSIterations ){
