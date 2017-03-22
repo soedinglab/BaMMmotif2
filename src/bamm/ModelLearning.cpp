@@ -446,7 +446,7 @@ void ModelLearning::GibbsSampling(){
 		}
 
 		// sampling z and q
-		if( !Global::noZQSampling )		Gibbs_sampling_z_q();
+		Gibbs_sampling_z_q();
 
 		// update alphas:
 		if( !Global::noAlphaOptimization ){
@@ -548,7 +548,7 @@ void ModelLearning::GibbsSampling(){
 /*		motif_->calculateP();
 		motif_->write( CGSIterations_ );*/
 
-		// get the sum of alpha[k][j] at the last five iterations
+		// get the sum of alpha[k][j] at the last five or ten iterations
 		if( iteration > Global::maxCGSIterations - 5 ){
 			for( k = 0; k < K+1; k++ ){
 				for( j = 0; j < W; j++ ){
@@ -559,7 +559,7 @@ void ModelLearning::GibbsSampling(){
 
 	}
 
-/*	// obtaining a motif model
+	// obtaining a motif model
 	// get the average alpha[k][j] from the last five iterations
 	for( k = 0; k < K+1; k++ ){
 		for( j = 0; j < W; j++ ){
@@ -568,7 +568,7 @@ void ModelLearning::GibbsSampling(){
 	}
 	// run five steps of EM to optimize the final model with
 	// the optimum model parameters v's and the fixed alphas
-	for( size_t step = 0; step < 3; step++ ){
+	for( size_t step = 0; step < 5; step++ ){
 		// compute log odd scores s[y][j], log likelihoods of the highest order K
 		for( y = 0; y < Y_[K+1]; y++ ){
 			for( j = 0; j < W; j++ ){
@@ -582,7 +582,7 @@ void ModelLearning::GibbsSampling(){
 
 		// M-step: update model parameters
 		MStep();
-	}*/
+	}
 
 
 	// calculate probabilities
@@ -695,16 +695,17 @@ void ModelLearning::Gibbs_sampling_z_q(){
 	}
 
 	// sampling q:
-	// draw two random numbers Q and P from Gamma distribution
-	std::gamma_distribution<> P_Gamma_dist( N_0 + 1, 1 );
-	std::gamma_distribution<> Q_Gamma_dist( N - N_0 + 1, 1 );
-	// draw a sample for P
-	double P = P_Gamma_dist( Global::rngx );
-	// draw a sample for Q
-	double Q = Q_Gamma_dist( Global::rngx );
-	// calculate q_
-	q_ = ( float )Q / ( float )( Q + P );
-
+	if( !Global::noQSampling ){
+		// draw two random numbers Q and P from Gamma distribution
+		std::gamma_distribution<> P_Gamma_dist( N_0 + 1, 1 );
+		std::gamma_distribution<> Q_Gamma_dist( N - N_0 + 1, 1 );
+		// draw a sample for P
+		double P = P_Gamma_dist( Global::rngx );
+		// draw a sample for Q
+		double Q = Q_Gamma_dist( Global::rngx );
+		// calculate q_
+		q_ = ( float )Q / ( float )( Q + P );
+	}
 }
 
 void ModelLearning::stochastic_optimize_alphas( int K, int W, float eta, int iter ){

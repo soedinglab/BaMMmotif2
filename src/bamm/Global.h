@@ -79,7 +79,7 @@ public:
 	static int 			maxCGSIterations;					// maximum number of iterations for CGS
 	static bool			noAlphaOptimization;				// disable alpha optimization in CGS
 	static bool			alphaSampling;						// enable alpha sampling in CGS
-	static bool			noZQSampling;						// disable q sampling in CGS
+	static bool			noQSampling;						// disable q sampling in CGS
 	static float		eta;								// learning rate for optimizing alphas, only for tuning
 	static int			interval;							// interval for sampling z and q, only for tuning
 	static bool			debugAlphas;
