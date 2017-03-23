@@ -77,6 +77,7 @@ public:
 	// CGS (Collapsed Gibbs sampling) options
 	static bool			CGS;								// flag to trigger Collapsed Gibbs sampling
 	static int 			maxCGSIterations;					// maximum number of iterations for CGS
+	static bool			initializeZ;						// enable initializing z with one E-step
 	static bool			noAlphaOptimization;				// disable alpha optimization in CGS
 	static bool			alphaSampling;						// enable alpha sampling in CGS
 	static bool			noQSampling;						// disable q sampling in CGS

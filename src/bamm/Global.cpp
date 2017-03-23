@@ -51,6 +51,7 @@ float				Global::q = 0.9f;						// prior probability for a positive sequence to 
 // CGS (Collapsed Gibbs sampling) options
 bool				Global::CGS = false;					// flag to trigger Collapsed Gibbs sampling
 int 				Global::maxCGSIterations = 200;			// maximum number of iterations for CGS
+bool				Global::initializeZ = false;			// enable initializing z with one E-step
 bool				Global::noAlphaOptimization = false;	// disable alpha optimization in CGS
 bool				Global::alphaSampling = false;			// enable alpha sampling in CGS
 bool				Global::noQSampling = false;			// disable q sampling in CGS
@@ -253,6 +254,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	// CGS options
 	if( opt >> GetOpt::OptionPresent( "CGS", CGS ) ){
 		opt >> GetOpt::Option( "maxCGSIterations", maxCGSIterations );
+		opt >> GetOpt::OptionPresent( "initializeZ", initializeZ );
 		opt >> GetOpt::OptionPresent( "noAlphaOptimization", noAlphaOptimization );
 		opt >> GetOpt::OptionPresent( "alphaSampling", alphaSampling );
 		opt >> GetOpt::OptionPresent( "noQSampling", noQSampling );
