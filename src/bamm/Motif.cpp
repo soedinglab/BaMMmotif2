@@ -248,7 +248,7 @@ void Motif::initFromPWM( float** PWM, int asize, int count ){
 			for( j = 0; j < W_; j++ ){
 				// extract k-mers on the motif at position i over W of the n'th sequence
 				y = ( kmer[i-1+j] >= 0 ) ? kmer[i-1+j] % asize : -1;
-				r[i] *= score[y][j];
+				if( y >= 0)	r[i] *= score[y][j];
 			}
 			r[i] *= pos1;
 			normFactor += r[i];
@@ -281,7 +281,7 @@ void Motif::initFromPWM( float** PWM, int asize, int count ){
 		for( k = 0; k < Global::modelOrder + 1; k++ ){
 			for( j = 0; j < W_; j++ ){
 				y = ( kmer[z-1+j] >= 0 ) ? kmer[z-1+j] % Y_[k+1] : -1;
-				n_[k][y][j]++;
+				if( y >= 0) n_[k][y][j]++;
 			}
 		}
 	}
