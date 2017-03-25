@@ -44,6 +44,7 @@ private:
 	int			C_ = 0;											// count the number of binding sites
 	int 		W_;					    						// motif length
 	float***    v_;				                				// conditional probabilities for (k+1)-mers y at motif position j
+	float*		f_bg_;											// monomer frequencies from negative set
 	float***	p_;												// probabilities for (k+1)-mers y at motif position j
 	int***		n_;												// counts of (k+1)-mer for all y at motif position j
 
@@ -68,7 +69,7 @@ inline void Motif::updateV( float*** n, float** alpha, int K ){
 	assert( isInitialized_ );
 
 	int y, j, k, y2, yk;
-	float* negBaseFreqs = Global::negSequenceSet->getBaseFrequencies();
+
 	// sum up the n over (k+1)-mers at different position of motif
 	std::vector<float> sumN;
 	sumN.resize( W_ );
@@ -81,7 +82,7 @@ inline void Motif::updateV( float*** n, float** alpha, int K ){
 	// for k = 0, v_ = freqs:
 	for( y = 0; y < Y_[1]; y++ ){
 		for( j = 0; j < W_; j++ ){
-			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * negBaseFreqs[y] )
+			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * f_bg_[y] )
 						/ ( sumN[j] + alpha[0][j] );
 		}
 	}
@@ -109,7 +110,6 @@ inline void Motif::updateVz_n( int*** n, float** alpha, int K ){
 	assert( isInitialized_ );
 
 	int y, j, k, y2, yk;
-	float* negBaseFreqs = Global::negSequenceSet->getBaseFrequencies();
 
 	// sum up the n over (k+1)-mers at different position of motif
 	std::vector<int> sumN;
@@ -123,7 +123,7 @@ inline void Motif::updateVz_n( int*** n, float** alpha, int K ){
 	// for k = 0, v_ = freqs:
 	for( y = 0; y < Y_[1]; y++ ){
 		for( j = 0; j < W_; j++ ){
-			v_[0][y][j] = ( ( float )n[0][y][j] + alpha[0][j] * negBaseFreqs[y] )
+			v_[0][y][j] = ( ( float )n[0][y][j] + alpha[0][j] * f_bg_[y] )
 						/ ( ( float )sumN[j] + alpha[0][j] );
 		}
 	}
