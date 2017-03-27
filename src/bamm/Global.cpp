@@ -50,7 +50,7 @@ float				Global::q = 0.9f;						// prior probability for a positive sequence to 
 
 // CGS (Collapsed Gibbs sampling) options
 bool				Global::CGS = false;					// flag to trigger Collapsed Gibbs sampling
-int 				Global::maxCGSIterations = 200;			// maximum number of iterations for CGS
+int 				Global::maxCGSIterations = 100;			// maximum number of iterations for CGS
 bool				Global::initializeZ = false;			// enable initializing z with one E-step
 bool				Global::noAlphaOptimization = false;	// disable alpha optimization in CGS
 bool				Global::alphaSampling = false;			// enable alpha sampling in CGS

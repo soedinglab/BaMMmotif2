@@ -264,9 +264,9 @@ void Motif::initFromPWM( float** PWM, int asize, int count ){
 		std::discrete_distribution<> posterior_dist( posteriors.begin(), posteriors.end() );
 
 		// draw a sample z randomly
-//		z = posterior_dist( Global::rngx );
+		z = posterior_dist( Global::rngx );
 
-		// extract initial z from the indices of the largest responsibilities
+/*		// extract initial z from the indices of the largest responsibilities
 		float maxR = r[0];
 		int maxIdx = 0;
 		for( int i = 1; i < LW1+1; i++ ){
@@ -276,6 +276,7 @@ void Motif::initFromPWM( float** PWM, int asize, int count ){
 			}
 		}
 		z = maxIdx;
+*/
 
 		// count kmers with sampled z
 		for( k = 0; k < Global::modelOrder + 1; k++ ){

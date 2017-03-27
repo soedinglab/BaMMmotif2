@@ -545,9 +545,11 @@ void ModelLearning::GibbsSampling(){
 
 		}
 
+/*
 		// only for writing out model after each iteration:
-/*		motif_->calculateP();
-		motif_->write( CGSIterations_ );*/
+		motif_->calculateP();
+		motif_->write( iteration );
+*/
 
 		// get the sum of alpha[k][j] at the last five or ten iterations
 		if( iteration > Global::maxCGSIterations - 5 ){
