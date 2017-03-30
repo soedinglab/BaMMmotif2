@@ -30,7 +30,7 @@ std::string			Global::initialModelBasename;			// basename of initial model
 // model options
 int        			Global::modelOrder = 2;					// model order
 std::vector<float> 	Global::modelAlpha( modelOrder+1, 1.0f );	// initial alphas
-float				Global::modelBeta = 20.0f;				// alpha_k = beta x gamma^k for k > 0
+float				Global::modelBeta = 7.0f;				// alpha_k = beta x gamma^k for k > 0
 float				Global::modelGamma = 3.0f;
 std::vector<int>    Global::addColumns( 2 );				// add columns to the left and right of initial model
 bool                Global::interpolate = true;             // calculate prior probabilities from lower-order probabilities

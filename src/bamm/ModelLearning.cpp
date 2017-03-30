@@ -69,6 +69,7 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int
 	n_ = ( float*** )calloc( K+1, sizeof( float** ) );
 	n_z_ = ( int*** )calloc( K+1, sizeof( int** ) );
 	for( k = 0; k < K+1; k++ ){
+		// allocate -1 position for y
 		n_[k] = ( float** )calloc( Y_[k+1]+1, sizeof( float* ) )+1;
 		n_z_[k] = ( int** )calloc( Y_[k+1]+1, sizeof( int* ) )+1;
 		for( y = -1; y < Y_[k+1]; y++ ){
@@ -81,12 +82,10 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int
 	alpha_ = ( float** )malloc( ( K+1 ) * sizeof( float* ) );
 	m1_t_ = ( float** )calloc( K+1, sizeof( float* ) );
 	m2_t_ = ( float** )calloc( K+1, sizeof( float* ) );
-	prob_a_ = ( float** )calloc( K+1, sizeof( float* ) );
 	for( k = 0; k < K+1; k++ ){
 		alpha_[k] = ( float* )malloc( W * sizeof( float ) );
 		m1_t_[k] = ( float* )calloc( W, sizeof( float ) );
 		m2_t_[k] = ( float* )calloc( W, sizeof( float ) );
-		prob_a_[k] = ( float* )calloc( W, sizeof( float ) );
 		for( j = 0; j < W; j++ ){
 			alpha_[k][j] = Global::modelAlpha[k];
 		}
@@ -429,22 +428,20 @@ void ModelLearning::GibbsSampling(){
 			}
 		}
 	}
-	// todo: delete afterwards! updated model parameters v excluding the n'th sequence
-	motif_->updateVz_n( n_z_, alpha_, K );
 
 	// iterate over
 	while( iterate && iteration < Global::maxCGSIterations ){
 
 		iteration++;
 
-		// get the previous v before updating alphas and z and q
+/*		// get the previous v before updating alphas and z and q
 		for( k = 0; k < K+1; k++ ){
 			for( y = 0; y < Y_[k+1]; y++ ){
 				for( j = 0; j < W; j++ ){
 					v_prev[k][y][j] = motif_->getV()[k][y][j];
 				}
 			}
-		}
+		}*/
 
 		// sampling z and q
 		Gibbs_sampling_z_q();
@@ -545,11 +542,10 @@ void ModelLearning::GibbsSampling(){
 
 		}
 
-/*
-		// only for writing out model after each iteration:
+		// todo: only for writing out model after each iteration for making a movie:
 		motif_->calculateP();
 		motif_->write( iteration );
-*/
+
 
 		// get the sum of alpha[k][j] at the last five or ten iterations
 		if( iteration > Global::maxCGSIterations - 5 ){
@@ -766,20 +762,27 @@ void ModelLearning::GibbsMH_sampling_alphas(){
 
 	for( int k = 0; k < K+1; k++ ){
 
-		for( int j = 0; j < W; j++ ){
+		for( int j = 1; j < W; j++ ){
+//		for( int j = 0; j < W; j++ ){
 
 			// draw 10 times in a row and take record of the last accepted sample
 			for( int step = 0; step < 10; step++ ){
 
 				float lprob_a_prev = calc_logCondProb_a( alpha_, k, j );
-
+				float alpha_prev = alpha_[k][j];
 				// draw a new a from N(a, 1)
-				std::normal_distribution<float> norm_dist( logf( alpha_[k][j] ), 1.0f );
+				std::normal_distribution<float> norm_dist( logf( alpha_[k][j] ), 0.5f );
 				alpha_[k][j] = expf( norm_dist( Global::rngx ) );
 
-				// accept this trial sample with a probability
 				float lprob_a_new = calc_logCondProb_a( alpha_, k, j );
-				prob_a_[k][j] = ( lprob_a_new < lprob_a_prev ) ? expf( lprob_a_new - lprob_a_prev ) : 1;
+
+				// accept the trial sample if the ratio >= 1
+				if( lprob_a_new < lprob_a_prev ){
+					alpha_[k][j] = alpha_prev;
+				} else {
+					if( alpha_[k][j] > 10e10 )
+						std::cout << "alpha_[" << k << "][" << j << "] = " << alpha_[k][j] << std::endl;
+				}
 			}
 		}
 	}
@@ -808,7 +811,7 @@ float ModelLearning::calc_gradient_alphas( float** alpha, int k, int j ){
 
 	// the forth term of equation 47
 	for( y = 0; y < Y_[k+1]; y++ ){
-		y2 = y % Y_[k];
+
 		if( k == 0 ){
 			// the first part
 			gradient += v_bg[k][y] * boost::math::digamma( ( float )n_z_[k][y][j] + alpha[k][j] * v_bg[k][y] );
@@ -817,6 +820,9 @@ float ModelLearning::calc_gradient_alphas( float** alpha, int k, int j ){
 			gradient -= v_bg[k][y] * boost::math::digamma( alpha[k][j] * v_bg[k][y] );
 
 		} else {
+
+			y2 = y % Y_[k];
+
 			// the first part
 			gradient += v[k-1][y2][j] * boost::math::digamma( ( float )n_z_[k][y][j] + alpha[k][j] * v[k-1][y2][j] );
 
@@ -830,15 +836,15 @@ float ModelLearning::calc_gradient_alphas( float** alpha, int k, int j ){
 	// the last term of equation 47
 	for( y = 0; y < Y_[k]; y++ ){
 
-		if( k == 0 ){
+		if( k == 0 || j == 0 ){
 
 			gradient -= boost::math::digamma( ( float )N + alpha[k][j] );
 
-		} else if( j == 0 ){
+		} /*else if( j == 0 ){
 
-			gradient -= boost::math::digamma( ( float )n_z_[k-1][y][j] / ( float )Y_[1] + alpha[k][j] );
+			gradient -= boost::math::digamma( ( float )n_z_[k-1][y][j] / v[k][y][j] );
 
-		} else {
+		} */else {
 
 			gradient -= boost::math::digamma( ( float )n_z_[k-1][y][j-1] + alpha[k][j] );
 
@@ -952,9 +958,13 @@ float ModelLearning::calc_logCondProb_a( float** alpha, int k, int j ){
 	// the last term of equation 46
 	for( y = 0; y < Y_[k]; y++ ){
 
-		if( j == 0 || k == 0 ){
+		if( k == 0 ){
 
 			logCondProbA -= boost::math::lgamma( ( float )N + alpha[k][j] );
+
+		} else if( j == 0 ){
+
+			logCondProbA -= boost::math::lgamma( ( float )n_z_[k-1][y][j] / v[k][y][j] );
 
 		} else {
 

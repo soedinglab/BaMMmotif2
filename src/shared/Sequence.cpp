@@ -24,6 +24,7 @@ Sequence::Sequence( uint8_t* sequence, int L, std::string header, std::vector<in
 	 *  (k+1)mer:	| A C G T | AA AC AG AT CA CC CG CT GA GC GG GT TA TC TG TT | AAA AAC AAG AAT ... | ...
 	 *  y:			| 0 1 2 3 |	 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 |  0   1   2   3  ... | ...
 	 */
+
 	kmer_ = ( int* )calloc( L_, sizeof( int ) );
 	for( int i = 0; i < L_; i++ ){
 		for( int j = i < 8 ? i : 8; j >= 0; j-- ){

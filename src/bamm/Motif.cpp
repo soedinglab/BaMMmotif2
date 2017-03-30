@@ -279,10 +279,12 @@ void Motif::initFromPWM( float** PWM, int asize, int count ){
 */
 
 		// count kmers with sampled z
-		for( k = 0; k < Global::modelOrder + 1; k++ ){
-			for( j = 0; j < W_; j++ ){
-				y = ( kmer[z-1+j] >= 0 ) ? kmer[z-1+j] % Y_[k+1] : -1;
-				if( y >= 0) n_[k][y][j]++;
+		if( z > 0 ){
+			for( k = 0; k < Global::modelOrder + 1; k++ ){
+				for( j = 0; j < W_; j++ ){
+					y = ( kmer[z-1+j] >= 0 ) ? kmer[z-1+j] % Y_[k+1] : -1;
+					if( y >= 0) n_[k][y][j]++;
+				}
 			}
 		}
 	}
