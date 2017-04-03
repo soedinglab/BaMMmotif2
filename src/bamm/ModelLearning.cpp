@@ -205,6 +205,9 @@ int ModelLearning::EM(){
 		if( v_diff < Global::epsilon )					iterate = false;
 		if( llikelihood_diff < 0 && EMIterations > 1 )	iterate = false;
 
+		// todo: only for writing out model after each iteration for making a movie:
+		motif_->calculateP();
+		motif_->write( EMIterations );
 	}
 
 	// calculate probabilities
@@ -349,37 +352,13 @@ void ModelLearning::GibbsSampling(){
 	int W = motif_->getW();
 	float eta = Global::eta;						// learning rate for alpha learning
 	int k, y, j, n;
-	float** alpha_avg = ( float** )calloc( K+1, sizeof( float* ) );
+	std::vector<std::vector<float>> alpha_avg;
+	alpha_avg.resize( K+1 );
 	for( k = 0; k < K+1; k++ ){
-		alpha_avg[k] = ( float* )calloc( W, sizeof( float ) );
+		alpha_avg[k].resize( W );
 	}
 
-	// ToDo: write down log posterior and model v after each alpha updating step
-/*	std::string opath = std::string( Global::outputDirectory ) + '/'
-						+ Global::posSequenceBasename;
-	std::string opath_log = opath + ".logposterior";
-	std::string opath_condProb = opath + ".condProb";
-	std::string opath_alphas = opath + ".alphas";
-	std::string opath_gradient = opath + ".gradient";
-	std::string opath_vdiff = opath + ".vdiff";
-	std::string opath_logAs = opath + ".logAs";
-
-	std::ofstream ofile_log( opath_log.c_str() );
-	std::ofstream ofile_vdiff( opath_vdiff.c_str() );
-	std::ofstream ofile_condProb( opath_condProb.c_str() );
-	std::ofstream ofile_alphas( opath_alphas.c_str() );
-	std::ofstream ofile_gradient( opath_gradient.c_str() );
-	std::ofstream ofile_logAs( opath_logAs.c_str() );*/
-
-	float*** v_prev = ( float*** )calloc( K+1, sizeof( float** ) );
-	for( k = 0; k < K+1; k++ ){
-		v_prev[k] = ( float** )calloc( Y_[k+1], sizeof( float* ) );
-		for( y = 0; y < Y_[k+1]; y++ ){
-			v_prev[k][y] = ( float* )calloc( W, sizeof( float ) );
-		}
-	}
-
-	if( Global::initializeZ ){
+	if( !Global::noInitialZ ){
 		// initialize the model with one EStep
 		// compute log odd scores s[y][j], log likelihoods of the highest order K
 		for( y = 0; y < Y_[K+1]; y++ ){
@@ -434,118 +413,39 @@ void ModelLearning::GibbsSampling(){
 
 		iteration++;
 
-/*		// get the previous v before updating alphas and z and q
-		for( k = 0; k < K+1; k++ ){
-			for( y = 0; y < Y_[k+1]; y++ ){
-				for( j = 0; j < W; j++ ){
-					v_prev[k][y][j] = motif_->getV()[k][y][j];
-				}
-			}
-		}*/
-
 		// sampling z and q
 		Gibbs_sampling_z_q();
 
 		// update alphas:
 		if( !Global::noAlphaOptimization ){
-
 			// update alphas by stochastic optimization
 			stochastic_optimize_alphas( K, W, eta, iteration );
-
-			// update model parameter v
-			motif_->updateVz_n( n_z_, alpha_, K );
-
-/*
-			// todo: write out the difference of v's for comparison
-			for( k = 0; k < K+1; k++ ){
-				float v_diff = 0.0f;
-				for( y = 0; y < Y_[k+1]; y++ ){
-					for( j = 0; j < W; j++ ){
-						v_diff += fabsf( motif_->getV()[k][y][j] - v_prev[k][y][j] );
-					}
-				}
-				ofile_vdiff << v_diff << '\t';
-			}
-			ofile_vdiff << std::endl;
-
-			for( j = 0; j < W; j++ ){
-				ofile_alphas << alpha_[K][j] << '\t';
-				ofile_gradient << calc_gradient_alphas( alpha_, K, j ) << '\t';
-				ofile_logAs << calc_logCondProb_a( alpha_, K, j ) << '\t';
-
-			}
-			ofile_alphas << std::endl;
-			ofile_gradient << std::endl;
-			ofile_logAs << std::endl;
-
-			ofile_condProb << expf( calc_logCondProb_alphas( alpha_, K ) ) << '\t';
-			ofile_log << calc_logCondProb_alphas( alpha_, K ) << '\t'
-					<< calc_prior_alphas( alpha_, K ) << '\t'
-					<< calc_likelihood_alphas( alpha_, K ) << '\t';
-			ofile_log << std::endl;
-			ofile_condProb << std::endl;
-*/
 
 		} else if( Global::alphaSampling ){
 			// sample alpha in the exponential space using Metreopolis-Hastings algorithm
 			GibbsMH_sampling_alphas();
 
 		} else if( Global::debugAlphas ){
-
 			// debug the optimization of alphas
 			if( iteration <= 150 ){
 				// update alphas by stochastic optimization
 				stochastic_optimize_alphas( K, W, eta, iteration );
 
-				// update model parameter v
-				motif_->updateVz_n( n_z_, alpha_, K );
-
 			} else {
-
 				// set up a sequential numbers for alphas with the highest order
 				for( j = 0; j < W; j++ ){
 					alpha_[K][j] = ( float )iteration - 150.0f;
 				}
-
-				// update model parameter v
-				motif_->updateVz_n( n_z_, alpha_, K );
-
-/*				// todo: write out the difference of v's for comparison
-				for( k = 0; k < K+1; k++ ){
-					float v_diff = 0.0f;
-					for( y = 0; y < Y_[k+1]; y++ ){
-						for( j = 0; j < W; j++ ){
-							v_diff += fabsf( motif_->getV()[k][y][j] - v_prev[k][y][j] );
-						}
-					}
-					ofile_vdiff << v_diff << '\t';
-				}
-				ofile_vdiff << std::endl;
-
-				for( j = 0; j < W; j++ ){
-					ofile_alphas << alpha_[K][j] << '\t';
-					ofile_gradient << calc_gradient_alphas( alpha_, K, j ) << '\t';
-					ofile_logAs << calc_logCondProb_a( alpha_, K, j ) << '\t';
-
-				}
-				ofile_alphas << std::endl;
-				ofile_gradient << std::endl;
-				ofile_logAs << std::endl;
-
-				ofile_condProb << expf( calc_logCondProb_alphas( alpha_, K ) ) << '\t';
-				ofile_log << calc_logCondProb_alphas( alpha_, K ) << '\t'
-						<< calc_prior_alphas( alpha_, K ) << '\t'
-						<< calc_likelihood_alphas( alpha_, K ) << '\t';
-				ofile_log << std::endl;
-				ofile_condProb << std::endl;*/
 			}
 
 		}
 
+/*
 		// todo: only for writing out model after each iteration for making a movie:
 		motif_->calculateP();
 		motif_->write( iteration );
 
+*/
 
 		// get the sum of alpha[k][j] at the last five or ten iterations
 		if( iteration > Global::maxCGSIterations - 5 ){
@@ -555,7 +455,6 @@ void ModelLearning::GibbsSampling(){
 				}
 			}
 		}
-
 	}
 
 	// obtaining a motif model
@@ -565,6 +464,10 @@ void ModelLearning::GibbsSampling(){
 			alpha_avg[k][j] /= 5.0f;
 		}
 	}
+
+	// update model parameter v
+	motif_->updateVz_n( n_z_, alpha_, K );
+
 	// run five steps of EM to optimize the final model with
 	// the optimum model parameters v's and the fixed alphas
 	for( size_t step = 0; step < 5; step++ ){
@@ -588,18 +491,6 @@ void ModelLearning::GibbsSampling(){
 	motif_->calculateP();
 
 	fprintf( stdout, "\n--- Runtime for Collapsed Gibbs sampling: %.4f seconds ---\n", ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );
-
-	// free the memory:
-	for( k = 0; k < K+1; k++ ){
-		for( y = 0; y < Y_[k+1]; y++ ){
-			free( v_prev[k][y] );
-		}
-		free( v_prev[k] );
-		free( alpha_avg[k] );
-	}
-	free( v_prev );
-	free( alpha_avg );
-
 }
 
 void ModelLearning::Gibbs_sampling_z_q(){
@@ -670,6 +561,7 @@ void ModelLearning::Gibbs_sampling_z_q(){
 		for( i = 1; i <= LW1; i++ ){
 			r_[n][i] = 1.0f;
 			for( j = 0; j < W; j++ ){
+				// todo: the most time-costly code!
 				// extract k-mers on the motif at position i over W of the n'th sequence
 				y = ( kmer[i-1+j] >= 0 ) ? kmer[i-1+j] % Y_[K+1] : -1;
 				r_[n][i] *= s_[y][j];
@@ -770,7 +662,7 @@ void ModelLearning::GibbsMH_sampling_alphas(){
 
 				float lprob_a_prev = calc_logCondProb_a( alpha_, k, j );
 				float alpha_prev = alpha_[k][j];
-				// draw a new a from N(a, 1)
+				// draw a new a from the distribution of N(a, 1)
 				std::normal_distribution<float> norm_dist( logf( alpha_[k][j] ), 0.5f );
 				alpha_[k][j] = expf( norm_dist( Global::rngx ) );
 

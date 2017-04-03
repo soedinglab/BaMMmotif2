@@ -246,9 +246,9 @@ void Motif::initFromPWM( float** PWM, int asize, int count ){
 		for( i = 1; i <= LW1; i++ ){
 			r[i] = 1.0f;
 			for( j = 0; j < W_; j++ ){
-				// extract k-mers on the motif at position i over W of the n'th sequence
+				// extract monomers on the motif at position i over W of the n'th sequence
 				y = ( kmer[i-1+j] >= 0 ) ? kmer[i-1+j] % asize : -1;
-				if( y >= 0)	r[i] *= score[y][j];
+				if( y >= 0 )	r[i] *= score[y][j];
 			}
 			r[i] *= pos1;
 			normFactor += r[i];
@@ -266,24 +266,12 @@ void Motif::initFromPWM( float** PWM, int asize, int count ){
 		// draw a sample z randomly
 		z = posterior_dist( Global::rngx );
 
-/*		// extract initial z from the indices of the largest responsibilities
-		float maxR = r[0];
-		int maxIdx = 0;
-		for( int i = 1; i < LW1+1; i++ ){
-			if( r[i] > maxR ){
-				maxR = r[i];
-				maxIdx = i;
-			}
-		}
-		z = maxIdx;
-*/
-
 		// count kmers with sampled z
 		if( z > 0 ){
 			for( k = 0; k < Global::modelOrder + 1; k++ ){
 				for( j = 0; j < W_; j++ ){
 					y = ( kmer[z-1+j] >= 0 ) ? kmer[z-1+j] % Y_[k+1] : -1;
-					if( y >= 0) n_[k][y][j]++;
+					if( y >= 0 )	n_[k][y][j]++;
 				}
 			}
 		}
@@ -307,13 +295,6 @@ void Motif::initFromPWM( float** PWM, int asize, int count ){
 
 	// set isInitialized
 	isInitialized_ = true;
-
-	// optional: save initial model
-	// TOdo: delete after
-	if( Global::saveInitialModel ){
-		calculateP();
-		write( count + 13 );
-	}
 
 }
 
