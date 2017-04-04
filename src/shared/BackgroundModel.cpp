@@ -20,7 +20,7 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 	}
 
 	K_ = order;
-	for( int k = 0; k < 10; k++ ){
+	for( int k = 0; k < 11; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 
@@ -66,12 +66,13 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 			int s_idx = foldIndices[folds[f]][f_idx];
 			// get sequence length
 			int L = seqs[s_idx]->getL();
+			int* kmer = seqs[s_idx]->getKmer();
 			// loop over order
 			for( int k = 0; k <= K_; k++ ){
 				// loop over sequence positions
 				for( int i = k; i < L; i++ ){
 					// extract (k+1)mer
-					int y = seqs[s_idx]->extractKmer( i, k );
+					int y = kmer[i] % Y_[k+1];
 					// skip non-defined alphabet letters
 					if( y >= 0 ){
 						// count (k+1)mer
@@ -186,10 +187,6 @@ int BackgroundModel::getOrder(){
     return K_;
 }
 
-float** BackgroundModel::getV(){
-    return v_;
-}
-
 void BackgroundModel::expV(){
 
 	for( int k = 0; k <= K_; k++ ){
@@ -256,12 +253,14 @@ double BackgroundModel::calculateLogLikelihood( SequenceSet& sequenceSet,
 			int s_idx = foldIndices[folds[f]][f_idx];
 			// get sequence length
 			int L = sequenceSet.getSequences()[s_idx]->getL();
+			int* kmer = sequenceSet.getSequences()[s_idx]->getKmer();
+
 			// loop over sequence positions
 			for( int i = 0; i < L; i++ ){
 				// calculate k
 				int k = std::min( i, K_ );
 				// extract (k+1)mer
-				int y = sequenceSet.getSequences()[s_idx]->extractKmer( i, k );
+				int y = kmer[i] % Y_[k+1];
 				// skip non-defined alphabet letters
 				if( y >= 0 ){
 					// add log probabilities
@@ -322,12 +321,13 @@ void BackgroundModel::calculatePosLikelihoods( SequenceSet& sequenceSet,
 				int s_idx = foldIndices[folds[f]][f_idx];
 				// get sequence length
 				int L = sequenceSet.getSequences()[s_idx]->getL();
+				int* kmer = sequenceSet.getSequences()[s_idx]->getKmer();
 				// loop over sequence positions
 				for( int i = 0; i < L; i++ ){
 					// calculate k
 					int k = std::min( i, K_ );
 					// extract (k+1)mer
-					int y = sequenceSet.getSequences()[s_idx]->extractKmer( i, k );
+					int y = kmer[i] % Y_[k+1];
 					file << ( i == 0 ? "" : " " );
 					if( y < 0 ){
 						file << "NA";

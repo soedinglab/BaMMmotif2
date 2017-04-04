@@ -46,7 +46,6 @@ private:
 	float* 					normFactor_;		// log likelihood for each iteration
 	float**					m1_t_;				// first moment for alpha optimizer (ADAM)
 	float**					m2_t_;				// second moment for alpha optimizer (ADAM)
-	float**					prob_a_;			// log conditional probabilities for a ( a = ln(alpha) )
 	std::vector<Sequence*>	posSeqs_;			// copy positive sequences due to folds
 
 	void 					EStep();			// E-step

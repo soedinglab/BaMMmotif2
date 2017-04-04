@@ -30,7 +30,7 @@ std::string			Global::initialModelBasename;			// basename of initial model
 // model options
 int        			Global::modelOrder = 2;					// model order
 std::vector<float> 	Global::modelAlpha( modelOrder+1, 1.0f );	// initial alphas
-float				Global::modelBeta = 20.0f;				// alpha_k = beta x gamma^k for k > 0
+float				Global::modelBeta = 7.0f;				// alpha_k = beta x gamma^k for k > 0
 float				Global::modelGamma = 3.0f;
 std::vector<int>    Global::addColumns( 2 );				// add columns to the left and right of initial model
 bool                Global::interpolate = true;             // calculate prior probabilities from lower-order probabilities
@@ -50,10 +50,11 @@ float				Global::q = 0.9f;						// prior probability for a positive sequence to 
 
 // CGS (Collapsed Gibbs sampling) options
 bool				Global::CGS = false;					// flag to trigger Collapsed Gibbs sampling
-int 				Global::maxCGSIterations = 200;			// maximum number of iterations for CGS
+int 				Global::maxCGSIterations = 100;			// maximum number of iterations for CGS, it should be larger than 5
+bool				Global::noInitialZ = false;				// enable initializing z with one E-step
 bool				Global::noAlphaOptimization = false;	// disable alpha optimization in CGS
 bool				Global::alphaSampling = false;			// enable alpha sampling in CGS
-bool				Global::noZQSampling = false;			// disable q sampling in CGS
+bool				Global::noQSampling = false;			// disable q sampling in CGS
 float				Global::eta = 0.2f;						// learning rate for Gibbs sampling, only for tuning
 int					Global::interval = 10;					// interval for sampling z and q, only for tuning
 bool				Global::debugAlphas = false;
@@ -72,8 +73,8 @@ float 				Global::scoreCutoff = 0.0;				// score cutoff for printing logodds sco
 bool                Global::verbose = false;
 bool                Global::debugMode = false;              // debug-mode: prints out everything.
 bool				Global::saveBaMMs = true;
-bool				Global::savePRs = false;				// write the precision, recall, TP and FP
-bool				Global::savePvalues = true;				// write p-values for each log odds score from sequence set
+bool				Global::savePRs = true;					// write the precision, recall, TP and FP
+bool				Global::savePvalues = false;			// write p-values for each log odds score from sequence set
 bool				Global::saveLogOdds = false;			// write the log odds of positive and negative sets to disk
 bool				Global::saveInitialModel = false;		// write out the initial model to disk
 bool				Global::saveBgModel = false;			// write out the background model to disk
@@ -257,9 +258,10 @@ int Global::readArguments( int nargs, char* args[] ){
 	// CGS options
 	if( opt >> GetOpt::OptionPresent( "CGS", CGS ) ){
 		opt >> GetOpt::Option( "maxCGSIterations", maxCGSIterations );
+		opt >> GetOpt::OptionPresent( "noInitialZ", noInitialZ );
 		opt >> GetOpt::OptionPresent( "noAlphaOptimization", noAlphaOptimization );
-		opt >> GetOpt::OptionPresent( "AlphaSampling", alphaSampling );
-		opt >> GetOpt::OptionPresent( "noZQSampling", noZQSampling );
+		opt >> GetOpt::OptionPresent( "alphaSampling", alphaSampling );
+		opt >> GetOpt::OptionPresent( "noQSampling", noQSampling );
 		opt >> GetOpt::Option( "eta", eta );
 		opt >> GetOpt::Option( "interval", interval );
 	}
@@ -375,6 +377,9 @@ void Global::printHelp(){
 	printf("\n 		Options for CGS: \n");
 	printf("\n 			--CGS\n"
 			"				trigger Collapsed Gibbs Sampling (CGS) algorithm.\n\n");
+	printf("\n 			--maxCGSIterations <INTEGER> (*) \n"
+			"				Limit the number of CGS iterations. \n"
+			"				It should be larger than 5 and is defaulted to 100.\n\n");
 	printf("\n 			--noAlphaSampling (*) \n"
 			"				disable alpha sampling. Defaults to false. *For developers.\n\n");
 	printf("\n 			--noQSampling (*) \n"

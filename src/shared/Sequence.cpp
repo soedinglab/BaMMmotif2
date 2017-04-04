@@ -13,9 +13,23 @@ Sequence::Sequence( uint8_t* sequence, int L, std::string header, std::vector<in
 		std::memcpy( sequence_, sequence, L_ );
 	}
 	header_ = header;
-	Y_ = new int[10];
-	for( int i = 0; i < 10; i++ ){
+	Y_ = new int[11];
+	for( int i = 0; i < 11; i++ ){
 		Y_[i] = ipow( Alphabet::getSize(), i );
+	}
+
+	/**
+	 *  extract (k+1)mer y from positions (i-k,...,i) of the sequence
+	 *  e.g.		| monomer |                      dimer                      |      trimer     ... | ...
+	 *  (k+1)mer:	| A C G T | AA AC AG AT CA CC CG CT GA GC GG GT TA TC TG TT | AAA AAC AAG AAT ... | ...
+	 *  y:			| 0 1 2 3 |	 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 |  0   1   2   3  ... | ...
+	 */
+
+	kmer_ = ( int* )calloc( L_, sizeof( int ) );
+	for( int i = 0; i < L_; i++ ){
+		for( int j = i < 8 ? i : 8; j >= 0; j-- ){
+			kmer_[i] += ( sequence_[i-j] > 0 ) ? ( sequence_[i-j] -1 ) * Y_[j] : -Y[10];
+		}
 	}
 
 }
@@ -25,6 +39,7 @@ Sequence::~Sequence(){
 		free( sequence_ );
 	}
 	delete[] Y_;
+	free( kmer_ );
 }
 
 uint8_t* Sequence::getSequence(){

@@ -24,7 +24,7 @@ public:
 	static char		getBase( uint8_t code );			// get base from encoding
 	static uint8_t	getComplementCode( uint8_t code );	// get complement encoding from encoding
 
-	static void 		setSize( int size );
+	static void 	setSize( int size );
 
 private:
 
@@ -41,7 +41,7 @@ inline uint8_t Alphabet::getCode( char base ){
 }
 
 inline char Alphabet::getBase( uint8_t code ){
-	return codeToBase_[ code ];
+	return codeToBase_[code];
 }
 
 inline uint8_t Alphabet::getComplementCode( uint8_t code ){
