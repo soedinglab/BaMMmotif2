@@ -20,7 +20,7 @@ ScoreSeqSet::ScoreSeqSet( Motif* motif, BackgroundModel* bg, std::vector<Sequenc
 	seqSet_ = seqSet;
 
 	// allocate memory for scores_[n][i]
-	scores_.resize( 2 );
+	scores_.resize( seqSet_.size() );
 
 }
 
@@ -40,7 +40,7 @@ void ScoreSeqSet::score(){
 
 		int LW1 = seqSet_[n]->getL() - W + 1;
 
-		maxScore = -FLT_MAX;
+		//maxScore = -FLT_MAX;
 
 		std::vector<float> logOdds( LW1 );
 
@@ -62,17 +62,14 @@ void ScoreSeqSet::score(){
 			}
 
 			// take all the log odds scores for MOPS model:
-			scores_[0].push_back( logOdds[i] );
+			scores_[n].push_back( logOdds[i] );
 
 			// take the largest log odds score for ZOOPS model:
-			if( logOdds[i] > maxScore ){
-				maxScore = logOdds[i];
-			}
-
+			//if( logOdds[i] > maxScore ){
+			//	maxScore = logOdds[i];
+			//}
 		}
-
-		scores_[1].push_back( maxScore );
-
+		//scores_[1].push_back( maxScore );
 	}
 }
 
@@ -80,24 +77,35 @@ std::vector<std::vector<float>> ScoreSeqSet::getScores(){
 	return scores_;
 }
 
-void ScoreSeqSet::write(){
+void ScoreSeqSet::write(int N,float cutoff){
 
 	/**
 	 * save log odds scores in one flat file:
 	 * posSequenceBasename.logOdds
 	 */
 
+	bool first_hit = true;
+
 	std::string opath = std::string( Global::outputDirectory ) + '/'
-			+ Global::posSequenceBasename + ".logOdds";
+			+ Global::posSequenceBasename +  "_motif_" + std::to_string( N+1 ) + ".logOdds";
 
 	std::ofstream ofile( opath );
 
 	for( size_t n = 0; n < seqSet_.size(); n++ ){
+		first_hit = true;
 		int LW1 = seqSet_[n]->getL() - motif_->getW() + 1;
 		for( int i = 0; i < LW1; i++ ){
-			ofile << std::setprecision( 3 ) << scores_[n][i] << '\t';
+			if ( scores_ [n][i]>cutoff ) {
+				if ( first_hit ){
+					ofile << seqSet_[n]->getHeader() << std::endl;
+					first_hit = false;
+				}
+				ofile << i << ':' << std::setprecision( 3 ) << scores_[n][i] << ' ';
+			}
 		}
-		ofile << std::endl;
+		if( ! first_hit ){
+			ofile << std::endl;
+		}
 	}
 
 }

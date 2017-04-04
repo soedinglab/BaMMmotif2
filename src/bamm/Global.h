@@ -90,6 +90,9 @@ public:
 	static int			cvFold;								// number of cross-validation (cv) folds
 	static int 			sOrder;								// the k-mer order for sampling negative sequence set
 
+	// scoring options
+	static float        scoreCutoff;                        // cutoff for logodds scores to print out as motif hits
+
 	// other options
 	static bool			verbose;							// verbose printouts, defaults to false
 	static bool         debugMode;                          // verbose printouts for debugging, defaults to false
@@ -99,6 +102,7 @@ public:
 	static bool			saveLogOdds;						// write the log odds of positive and negative sets to disk
 	static bool			saveInitialModel;					// write out the initial model to disk
 	static bool 		saveBgModel;						// write out background model to disk
+	static bool         scoreSeqset;                        // write logOdds Scores of positive sequence set to disk
 	static int			Yk;									// the counts of numbers in Y_ array
 	static bool			generatePseudoSet;					// test for alpha learning
 
