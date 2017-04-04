@@ -99,12 +99,13 @@ int main( int nargs, char* args[] ){
 		// write out the learned model
 		motif->write( n );
 
-/*
-		// score the model on sequence set
-		ScoreSeqSet seqset( motif, bgModel, Global::posSequenceSet->getSequences() );
-		seqset.score();
-		seqset.write();
-*/
+		if ( Global::scoreSeqset){
+			// score the model on sequence set
+			ScoreSeqSet seqset( motif, bgModel, Global::posSequenceSet->getSequences() );
+			seqset.score();
+			seqset.write( n, Global::scoreCutoff );
+		}
+
 
 		delete motif;
 	}

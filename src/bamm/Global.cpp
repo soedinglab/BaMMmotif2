@@ -66,6 +66,9 @@ int        			Global::mFold = 10;						// number of negative sequences as multip
 int        			Global::cvFold = 5;						// size of cross-validation folds
 int 				Global::sOrder = 2;						// the k-mer order for sampling negative sequence set
 
+// scoring options
+float 				Global::scoreCutoff = 0.0;				// score cutoff for printing logodds scores as motif hit
+
 // printout options
 bool                Global::verbose = false;
 bool                Global::debugMode = false;              // debug-mode: prints out everything.
@@ -75,6 +78,7 @@ bool				Global::savePvalues = false;			// write p-values for each log odds score
 bool				Global::saveLogOdds = false;			// write the log odds of positive and negative sets to disk
 bool				Global::saveInitialModel = false;		// write out the initial model to disk
 bool				Global::saveBgModel = false;			// write out the background model to disk
+bool                Global::scoreSeqset = false;            // write logOdds Scores of positive sequence set to disk
 int					Global::Yk = 10;						// the counts of numbers in Y_ array
 bool				Global::generatePseudoSet = false;		// test for alpha learning
 std::mt19937		Global::rngx;
@@ -273,6 +277,9 @@ int Global::readArguments( int nargs, char* args[] ){
 		opt >> GetOpt::Option( 'n', "cvFold", cvFold );
 		opt >> GetOpt::Option( 's', "samplingOrder", sOrder );
 	}
+	// scoring option
+	opt >> GetOpt::Option( "scoreCutoff", scoreCutoff );
+
 
 	// printout options
 	opt >> GetOpt::OptionPresent( "verbose", verbose );
@@ -282,6 +289,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "savePvalues", savePvalues );
 	opt >> GetOpt::OptionPresent( "saveLogOdds", saveLogOdds );
 	opt >> GetOpt::OptionPresent( "saveBgModel", saveBgModel );
+	opt >> GetOpt::OptionPresent( "scoreSeqset", scoreSeqset );
 
 	// for remaining unknown options
 	if( opt.options_remain() ){

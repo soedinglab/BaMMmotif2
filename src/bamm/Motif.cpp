@@ -321,8 +321,8 @@ void Motif::initFromBaMM( char* filename ){
 			y = 0;
 			while( number >> probability ){
 				// fill up for kmers y
-				//v_[k][y][j] = probability;
-				v_[k][y][j] = 1.0f / ( float )ipow( 4, k );
+				v_[k][y][j] = probability;
+				//v_[k][y][j] = 1.0f / ( float )ipow( 4, k );
 				y++;
 			}
 		}

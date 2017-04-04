@@ -26,7 +26,7 @@ public:
 
 	void score();
 	std::vector<std::vector<float>> getScores();
-	void write();
+	void write(int N, float cutoff);
 
 
 private:
