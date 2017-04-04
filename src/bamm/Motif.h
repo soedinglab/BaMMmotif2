@@ -92,9 +92,11 @@ inline void Motif::updateV( float*** n, float** alpha, int K ){
 		for( y = 0; y < Y_[k+1]; y++ ){
 			y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
 			yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer
+			//todo: Merge first loop into second one (by allowing contexts to extend left of the motif)
 			for( j = 0; j < k; j++ ){						// when j < k, i.e. p(A|CG) = p(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
 			}
+			//todo: Vectorize in AVX2 / SSE2
 			for( j = k; j < W_; j++ ){
 				v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
 							/ ( n[k-1][yk][j-1] + alpha[k][j] );
@@ -133,11 +135,11 @@ inline void Motif::updateVz_n( int*** n, float** alpha, int K ){
 		for( y = 0; y < Y_[k+1]; y++ ){
 			y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
 			yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer
-//todo: Merge first loop into second one (by allowing contexts to extend left of the motif)
+			//todo: Merge first loop into second one (by allowing contexts to extend left of the motif)
 			for( j = 0; j < k; j++ ){						// when j < k, i.e. p(A|CG) = p(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
 			}
-//todo: Vectorize in AVX2 / SSE2
+			//todo: Vectorize in AVX2 / SSE2
 			for( j = k; j < W_; j++ ){
 				v_[k][y][j] = ( ( float )n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
 							/ ( ( float )n[k-1][yk][j-1] + alpha[k][j] );
