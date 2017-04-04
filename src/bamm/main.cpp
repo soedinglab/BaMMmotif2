@@ -50,7 +50,7 @@ int main( int nargs, char* args[] ){
 	MotifSet motifs;
 	// todo: reduce the number of motif for benchmarking
 //	int motifNum = ( motifs.getN() < 3 ) ? motifs.getN() : 3;
-	int motifNum = 1;
+	int motifNum = motifs.getN();
 	for( int n = 0; n < motifNum; n++ ){
 
 		// initialize the model

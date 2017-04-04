@@ -205,9 +205,9 @@ int ModelLearning::EM(){
 		if( v_diff < Global::epsilon )					iterate = false;
 		if( llikelihood_diff < 0 && EMIterations > 1 )	iterate = false;
 
-		// todo: only for writing out model after each iteration for making a movie:
+/*		// todo: only for writing out model after each iteration for making a movie:
 		motif_->calculateP();
-		motif_->write( EMIterations );
+		motif_->write( EMIterations );*/
 	}
 
 	// calculate probabilities
@@ -385,7 +385,7 @@ void ModelLearning::GibbsSampling(){
 	}
 
 	// count the k-mers
-	// 1. reset n_z_[k][y][j]
+	// 1. reset n_z_[k][y][j] to 0
 	for( k = 0; k < K+1; k++ ){
 		for( y = 0; y < Y_[k+1]; y++ ){
 			for( j = 0; j < W; j++ ){
@@ -393,17 +393,26 @@ void ModelLearning::GibbsSampling(){
 			}
 		}
 	}
-	// 2. count k-mers for all the orders
+	// 2. count k-mers for the highest order J
 	// note: the last sequence is not counted, since during the first iteration
 	// of iteration, it is added back.
 	for( n = 0; n < ( int )posSeqs_.size()-1; n++ ){
 		int* kmer = posSeqs_[n]->getKmer();
 		if( z_[n] > 0 ){
-			for( k = 0; k < K+1; k++ ){
-				for( j = 0; j < W; j++ ){
-					y = ( kmer[z_[n]-1+j] >= 0 ) ? kmer[z_[n]-1+j] % Y_[k+1] : -1;
-					n_z_[k][y][j]++;
-				}
+			for( j = 0; j < W; j++ ){
+				y = ( kmer[z_[n]-1+j] >= 0 ) ? kmer[z_[n]-1+j] % Y_[K+1] : -1;
+				n_z_[K][y][j]++;
+			}
+
+		}
+	}
+
+	// compute k-mer counts for all the lower orders
+	for( k = K; k > 0; k-- ){
+		for( y = 0; y < Y_[k+1]; y++ ){
+			int y2 = ( y >= 0 ) ? y % Y_[k] : -1;
+			for( j = 0; j < W; j++ ){
+				n_z_[k-1][y2][j] += n_z_[k][y][j];
 			}
 		}
 	}
@@ -422,8 +431,8 @@ void ModelLearning::GibbsSampling(){
 			stochastic_optimize_alphas( K, W, eta, iteration );
 
 		} else if( Global::alphaSampling ){
-			// sample alpha in the exponential space using Metreopolis-Hastings algorithm
-			GibbsMH_sampling_alphas();
+			// sample alpha in the exponential space using Metropolis-Hastings algorithm
+			GibbsMH_sample_alphas();
 
 		} else if( Global::debugAlphas ){
 			// debug the optimization of alphas
@@ -437,15 +446,11 @@ void ModelLearning::GibbsSampling(){
 					alpha_[K][j] = ( float )iteration - 150.0f;
 				}
 			}
-
 		}
 
-/*
 		// todo: only for writing out model after each iteration for making a movie:
 		motif_->calculateP();
 		motif_->write( iteration );
-
-*/
 
 		// get the sum of alpha[k][j] at the last five or ten iterations
 		if( iteration > Global::maxCGSIterations - 5 ){
@@ -466,6 +471,7 @@ void ModelLearning::GibbsSampling(){
 	}
 
 	// update model parameter v
+	// todo: here only update the K-th order
 	motif_->updateVz_n( n_z_, alpha_, K );
 
 	// run five steps of EM to optimize the final model with
@@ -534,6 +540,7 @@ void ModelLearning::Gibbs_sampling_z_q(){
 		// add the k-mer counts from the previous sequence with updated z
 		int* kmer_prev = posSeqs_[n_prev]->getKmer();
 		if( z_[n_prev] > 0 ){
+			// todo: here only count the K-th order
 			for( k = 0; k < K+1; k++ ){
 				for( j = 0; j < W; j++ ){
 					y_prev = ( kmer_prev[z_[n_prev]-1+j] >= 0 ) ? kmer_prev[z_[n_prev]-1+j] % Y_[k+1] : -1;
@@ -543,6 +550,7 @@ void ModelLearning::Gibbs_sampling_z_q(){
 		}
 
 		// updated model parameters v excluding the n'th sequence
+		// todo: here only update the K-th order
 		motif_->updateVz_n( n_z_, alpha_, K );
 
 		// compute log odd scores s[y][j], log likelihoods of the highest order K
@@ -646,7 +654,7 @@ void ModelLearning::stochastic_optimize_alphas( int K, int W, float eta, int ite
 
 }
 
-void ModelLearning::GibbsMH_sampling_alphas(){
+void ModelLearning::GibbsMH_sample_alphas(){
 	// Gibbs sampling alphas in exponential space with Metropolis-Hastings algorithm
 
 	int K = Global::modelOrder;
@@ -661,19 +669,46 @@ void ModelLearning::GibbsMH_sampling_alphas(){
 			for( int step = 0; step < 10; step++ ){
 
 				float lprob_a_prev = calc_logCondProb_a( alpha_, k, j );
+
 				float alpha_prev = alpha_[k][j];
+
 				// draw a new a from the distribution of N(a, 1)
-				std::normal_distribution<float> norm_dist( logf( alpha_[k][j] ), 0.5f );
+				std::normal_distribution<float> norm_dist( logf( alpha_[k][j] ), 1.0f );
 				alpha_[k][j] = expf( norm_dist( Global::rngx ) );
 
 				float lprob_a_new = calc_logCondProb_a( alpha_, k, j );
 
-				// accept the trial sample if the ratio >= 1
+				// calculate the acceptance ratio
+				float accept_ratio = ( lprob_a_new < lprob_a_prev ) ? expf( lprob_a_new - lprob_a_prev ) : 1;
+
+				// draw a random number uniformly between 0 and 1
+				std::uniform_real_distribution<float> uniform_dist( 0.0f, 1.0f );
+				float uni = uniform_dist( Global::rngx );
+
+				// reject the trial sample if the ratio < uni
+				if( accept_ratio < uni ){
+					alpha_[k][j] = alpha_prev;
+				} else {
+					if( alpha_[k][j] > 10e10 ){
+						std::cout << "accept_ratio = " << accept_ratio
+								<< "\tuni = " << uni
+								<< "\t" << alpha_prev << "\t" << alpha_[k][j]
+								<< "\t" << lprob_a_prev << "\t" << lprob_a_new << std::endl;
+//						std::cout << "alpha_[" << k << "][" << j << "] = " << alpha_[k][j] << std::endl;
+					}
+
+
+/*				// accept the trial sample if the ratio >= 1
 				if( lprob_a_new < lprob_a_prev ){
 					alpha_[k][j] = alpha_prev;
 				} else {
-					if( alpha_[k][j] > 10e10 )
-						std::cout << "alpha_[" << k << "][" << j << "] = " << alpha_[k][j] << std::endl;
+					if( alpha_[k][j] > 10e10 ){
+						std::cout << "rej_ratio: " << lprob_a_new / lprob_a_prev
+								<< "\t" << alpha_prev << "\t" << alpha_[k][j]
+								<< "\t" << lprob_a_prev << "\t" << lprob_a_new << std::endl;
+//						std::cout << "alpha_[" << k << "][" << j << "] = " << alpha_[k][j] << std::endl;
+					}
+*/
 				}
 			}
 		}
@@ -728,15 +763,18 @@ float ModelLearning::calc_gradient_alphas( float** alpha, int k, int j ){
 	// the last term of equation 47
 	for( y = 0; y < Y_[k]; y++ ){
 
-		if( k == 0 || j == 0 ){
+		if( k == 0 ){
 
 			gradient -= boost::math::digamma( ( float )N + alpha[k][j] );
 
-		} /*else if( j == 0 ){
+		} else if( j == 0 ){
+			int sum = 0;
+			for( int a = 0; a < Y_[1]; a++ ){
+				sum += n_z_[k][y*Y_[1]+a][j];
+			}
+			gradient -= boost::math::digamma( ( float )sum + alpha[k][j] );
 
-			gradient -= boost::math::digamma( ( float )n_z_[k-1][y][j] / v[k][y][j] );
-
-		} */else {
+		} else {
 
 			gradient -= boost::math::digamma( ( float )n_z_[k-1][y][j-1] + alpha[k][j] );
 
