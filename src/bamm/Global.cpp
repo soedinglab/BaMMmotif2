@@ -59,7 +59,6 @@ float				Global::eta = 0.2f;						// learning rate for Gibbs sampling, only for 
 int					Global::interval = 10;					// interval for sampling z and q, only for tuning
 bool				Global::debugAlphas = false;
 
-
 // FDR options
 bool                Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
 int        			Global::mFold = 10;						// number of negative sequences as multiple of positive sequences
