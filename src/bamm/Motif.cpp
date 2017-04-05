@@ -294,6 +294,7 @@ void Motif::initFromPWM( float** PWM, int asize, int count ){
 	}
 
 	// set isInitialized
+	calculateP();
 	isInitialized_ = true;
 
 }
