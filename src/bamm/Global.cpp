@@ -18,7 +18,7 @@ bool				Global::negSeqGiven = false;			// a flag for the negative sequence given
 char*               Global::intensityFilename = NULL;		// filename of intensity file (i.e. for HT-SELEX data)
 
 char*				Global::alphabetType = NULL;			// alphabet type is defaulted to standard which is ACGT
-bool                Global::revcomp = false;				// also search on reverse complement of sequences
+bool                Global::ss = false;						// only search on single strand sequences
 
 // initial model(s) options
 char*               Global::BaMMpatternFilename = NULL;		// filename of BaMMpattern file
@@ -26,6 +26,7 @@ char*               Global::bindingSiteFilename = NULL;		// filename of binding 
 char*               Global::PWMFilename = NULL;				// filename of PWM file
 char*               Global::BaMMFilename = NULL;			// filename of Markov model (.bamm) file
 std::string			Global::initialModelBasename;			// basename of initial model
+int					Global::num = 0;						// number of models that are to be optimized
 
 // model options
 int        			Global::modelOrder = 2;					// model order
@@ -89,7 +90,7 @@ void Global::init( int nargs, char* args[] ){
 	Alphabet::init( alphabetType );
 
 	// read in positive and negative sequence set
-	posSequenceSet = new SequenceSet( posSequenceFilename, revcomp );
+	posSequenceSet = new SequenceSet( posSequenceFilename, ss );
 	negSequenceSet = new SequenceSet( negSequenceFilename, true );
 
 	// generate fold indices for positive and negative sequence set
@@ -145,10 +146,10 @@ int Global::readArguments( int nargs, char* args[] ){
 		opt >> GetOpt::Option( "alphabet", alphabetType );
 	} else {
 		alphabetType = new char[9];
-		strcpy( alphabetType, "STANDARD");
+		strcpy( alphabetType, "STANDARD" );
 	}
 
-	opt >> GetOpt::OptionPresent( "reverseComp", revcomp );
+	opt >> GetOpt::OptionPresent( "ss", ss );
 
 	// for HT-SELEX data
 	opt >> GetOpt::Option( "intensityFile", intensityFilename );
@@ -172,7 +173,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	}
 
 	opt >> GetOpt::OptionPresent( "saveInitialModel", saveInitialModel );
-
+	opt >> GetOpt::Option( "num", num );
 
 	// model options
 	opt >> GetOpt::Option( 'k', "order", modelOrder );
@@ -315,8 +316,8 @@ void Global::printHelp(){
 			"				METHYLC. 		For alphabet type ACGTM; \n"
 			"				HYDROXYMETHYLC.	For alphabet type ACGTH; \n"
 			"				EXTENDED.		For alphabet type ACGTMH. \n\n");
-	printf("\n			--reverseComp \n"
-			"				search motif on the reverse complementary sequence as well. \n\n");
+	printf("\n			--ss \n"
+			"				only search motif on single strand sequences \n\n");
 	printf("\n			--negSeqFile \n"
 			"				negative sequence file. \n\n");
 	printf("\n		Options for HT-SELEX data: \n");
@@ -333,6 +334,9 @@ void Global::printHelp(){
 			"				file that contains BaMM data.\n\n");
 	printf("\n 			--saveInitialModel \n"
 			"				save initial model.\n\n");
+	printf("\n 			--num <INTEGER> \n"
+			"				number of models to be learned by BaMM. \n"
+			"				By default, all the motifs will be optimized.\n\n");
 	printf("\n 		Options for inhomogeneous BaMM: \n");
 	printf("\n 			-k, --order <INTEGER> \n"
 			"				model Order. The default is 2. \n\n");

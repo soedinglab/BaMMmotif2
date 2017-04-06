@@ -17,6 +17,11 @@ ScoreSeqSet::ScoreSeqSet( Motif* motif, BackgroundModel* bg, std::vector<Sequenc
 
 	motif_ = motif;
 	bg_ = bg;
+
+	s_ = ( float** )calloc( Y_[Global::modelOrder+1], sizeof( float* ) );
+	for( int y = 0; y < Y_[Global::modelOrder+1]; y++ ){
+		s_[y] = ( float* )calloc( motif_->getW(), sizeof( float ) );
+	}
 	seqSet_ = seqSet;
 
 	// allocate memory for scores_[n][i]
@@ -25,16 +30,27 @@ ScoreSeqSet::ScoreSeqSet( Motif* motif, BackgroundModel* bg, std::vector<Sequenc
 }
 
 ScoreSeqSet::~ScoreSeqSet(){
-
+	for( int y = 0; y < Y_[Global::modelOrder+1]; y++ ){
+		free( s_[y]);
+	}
+	free( s_ );
 }
 
 // store the log odds scores at all positions of each sequence
 void ScoreSeqSet::score(){
 
 	int 	K = Global::modelOrder;
-	int 	K_bg = Global::bgModelOrder;
+	int 	K_bg = ( Global::bgModelOrder < K ) ? Global::bgModelOrder : K;
 	int 	W = motif_->getW();
-	float 	maxScore;								// maximal logOddsScore over all positions for each sequence
+
+	//	float 	maxScore;								// maximal logOddsScore over all positions for each sequence
+
+	for( int y = 0; y < Y_[Global::modelOrder+1]; y++ ){
+		int y_bg = y % Y_[K_bg+1];
+		for( int j = 0; j < W; j++ ){
+			s_[y][j] = logf( motif_->getV()[K][y][j] ) - logf( bg_->getV()[K_bg][y_bg] );
+		}
+	}
 
 	for( size_t n = 0; n < seqSet_.size(); n++ ){
 
@@ -52,11 +68,10 @@ void ScoreSeqSet::score(){
 			for( int j = 0; j < W; j++ ){
 
 				int y = kmer[i+j] % (i+j < K ) ? Y_[i+j+1] : Y_[K+1];
-				int y_bg = y % Y_[K_bg+1];
 
 				if( y >= 0 ){
 
-					logOdds[i] += ( logf( motif_->getV()[K][y][j] ) - logf( bg_->getV()[std::min( K, K_bg )][y_bg] ) );
+					logOdds[i] += s_[y][j];
 
 				}
 			}
@@ -77,7 +92,7 @@ std::vector<std::vector<float>> ScoreSeqSet::getScores(){
 	return scores_;
 }
 
-void ScoreSeqSet::write(int N,float cutoff){
+void ScoreSeqSet::write( int N, float cutoff ){
 
 	/**
 	 * save log odds scores in one flat file:
@@ -95,15 +110,15 @@ void ScoreSeqSet::write(int N,float cutoff){
 		first_hit = true;
 		int LW1 = seqSet_[n]->getL() - motif_->getW() + 1;
 		for( int i = 0; i < LW1; i++ ){
-			if ( scores_ [n][i]>cutoff ) {
-				if ( first_hit ){
+			if( scores_[n][i] > cutoff ) {
+				if( first_hit ){
 					ofile << seqSet_[n]->getHeader() << std::endl;
 					first_hit = false;
 				}
 				ofile << i << ':' << std::setprecision( 3 ) << scores_[n][i] << ' ';
 			}
 		}
-		if( ! first_hit ){
+		if( !first_hit ){
 			ofile << std::endl;
 		}
 	}

@@ -26,13 +26,15 @@ public:
 
 	void score();
 	std::vector<std::vector<float>> getScores();
-	void write(int N, float cutoff);
+	void write( int N, float cutoff );
 
 
 private:
 
 	Motif* 							motif_;
 	BackgroundModel* 				bg_;
+
+	float**							s_;		// log odds scores
 	std::vector<Sequence*>			seqSet_;
 	std::vector<std::vector<float>>	scores_;
 	std::vector<int>				Y_;		// contains 1 at position 0

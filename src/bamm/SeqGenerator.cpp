@@ -146,7 +146,7 @@ std::unique_ptr<Sequence> SeqGenerator::sample_negative_sequence( int L ){
 		}
 	}
 
-	std::unique_ptr<Sequence> seq( new Sequence( sequence, L, header, Y_, Global::revcomp ) );
+	std::unique_ptr<Sequence> seq( new Sequence( sequence, L, header, Y_, true ) );
 
 	free( sequence );
 
@@ -163,7 +163,6 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_pseudo_seqset(){
 
 	for( size_t i = 0; i < seqs_.size(); i++ ){
 		int L = seqs_[i]->getL();
-//		int L = 20;
 		for( int n = 0; n < Global::mFold; n++ ){
 			sampleSet.push_back( sample_pseudo_sequence( L ) );
 		}
@@ -282,7 +281,7 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( int L ){
 		}
 	}
 
-	std::unique_ptr<Sequence> seq( new Sequence( sequence, L, header, Y_, Global::revcomp ) );
+	std::unique_ptr<Sequence> seq( new Sequence( sequence, L, header, Y_, true ) );
 
 	free( sequence );
 

@@ -12,7 +12,7 @@ class Sequence{
 
 public:
 
-	Sequence( uint8_t* sequence, int L, std::string header, std::vector<int> Y, bool revcomp = false );
+	Sequence( uint8_t* sequence, int L, std::string header, std::vector<int> Y, bool singleStrand = false );
 	~Sequence();
 
 	uint8_t*        getSequence();

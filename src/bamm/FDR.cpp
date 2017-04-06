@@ -14,10 +14,17 @@ FDR::FDR( Motif* motif ){
 
 	occ_mult_ = 0.0f;
 
+	s_ = ( float** )calloc( Y_[Global::modelOrder+1], sizeof( float* ) );
+	for( int y = 0; y < Y_[Global::modelOrder+1]; y++ ){
+		s_[y] = ( float* )calloc( motif_->getW(), sizeof( float ) );
+	}
 }
 
 FDR::~FDR(){
-
+	for( int y = 0; y < Y_[Global::modelOrder+1]; y++ ){
+		free( s_[y]);
+	}
+	free( s_ );
 }
 
 void FDR::evaluateMotif( int n ){
@@ -77,6 +84,7 @@ void FDR::evaluateMotif( int n ){
 
 		// score positive test sequences with the (learned) motif
 		scores = scoreSequenceSet( motif, bgModel, testSet );
+
 		posScoreAll_.insert( std::end( posScoreAll_ ), std::begin( scores[0] ), std::end( scores[0] ) );
 		posScoreMax_.insert( std::end( posScoreMax_ ), std::begin( scores[1] ), std::end( scores[1] ) );
 
@@ -131,9 +139,16 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 	std::vector<std::vector<float>> scores( 2 );			// scores[0]: store the log odds scores at all positions of each sequence
 															// scores[1]: store maximal log odds scores of each sequence
 	int K = Global::modelOrder;
-	int K_bg = Global::bgModelOrder;
+	int K_bg = ( Global::bgModelOrder < K ) ? Global::bgModelOrder : K ;
 	int W = motif->getW();
 	float maxScore;											// maximal logOddsScore over all positions for each sequence
+
+	for( int y = 0; y < Y_[Global::modelOrder+1]; y++ ){
+		int y_bg = y % Y_[K_bg+1];
+		for( int j = 0; j < W; j++ ){
+			s_[y][j] = logf( motif_->getV()[K][y][j] + 0.000001f ) - logf( bg->getV()[K_bg][y_bg] );
+		}
+	}
 
 	for( size_t n = 0; n < seqSet.size(); n++ ){
 
@@ -152,10 +167,8 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 
 				int y = kmer[i+j] % Y_[(i+j < K ) ? i+j+1 : K+1];
 
-				int y_bg = y % Y_[K_bg+1];
-
 				if( y >= 0 ){
-					logOdds[i] += ( logf( motif->getV()[K][y][j] + 0.000001f ) - logf( bg->getV()[std::min( K, K_bg )][y_bg] ) );
+					logOdds[i] += s_[y][j];
 				}
 			}
 
@@ -184,6 +197,13 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 	int W = motif->getW();
 	float maxScore;											// maximal logOddsScore over all positions for each sequence
 
+	for( int y = 0; y < Y_[Global::modelOrder+1]; y++ ){
+		int y_bg = y % Y_[K_bg+1];
+		for( int j = 0; j < W; j++ ){
+			s_[y][j] = logf( motif_->getV()[K][y][j] + 0.000001f ) - logf( bg->getV()[K_bg][y_bg] );
+		}
+	}
+
 	for( size_t n = 0; n < seqSet.size(); n++ ){
 
 		int LW1 = seqSet[n]->getL() - W + 1;
@@ -191,27 +211,25 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 
 		maxScore = -FLT_MAX;
 
-		std::vector<float> logOdds( LW1 );					// calculate log odds scores for all the positions
-
 		for( int i = 0; i < LW1; i++ ){
 
-			logOdds[i] = 0.0f;
+			float logOdds = 0.0f;
 
 			for( int j = 0; j < W; j++ ){
-				int y = kmer[i+j] % Y_[(i+j < K ) ? i+j+1 : K+1];
-				int y_bg = y % Y_[K_bg+1];
+
+				int y = kmer[i+j] % Y_[K+1];
 
 				if( y >= 0 ){
-					logOdds[i] += ( logf( motif->getV()[K][y][j] + 0.000001f ) - logf( bg->getV()[std::min( K, K_bg )][y_bg] ) );
+					logOdds += s_[y][j];
 				}
 			}
 
 			// take all the log odds scores for MOPS model:
-			scores[0].push_back( logOdds[i] );
+			scores[0].push_back( logOdds );
 
 			// take the largest log odds score for ZOOPS model:
-			if( logOdds[i] > maxScore ){
-				maxScore = logOdds[i];
+			if( logOdds > maxScore ){
+				maxScore = logOdds;
 			}
 		}
 

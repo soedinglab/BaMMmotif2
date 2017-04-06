@@ -393,10 +393,8 @@ void ModelLearning::GibbsSampling(){
 			}
 		}
 	}
-	// 2. count k-mers for the highest order J
-	// note: the last sequence is not counted, since during the first iteration
-	// of iteration, it is added back.
-	for( n = 0; n < ( int )posSeqs_.size()-1; n++ ){
+	// 2. count k-mers for the highest order K
+	for( n = 0; n < ( int )posSeqs_.size(); n++ ){
 		int* kmer = posSeqs_[n]->getKmer();
 		if( z_[n] > 0 ){
 			for( j = 0; j < W; j++ ){
@@ -454,9 +452,9 @@ void ModelLearning::GibbsSampling(){
 			}
 		}
 
-		// todo: only for writing out model after each iteration for making a movie:
+/*		// todo: only for writing out model after each iteration for making a movie:
 		motif_->calculateP();
-		motif_->write( iteration );
+		motif_->write( iteration );*/
 
 		// get the sum of alpha[k][j] at the last five or ten iterations
 		if( iteration > Global::maxCGSIterations - 5 ){
@@ -502,6 +500,8 @@ void ModelLearning::GibbsSampling(){
 	// calculate probabilities
 	motif_->calculateP();
 
+	std::cout << "q_ = " << q_ << std::endl;
+
 	fprintf( stdout, "\n--- Runtime for Collapsed Gibbs sampling: %.4f seconds ---\n", ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );
 }
 
@@ -511,59 +511,51 @@ void ModelLearning::Gibbs_sampling_z_q(){
 	int W = motif_->getW();
 	int K = Global::modelOrder;
 	int K_bg = ( Global::bgModelOrder < K ) ? Global::bgModelOrder : K;
-	int k, y, y_prev, y_bg, j, i, LW1, n, n_prev;
+	int k, y, y2, yk, y_bg, j, i, L, LW1, n;
 	int N_0 = 0;								// counts of sequences which do not contain motifs.
 
 	float** v_bg = bg_->getV();
-
+	float*** v = motif_->getV();
 	// sampling z:
 	// loop over all sequences and drop one sequence each time and update r
 	for( n = 0; n < N; n++ ){
-
-		LW1 = posSeqs_[n]->getL() - W + 1;
+		L = posSeqs_[n]->getL();
+		LW1 = L - W + 1;
 		int* kmer = posSeqs_[n]->getKmer();
 
-		// calculate positional prior:
-		pos_[n][0] = 1.0f - q_;
-		for( i = 1; i <= LW1; i++ ){
-			pos_[n][i] = q_ / ( float )LW1;
-		}
-
 		// count k-mers at position z_i+j except the n'th sequence
-		// remove the k-mer counts from the current sequence with old z
+		// remove the k-mer counts from the current sequence with the current z
 		if( z_[n] > 0 ){
-			for( k = 0; k < K+1; k++ ){
-				for( j = 0; j < W; j++ ){
+			for( j = 0; j < W; j++ ){
+				// for k = 0:
+				y = ( kmer[z_[n]-1+j] >= 0 ) ? kmer[z_[n]-1+j] % Y_[1] : -1;
+				n_z_[0][y][j]--;
+				if( y >= 0 ){
+					v[0][y][j]= ( ( float )n_z_[0][y][j] + alpha_[0][j] * v_bg[0][y] )
+								/ ( ( float )N * q_ + alpha_[0][j] );
+					// update s for y
+					y_bg = y % Y_[K_bg+1];
+					s_[y][j] = v[K][y][j] / v_bg[K_bg][y_bg];
+				}
+				// for 1 <= k <= K
+				for( k = 1; k < K+1; k++ ){
 					y = ( kmer[z_[n]-1+j] >= 0 ) ? kmer[z_[n]-1+j] % Y_[k+1] : -1;
 					n_z_[k][y][j]--;
+					if( y >= 0 ){
+						// updated model parameters v excluding the n'th sequence
+						y2 = y % Y_[k];
+						yk = y / Y_[1];
+						if( j < k ){						// when j < k, i.e. p(A|CG) = p(A|C)
+							v[k][y][j] = v[k-1][y2][j];
+						} else {
+							v[k][y][j] = ( ( float )n_z_[k][y][j] + alpha_[k][j] * v[k-1][y2][j] )
+									/ ( ( float )n_z_[k-1][yk][j-1] + alpha_[k][j] );
+						}
+						// update s for y
+						y_bg = y % Y_[K_bg+1];
+						s_[y][j] = v[K][y][j] / v_bg[K_bg][y_bg];
+					}
 				}
-			}
-		}
-
-		// get the index of the previous sequence
-		n_prev = ( n > 0 ) ? n-1 : N-1;
-
-		// add the k-mer counts from the previous sequence with updated z
-		int* kmer_prev = posSeqs_[n_prev]->getKmer();
-		if( z_[n_prev] > 0 ){
-			// todo: here only count the K-th order
-			for( k = 0; k < K+1; k++ ){
-				for( j = 0; j < W; j++ ){
-					y_prev = ( kmer_prev[z_[n_prev]-1+j] >= 0 ) ? kmer_prev[z_[n_prev]-1+j] % Y_[k+1] : -1;
-					n_z_[k][y_prev][j]++;
-				}
-			}
-		}
-
-		// updated model parameters v excluding the n'th sequence
-		// todo: here only update the K-th order
-		motif_->updateVz_n( n_z_, alpha_, K );
-
-		// compute log odd scores s[y][j], log likelihoods of the highest order K
-		for( y = 0; y < Y_[K+1]; y++ ){
-			for( j = 0; j < W; j++ ){
-				y_bg = y % Y_[K_bg+1];
-				s_[y][j] = motif_->getV()[K][y][j] / v_bg[K_bg][y_bg];
 			}
 		}
 
@@ -571,35 +563,54 @@ void ModelLearning::Gibbs_sampling_z_q(){
 		// calculate responsibilities over all LW1 positions on n'th sequence
 		std::vector<float> posteriors;
 		float normFactor = 0.0f;
-		// todo: could be parallelized by extracting 8 sequences at once
+		// calculate positional prior and reset r[n][i]
+		pos_[n][0] = 1.0f - q_;
+		r_[n][0] = pos_[n][0];
+		normFactor += r_[n][0];
+
 		for( i = 1; i <= LW1; i++ ){
+			pos_[n][i] = q_ / ( float )LW1;
 			r_[n][i] = 1.0f;
-//			int* kmer_i1 = kmer + i - 1;
-			for( j = 0; j < W; j++ ){
-				// todo: the most time-costly code!
-				// extract k-mers on the motif at position i over W of the n'th sequence
-				y = ( kmer[i-1+j] >= 0 ) ? kmer[i-1+j] % Y_[K+1] : -1;
-				r_[n][i] *= s_[y][j];
-//				y = *kmer_i1 % Y_[K+1];
-//				r_[n][i] *= s_[y][j] * (*kmer_i1++ >=0);
+		}
+		// todo: could be parallelized by extracting 8 sequences at once
+		// ij = i+j runs over all positions in sequence
+		for( int ij = 0; ij < L; ij++ ){
+
+			// extract (K+1)-mer y from positions (i-k,...,i)
+			y = ( kmer[ij] >= 0 ) ? kmer[ij] % Y_[K+1] : -1;
+
+			// j runs over all motif positions
+			for( j = ( ( ij-L+W ) < 0 ? 0 : ij-L+W ); j < ( W < (ij+1) ? W : ij+1 ); j++ ){
+				r_[n][LW1-ij+j] *= s_[y][j];
 			}
+		}
+
+		for( i = 1; i <= LW1; i++ ){
 			r_[n][i] *= pos_[n][i];
 			normFactor += r_[n][i];
 		}
-		// for sequences that do not contain motif
-		r_[n][0] = pos_[n][0];
-		normFactor += r_[n][0];
+
+		// normalize responsibilities
 		for( i = 0; i <= LW1; i++ ){
 			r_[n][i] /= normFactor;
 			posteriors.push_back( r_[n][i] );
 		}
 		// draw a new position z from discrete posterior distribution
 		std::discrete_distribution<> posterior_dist( posteriors.begin(), posteriors.end() );
+		z_[n] = LW1 + 1 - posterior_dist( Global::rngx );
 
-		// draw a sample z randomly
-		z_[n] = posterior_dist( Global::rngx );
-
-		if( z_[n] == 0 ) N_0++;
+		if( z_[n] == 0 ){
+			// count the number of sequence that do not have a motif
+			N_0++;
+		} else {
+			// add the k-mer counts from the current sequence with the updated z
+			for( j = 0; j < W; j++ ){
+				for( k = 0; k < K+1; k++ ){
+					y = ( kmer[z_[n]-1+j] >= 0 ) ? kmer[z_[n]-1+j] % Y_[k+1] : -1;
+					n_z_[k][y][j]++;
+				}
+			}
+		}
 	}
 
 	// sampling q:
@@ -987,7 +998,6 @@ float ModelLearning::calc_likelihood_alphas( float** alpha, int k ){
 
 	return logLikelihood;
 }
-
 
 void ModelLearning::debug_optimization_alphas( float** alphas, int K, int W ){
 	// test if the log posterior function of alpha fits to its gradient

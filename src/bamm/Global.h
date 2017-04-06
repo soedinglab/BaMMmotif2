@@ -43,7 +43,7 @@ public:
 	static char*		intensityFilename;					// filename of intensity file (i.e. for HT-SELEX data)
 
 	static char* 		alphabetType;						// provide alphabet type
-	static bool			revcomp;							// also search on reverse complement of sequences, defaults to false
+	static bool			ss;									// only search on single strand sequences
 
 	// initial model(s) options
 	static char*		BaMMpatternFilename;				// filename of BaMMpattern file
@@ -51,6 +51,7 @@ public:
 	static char*		PWMFilename;						// filename of PWM file
 	static char*		BaMMFilename;						// filename of Markov model (.bamm) file
 	static std::string	initialModelBasename;				// basename of initial model
+	static int			num;								// number of models that are to be optimized
 
 	// model options
 	static int			modelOrder;							// model order
@@ -77,7 +78,7 @@ public:
 	// CGS (Collapsed Gibbs sampling) options
 	static bool			CGS;								// flag to trigger Collapsed Gibbs sampling
 	static int 			maxCGSIterations;					// maximum number of iterations for CGS
-	static bool			noInitialZ;						// enable initializing z with one E-step
+	static bool			noInitialZ;							// enable initializing z with one E-step
 	static bool			noAlphaOptimization;				// disable alpha optimization in CGS
 	static bool			alphaSampling;						// enable alpha sampling in CGS
 	static bool			noQSampling;						// disable q sampling in CGS

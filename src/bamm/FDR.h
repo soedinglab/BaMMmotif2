@@ -37,6 +37,8 @@ private:
 
 	Motif*				motif_;				// initial motif
 
+	float**				s_;					// log odds scores
+
 	std::vector<float> 	posScoreAll_;		// store log odds scores over all positions on the sequences
 	std::vector<float> 	posScoreMax_;		// store maximal log odds score from each sequence
 	std::vector<float> 	negScoreAll_;

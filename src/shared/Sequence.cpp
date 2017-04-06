@@ -1,9 +1,9 @@
 #include "Sequence.h"
 #include "utils.h"
 
-Sequence::Sequence( uint8_t* sequence, int L, std::string header, std::vector<int> Y, bool revcomp ){
+Sequence::Sequence( uint8_t* sequence, int L, std::string header, std::vector<int> Y, bool singleStrand ){
 
-	if( revcomp ){
+	if( !singleStrand ){
 		L_ = 2 * L + 1;
 		sequence_ = ( uint8_t* )calloc( L_, sizeof( uint8_t ) );
 		appendRevComp( sequence, L );
