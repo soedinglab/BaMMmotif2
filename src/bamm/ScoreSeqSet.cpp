@@ -46,36 +46,28 @@ void ScoreSeqSet::score(){
 	//	float 	maxScore;								// maximal logOddsScore over all positions for each sequence
 
 	for( int y = 0; y < Y_[Global::modelOrder+1]; y++ ){
-		int y_bg = y % Y_[K_bg+1];
+	    int y_bg = y % Y_[K_bg+1];
 		for( int j = 0; j < W; j++ ){
 			s_[y][j] = logf( motif_->getV()[K][y][j] ) - logf( bg_->getV()[K_bg][y_bg] );
 		}
 	}
 
 	for( size_t n = 0; n < seqSet_.size(); n++ ){
-
 		int LW1 = seqSet_[n]->getL() - W + 1;
 		int* kmer = seqSet_[n]->getKmer();
 
-		std::vector<float> logOdds( LW1 );
+		float logOdds;
 
 		for( int i = 0; i < LW1; i++ ){
-
-			logOdds[i] = 0.0f;
+			logOdds = 0.0f;
 
 			for( int j = 0; j < W; j++ ){
-
-				int y = kmer[i+j] % (i+j < K ) ? Y_[i+j+1] : Y_[K+1];
-
-				if( y >= 0 ){
-
-					logOdds[i] += s_[y][j];
-
-				}
+				int y = ( kmer[i+j] >= 0 ) ? kmer[i+j] % Y_[K+1] : -1;
+				logOdds += ( y >= 0 ) ? s_[y][j] : 0;
 			}
 
 			// take all the log odds scores for MOPS model:
-			scores_[n].push_back( logOdds[i] );
+			scores_[n].push_back( logOdds );
 
 			// take the largest log odds score for ZOOPS model:
 			//if( logOdds[i] > maxScore ){
