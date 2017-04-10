@@ -37,8 +37,6 @@ private:
 
 	Motif*				motif_;				// initial motif
 
-	float**				s_;					// log odds scores
-
 	std::vector<float> 	posScoreAll_;		// store log odds scores over all positions on the sequences
 	std::vector<float> 	posScoreMax_;		// store maximal log odds score from each sequence
 	std::vector<float> 	negScoreAll_;
@@ -69,9 +67,6 @@ private:
 
 							// score sequences for both positive and negative sets
 	std::vector<std::vector<float>>	scoreSequenceSet( Motif* motif, BackgroundModel* bg, const std::vector<std::unique_ptr<Sequence>> & seqSet );
-
-							// score sequences for both positive and negative sets
-	std::vector<std::vector<float>>	scoreSequenceSet( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqSet );
 
 							// calculate precision and recall for both ZOOPS and MOPS models
 	void 		   			calculatePR();
