@@ -107,9 +107,12 @@ int main( int nargs, char* args[] ){
 			// 1. generate MN negative sequences of same size and length as posSet
 			//    base on 2nd order homogeneous IMM background model
 			//    M ~ min{ 10^6/N , 1 }
+			SeqGenerator neg_seqset( Global::posSequenceSet->getSequences(), model.getMotif() );
+			neg_seqset.sample_negative_seqset();
 
 			// 2. Score each sequence and obtain N- and N+ scores
 			//	  sort the scores in descending order
+			neg_seqset.score();
 
 			// 3. Sl_lower  = max{ Sn- : Sn- <= Sl }
 			// 4. Sl_higher = min{ Sn+ : Sn- >= Sl }

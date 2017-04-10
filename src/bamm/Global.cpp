@@ -368,8 +368,8 @@ void Global::printHelp(){
 			"				two positions to the right of initial BaMMs. Invoking with --extend 2\n"
 			"				adds two positions to both sides of initial BaMMs. By default, BaMMs\n"
 			"				are not being extended.\n\n");
-          	"           --bamm-search \n"
-	        "               scan positive sequence file with provided initial model.\n"
+    printf("\n           --bamm-search \n"
+	        "               scan positive sequence file with provided initial model.\n\n");
 	printf("\n 		Options for homogeneous (background) BaMM: \n");
 	printf("\n 			-K, --Order <INTEGER> \n"
 			"				Order. The default is 2.\n"
