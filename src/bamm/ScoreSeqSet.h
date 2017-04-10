@@ -21,11 +21,13 @@ class ScoreSeqSet{
 public:
 
 	ScoreSeqSet( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqSet );
-
 	~ScoreSeqSet();
 
 	void score();
-	std::vector<std::vector<float>> getScores();
+
+	std::vector<std::vector<float>> getMopsScores();
+	std::vector<float> 				getZoopsScores();
+
 	void write( int N, float cutoff );
 
 
@@ -33,10 +35,11 @@ private:
 
 	Motif* 							motif_;
 	BackgroundModel* 				bg_;
-
-	float**							s_;		// log odds scores
 	std::vector<Sequence*>			seqSet_;
-	std::vector<std::vector<float>>	scores_;
+
+	std::vector<std::vector<float>>	mops_scores_;
+	std::vector<float>				zoops_scores_;
+
 	std::vector<int>				Y_;		// contains 1 at position 0
 											// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
 											// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
