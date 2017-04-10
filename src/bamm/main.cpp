@@ -50,8 +50,13 @@ int main( int nargs, char* args[] ){
 	MotifSet motifs;
 
 	int motifNum = ( Global::num ) ? Global::num : motifs.getN();
-	for( int n = 0; n < motifNum; n++ ){
 
+	if( motifNum > motifs.getN() ){
+		std::cout << "--num is larger than the number of the initial motifs." << std::endl;
+		exit( -1 );
+	}
+
+	for( int n = 0; n < motifNum; n++ ){
 		// initialize the model
 		Motif* motif = new Motif( *motifs.getMotifs()[n] );
 
@@ -104,7 +109,6 @@ int main( int nargs, char* args[] ){
 			seqset.score();
 			seqset.write( n, Global::scoreCutoff );
 		}
-
 
 		delete motif;
 	}

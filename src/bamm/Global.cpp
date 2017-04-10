@@ -27,6 +27,8 @@ char*               Global::PWMFilename = NULL;				// filename of PWM file
 char*               Global::BaMMFilename = NULL;			// filename of Markov model (.bamm) file
 std::string			Global::initialModelBasename;			// basename of initial model
 int					Global::num = 0;						// number of models that are to be optimized
+bool				Global::mops = false;					// learn MOPS model
+bool				Global::zoops = true;					// learn ZOOPS model
 
 // model options
 int        			Global::modelOrder = 2;					// model order
@@ -174,6 +176,8 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	opt >> GetOpt::OptionPresent( "saveInitialModel", saveInitialModel );
 	opt >> GetOpt::Option( "num", num );
+	opt >> GetOpt::OptionPresent( "mops", mops );
+	opt >> GetOpt::OptionPresent( "zoops", zoops );
 
 	// model options
 	opt >> GetOpt::Option( 'k', "order", modelOrder );
@@ -337,6 +341,12 @@ void Global::printHelp(){
 	printf("\n 			--num <INTEGER> \n"
 			"				number of models to be learned by BaMM. \n"
 			"				By default, all the motifs will be optimized.\n\n");
+	printf("\n 			--mops \n"
+			"				learn more-than-one-motif-per-sequence (MOPS) model.\n"
+			"				By default, it is not learned.\n\n");
+	printf("\n 			--zoops \n"
+			"				learn zero-or-one-motif-per-sequence (ZOOPS) model.\n"
+			"				By default, it is learned.\n\n");
 	printf("\n 		Options for inhomogeneous BaMM: \n");
 	printf("\n 			-k, --order <INTEGER> \n"
 			"				model Order. The default is 2. \n\n");

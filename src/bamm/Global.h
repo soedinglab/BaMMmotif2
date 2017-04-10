@@ -42,6 +42,7 @@ public:
 	// weighting options
 	static char*		intensityFilename;					// filename of intensity file (i.e. for HT-SELEX data)
 
+	// sequence set options
 	static char* 		alphabetType;						// provide alphabet type
 	static bool			ss;									// only search on single strand sequences
 
@@ -52,6 +53,8 @@ public:
 	static char*		BaMMFilename;						// filename of Markov model (.bamm) file
 	static std::string	initialModelBasename;				// basename of initial model
 	static int			num;								// number of models that are to be optimized
+	static bool			mops;								// learn MOPS model
+	static bool			zoops;								// learn ZOOPS model
 
 	// model options
 	static int			modelOrder;							// model order
@@ -93,7 +96,7 @@ public:
 	static int 			sOrder;								// the k-mer order for sampling negative sequence set
 
 	// scoring options
-	static float        scoreCutoff;                        // cutoff for logodds scores to print out as motif hits
+	static float        scoreCutoff;                        // cutoff for logOdds scores to print out as motif hits
 
 	// other options
 	static bool			verbose;							// verbose printouts, defaults to false
