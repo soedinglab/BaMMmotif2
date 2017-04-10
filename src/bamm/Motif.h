@@ -22,17 +22,19 @@ public:
 
 	void initFromPWM( float** PWM, int asize, int count );		// initialize v from PWM file
 
-	void initFromBaMM( char* filename );			// initialize v from Bayesian Markov model file and set isInitialized
+	void initFromBaMM( char* filename );						// initialize v from Bayesian Markov model file and set isInitialized
 
 	int			getC();											// get the count of motifs N
 	int         getW(); 										// get motif length w
 	float***    getV();											// get conditional probabilities v
 	float***	getP();											// get probabilities p
+	float**		getS();											// get log odds scores for the highest order K at position j
 	int***		getN();											// get the counts of (k+1)-mer for all y at motif position j
 	void        updateV( float*** n, float** alpha, int order );// update v for EM
 	void        updateVz_n( int*** n, float** alpha, int order );	// update v for Collapsed Gibbs sampling
 
 	void		calculateP();									// calculate probabilities p
+	void		calculateS( BackgroundModel* bg );				// calculate log odds scores for the highest order K at position j
 
 	void 		print();					   					// print v to console
 	void 		write( int N );					   				// write v (basename.ihbcp/.ihbp). Include header with alphabetType
@@ -46,6 +48,7 @@ private:
 	float***    v_;				                				// conditional probabilities for (k+1)-mers y at motif position j
 	float*		f_bg_;											// monomer frequencies from negative set
 	float***	p_;												// probabilities for (k+1)-mers y at motif position j
+	float**		s_;												// log odds scores for (K+1)-mers y at motif position j
 	int***		n_;												// counts of (k+1)-mer for all y at motif position j
 
 	void 		calculateV();									// calculate v from k-mer counts n and global alphas

@@ -25,6 +25,12 @@ Motif::Motif( int length ){
 			p_[k][y] = ( float* )calloc( W_, sizeof( float ) );
 		}
 	}
+
+	s_ = ( float** )calloc( Y_[Global::modelOrder+1], sizeof( float* ) );
+	for( int y = 0; y < Y_[Global::modelOrder+1]; y++ ){
+		s_[y] = ( float* )calloc( W_, sizeof( float ) );
+	}
+
 	f_bg_ = Global::negSequenceSet->getBaseFrequencies();
 }
 
@@ -56,6 +62,12 @@ Motif::Motif( const Motif& other ){ 		// copy constructor
 			}
 		}
 	}
+
+	s_ = ( float** )calloc( Y_[Global::modelOrder+1], sizeof( float* ) );
+	for( int y = 0; y < Y_[Global::modelOrder+1]; y++ ){
+		s_[y] = ( float* )calloc( W_, sizeof( float ) );
+	}
+
 	f_bg_ = other.f_bg_;
 
 	isInitialized_ = true;
@@ -76,6 +88,11 @@ Motif::~Motif(){
 	free( v_ );
 	free( n_ );
 	free( p_ );
+
+	for( int y = 0; y < Y_[Global::modelOrder+1]; y++ ){
+		free( s_[y]);
+	}
+	free( s_ );
 
 }
 
@@ -243,6 +260,7 @@ void Motif::initFromPWM( float** PWM, int asize, int count ){
 		float pos1 = Global::q / ( float )LW1;
 
 		// todo: could be parallelized by extracting 8 sequences at once
+		// todo: should be written in a faster way
 		for( i = 1; i <= LW1; i++ ){
 			r[i] = 1.0f;
 			for( j = 0; j < W_; j++ ){
@@ -347,6 +365,10 @@ int Motif::getC(){
 	return C_;
 }
 
+float** Motif::getS(){
+	return s_;
+}
+
 float*** Motif::getP(){
 	return p_;
 }
@@ -408,6 +430,19 @@ void Motif::calculateP(){
 	}
 }
 
+void Motif::calculateS( BackgroundModel* bg ){
+
+	int K = Global::modelOrder;
+	int K_bg = ( Global::bgModelOrder < K ) ? Global::bgModelOrder : K ;
+
+	for( int y = 0; y < Y_[Global::modelOrder+1]; y++ ){
+		int y_bg = y % Y_[K_bg+1];
+		for( int j = 0; j < W_; j++ ){
+			s_[y][j] = logf( v_[K][y][j] + 0.000001f ) - logf( bg->getV()[K_bg][y_bg] );
+		}
+	}
+
+}
 void Motif::print(){
 
 	fprintf( stderr," _______________________\n"
