@@ -103,6 +103,34 @@ int main( int nargs, char* args[] ){
 		// write out the learned model
 		motif->write( n );
 
+		if ( Global::bammSearch ){
+			// 1. generate MN negative sequences of same size and length as posSet
+			//    base on 2nd order homogeneous IMM background model
+			//    M ~ min{ 10^6/N , 1 }
+
+			// 2. Score each sequence and obtain N- and N+ scores
+			//	  sort the scores in descending order
+
+			// 3. Sl_lower  = max{ Sn- : Sn- <= Sl }
+			// 4. Sl_higher = min{ Sn+ : Sn- >= Sl }
+			//    -> as the nearest ranked negative scores.
+
+			// 5. P-value is interpolated between those scores with FPl and FPl+1 false positive counts
+			//	  P-value( Sl ) = ( FPl / N- ) + 1 / N-  * ( Sl_higher - Sl + e ) / ( Sl_higher - Sl_lower + e )
+			//
+			//	  e : very small i.e. 1e-5
+			//    --> only works if Sl in between Sl_lower and Sl_higher
+			// 6. --> if Sl is lower than any negatve score -> P-value is simply 1
+			//
+			// 7. --> if Sl is higher than any negative score:
+			//	  P-value( Sl ) = 1 / N- exp( - ( Sl - Smax- ) / lambda )
+			//	  lambda = 1 / n_top  sum_from n=1 to ntop( Sn- - sntop- )
+			//    ntop = min { 100, 0.1 X N- }
+			//
+			// 8. calculate E-value:
+			//	  -> Evalue = N+ * P-Value
+		}
+
 		if ( Global::scoreSeqset){
 			// score the model on sequence set
 			ScoreSeqSet seqset( motif, bgModel, Global::posSequenceSet->getSequences() );

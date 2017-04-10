@@ -110,6 +110,7 @@ public:
 	static bool         scoreSeqset;                        // write logOdds Scores of positive sequence set to disk
 	static int			Yk;									// the counts of numbers in Y_ array
 	static bool			generatePseudoSet;					// test for alpha learning
+	static bool         bammSearch;							// score sequences with provided initial model
 
 	static void         init( int nargs, char* args[] );
 	static void         destruct();

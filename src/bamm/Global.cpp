@@ -83,6 +83,8 @@ bool				Global::saveBgModel = false;			// write out the background model to disk
 bool                Global::scoreSeqset = false;            // write logOdds Scores of positive sequence set to disk
 int					Global::Yk = 10;						// the counts of numbers in Y_ array
 bool				Global::generatePseudoSet = false;		// test for alpha learning
+bool                Global::bammSearch = false;				// score sequences with provided initial model
+
 std::mt19937		Global::rngx;
 
 void Global::init( int nargs, char* args[] ){
@@ -294,6 +296,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "saveLogOdds", saveLogOdds );
 	opt >> GetOpt::OptionPresent( "saveBgModel", saveBgModel );
 	opt >> GetOpt::OptionPresent( "scoreSeqset", scoreSeqset );
+	opt >> GetOpt::OptionPresent( "banmmSearch", bammSearch );
 
 	// for remaining unknown options
 	if( opt.options_remain() ){
@@ -365,6 +368,8 @@ void Global::printHelp(){
 			"				two positions to the right of initial BaMMs. Invoking with --extend 2\n"
 			"				adds two positions to both sides of initial BaMMs. By default, BaMMs\n"
 			"				are not being extended.\n\n");
+          	"           --bamm-search \n"
+	        "               scan positive sequence file with provided initial model.\n"
 	printf("\n 		Options for homogeneous (background) BaMM: \n");
 	printf("\n 			-K, --Order <INTEGER> \n"
 			"				Order. The default is 2.\n"
