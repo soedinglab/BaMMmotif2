@@ -110,7 +110,10 @@ public:
 	static bool         scoreSeqset;                        // write logOdds Scores of positive sequence set to disk
 	static int			Yk;									// the counts of numbers in Y_ array
 	static bool			generatePseudoSet;					// test for alpha learning
+
+	// options for bamm-search
 	static bool         bammSearch;							// score sequences with provided initial model
+	static char*        bgModelFile;						// if scanning with a BaMM file, according bgModelFiles is required!
 
 	static void         init( int nargs, char* args[] );
 	static void         destruct();

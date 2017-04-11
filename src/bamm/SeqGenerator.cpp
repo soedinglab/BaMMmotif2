@@ -289,6 +289,11 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( int L ){
 
 }
 
+std::vector<Sequence*> SeqGenerator::getSeqs(){
+	return seqs_;
+}
+
+
 void SeqGenerator::write( std::vector<std::unique_ptr<Sequence>> seqs ){
 
 	/**

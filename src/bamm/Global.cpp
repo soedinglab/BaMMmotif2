@@ -83,7 +83,10 @@ bool				Global::saveBgModel = false;			// write out the background model to disk
 bool                Global::scoreSeqset = false;            // write logOdds Scores of positive sequence set to disk
 int					Global::Yk = 10;						// the counts of numbers in Y_ array
 bool				Global::generatePseudoSet = false;		// test for alpha learning
+
+// options for bamm-search
 bool                Global::bammSearch = false;				// score sequences with provided initial model
+char*               Global::bgModelFile = NULL;				// if scanning with a BaMM file, according bgModelFiles is required!
 
 std::mt19937		Global::rngx;
 
@@ -296,7 +299,10 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "saveLogOdds", saveLogOdds );
 	opt >> GetOpt::OptionPresent( "saveBgModel", saveBgModel );
 	opt >> GetOpt::OptionPresent( "scoreSeqset", scoreSeqset );
+
+	// options for bamm-search
 	opt >> GetOpt::OptionPresent( "banmmSearch", bammSearch );
+	opt >> GetOpt::Option( "bgFile", bgModelFile );
 
 	// for remaining unknown options
 	if( opt.options_remain() ){
@@ -370,6 +376,10 @@ void Global::printHelp(){
 			"				are not being extended.\n\n");
     printf("\n           --bamm-search \n"
 	        "               scan positive sequence file with provided initial model.\n\n");
+    printf("\n           --bgModelFile <STRING> \n"
+    		"               if bamm-search is turned on and initial model is in bamm format,\n"
+    		"               bgModelFile is required to contain the background model the bamm was \n"
+    		"               predicted upon. \n\n");
 	printf("\n 		Options for homogeneous (background) BaMM: \n");
 	printf("\n 			-K, --Order <INTEGER> \n"
 			"				Order. The default is 2.\n"

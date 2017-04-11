@@ -28,6 +28,8 @@ public:
 
 	BackgroundModel( std::string filePath );
 
+	BackgroundModel( char* , int K, float A );
+
 	~BackgroundModel();
 
 	std::string getName();

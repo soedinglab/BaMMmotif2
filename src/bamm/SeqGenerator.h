@@ -23,6 +23,7 @@ public:
 
 	std::vector<std::unique_ptr<Sequence>> 	sample_negative_seqset();
 	std::vector<std::unique_ptr<Sequence>> 	sample_pseudo_seqset();
+	std::vector<Sequence*>                  getSeqs();
 
 	void									write( std::vector<std::unique_ptr<Sequence>> );
 

@@ -104,15 +104,41 @@ int main( int nargs, char* args[] ){
 		motif->write( n );
 
 		if ( Global::bammSearch ){
+			BackgroundModel* bg = bgModel;
+			// 0. Depending on motif input, and learning, define bgModel
+			// use bgModel generated from input sequences wehn prediction is turned on
+			if( ! Global::EM and ! Global::CGS ){
+				// use provided bgModelFile if initialized with bamm format
+				if( Global::BaMMFilename != NULL ){
+					if( Global::bgModelFile == NULL ){
+						std::cout << "No background Model File provided for initial search motif!\n";
+						exit(-1);
+					}
+					bg = new BackgroundModel( Global::bgModelFile );
+				}
+				// use bgModel generated when reading in PWM File
+				if( Global::PWMFilename != NULL ){
+					bg = new BackgroundModel( Global::PWMFilename , 0, 1);
+				}
+				else{
+					std::cout << "No background Model found for provided initial search motif!\n";
+					exit(-1);
+				}
+			}
+
+
 			// 1. generate MN negative sequences of same size and length as posSet
 			//    base on 2nd order homogeneous IMM background model
 			//    M ~ min{ 10^6/N , 1 }
-			SeqGenerator neg_seqset( Global::posSequenceSet->getSequences(), model.getMotif() );
-			neg_seqset.sample_negative_seqset();
+			SeqGenerator neg_seqs( Global::posSequenceSet->getSequences(), model.getMotif() );
+			neg_seqs.sample_negative_seqset();
 
 			// 2. Score each sequence and obtain N- and N+ scores
 			//	  sort the scores in descending order
+			ScoreSeqSet neg_seqset( model.getMotif(), bg, neg_seqs.getSeqs());
 			neg_seqset.score();
+			ScoreSeqSet pos_seqset( model.getMotif(), bg, Global::posSequenceSet->getSequences());
+			pos_seqset.score();
 
 			// 3. Sl_lower  = max{ Sn- : Sn- <= Sl }
 			// 4. Sl_higher = min{ Sn+ : Sn- >= Sl }
