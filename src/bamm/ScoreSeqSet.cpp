@@ -79,7 +79,7 @@ void ScoreSeqSet::calcPvalues( std::vector<float> neg_scores ){
 	mops_e_values_.resize( seqSet_.size() );
 
 	int FPl = 0;
-	float SlLower, SlHigher, p_value, Sl_prev, Sl;
+	float SlLower, SlHigher, p_value, Sl;
 	float lambda = 0;
 	float eps = (float) 1e-5;
 	int negN = (int) neg_scores.size();
@@ -87,10 +87,13 @@ void ScoreSeqSet::calcPvalues( std::vector<float> neg_scores ){
 	int nTop = std::min( 100, int( 0.1*negN ));
 
 	for( int n = 0; n < nTop; n++ ){
+		//fprintf(stderr, "%f\n", neg_scores[n]);
 		lambda =+ (neg_scores[n] - neg_scores[nTop]);
 	}
 	lambda = lambda / (float)nTop;
 
+
+	//fprintf(stderr, "\n negN = %d  posN = %d  nTop = %d  lambda = %f \n", negN, posN, nTop, lambda);
 
 	for( size_t n = 0; n < seqSet_.size(); n++ ){
 		int seqlen = seqSet_[n]->getL();
@@ -99,49 +102,46 @@ void ScoreSeqSet::calcPvalues( std::vector<float> neg_scores ){
 		}
 		int LW1 = seqSet_[n]->getL() - motif_->getW() + 1;
 
-		Sl_prev = pos_scores[n][0]+1;
 		for( int i = 0; i < LW1; i++ ){
 			Sl = pos_scores[n][i];
-			if( Sl == Sl_prev ){
-				mops_p_values_[n].push_back( p_value );
-				mops_e_values_[n].push_back( p_value * (float)posN );
-				continue;
-			}
-			if( Sl < Sl_prev ){
-				// FP will increase
-				while( Sl <= neg_scores[FPl] && FPl < negN){
-					FPl++;
-				}
-			}else{
-				// FP is smaller than previous round
-				while( Sl > neg_scores[FPl] && FPl > 0 ){
-					FPl--;
-				}
-			}
+
+			//fprintf(stderr, "\n Sl_prev = %f  Sl = %f \n", Sl_prev, Sl);
+
+			FPl = (int) count_if(neg_scores.begin(), neg_scores.end(), [Sl](float n) { return n >= Sl; } );
+
+			//fprintf(stderr, "\n FPl =  %d  \n", FPl);
 
 			// Sl is lower than worst negScore
 			if( FPl == negN ){
 				p_value = (float) 1;
-				mops_p_values_[n].push_back( p_value );
-				mops_e_values_[n].push_back( p_value * (float)posN );
-				Sl_prev = Sl;
+				mops_p_values_[n].push_back( (float)p_value );
+				mops_e_values_[n].push_back( (float)p_value * (float)posN );
+				//fprintf(stderr, "p_value = %f \n", (float)p_value );
 				continue;
 			}
 			// Sl is higher than best negScore
 			if ( FPl == 0 ){
-				p_value =  float(1 / negN) * (float) exp( - ( Sl - neg_scores[0] ) / lambda );
-				mops_p_values_[n].push_back( p_value );
-				mops_e_values_[n].push_back( p_value * (float)posN );
-				Sl_prev = Sl;
+				p_value =  float(1) / (float)negN * (float) exp( - ( Sl - neg_scores[0] ) / lambda );
+				mops_p_values_[n].push_back( (float)p_value );
+				mops_e_values_[n].push_back( (float)p_value * (float)posN );
+				//fprintf(stderr, "p_value = %f \n", p_value );
 				continue;
 			}else{
 				// SlHigher and SlLower can be defined
 				SlHigher = neg_scores[FPl-1];
 				SlLower = neg_scores[FPl];
-				p_value = float(FPl / negN) + float(1 / negN) * ( SlHigher - Sl + eps ) / ( SlHigher - SlLower + eps );
-				mops_p_values_[n].push_back( p_value );
-				mops_e_values_[n].push_back( p_value * (float)posN );
-				Sl_prev = Sl;
+				p_value = float(FPl) / float(negN) + float(1) /float(negN) * ( SlHigher - Sl + eps ) / ( SlHigher - SlLower + eps );
+				mops_p_values_[n].push_back( (float)p_value );
+				mops_e_values_[n].push_back( (float)p_value * (float)posN );
+				//fprintf(stderr, "FPl / negN   = %f \n", (float) FPl / (float)negN  );
+				//fprintf(stderr, "  1 / negN   = %f \n", (float) 1 / (float)negN );
+				//fprintf(stderr, "SlH - Sl +e  = %f \n",  SlHigher - Sl + eps );
+				//fprintf(stderr, "SlH - SlL +e = %f \n",  SlHigher - SlLower + eps );
+				//fprintf(stderr, "Bruch        = %f \n", ( SlHigher - Sl + eps ) / ( SlHigher - SlLower + eps ) );
+
+				//fprintf(stderr, "SlHigher = %f \n", SlHigher );
+				//fprintf(stderr, "SlLower = %f \n", SlLower );
+				//fprintf(stderr, "p_value = %f \n", p_value );
 				continue;
 			}
 		}

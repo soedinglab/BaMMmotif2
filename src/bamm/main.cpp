@@ -135,7 +135,7 @@ int main( int nargs, char* args[] ){
 			}
 
 			// generate M * Npos negative sequences
-			int M = std::min(int(pow(10,6)/Global::posSequenceSet->getN()),1);
+			int M = std::min(int(pow(10,6)/Global::posSequenceSet->getN()),5);
 
 			SeqGenerator neg_seqs( Global::posSequenceSet->getSequences(), model.getMotif() );
 			neg_seqs.sample_negative_seqset( M );
