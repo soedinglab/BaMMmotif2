@@ -69,7 +69,7 @@ int        			Global::cvFold = 5;						// size of cross-validation folds
 int 				Global::sOrder = 2;						// the k-mer order for sampling negative sequence set
 
 // scoring options
-float 				Global::scoreCutoff = 0.0;				// score cutoff for printing logodds scores as motif hit
+float 				Global::scoreCutoff = 0.0f;				// score cutoff for printing logodds scores as motif hit
 
 // printout options
 bool                Global::verbose = false;
@@ -87,6 +87,7 @@ bool				Global::generatePseudoSet = false;		// test for alpha learning
 // options for bamm-search
 bool                Global::bammSearch = false;				// score sequences with provided initial model
 char*               Global::bgModelFile = NULL;				// if scanning with a BaMM file, according bgModelFiles is required!
+float               Global::pvalCutoff = 0.1f;				// pValue cutoff for reporting motif occurrences
 
 std::mt19937		Global::rngx;
 
@@ -303,6 +304,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	// options for bamm-search
 	opt >> GetOpt::OptionPresent( "banmmSearch", bammSearch );
 	opt >> GetOpt::Option( "bgFile", bgModelFile );
+	opt >> GetOpt::Option( "pvalCutoff", pvalCutoff );
 
 	// for remaining unknown options
 	if( opt.options_remain() ){

@@ -105,6 +105,11 @@ int main( int nargs, char* args[] ){
 		motif->write( n );
 
 		if ( Global::bammSearch ){
+			fprintf( stderr, "\n" );
+    		fprintf( stderr, "**********************\n" );
+			fprintf( stderr, "*   Score Sequences  *\n" );
+			fprintf( stderr, "**********************\n" );
+
 			BackgroundModel* bg = bgModel;
 			// 0. Depending on motif input, and learning, define bgModel
 			// use bgModel generated from input sequences wehn prediction is turned on
@@ -127,82 +132,39 @@ int main( int nargs, char* args[] ){
 				}
 			}
 
-
-			int posN = Global::posSequenceSet->getN();
-			int M = std::min(int(pow(10,6)/posN),1);
-			int negN = posN * M;
-
-			// 1. generate MN negative sequences of same size and length as posSet
-			//    base on 2nd order homogeneous IMM background model
-			//    M ~ min{ 10^6/N , 1 }
+			// generate M * Npos negative sequences
+			int M = std::min(int(pow(10,6)/Global::posSequenceSet->getN()),1);
 			SeqGenerator neg_seqs( Global::posSequenceSet->getSequences(), model.getMotif() );
-			neg_seqs.sample_negative_seqset( negN );
+			neg_seqs.sample_negative_seqset( M );
 
-			// 2. Score each sequence and obtain N- and N+ scores
-			//	  sort the scores in descending order
+			// generate and score negative sequence set
 			ScoreSeqSet neg_seqset( model.getMotif(), bg, neg_seqs.getSeqs());
 			neg_seqset.score();
+
+			// score positive sequence set
 			ScoreSeqSet pos_seqset( model.getMotif(), bg, Global::posSequenceSet->getSequences());
 			pos_seqset.score();
 
-
-			// obtain p_value and e_value for each positive_mopsscore
-			std::vector<float> pos_scores = pos_seqset.getScoreAll();
+			// collapse and rank negative scores
 			std::vector<float> neg_scores = neg_seqset.getScoreAll();
-
-			std::sort( pos_scores.begin(), pos_scores.end(), std::greater<float>() );
 			std::sort( neg_scores.begin(), neg_scores.end(), std::greater<float>() );
 
+			fprintf( stderr, "\n" );
+    		fprintf( stderr, "***************************\n" );
+    		fprintf( stderr, "*   Evaluate Occurrences  *\n" );
+			fprintf( stderr, "***************************\n" );
 
-
-			int FPl = 0;
-			float Sl, SlLower, SlHigher, p_value;
-			float lambda = 0;
-			float eps = (float) 1e-5;
-			int nTop = std::min( 100, int( 0.1*negN ));
-			std::vector<float> p_values;
-			std::vector<float> e_values;
-
-			for( int n = 0; n < nTop; n++ ){
-				lambda =+ (neg_scores[n] - neg_scores[nTop]);
-			}
-			lambda = lambda / (float)nTop;
-
-			for( int l = 0; l < posN; l++ ){
-				Sl = pos_scores[l];
-				while( Sl <= neg_scores[FPl] && FPl < negN){
-					SlHigher = neg_scores[FPl];
-					FPl++;
-				}
-				// Sl is lower than worst negScore
-				if( FPl == negN ){
-					p_value = (float) 1;
-					p_values.push_back( p_value );
-					e_values.push_back( p_value * (float)posN );
-					continue;
-				}
-				// Sl is higher than best negScore
-				if ( FPl == 0 ){
-					p_value =  float(1 / negN) * (float) exp( - ( Sl - neg_scores[0] ) / lambda );
-					p_values.push_back( p_value );
-					e_values.push_back( p_value * (float)posN );
-					continue;
-				}else{
-					// SlHigher and SlLower can be defined
-					SlLower = neg_scores[FPl];
-					p_value = float(FPl / negN) + float(1 / negN) * ( SlHigher - Sl + eps ) / ( SlHigher - SlLower + eps );
-					p_values.push_back( p_value );
-					e_values.push_back( p_value * (float)posN );
-					continue;
-				}
-			}
+			// calculate p- and e-values for positive scores based on negative scores
+			pos_seqset.calcPvalues(neg_scores);
+			// print out scores and p-/e-values larger than p-values based cutoff
+			pos_seqset.write( n, Global:: pvalCutoff );
 		}
 
 		if ( Global::scoreSeqset){
 			// score the model on sequence set
 			ScoreSeqSet seqset( motif, bgModel, Global::posSequenceSet->getSequences() );
 			seqset.score();
-			seqset.write( n, Global::scoreCutoff );
+			seqset.writePvalues( n, Global::scoreCutoff );
 		}
 
 		delete motif;

@@ -72,8 +72,62 @@ void ScoreSeqSet::score(){
 
 
 // compute p_values for motif scores based on negative sequeunce scores
-void ScoreSeqSet::calcPvalues(){
+void ScoreSeqSet::calcPvalues( std::vector<float> neg_scores ){
 
+	std::vector<std::vector<float>> pos_scores = mops_scores_;
+	mops_p_values_.resize( seqSet_.size() );
+	mops_e_values_.resize( seqSet_.size() );
+
+	int FPl = 0;
+	float Sl, SlLower, SlHigher, p_value;
+	float lambda = 0;
+	float eps = (float) 1e-5;
+	int negN = (int) neg_scores.size();
+	int posN = (int) ScoreAll_.size();
+	int nTop = std::min( 100, int( 0.1*negN ));
+
+	for( int n = 0; n < nTop; n++ ){
+		lambda =+ (neg_scores[n] - neg_scores[nTop]);
+	}
+	lambda = lambda / (float)nTop;
+
+
+	for( size_t n = 0; n < seqSet_.size(); n++ ){
+		int seqlen = seqSet_[n]->getL();
+		if( !Global::ss ){
+			seqlen = seqlen / 2;
+		}
+		int LW1 = seqSet_[n]->getL() - motif_->getW() + 1;
+		for( int i = 0; i < LW1; i++ ){
+			FPl = 0;
+			Sl = pos_scores[n][i];
+			while( Sl <= neg_scores[FPl] && FPl < negN){
+				SlHigher = neg_scores[FPl];
+				FPl++;
+			}
+			// Sl is lower than worst negScore
+			if( FPl == negN ){
+				p_value = (float) 1;
+				mops_p_values_[n].push_back( p_value );
+				mops_e_values_[n].push_back( p_value * (float)posN );
+				continue;
+			}
+			// Sl is higher than best negScore
+			if ( FPl == 0 ){
+				p_value =  float(1 / negN) * (float) exp( - ( Sl - neg_scores[0] ) / lambda );
+				mops_p_values_[n].push_back( p_value );
+				mops_e_values_[n].push_back( p_value * (float)posN );
+				continue;
+			}else{
+				// SlHigher and SlLower can be defined
+				SlLower = neg_scores[FPl];
+				p_value = float(FPl / negN) + float(1 / negN) * ( SlHigher - Sl + eps ) / ( SlHigher - SlLower + eps );
+				mops_p_values_[n].push_back( p_value );
+				mops_e_values_[n].push_back( p_value * (float)posN );
+				continue;
+			}
+		}
+	}
 }
 
 std::vector<float> ScoreSeqSet::getScoreAll(){
@@ -87,6 +141,7 @@ std::vector<std::vector<float>> ScoreSeqSet::getMopsScores(){
 std::vector<float> ScoreSeqSet::getZoopsScores(){
 	return zoops_scores_;
 }
+
 
 void ScoreSeqSet::write( int N, float cutoff ){
 
@@ -133,4 +188,48 @@ void ScoreSeqSet::write( int N, float cutoff ){
 		//ofile << std::endl;
 	}
 
+}
+
+void ScoreSeqSet::writePvalues( int N, float cutoff ){
+
+	/**
+	 * save log odds scores in one flat file:
+	 * posSequenceBasename.logOdds
+	 */
+
+	bool 	first_hit = true;
+	int 	end; 				// end of motif match
+
+	std::string opath = std::string( Global::outputDirectory ) + '/'
+			+ Global::posSequenceBasename +  "_motif_" + std::to_string( N+1 ) + ".scores";
+
+	std::ofstream ofile( opath );
+
+	for( size_t n = 0; n < seqSet_.size(); n++ ){
+		first_hit = true;
+		int seqlen = seqSet_[n]->getL();
+		if( !Global::ss ){
+			seqlen = seqlen / 2;
+		}
+		int LW1 = seqSet_[n]->getL() - motif_->getW() + 1;
+		for( int i = 0; i < LW1; i++ ){
+
+			if( mops_p_values_ [n][i] < cutoff ){
+				if( first_hit ){
+					// >header:sequence_length
+					ofile << '>' << seqSet_[n]->getHeader() <<  ':' << seqlen << std::endl;
+					first_hit = false;
+				}
+				// start:end:score:strand:sequence_matching
+				end = i + motif_->getW()-1;
+
+				ofile << i << ':' << end << ':' << std::setprecision( 3 ) << mops_scores_[n][i] << ':' << std::setprecision( 3 ) << mops_p_values_[n][i] << ':'  << std::setprecision( 3 ) << mops_e_values_[n][i] << ':'<<
+						( ( i < seqlen ) ? '+' : '-' ) << ':' ;
+				for( int m = i; m <= end; m++ ){
+					ofile << Alphabet::getBase( seqSet_[n]->getSequence()[m] );
+				}
+				ofile << std::endl;
+			}
+		}
+	}
 }

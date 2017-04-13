@@ -114,6 +114,7 @@ public:
 	// options for bamm-search
 	static bool         bammSearch;							// score sequences with provided initial model
 	static char*        bgModelFile;						// if scanning with a BaMM file, according bgModelFiles is required!
+	static float        pvalCutoff;							// p-value cutoff for reporting motif occurrences;
 
 	static void         init( int nargs, char* args[] );
 	static void         destruct();
