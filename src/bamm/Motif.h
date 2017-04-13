@@ -35,6 +35,8 @@ public:
 
 	void		calculateP();									// calculate probabilities p
 	void		calculateS( BackgroundModel* bg );				// calculate log odds scores for the highest order K at position j
+	void		calculateLinearS( BackgroundModel* bg );		// calculate log odds scores for the highest order K at position j
+																// in linear space for speeding up
 
 	void 		print();					   					// print v to console
 	void 		write( int N );					   				// write v (basename.ihbcp/.ihbp). Include header with alphabetType

@@ -66,6 +66,9 @@ Motif::Motif( const Motif& other ){ 		// copy constructor
 	s_ = ( float** )calloc( Y_[Global::modelOrder+1], sizeof( float* ) );
 	for( int y = 0; y < Y_[Global::modelOrder+1]; y++ ){
 		s_[y] = ( float* )calloc( W_, sizeof( float ) );
+		for( j = 0; j < W_; j++ ){
+			s_[y][j] = other.s_[y][j];
+		}
 	}
 
 	f_bg_ = other.f_bg_;
@@ -90,7 +93,7 @@ Motif::~Motif(){
 	free( p_ );
 
 	for( int y = 0; y < Y_[Global::modelOrder+1]; y++ ){
-		free( s_[y]);
+		free( s_[y] );
 	}
 	free( s_ );
 
@@ -443,6 +446,21 @@ void Motif::calculateS( BackgroundModel* bg ){
 	}
 
 }
+
+void Motif::calculateLinearS( BackgroundModel* bg ){
+
+	int K = Global::modelOrder;
+	int K_bg = ( Global::bgModelOrder < K ) ? Global::bgModelOrder : K ;
+
+	for( int y = 0; y < Y_[Global::modelOrder+1]; y++ ){
+		int y_bg = y % Y_[K_bg+1];
+		for( int j = 0; j < W_; j++ ){
+			s_[y][j] =  v_[K][y][j] / bg->getV()[K_bg][y_bg];
+		}
+	}
+
+}
+
 void Motif::print(){
 
 	fprintf( stderr," _______________________\n"

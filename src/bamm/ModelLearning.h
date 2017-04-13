@@ -33,7 +33,6 @@ private:
 
 	std::vector<int>		folds_;				// folds to iterate over, for cross-validation
 
-	float**					s_;					// log scores of each (K+1)-mer at each position
 	float** 				r_;		        	// responsibilities at position i in sequence n
 	float*** 				n_;	            	// fractional counts n for (k+1)-mers y at motif position j
 	int***					n_z_;				// n^z_j(y_1:k), the k-mer counts(for 0<k<K+2 ) with y_k's

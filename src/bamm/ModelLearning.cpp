@@ -12,6 +12,7 @@
 
 #include <boost/math/special_functions.hpp>		/* gamma function and digamma function */
 #include <boost/math/special_functions/digamma.hpp>
+#include <boost/math/distributions/beta.hpp>
 #include <boost/random.hpp>
 #include <cassert>
 #include <stdlib.h>
@@ -45,12 +46,6 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int
 				posSeqs_.push_back( Global::posSequenceSet->getSequences()[Global::posFoldIndices[folds_[f_idx]][s_idx]] );
 			}
 		}
-	}
-
-	// allocate memory for s_[y][j] and initialize it
-	s_ = ( float** )calloc( Y_[K+1]+1, sizeof( float* ) ) + 1;
-	for( y = -1; y < Y_[K+1]; y++ ){
-		s_[y] = ( float* )calloc( W, sizeof( float ) );
 	}
 
 	// allocate memory for r_[n][i], pos_[n][i], z_[n], normFactor_[n] and initialize them
@@ -96,10 +91,6 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int
 ModelLearning::~ModelLearning(){
 
 	int K = Global::modelOrder;
-	for( int y = -1; y < Y_[K+1]; y++ ){
-		free( s_[y] );
-	}
-	free( s_-1 );
 
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 		free( r_[n] );
@@ -140,9 +131,8 @@ int ModelLearning::EM(){
 	bool iterate = true;									// flag for iterating before convergence
 	int W = motif_->getW();
 	int K = Global::modelOrder;
-	int K_bg = ( Global::bgModelOrder < K ) ? Global::bgModelOrder : K;
 
-	int y, y_bg, j;
+	int y, j;
 	float v_diff, llikelihood_prev, llikelihood_diff = 0.0f;
 	float** v_before;										// hold the parameters of the highest-order before EM
 
@@ -163,14 +153,6 @@ int ModelLearning::EM(){
 		for( y = 0; y < Y_[K+1]; y++ ){
 			for( j = 0; j < W; j++ ){
 				v_before[y][j] = motif_->getV()[K][y][j];
-			}
-		}
-
-		// compute log odd scores s[y][j], log likelihoods of the highest order K
-		for( y = 0; y < Y_[K+1]; y++ ){
-			for( j = 0; j < W; j++ ){
-				y_bg = y % Y_[K_bg+1];
-				s_[y][j] = motif_->getV()[K][y][j] / bg_->getV()[K_bg][y_bg];
 			}
 		}
 
@@ -233,11 +215,15 @@ void ModelLearning::EStep(){
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 		normFactor_[n] = 0.0f;
 	}
+
+	motif_->calculateLinearS( bg_ );
+	float** s = motif_->getS();
+
+	// parallel the code
+//	#pragma omp parallel for
+
 	// calculate responsibilities r_[n][i] at position i in sequence n
 	// n runs over all sequences
-	// and parallel the code
-	#pragma omp parallel for
-
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 
 		int L = posSeqs_[n]->getL();
@@ -258,18 +244,15 @@ void ModelLearning::EStep(){
 
 			// extract (K+1)-mer y from positions (i-k,...,i)
 			int y = ( kmer[ij] >= 0 ) ? kmer[ij] % Y_[K+1] : -1;
-
 			// j runs over all motif positions
 			for( int j = ( 0 > ( ij-L+W ) ? 0 : ij-L+W ); j < ( W < (ij+1) ? W : ij+1 ); j++ ){
-				r_[n][L-W+1-ij+j] *= s_[y][j];
+				r_[n][LW1-ij+j] *= ( y >= 0 ) ? s[y][j] : 0;
 			}
 		}
 
 		// calculate complete responsibilities and sum them up
 		for( int i = 0; i < LW2; i++ ){
-			if( r_[n][i] != 0.0f ){
-				r_[n][i] *= pos_[n][i];
-			}
+			r_[n][i] *= pos_[n][i];
 			normFactor_[n] += r_[n][i];
 		}
 
@@ -348,10 +331,10 @@ void ModelLearning::GibbsSampling(){
 	int iteration = 0;
 
 	int K = Global::modelOrder;
-	int K_bg = ( Global::bgModelOrder < K ) ? Global::bgModelOrder : K;
 	int W = motif_->getW();
 	float eta = Global::eta;						// learning rate for alpha learning
 	int k, y, j, n;
+
 	std::vector<std::vector<float>> alpha_avg;
 	alpha_avg.resize( K+1 );
 	for( k = 0; k < K+1; k++ ){
@@ -360,24 +343,17 @@ void ModelLearning::GibbsSampling(){
 
 	if( !Global::noInitialZ ){
 		// initialize the model with one EStep
-		// compute log odd scores s[y][j], log likelihoods of the highest order K
-		for( y = 0; y < Y_[K+1]; y++ ){
-			for( j = 0; j < W; j++ ){
-				int y_bg = y % Y_[K_bg+1];
-				s_[y][j] = motif_->getV()[K][y][j] / bg_->getV()[K_bg][y_bg];
-			}
-		}
 		// E-step: calculate posterior
 		EStep();
 		// extract initial z from the indices of the largest responsibilities
 		for( n = 0; n < ( int )posSeqs_.size(); n++ ){
-			int LW2 = posSeqs_[n]->getL() - motif_->getW() + 2;
+			int LW1 = posSeqs_[n]->getL() - motif_->getW() + 1;
 			float maxR = r_[n][0];
 			int maxIdx = 0;
-			for( int i = 1; i < LW2; i++ ){
+			for( int i = 1; i <= LW1; i++ ){
 				if( r_[n][i] > maxR ){
 					maxR = r_[n][i];
-					maxIdx = LW2 - i;
+					maxIdx = LW1+1-i;
 				}
 			}
 			z_[n] = maxIdx;
@@ -393,10 +369,11 @@ void ModelLearning::GibbsSampling(){
 			}
 		}
 	}
+
 	// 2. count k-mers for the highest order K
 	for( n = 0; n < ( int )posSeqs_.size(); n++ ){
-		int* kmer = posSeqs_[n]->getKmer();
 		if( z_[n] > 0 ){
+		int* kmer = posSeqs_[n]->getKmer();
 			for( j = 0; j < W; j++ ){
 				y = ( kmer[z_[n]-1+j] >= 0 ) ? kmer[z_[n]-1+j] % Y_[K+1] : -1;
 				n_z_[K][y][j]++;
@@ -407,7 +384,7 @@ void ModelLearning::GibbsSampling(){
 	// compute k-mer counts for all the lower orders
 	for( k = K; k > 0; k-- ){
 		for( y = 0; y < Y_[k+1]; y++ ){
-			int y2 = ( y >= 0 ) ? y % Y_[k] : -1;
+			int y2 = y % Y_[k];
 			for( j = 0; j < W; j++ ){
 				n_z_[k-1][y2][j] += n_z_[k][y][j];
 			}
@@ -475,19 +452,11 @@ void ModelLearning::GibbsSampling(){
 	}
 
 	// update model parameter v
-	// todo: here only update the K-th order
 	motif_->updateVz_n( n_z_, alpha_, K );
 
 	// run five steps of EM to optimize the final model with
 	// the optimum model parameters v's and the fixed alphas
 	for( size_t step = 0; step < 5; step++ ){
-		// compute log odd scores s[y][j], log likelihoods of the highest order K
-		for( y = 0; y < Y_[K+1]; y++ ){
-			for( j = 0; j < W; j++ ){
-				int y_bg = y % Y_[K_bg+1];
-				s_[y][j] = motif_->getV()[K][y][j] / bg_->getV()[K_bg][y_bg];
-			}
-		}
 
 		// E-step: calculate posterior
 		EStep();
@@ -510,68 +479,89 @@ void ModelLearning::Gibbs_sampling_z_q(){
 	int N = ( int )posSeqs_.size();
 	int W = motif_->getW();
 	int K = Global::modelOrder;
-	int K_bg = ( Global::bgModelOrder < K ) ? Global::bgModelOrder : K;
-	int k, y, y2, yk, y_bg, j, i, L, LW1, n;
-	int N_0 = 0;								// counts of sequences which do not contain motifs.
+//	int K_bg = ( Global::bgModelOrder < K ) ? Global::bgModelOrder : K;
+	int k, y, j, i, n;
+	int N_0 = 0;
 
-	float** v_bg = bg_->getV();
-	float*** v = motif_->getV();
+//	float*** v = motif_->getV();
+//	float** v_bg = bg_->getV();
+//	motif_->calculateLinearS( bg_ );
+	float** s = motif_->getS();
+
+
 	// sampling z:
 	// loop over all sequences and drop one sequence each time and update r
 	for( n = 0; n < N; n++ ){
-		L = posSeqs_[n]->getL();
-		LW1 = L - W + 1;
+
+		int L = posSeqs_[n]->getL();
+		int LW1 = L - W + 1;
 		int* kmer = posSeqs_[n]->getKmer();
 
 		// count k-mers at position z_i+j except the n'th sequence
-		// remove the k-mer counts from the current sequence with the current z
-		if( z_[n] > 0 ){
+		// remove the k-mer counts from the sequence with the current z
+		/*
+		 * -------------- faster version of removing k-mer ------------------
+		 */
+
+/*		if( z_[n] > 0 ){
 			for( j = 0; j < W; j++ ){
-				// for k = 0:
-				y = ( kmer[z_[n]-1+j] >= 0 ) ? kmer[z_[n]-1+j] % Y_[1] : -1;
-				n_z_[0][y][j]--;
-				if( y >= 0 ){
-					v[0][y][j]= ( ( float )n_z_[0][y][j] + alpha_[0][j] * v_bg[0][y] )
-								/ ( ( float )N * q_ + alpha_[0][j] );
-					// update s for y
-					y_bg = y % Y_[K_bg+1];
-					s_[y][j] = v[K][y][j] / v_bg[K_bg][y_bg];
-				}
-				// for 1 <= k <= K
-				for( k = 1; k < K+1; k++ ){
+				for( k = 0; k < K+1; k++ ){
 					y = ( kmer[z_[n]-1+j] >= 0 ) ? kmer[z_[n]-1+j] % Y_[k+1] : -1;
 					n_z_[k][y][j]--;
 					if( y >= 0 ){
 						// updated model parameters v excluding the n'th sequence
-						y2 = y % Y_[k];
-						yk = y / Y_[1];
-						if( j < k ){						// when j < k, i.e. p(A|CG) = p(A|C)
+						int y2 = y % Y_[k];
+						int yk = y / Y_[1];
+						int y_bg = y % Y_[K_bg+1];
+						if( k == 0 ){
+							v[k][y][j]= ( ( float )n_z_[k][y][j] + alpha_[k][j] * v_bg[k][y] )
+									/ ( ( float )N * q_ + alpha_[k][j] );
+						} else if( j < k ){						// when j < k, i.e. p(A|CG) = p(A|C)
 							v[k][y][j] = v[k-1][y2][j];
 						} else {
 							v[k][y][j] = ( ( float )n_z_[k][y][j] + alpha_[k][j] * v[k-1][y2][j] )
 									/ ( ( float )n_z_[k-1][yk][j-1] + alpha_[k][j] );
 						}
-						// update s for y
-						y_bg = y % Y_[K_bg+1];
-						s_[y][j] = v[K][y][j] / v_bg[K_bg][y_bg];
+
+						// compute log odd scores s[y][j], log likelihoods of the highest order K
+						if( k == K ){
+							s[y][j] = v[K][y][j] / v_bg[K_bg][y_bg];
+						}
 					}
 				}
 			}
+		}*/
+
+		/*
+		 * -------------- slower version of removing k-mer -----------------------
+		 */
+
+		// remove the k-mer counts from the sequence with the current z
+		if( z_[n] > 0 ){
+			for( k = 0; k < K+1; k++ ){
+				for( j = 0; j < W; j++ ){
+					y = ( kmer[z_[n]-1+j] >= 0 ) ? kmer[z_[n]-1+j] % Y_[k+1] : -1;
+					n_z_[k][y][j]--;
+				}
+			}
+			// updated model parameters v excluding the n'th sequence
+			motif_->updateVz_n( n_z_, alpha_, K );
 		}
+		// compute log odd scores s[y][j], log likelihoods of the highest order K
+		motif_->calculateLinearS( bg_ );
 
 		// sampling equation:
-		// calculate responsibilities over all LW1 positions on n'th sequence
-		std::vector<float> posteriors;
+		// calculate responsibilities and positional priors
+		// over all LW1 positions on n'th sequence:
 		float normFactor = 0.0f;
-		// calculate positional prior and reset r[n][i]
-		pos_[n][0] = 1.0f - q_;
 		r_[n][0] = pos_[n][0];
 		normFactor += r_[n][0];
-
+		pos_[n][0] = 1.0f - q_;
 		for( i = 1; i <= LW1; i++ ){
 			pos_[n][i] = q_ / ( float )LW1;
 			r_[n][i] = 1.0f;
 		}
+
 		// todo: could be parallelized by extracting 8 sequences at once
 		// ij = i+j runs over all positions in sequence
 		for( int ij = 0; ij < L; ij++ ){
@@ -581,27 +571,29 @@ void ModelLearning::Gibbs_sampling_z_q(){
 
 			// j runs over all motif positions
 			for( j = ( ( ij-L+W ) < 0 ? 0 : ij-L+W ); j < ( W < (ij+1) ? W : ij+1 ); j++ ){
-				r_[n][LW1-ij+j] *= s_[y][j];
+				r_[n][LW1-ij+j] *= ( y >= 0 ) ? s[y][j] : 0;
 			}
 		}
-
 		for( i = 1; i <= LW1; i++ ){
 			r_[n][i] *= pos_[n][i];
 			normFactor += r_[n][i];
 		}
-
-		// normalize responsibilities
-		for( i = 0; i <= LW1; i++ ){
+		// normalize responsibilities and append them to an array
+		std::vector<float> posteriors;
+		r_[n][0] /= normFactor;
+		posteriors.push_back( r_[n][0] );
+		for( i = LW1; i >= 1; i-- ){
 			r_[n][i] /= normFactor;
 			posteriors.push_back( r_[n][i] );
 		}
 		// draw a new position z from discrete posterior distribution
 		std::discrete_distribution<> posterior_dist( posteriors.begin(), posteriors.end() );
-		z_[n] = LW1 + 1 - posterior_dist( Global::rngx );
+		z_[n] = posterior_dist( Global::rngx );
 
 		if( z_[n] == 0 ){
-			// count the number of sequence that do not have a motif
+			// count sequences which do not contain motifs.
 			N_0++;
+
 		} else {
 			// add the k-mer counts from the current sequence with the updated z
 			for( j = 0; j < W; j++ ){
@@ -615,6 +607,11 @@ void ModelLearning::Gibbs_sampling_z_q(){
 
 	// sampling q:
 	if( !Global::noQSampling ){
+/*
+ * 		slower version of sampling q
+ */
+
+/*
 		// draw two random numbers Q and P from Gamma distribution
 		std::gamma_distribution<> P_Gamma_dist( N_0 + 1, 1 );
 		std::gamma_distribution<> Q_Gamma_dist( N - N_0 + 1, 1 );
@@ -624,7 +621,15 @@ void ModelLearning::Gibbs_sampling_z_q(){
 		double Q = Q_Gamma_dist( Global::rngx );
 		// calculate q_
 		q_ = ( float )Q / ( float )( Q + P );
+*/
+
+/*
+ * 		faster version of sampling q
+ */
+		boost::math::beta_distribution<> q_beta_dist( N - N_0 + 1, N_0 + 1);
+		q_ = ( float )quantile( q_beta_dist, ( float )rand() / ( float )RAND_MAX );
 	}
+
 }
 
 void ModelLearning::stochastic_optimize_alphas( int K, int W, float eta, int iter ){
@@ -1217,7 +1222,7 @@ void ModelLearning::write( int N ){
 		std::ofstream ofile_z( opath_z.c_str() );
 		ofile_z << "seq" << '\t' << "start" <<'\t' << "end" << std::endl;
 		for( size_t n = 0; n < posSeqs_.size(); n++ ){
-			ofile_z << n+1 << '\t' << z_[n]+1 <<'\t' << z_[n]+W << std::endl;
+			ofile_z << n+1 << '\t' << z_[n] <<'\t' << z_[n]+W-1 << std::endl;
 		}
 	}
 }
