@@ -167,7 +167,7 @@ BackgroundModel::BackgroundModel( std::string filePath ){
 BackgroundModel::BackgroundModel(char* filePath , int K, float A ){
 	// for reading in Background Model from PWMfile
 	name_.assign( baseName( filePath ) );
-
+	std::cerr << "  "<< std::endl;
 	n_ = NULL;
 	v_ = NULL;
 
@@ -179,38 +179,42 @@ BackgroundModel::BackgroundModel(char* filePath , int K, float A ){
 	for( int k = 0; k < K_+2; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
-
+	std::cerr << "  "<< std::endl;
 	v_ = ( float** )malloc( ( K_+1 ) * sizeof( float* ) );
 	for( int k = 0; k <= K_; k++ ){
 		v_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
 	}
 
+	float A_nuc,C_nuc,G_nuc,T_nuc;
 	std::ifstream file;
 	file.open( filePath, std::ifstream::in );
-
+	std::cerr << "  "<< std::endl;
 	if( !file.good() ){
 		std::cout << "Error: Cannot open PWM file: " << filePath << std::endl;
 		exit( -1 );
 	} else {
 
 		std::string line;
-		std::string row;
 
 		while( getline( file, line ) ){
 			// search for the line starting with "Background letter frequencies"
 			if( line[0] == 'B' ){
 				// read the following line
 				getline( file, line );
-
 				// get the length of motif after "w= "
-				std::stringstream A( line.substr( line.find( "A " ) + 8 ) );
-				std::stringstream C( line.substr( line.find( "C=" ) + 8 ) );
-				std::stringstream G( line.substr( line.find( "G=" ) + 8 ) );
-				std::stringstream T( line.substr( line.find( "T=" ) + 8 ) );
-				A >> v_[0][0];
-				C >> v_[0][1];
-				G >> v_[0][2];
-				T >> v_[0][3];
+				std::stringstream a( line.substr( line.find( "A " ) + 2, 8 ) );
+				std::stringstream c( line.substr( line.find( "C " ) + 2, 8 ) );
+				std::stringstream g( line.substr( line.find( "G " ) + 2, 8 ) );
+				std::stringstream t( line.substr( line.find( "T " ) + 2, 8 ) );
+				a >> A_nuc;
+				c >> C_nuc;
+				g >> G_nuc;
+				t >> T_nuc;
+				v_[0][0] = (float) A_nuc;
+				v_[0][1] = (float) C_nuc;
+				v_[0][2] = (float) G_nuc;
+				v_[0][3] = (float) T_nuc;
+				break;
 			}
 		}
 

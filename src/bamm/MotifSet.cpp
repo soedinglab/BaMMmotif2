@@ -57,7 +57,6 @@ MotifSet::MotifSet(){
 		N_ = 1;
 
 	} else if( Global::PWMFilename != NULL ){
-
 		// read file to calculate motif length
 		std::ifstream file;
 		file.open( Global::PWMFilename, std::ifstream::in );

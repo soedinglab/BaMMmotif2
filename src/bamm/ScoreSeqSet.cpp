@@ -79,7 +79,7 @@ void ScoreSeqSet::calcPvalues( std::vector<float> neg_scores ){
 	mops_e_values_.resize( seqSet_.size() );
 
 	int FPl = 0;
-	float Sl, SlLower, SlHigher, p_value;
+	float SlLower, SlHigher, p_value, Sl_prev, Sl;
 	float lambda = 0;
 	float eps = (float) 1e-5;
 	int negN = (int) neg_scores.size();
@@ -98,18 +98,33 @@ void ScoreSeqSet::calcPvalues( std::vector<float> neg_scores ){
 			seqlen = seqlen / 2;
 		}
 		int LW1 = seqSet_[n]->getL() - motif_->getW() + 1;
+
+		Sl_prev = pos_scores[n][0]+1;
 		for( int i = 0; i < LW1; i++ ){
-			FPl = 0;
 			Sl = pos_scores[n][i];
-			while( Sl <= neg_scores[FPl] && FPl < negN){
-				SlHigher = neg_scores[FPl];
-				FPl++;
+			if( Sl == Sl_prev ){
+				mops_p_values_[n].push_back( p_value );
+				mops_e_values_[n].push_back( p_value * (float)posN );
+				continue;
 			}
+			if( Sl < Sl_prev ){
+				// FP will increase
+				while( Sl <= neg_scores[FPl] && FPl < negN){
+					FPl++;
+				}
+			}else{
+				// FP is smaller than previous round
+				while( Sl > neg_scores[FPl] && FPl > 0 ){
+					FPl--;
+				}
+			}
+
 			// Sl is lower than worst negScore
 			if( FPl == negN ){
 				p_value = (float) 1;
 				mops_p_values_[n].push_back( p_value );
 				mops_e_values_[n].push_back( p_value * (float)posN );
+				Sl_prev = Sl;
 				continue;
 			}
 			// Sl is higher than best negScore
@@ -117,13 +132,16 @@ void ScoreSeqSet::calcPvalues( std::vector<float> neg_scores ){
 				p_value =  float(1 / negN) * (float) exp( - ( Sl - neg_scores[0] ) / lambda );
 				mops_p_values_[n].push_back( p_value );
 				mops_e_values_[n].push_back( p_value * (float)posN );
+				Sl_prev = Sl;
 				continue;
 			}else{
 				// SlHigher and SlLower can be defined
+				SlHigher = neg_scores[FPl-1];
 				SlLower = neg_scores[FPl];
 				p_value = float(FPl / negN) + float(1 / negN) * ( SlHigher - Sl + eps ) / ( SlHigher - SlLower + eps );
 				mops_p_values_[n].push_back( p_value );
 				mops_e_values_[n].push_back( p_value * (float)posN );
+				Sl_prev = Sl;
 				continue;
 			}
 		}

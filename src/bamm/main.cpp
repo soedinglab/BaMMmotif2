@@ -125,6 +125,8 @@ int main( int nargs, char* args[] ){
 				// use bgModel generated when reading in PWM File
 				if( Global::PWMFilename != NULL ){
 					bg = new BackgroundModel( Global::PWMFilename , 0, 1);
+					// this means that also the global motif order needs to be adjusted;
+					Global::modelOrder = 0;
 				}
 				else{
 					std::cout << "No background Model found for provided initial search motif!\n";
@@ -134,6 +136,7 @@ int main( int nargs, char* args[] ){
 
 			// generate M * Npos negative sequences
 			int M = std::min(int(pow(10,6)/Global::posSequenceSet->getN()),1);
+
 			SeqGenerator neg_seqs( Global::posSequenceSet->getSequences(), model.getMotif() );
 			neg_seqs.sample_negative_seqset( M );
 
@@ -156,8 +159,9 @@ int main( int nargs, char* args[] ){
 
 			// calculate p- and e-values for positive scores based on negative scores
 			pos_seqset.calcPvalues(neg_scores);
+
 			// print out scores and p-/e-values larger than p-values based cutoff
-			pos_seqset.write( n, Global:: pvalCutoff );
+			pos_seqset.writePvalues( n, Global:: pvalCutoff );
 		}
 
 		if ( Global::scoreSeqset){

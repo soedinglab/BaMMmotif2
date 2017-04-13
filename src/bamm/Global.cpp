@@ -302,7 +302,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "scoreSeqset", scoreSeqset );
 
 	// options for bamm-search
-	opt >> GetOpt::OptionPresent( "banmmSearch", bammSearch );
+	opt >> GetOpt::OptionPresent( "bammSearch", bammSearch );
 	opt >> GetOpt::Option( "bgFile", bgModelFile );
 	opt >> GetOpt::Option( "pvalCutoff", pvalCutoff );
 
