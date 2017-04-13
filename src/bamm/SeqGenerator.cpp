@@ -71,16 +71,18 @@ void SeqGenerator::calculate_kmer_frequency(){
 
 
 // generate negative sequences
-std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_negative_seqset( ){
+std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_negative_seqset(int M){
 
 	std::vector<std::unique_ptr<Sequence>> sampleSet;
 
 	calculate_kmer_frequency();
 
-	for( size_t i = 0; i < seqs_.size(); i++ ){
-		int L = seqs_[i]->getL();
-		for( int n = 0; n < Global::mFold; n++ ){
-			sampleSet.push_back( sample_negative_sequence( L ) );
+	for( int m = 0; m < M; m++ ){
+		for( size_t i = 0; i < seqs_.size(); i++ ){
+			int L = seqs_[i]->getL();
+			for( int n = 0; n < Global::mFold; n++ ){
+				sampleSet.push_back( sample_negative_sequence( L ) );
+			}
 		}
 	}
 	return sampleSet;

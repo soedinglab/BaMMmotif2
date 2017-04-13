@@ -1,5 +1,6 @@
 #include <time.h>		// time(), clock_t, clock, CLOCKS_PER_SEC
 #include <stdio.h>
+#include <algorithm>    // std::min
 
 #include "Global.h"
 #include "../shared/BackgroundModel.h"
@@ -127,11 +128,15 @@ int main( int nargs, char* args[] ){
 			}
 
 
+			int posN = Global::posSequenceSet->getN();
+			int M = std::min(int(pow(10,6)/posN),1);
+			int negN = posN * M;
+
 			// 1. generate MN negative sequences of same size and length as posSet
 			//    base on 2nd order homogeneous IMM background model
 			//    M ~ min{ 10^6/N , 1 }
 			SeqGenerator neg_seqs( Global::posSequenceSet->getSequences(), model.getMotif() );
-			neg_seqs.sample_negative_seqset();
+			neg_seqs.sample_negative_seqset( negN );
 
 			// 2. Score each sequence and obtain N- and N+ scores
 			//	  sort the scores in descending order
@@ -140,24 +145,57 @@ int main( int nargs, char* args[] ){
 			ScoreSeqSet pos_seqset( model.getMotif(), bg, Global::posSequenceSet->getSequences());
 			pos_seqset.score();
 
-			// 3. Sl_lower  = max{ Sn- : Sn- <= Sl }
-			// 4. Sl_higher = min{ Sn+ : Sn- >= Sl }
-			//    -> as the nearest ranked negative scores.
 
-			// 5. P-value is interpolated between those scores with FPl and FPl+1 false positive counts
-			//	  P-value( Sl ) = ( FPl / N- ) + 1 / N-  * ( Sl_higher - Sl + e ) / ( Sl_higher - Sl_lower + e )
-			//
-			//	  e : very small i.e. 1e-5
-			//    --> only works if Sl in between Sl_lower and Sl_higher
-			// 6. --> if Sl is lower than any negatve score -> P-value is simply 1
-			//
-			// 7. --> if Sl is higher than any negative score:
-			//	  P-value( Sl ) = 1 / N- exp( - ( Sl - Smax- ) / lambda )
-			//	  lambda = 1 / n_top  sum_from n=1 to ntop( Sn- - sntop- )
-			//    ntop = min { 100, 0.1 X N- }
-			//
-			// 8. calculate E-value:
-			//	  -> Evalue = N+ * P-Value
+			// obtain p_value and e_value for each positive_mopsscore
+			std::vector<float> pos_scores = pos_seqset.getScoreAll();
+			std::vector<float> neg_scores = neg_seqset.getScoreAll();
+
+			std::sort( pos_scores.begin(), pos_scores.end(), std::greater<float>() );
+			std::sort( neg_scores.begin(), neg_scores.end(), std::greater<float>() );
+
+
+
+			int FPl = 0;
+			float Sl, SlLower, SlHigher, p_value;
+			float lambda = 0;
+			float eps = (float) 1e-5;
+			int nTop = std::min( 100, int( 0.1*negN ));
+			std::vector<float> p_values;
+			std::vector<float> e_values;
+
+			for( int n = 0; n < nTop; n++ ){
+				lambda =+ (neg_scores[n] - neg_scores[nTop]);
+			}
+			lambda = lambda / (float)nTop;
+
+			for( int l = 0; l < posN; l++ ){
+				Sl = pos_scores[l];
+				while( Sl <= neg_scores[FPl] && FPl < negN){
+					SlHigher = neg_scores[FPl];
+					FPl++;
+				}
+				// Sl is lower than worst negScore
+				if( FPl == negN ){
+					p_value = (float) 1;
+					p_values.push_back( p_value );
+					e_values.push_back( p_value * (float)posN );
+					continue;
+				}
+				// Sl is higher than best negScore
+				if ( FPl == 0 ){
+					p_value =  float(1 / negN) * (float) exp( - ( Sl - neg_scores[0] ) / lambda );
+					p_values.push_back( p_value );
+					e_values.push_back( p_value * (float)posN );
+					continue;
+				}else{
+					// SlHigher and SlLower can be defined
+					SlLower = neg_scores[FPl];
+					p_value = float(FPl / negN) + float(1 / negN) * ( SlHigher - Sl + eps ) / ( SlHigher - SlLower + eps );
+					p_values.push_back( p_value );
+					e_values.push_back( p_value * (float)posN );
+					continue;
+				}
+			}
 		}
 
 		if ( Global::scoreSeqset){

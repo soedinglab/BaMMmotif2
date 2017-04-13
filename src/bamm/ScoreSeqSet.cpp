@@ -64,6 +64,20 @@ void ScoreSeqSet::score(){
 		}
 		zoops_scores_.push_back( maxScore );
 	}
+	// fill up ALL and Max
+	for( size_t n = 0; n < seqSet_.size(); n++ ){
+		ScoreAll_.insert( std::end( ScoreAll_ ), std::begin( mops_scores_[n] ), std::end( mops_scores_[n] ) );
+	}
+}
+
+
+// compute p_values for motif scores based on negative sequeunce scores
+void ScoreSeqSet::calcPvalues(){
+
+}
+
+std::vector<float> ScoreSeqSet::getScoreAll(){
+	return ScoreAll_;
 }
 
 std::vector<std::vector<float>> ScoreSeqSet::getMopsScores(){
