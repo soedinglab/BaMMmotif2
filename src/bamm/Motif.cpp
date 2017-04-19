@@ -433,7 +433,7 @@ void Motif::calculateP(){
 	}
 }
 
-void Motif::calculateS( BackgroundModel* bg ){
+void Motif::calculateS( float** Vbg ){
 
 	int K = Global::modelOrder;
 	int K_bg = ( Global::bgModelOrder < K ) ? Global::bgModelOrder : K ;
@@ -441,13 +441,13 @@ void Motif::calculateS( BackgroundModel* bg ){
 	for( int y = 0; y < Y_[Global::modelOrder+1]; y++ ){
 		int y_bg = y % Y_[K_bg+1];
 		for( int j = 0; j < W_; j++ ){
-			s_[y][j] = logf( v_[K][y][j] + 0.000001f ) - logf( bg->getV()[K_bg][y_bg] );
+			s_[y][j] = logf( v_[K][y][j] + 0.000001f ) - logf( Vbg[K_bg][y_bg] );
 		}
 	}
 
 }
 
-void Motif::calculateLinearS( BackgroundModel* bg ){
+void Motif::calculateLinearS( float** Vbg ){
 
 	int K = Global::modelOrder;
 	int K_bg = ( Global::bgModelOrder < K ) ? Global::bgModelOrder : K ;
@@ -455,7 +455,7 @@ void Motif::calculateLinearS( BackgroundModel* bg ){
 	for( int y = 0; y < Y_[Global::modelOrder+1]; y++ ){
 		int y_bg = y % Y_[K_bg+1];
 		for( int j = 0; j < W_; j++ ){
-			s_[y][j] =  v_[K][y][j] / bg->getV()[K_bg][y_bg];
+			s_[y][j] =  v_[K][y][j] / Vbg[K_bg][y_bg];
 		}
 	}
 

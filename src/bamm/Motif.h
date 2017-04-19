@@ -34,8 +34,8 @@ public:
 	void        updateVz_n( int*** n, float** alpha, int order );	// update v for Collapsed Gibbs sampling
 
 	void		calculateP();									// calculate probabilities p
-	void		calculateS( BackgroundModel* bg );				// calculate log odds scores for the highest order K at position j
-	void		calculateLinearS( BackgroundModel* bg );		// calculate log odds scores for the highest order K at position j
+	void		calculateS( float** Vbg );				// calculate log odds scores for the highest order K at position j
+	void		calculateLinearS( float** Vbg );		// calculate log odds scores for the highest order K at position j
 																// in linear space for speeding up
 
 	void 		print();					   					// print v to console
