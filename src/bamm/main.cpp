@@ -133,6 +133,7 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*   Statistics   *\n" );
 	fprintf( stderr, "******************\n" );
 	std::cout << "Given alphabet type is " << Alphabet::getAlphabet();
+	std::cout << "\nGiven initial model is " << Global::initialModelBasename;
 	// for positive sequence set
 	std::cout << "\nGiven positive sequence set is " << Global::posSequenceBasename
 			<< "\n	"<< Global::posSequenceSet->getN() << " sequences. max.length: " <<
@@ -142,6 +143,7 @@ int main( int nargs, char* args[] ){
 		std::cout << ' ' << Global::posSequenceSet->getBaseFrequencies()[i]
 		          << "(" << Alphabet::getAlphabet()[i] << ")";
 	}
+	std::cout << "\n	" << Global::q * 100 << "% of the sequences contain the optimized motif.";
 	// for negative sequence set
 	if( Global::negSeqGiven ){
 		std::cout << "\nGiven negative sequence set is " << Global::negSequenceBasename
@@ -152,7 +154,7 @@ int main( int nargs, char* args[] ){
 			std::cout << ' ' << Global::negSequenceSet->getBaseFrequencies()[i]
 					  << "(" << Alphabet::getAlphabet()[i] << ")";
 	}
-	std::cout << "\nGiven initial model is " << Global::initialModelBasename;
+
 	if( Global::FDR ){
 		std::cout << "\nGiven folds for FDR estimation: " << Global::cvFold;
 	}

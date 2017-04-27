@@ -336,12 +336,6 @@ void ModelLearning::GibbsSampling(){
 	float eta = Global::eta;						// learning rate for alpha learning
 	int k, y, j, n;
 
-	std::vector<std::vector<float>> alpha_avg;
-	alpha_avg.resize( K+1 );
-	for( k = 0; k < K+1; k++ ){
-		alpha_avg[k].resize( W );
-	}
-
 	if( !Global::noInitialZ ){
 		// initialize the model with one EStep
 		// E-step: calculate posterior
@@ -392,11 +386,18 @@ void ModelLearning::GibbsSampling(){
 		}
 	}
 
+	if( Global::alphaSampling ){
+
+			std::vector<std::vector<float>> a_avg;
+			a_avg.resize( K+1 );
+			for( k = 0; k < K+1; k++ ){
+				a_avg[k].resize( W );
+			}
+	}
 
 	// todo: only for writing out the log posterior of alphas
-	std::string opath = std::string( Global::outputDirectory ) + "/k1j1.lposA";
+	std::string opath = std::string( Global::outputDirectory ) + "/Kj.lposA";
 	std::ofstream ofile( opath );
-
 
 	// iterate over
 	while( iterate && iteration < Global::maxCGSIterations ){
@@ -404,61 +405,27 @@ void ModelLearning::GibbsSampling(){
 		iteration++;
 
 		// sampling z and q
-//		Gibbs_sampling_z_q();
+		if( !Global::noZSampling )	Gibbs_sampling_z_q();
 
-		// update alphas:
+		// update alphas by stochastic optimization
 		if( !Global::noAlphaOptimization ){
-			// update alphas by stochastic optimization
 			stochastic_optimize_alphas( K, W, eta, iteration );
-
 		} else if( Global::alphaSampling ){
-			// sample alpha in the exponential space using Metropolis-Hastings algorithm
 			GibbsMH_sample_alphas();
-
-			// todo: only for writing out the log posterior of alphas
-			ofile << calc_logCondProb_a( alpha_, 2, 11 ) <<'\t' << alpha_[2][11] << std::endl;
-
 		} else if( Global::debugAlphas ){
-/*
-			// debug the optimization of alphas
-			if( iteration <= 150 ){
-				// update alphas by stochastic optimization
-				//stochastic_optimize_alphas( K, W, eta, iteration );
-				// GibbsMH_sample_alphas();
-			} else {
-				// set up a sequential numbers for alphas with the highest order
-				for( j = 0; j < W; j++ ){
-					alpha_[K][j] = ( float )iteration - 150.0f;
-				}
-			}
-			// todo: only for writing out the log posterior of alphas
-
-			alpha_[2][11] = ( float )iteration;
-			ofile << expf( calc_logCondProb_a( alpha_, 2, 11 ) ) << '\t' << alpha_[2][11] << std::endl;
-*/
-		}
-
-/*		// todo: only for writing out model after each iteration for making a movie:
-		motif_->calculateP();
-		motif_->write( iteration );*/
-
-		// get the sum of alpha[k][j] at the last five or ten iterations
-		if( iteration > Global::maxCGSIterations - 5 ){
-			for( k = 0; k < K+1; k++ ){
-				for( j = 0; j < W; j++ ){
-					alpha_avg[k][j] += alpha_[k][j];
-				}
+			// set up a sequential numbers for alphas with the highest order
+			for( j = 0; j < W; j++ ){
+				alpha_[K][j] = expf( ( float )iteration / 20.f );
 			}
 		}
-	}
 
-	// obtaining a motif model
-	// get the average alpha[k][j] from the last five iterations
-	for( k = 0; k < K+1; k++ ){
+		// todo: only for writing out the log posterior of alphas
 		for( j = 0; j < W; j++ ){
-			alpha_avg[k][j] /= 5.0f;
+			ofile << calc_logCondProb_a( logf( alpha_[K][j] ), K, j ) << '\t' << logf( alpha_[K][j] )<< '\t';
 		}
+		ofile << std::endl;
 	}
+
 
 	// update model parameter v
 	motif_->updateVz_n( n_z_, alpha_, K );
@@ -477,8 +444,6 @@ void ModelLearning::GibbsSampling(){
 
 	// calculate probabilities
 	motif_->calculateP();
-
-	std::cout << "q_ = " << q_ << std::endl;
 
 	fprintf( stdout, "\n--- Runtime for Collapsed Gibbs sampling: %.4f seconds ---\n", ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );
 }
@@ -516,6 +481,7 @@ void ModelLearning::Gibbs_sampling_z_q(){
 		/*
 		 * -------------- faster version of removing k-mer ------------------
 		 */
+/*
 
 		if( z_[n] > 0 ){
 			for( k = 0; k < K+1; k++ ){
@@ -546,12 +512,13 @@ void ModelLearning::Gibbs_sampling_z_q(){
 				}
 			}
 		}
+*/
 
 		/*
 		 * -------------- slower version of removing k-mer -----------------------
 		 */
 
-/*
+
 		// remove the k-mer counts from the sequence with the current z
 		if( z_[n] > 0 ){
 			for( j = 0; j < W; j++ ){
@@ -565,7 +532,7 @@ void ModelLearning::Gibbs_sampling_z_q(){
 		}
 		// compute log odd scores s[y][j], log likelihoods of the highest order K
 		motif_->calculateLinearS( Vbg );
-*/
+
 
 		/*
 		 * ------- sampling equation -------
@@ -670,7 +637,7 @@ void ModelLearning::stochastic_optimize_alphas( int K, int W, float eta, int ite
 
 		for( j = 0; j < W; j++ ){
 
-			// reparameterise alpha on log scale: alpha = e^a
+			// re-parameterise alpha on log scale: alpha = e^a
 			float a  = logf( alpha_[k][j] );
 
 			// get gradients w.r.t. stochastic objective at timestep t
@@ -710,18 +677,19 @@ void ModelLearning::GibbsMH_sample_alphas(){
 		for( int j = 0; j < W; j++ ){
 
 			// draw 10 times in a row and take record of the last accepted sample
-			for( int step = 0; step < 10; step++ ){
+//			for( int step = 0; step < 10; step++ ){
 
-				float alpha_prev = alpha_[k][j];
+				float a_prev = logf( alpha_[k][j] );
 
-				float lprob_a_prev = calc_logCondProb_a( alpha_, k, j );
+				float lprob_a_prev = calc_logCondProb_a( a_prev, k, j );
 
 				// draw a new 'a' from the distribution of N(a, 1)
-				std::normal_distribution<float> norm_dist( logf( alpha_[k][j] ), 0.1f );
+//				std::normal_distribution<float> norm_dist( a_prev, 1.0f );
+				std::normal_distribution<float> norm_dist( a_prev, 1.0f / ( float )( k+1 ) );
 
-				alpha_[k][j] = expf( norm_dist( Global::rngx ) );
+				float a_new = norm_dist( Global::rngx );
 
-				float lprob_a_new = calc_logCondProb_a( alpha_, k, j );
+				float lprob_a_new = calc_logCondProb_a( a_new, k, j );
 
 				// calculate the acceptance ratio
 				float accept_ratio = ( lprob_a_new < lprob_a_prev ) ? expf( lprob_a_new - lprob_a_prev ) : 1;
@@ -730,28 +698,13 @@ void ModelLearning::GibbsMH_sample_alphas(){
 				std::uniform_real_distribution<float> uniform_dist( 0.0f, 1.0f );
 				float uni_random = uniform_dist( Global::rngx );
 
-/*
-				if( k == 2 && j == 3 )
-					std::cout << "a_prev=" << alpha_prev
-								<< "\ta_try=" << alpha_[k][j]
-								<< "\tl_prev=" << lprob_a_prev
-					            << "\tl_try=" << lprob_a_new
-					            << "\tratio=" << accept_ratio
-					            << "\t\trandom=" << uni_random << std::endl;
-*/
+				// accept the trial sample if the ratio is not smaller than a random number between (0,1)
+				if( accept_ratio >= uni_random ){
 
-				// reject the trial sample if the ratio is smaller than a random number between (0,1)
-				if( accept_ratio < uni_random ){
+					alpha_[k][j] = expf( a_new );
 
-					alpha_[k][j] = alpha_prev;
-
-				} /*else if( alpha_[k][j] > 10e10 ){
-					std::cout << "accept ratio=" << accept_ratio
-							<< "\tuni=" << uni_random
-							<< "\t" << "alpha_[" << k << "][" << j << "]=" << alpha_prev << "\t" << alpha_[k][j]
-							<< "\t" << lprob_a_prev << "\t" << lprob_a_new << std::endl;
-				}*/
-			}
+				}
+//			}
 		}
 	}
 
@@ -885,70 +838,73 @@ float ModelLearning::calc_logCondProb_alphas( float** alpha, int k ){
 	return logCondProb;
 }
 
-float ModelLearning::calc_logCondProb_a( float** alpha, int k, int j ){
+float ModelLearning::calc_logCondProb_a( float a, int k, int j ){
 	// calculate partial log conditional probabilities of a's due to equation 50 in the theory
 
 	float logCondProbA = 0.0f;
 	float*** v = motif_->getV();
 	float** v_bg = bg_->getV();
 	int N = static_cast<int>( posSeqs_.size() ) - 1;
-	int y, y2;
+	int y, y2, ya;
 
+	// get alpha by alpha = e^a
+	float alpha = expf( a );
 
 	// the first term of equation 50
-	logCondProbA -= logf( alpha[k][j] );
+	logCondProbA -= a;
 
 	// the second term of equation 50
-	logCondProbA -= Global::modelBeta * powf( Global::modelGamma, ( float )k ) / alpha[k][j];
+	logCondProbA -= Global::modelBeta * powf( Global::modelGamma, ( float )k ) / alpha;
 
 	// the third term of equation 50
-	logCondProbA += ( float )ipow( Y_[1], k ) * boost::math::lgamma( alpha[k][j] );
+	logCondProbA += ( float )ipow( Y_[1], k ) * boost::math::lgamma( alpha );
 
-	// the forth term of equation 50
-	for( y = 0; y < Y_[k+1]; y++ ){
-
-		// cut off the first nucleotide in the (k+1)-mer
-		y2 = y % Y_[k];
-
-		if( k == 0 ){
+	if( k == 0 ){
+		// the forth term of equation 50
+		for( y = 0; y < Y_[k]; y++ ){
 			// the first part
-			logCondProbA += boost::math::lgamma( ( float )n_z_[k][y][j] + alpha[k][j] * v_bg[k][y] );
+			logCondProbA += boost::math::lgamma( ( float )n_z_[k][y][j] + alpha * v_bg[k][y] );
 
 			// the second part
-			logCondProbA -= boost::math::lgamma( alpha[k][j] * v_bg[k][y] );
-
-		} else {
-			// the first part
-			logCondProbA += boost::math::lgamma( ( float )n_z_[k][y][j] + alpha[k][j] * v[k-1][y2][j] );
-
-			// the second part
-			logCondProbA -= boost::math::lgamma( alpha[k][j] * v[k-1][y2][j] );
-
+			logCondProbA -= boost::math::lgamma( alpha * v_bg[k][y] );
 		}
-	}
+		// the fifth term of equation 50
+		logCondProbA -= boost::math::lgamma( ( float )N + alpha );
 
-	// the last term of equation 46
-	for( y = 0; y < Y_[k]; y++ ){
-
-		if( k == 0 ){
-
-			logCondProbA -= boost::math::lgamma( ( float )N + alpha[k][j] );
-
-		} else if( j == 0 ){
+	} else {
+		// the forth and fifth terms of equation 50
+		for( y = 0; y < Y_[k]; y++ ){
 
 			int sum = 0;
-			for( int a = 0; a < Y_[1]; a++ ){
-				int ya = y * Y_[1] + a;
+
+			for( int A = 0; A < Y_[1]; A++ ){
+
+				ya = y * Y_[1] + A;
+
+				y2 = ya % Y_[k];
+
 				sum += n_z_[k][ya][j];
+
+				// the first part of the forth term
+				logCondProbA += boost::math::lgamma( ( float )n_z_[k][ya][j] + alpha * v[k-1][y2][j] );
+
+				// the second part of the forth term
+				logCondProbA -= boost::math::lgamma( alpha * v[k-1][y2][j] );
+
 			}
 
-			logCondProbA -= boost::math::lgamma( ( float )sum + alpha[k][j] );
+			// the fifth term
+			int n_j1 = ( j > 0 ) ? n_z_[k-1][y][j-1] : sum;
+			logCondProbA -= boost::math::lgamma( ( float )n_j1 + alpha );
 
-		} else {
+			// for the occasions when only one or two k-mers are present
+			if( n_j1 >= 1 ){
 
-			logCondProbA -= boost::math::lgamma( ( float )n_z_[k-1][y][j-1] + alpha[k][j] );
+				logCondProbA = -a - Global::modelBeta * powf( Global::modelGamma, ( float )k ) / alpha;
 
+			}
 		}
+
 	}
 
 	return logCondProbA;
@@ -1010,7 +966,7 @@ float ModelLearning::calc_likelihood_alphas( float** alpha, int k ){
 			}
 
 			// the missing part for v_bg
-//			logLikelihood -= ( float )n_z_[k][y][j] * logf( v_bg[k][y] );
+			logLikelihood -= ( float )n_z_[k][y][j] * logf( v_bg[k][y] );
 
 		}
 

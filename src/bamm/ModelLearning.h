@@ -64,10 +64,11 @@ private:
 	float					calc_logCondProb_alphas( float** alphas, int order );
 
 							// calculate the log posterior of a's
-	float					calc_logCondProb_a( float** alphas, int order, int position );
+	float					calc_logCondProb_a( float a, int k, int j );
 
 							// Gibbs sampling alphas with Metropolis-Hastings algorithm
 	void					GibbsMH_sample_alphas();
+
 
 	// test on the alpha optimization
 	void					debug_optimization_alphas( float** alphas, int order, int width );	// only for testing, will be removed afterwards

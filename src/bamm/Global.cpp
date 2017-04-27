@@ -57,6 +57,7 @@ int 				Global::maxCGSIterations = 100;			// maximum number of iterations for CG
 bool				Global::noInitialZ = false;				// enable initializing z with one E-step
 bool				Global::noAlphaOptimization = false;	// disable alpha optimization in CGS
 bool				Global::alphaSampling = false;			// enable alpha sampling in CGS
+bool				Global::noZSampling = false;			// disable q sampling in CGS
 bool				Global::noQSampling = false;			// disable q sampling in CGS
 float				Global::eta = 0.2f;						// learning rate for Gibbs sampling, only for tuning
 int					Global::interval = 10;					// interval for sampling z and q, only for tuning
@@ -265,6 +266,7 @@ int Global::readArguments( int nargs, char* args[] ){
 		opt >> GetOpt::OptionPresent( "noInitialZ", noInitialZ );
 		opt >> GetOpt::OptionPresent( "noAlphaOptimization", noAlphaOptimization );
 		opt >> GetOpt::OptionPresent( "alphaSampling", alphaSampling );
+		opt >> GetOpt::OptionPresent( "noZSampling", noZSampling );
 		opt >> GetOpt::OptionPresent( "noQSampling", noQSampling );
 		opt >> GetOpt::Option( "eta", eta );
 		opt >> GetOpt::Option( "interval", interval );

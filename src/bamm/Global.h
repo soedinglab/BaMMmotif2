@@ -84,7 +84,8 @@ public:
 	static bool			noInitialZ;							// enable initializing z with one E-step
 	static bool			noAlphaOptimization;				// disable alpha optimization in CGS
 	static bool			alphaSampling;						// enable alpha sampling in CGS
-	static bool			noQSampling;						// disable q sampling in CGS
+	static bool			noZSampling;						// disable sampling of z in CGS
+	static bool			noQSampling;						// disable sampling of q in CGS
 	static float		eta;								// learning rate for optimizing alphas, only for tuning
 	static int			interval;							// interval for sampling z and q, only for tuning
 	static bool			debugAlphas;

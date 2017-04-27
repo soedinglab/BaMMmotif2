@@ -444,7 +444,6 @@ void FDR::write( int n ){
 						<< "FDR" << '\t'
 						<< "Recall" << std::endl;
 
-
 			for( i = 0; i < MOPS_FDR_.size(); i++ ){
 				ofile_mops  << MOPS_TP_[i]  << '\t'
 							<< MOPS_FP_[i]  << '\t'
