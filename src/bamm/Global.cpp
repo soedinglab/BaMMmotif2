@@ -87,7 +87,7 @@ bool				Global::generatePseudoSet = false;		// test for alpha learning
 // options for bamm-search
 bool                Global::bammSearch = false;				// score sequences with provided initial model
 char*               Global::bgModelFile = NULL;				// if scanning with a BaMM file, according bgModelFiles is required!
-float               Global::pvalCutoff = 0.1f;				// pValue cutoff for reporting motif occurrences
+float               Global::pvalCutoff = 0.01f;				// pValue cutoff for reporting motif occurrences
 
 std::mt19937		Global::rngx;
 
@@ -376,11 +376,13 @@ void Global::printHelp(){
 			"				two positions to the right of initial BaMMs. Invoking with --extend 2\n"
 			"				adds two positions to both sides of initial BaMMs. By default, BaMMs\n"
 			"				are not being extended.\n\n");
-    printf("\n           --bamm-search \n"
+    printf("\n           --bammSearch \n"
 	        "               scan positive sequence file with provided initial model.\n\n");
-    printf("\n           --bgModelFile <STRING> \n"
+    printf("\n           --bgFile <STRING> \n"
     		"               if bamm-search is turned on and initial model is in bamm format,\n"
     		"               bgModelFile is required to contain the background model the bamm was \n"
+    		"            --pvalCutoff <FLOAT> \n"
+    		"               if bamm-search is turned on, a reporting pvalue cutoff can be selected, default is 0.01 \n"
     		"               predicted upon. \n\n");
 	printf("\n 		Options for homogeneous (background) BaMM: \n");
 	printf("\n 			-K, --Order <INTEGER> \n"

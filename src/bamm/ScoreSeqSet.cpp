@@ -111,7 +111,7 @@ void ScoreSeqSet::calcPvalues( std::vector<float> neg_scores ){
 
 			//fprintf(stderr, "\n FPl =  %d  \n", FPl);
 
-			// Sl is lower than worst negScore
+			// Sl is lower than worst negScoress
 			if( FPl == negN ){
 				p_value = (float) 1;
 				mops_p_values_[n].push_back( (float)p_value );
@@ -121,7 +121,7 @@ void ScoreSeqSet::calcPvalues( std::vector<float> neg_scores ){
 			}
 			// Sl is higher than best negScore
 			if ( FPl == 0 ){
-				p_value =  float(1) / (float)negN * (float) exp( - ( Sl - neg_scores[0] ) / lambda );
+				p_value =  float(nTop) / (float)negN * (float) exp( - ( Sl - neg_scores[nTop] ) / lambda );
 				mops_p_values_[n].push_back( (float)p_value );
 				mops_e_values_[n].push_back( (float)p_value * (float)posN );
 				//fprintf(stderr, "p_value = %f \n", p_value );

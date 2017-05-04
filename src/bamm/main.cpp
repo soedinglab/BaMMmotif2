@@ -113,25 +113,38 @@ int main( int nargs, char* args[] ){
 			BackgroundModel* bg = bgModel;
 			// 0. Depending on motif input, and learning, define bgModel
 			// use bgModel generated from input sequences wehn prediction is turned on
+			std::cout << "bgmodel is copied\n";
+
 			if( ! Global::EM and ! Global::CGS ){
+
+				//std::cout << "no Optimization takes place EM! CGS!\n";
+
 				// use provided bgModelFile if initialized with bamm format
 				if( Global::BaMMFilename != NULL ){
+					//std::cout << "init with BaMMfile \n";
 					if( Global::bgModelFile == NULL ){
+						//std::cout << "bgModel not provided! \n";
 						std::cout << "No background Model File provided for initial search motif!\n";
 						exit(-1);
 					}
 					bg = new BackgroundModel( Global::bgModelFile );
 				}
-				// use bgModel generated when reading in PWM File
-				if( Global::PWMFilename != NULL ){
-					bg = new BackgroundModel( Global::PWMFilename , 0, 1);
-					// this means that also the global motif order needs to be adjusted;
-					Global::modelOrder = 0;
-				}
 				else{
-					std::cout << "No background Model found for provided initial search motif!\n";
-					exit(-1);
+					//std::cout << "not optimized with BammFile\n";
+					// use bgModel generated when reading in PWM File
+					if( Global::PWMFilename != NULL ){
+						//std::cout << "Init with PWM instead \n";
+						bg = new BackgroundModel( Global::PWMFilename , 0, 1);
+						// this means that also the global motif order needs to be adjusted;
+						Global::modelOrder = 0;
+					}
+					else{
+						//std::cout << "Other init, no implementation yet\n";
+						std::cout << "No background Model found for provided initial search motif!\n";
+						exit(-1);
+					}
 				}
+
 			}
 
 			// generate M * Npos negative sequences
