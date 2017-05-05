@@ -113,7 +113,6 @@ int main( int nargs, char* args[] ){
 			BackgroundModel* bg = bgModel;
 			// 0. Depending on motif input, and learning, define bgModel
 			// use bgModel generated from input sequences wehn prediction is turned on
-			std::cout << "bgmodel is copied\n";
 
 			if( ! Global::EM and ! Global::CGS ){
 

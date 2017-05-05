@@ -174,8 +174,8 @@ MotifSet::MotifSet(){
 				}
 			}
 
-			// adjust modelOrder
-			Global::modelOrder = order;
+			// remember initOrder
+			int initOrder = order;
 
 			// adjust Alphabet
 			char* alphabetType = new char[9];
@@ -198,7 +198,7 @@ MotifSet::MotifSet(){
 			Motif* motif = new Motif( length );
 
 			// initialize motif from file
-			motif->initFromBaMM( Global::BaMMFilename );
+			motif->initFromBaMM( Global::BaMMFilename, initOrder );
 
 			motifs_.push_back( motif );
 

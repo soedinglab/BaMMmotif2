@@ -22,7 +22,7 @@ public:
 
 	void initFromPWM( float** PWM, int asize, int count );		// initialize v from PWM file
 
-	void initFromBaMM( char* filename );						// initialize v from Bayesian Markov model file and set isInitialized
+	void initFromBaMM( char* filename , int Order);  			// initialize v from Bayesian Markov model file and set isInitialized
 
 	int			getC();											// get the count of motifs N
 	int         getW(); 										// get motif length w
