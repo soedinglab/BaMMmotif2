@@ -39,12 +39,11 @@ private:
 												// rightmost nucleotide at position j
 	int*					z_;					// observed position of motif in each sequence
 	float**					pos_;				// positional prior, pos[i]=0 means no motif is found on the sequence
-	float** 				alpha_;	        	// pseudo-count hyper-parameter for order k and motif position j
+	double** 				alpha_;	        	// pseudo-count hyper-parameter for order k and motif position j
 	float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif
 	float 					llikelihood_ = 0.0f;// log likelihood for each iteration
-	float* 					normFactor_;		// log likelihood for each iteration
-	float**					m1_t_;				// first moment for alpha optimizer (ADAM)
-	float**					m2_t_;				// second moment for alpha optimizer (ADAM)
+	double**				m1_t_;				// first moment for alpha optimizer (ADAM)
+	double**				m2_t_;				// second moment for alpha optimizer (ADAM)
 	std::vector<Sequence*>	posSeqs_;			// copy positive sequences due to folds
 
 	void 					EStep();			// E-step
@@ -58,28 +57,20 @@ private:
 	void					stochastic_optimize_alphas( int order, int width, float learningrate, int t );
 
 							// calculate the gradient of the log posterior of alphas
-	float					calc_gradient_alphas( float** alphas, int order, int position );
-
-							// calculate the log posterior of alphas
-	float					calc_logCondProb_alphas( float** alphas, int order );
+	double					calc_gradient_alphas( double** alphas, int order, int position );
 
 							// calculate the log posterior of a's
-	float					calc_logCondProb_a( float a, int k, int j );
+	double					calc_logCondProb_a( int iteration, double a, int k, int j );
 
 							// Gibbs sampling alphas with Metropolis-Hastings algorithm
-	void					GibbsMH_sample_alphas();
+	void					GibbsMH_sample_alphas( int iteration );
 
-
-	// test on the alpha optimization
-	void					debug_optimization_alphas( float** alphas, int order, int width );	// only for testing, will be removed afterwards
-	float 					debug_first_term_of_derivative_with_prior( int order, int position );
-	float 					debug_second_term_of_derivative( int order, int position );
 
 	// calculate the prior of alphas
-	float					calc_prior_alphas( float** alphas, int order );
+	double					calc_prior_alphas( double** alphas, int order );
 
 	// calculate the likelihood of alphas
-	float					calc_likelihood_alphas( float** alphas, int order );
+	double					calc_likelihood_alphas( double** alphas, int order );
 
 	std::vector<int>		Y_;					// contains 1 at position 0
 												// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1

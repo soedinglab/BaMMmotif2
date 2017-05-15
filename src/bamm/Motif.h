@@ -29,13 +29,13 @@ public:
 	float***    getV();											// get conditional probabilities v
 	float***	getP();											// get probabilities p
 	float**		getS();											// get log odds scores for the highest order K at position j
-	int***		getN();											// get the counts of (k+1)-mer for all y at motif position j
-	void        updateV( float*** n, float** alpha, int order );// update v for EM
-	void        updateVz_n( int*** n, float** alpha, int order );	// update v for Collapsed Gibbs sampling
+	int***		getN();											// get (k+1)-mer counts for all y at motif position j
+	void        updateV( float*** n, double** alpha, int k );	// update v for EM
+	void        updateVz_n( int*** n, double** alpha, int k );	// update v for Collapsed Gibbs sampling
 
 	void		calculateP();									// calculate probabilities p
-	void		calculateS( float** Vbg );				// calculate log odds scores for the highest order K at position j
-	void		calculateLinearS( float** Vbg );		// calculate log odds scores for the highest order K at position j
+	void		calculateS( float** Vbg );						// calculate log odds scores for the highest order K at position j
+	void		calculateLinearS( float** Vbg );				// calculate log odds scores for the highest order K at position j
 																// in linear space for speeding up
 
 	void 		print();					   					// print v to console
@@ -69,7 +69,7 @@ inline float*** Motif::getV(){
 }
 
 // update v from fractional k-mer counts n and current alphas (e.g for EM)
-inline void Motif::updateV( float*** n, float** alpha, int K ){
+inline void Motif::updateV( float*** n, double** alpha, int K ){
 
 	assert( isInitialized_ );
 
@@ -87,8 +87,8 @@ inline void Motif::updateV( float*** n, float** alpha, int K ){
 	// for k = 0, v_ = freqs:
 	for( y = 0; y < Y_[1]; y++ ){
 		for( j = 0; j < W_; j++ ){
-			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * f_bg_[y] )
-						/ ( sumN[j] + alpha[0][j] );
+			v_[0][y][j] = ( n[0][y][j] + static_cast<float>( alpha[0][j] ) * f_bg_[y] )
+						/ ( sumN[j] + static_cast<float>( alpha[0][j] ) );
 		}
 	}
 
@@ -103,8 +103,8 @@ inline void Motif::updateV( float*** n, float** alpha, int K ){
 			}
 			//todo: Vectorize in AVX2 / SSE2
 			for( j = k; j < W_; j++ ){
-				v_[k][y][j] = ( n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
-							/ ( n[k-1][yk][j-1] + alpha[k][j] );
+				v_[k][y][j] = ( n[k][y][j] + static_cast<float>( alpha[k][j] ) * v_[k-1][y2][j] )
+							/ ( n[k-1][yk][j-1] + static_cast<float>( alpha[k][j] ) );
 			}
 		}
 	}
@@ -112,26 +112,23 @@ inline void Motif::updateV( float*** n, float** alpha, int K ){
 
 
 // update v from integral k-mer counts n and current alphas (e.g for CGS)
-inline void Motif::updateVz_n( int*** n, float** alpha, int K ){
+inline void Motif::updateVz_n( int*** n, double** alpha, int K ){
 
 	assert( isInitialized_ );
 
 	int y, j, k, y2, yk;
 
-	// sum up the n over (k+1)-mers at different position of motif
-	std::vector<int> sumN;
-	sumN.resize( W_ );
-	for( j = 0; j < W_; j++ ){
-		for( y = 0; y < Y_[1]; y++ ){
-			sumN[j] += n[0][y][j];
-		}
+	// sum up the monomers
+	int sumN = 0;
+	for( y = 0; y < Y_[1]; y++ ){
+		sumN += n[0][y][0];
 	}
 
 	// for k = 0, v_ = freqs:
 	for( y = 0; y < Y_[1]; y++ ){
 		for( j = 0; j < W_; j++ ){
-			v_[0][y][j] = ( ( float )n[0][y][j] + alpha[0][j] * f_bg_[y] )
-						/ ( ( float )sumN[j] + alpha[0][j] );
+			v_[0][y][j] = ( static_cast<float>( n[0][y][j] ) + static_cast<float>( alpha[0][j] ) * f_bg_[y] )
+						/ ( static_cast<float>( sumN ) + static_cast<float>( alpha[0][j] ) );
 		}
 	}
 
@@ -140,14 +137,10 @@ inline void Motif::updateVz_n( int*** n, float** alpha, int K ){
 		for( y = 0; y < Y_[k+1]; y++ ){
 			y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
 			yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer
-			//todo: Merge first loop into second one (by allowing contexts to extend left of the motif)
-			for( j = 0; j < k; j++ ){						// when j < k, i.e. p(A|CG) = p(A|C)
-				v_[k][y][j] = v_[k-1][y2][j];
-			}
 			//todo: Vectorize in AVX2 / SSE2
-			for( j = k; j < W_; j++ ){
-				v_[k][y][j] = ( ( float )n[k][y][j] + alpha[k][j] * v_[k-1][y2][j] )
-							/ ( ( float )n[k-1][yk][j-1] + alpha[k][j] );
+			for( j = 0; j < W_; j++ ){
+				v_[k][y][j] = ( static_cast<float>( n[k][y][j] ) + static_cast<float>( alpha[k][j] ) * v_[k-1][y2][j] )
+							/ ( static_cast<float>( n[k-1][yk][j-1] ) + static_cast<float>( alpha[k][j] ) );
 			}
 		}
 	}

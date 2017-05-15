@@ -224,7 +224,7 @@ void FDR::calculatePR(){
 
 		for( int i = 0; i < posN + negN; i++ ){
 			if( posScoreMax_[idx_posMax] >= negScoreMax_[idx_negMax] ||
-				idx_posMax == 0 ||  idx_negMax == posN+negN-1 ){
+				idx_posMax == 0 || idx_negMax == posN+negN-1 ){
 				idx_posMax++;
 			} else {
 				idx_negMax++;

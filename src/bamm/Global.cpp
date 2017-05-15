@@ -178,7 +178,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "saveInitialModel", saveInitialModel );
 	opt >> GetOpt::Option( "num", num );
 	opt >> GetOpt::OptionPresent( "mops", mops );
-	opt >> GetOpt::OptionPresent( "zoops", zoops );
+//	opt >> GetOpt::OptionPresent( "zoops", zoops );
 
 	// model options
 	opt >> GetOpt::Option( 'k', "order", modelOrder );
@@ -291,7 +291,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "verbose", verbose );
 	opt >> GetOpt::OptionPresent( "debug", debugMode );
 	opt >> GetOpt::OptionPresent( "saveBaMMs", saveBaMMs );
-	opt >> GetOpt::OptionPresent( "savePRs", savePRs );
+//	opt >> GetOpt::OptionPresent( "savePRs", savePRs );
 	opt >> GetOpt::OptionPresent( "savePvalues", savePvalues );
 	opt >> GetOpt::OptionPresent( "saveLogOdds", saveLogOdds );
 	opt >> GetOpt::OptionPresent( "saveBgModel", saveBgModel );

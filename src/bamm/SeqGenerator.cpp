@@ -173,13 +173,16 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_pseudo_seqset(){
 // generate pseudo-sequence based on k-mer frequencies from positive set
 std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( int L ){
 
+	uint8_t a;
+	int i,j, k, yk;
+	int K = Global::modelOrder;
+
 	uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
 	std::string header = "pseudo sequence";
 
-	int K = Global::modelOrder;
-
-	uint8_t a;
-	int i,j, k, yk;
+	for( i = 0; i < L; i++ ){
+		sequence[i] = 1;
+	}
 
 	// sample the first nucleotide
 	double random = ( double )rand() / ( double )RAND_MAX;
