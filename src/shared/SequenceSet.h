@@ -16,7 +16,7 @@ class SequenceSet{
 
 public:
 
-	SequenceSet( std::string sequenceFilepath, bool revcomp = false, std::string intensityFilepath = "" );
+	SequenceSet( std::string sequenceFilepath, bool singleStrand = false, std::string intensityFilepath = "" );
 	~SequenceSet();
 
 	std::string				getSequenceFilepath();
@@ -47,8 +47,8 @@ private:
 												// alphabet size_ = 4: Y_ = 4^0 4^1 4^2 ... 4^15 < std::numeric_limits<int>::max()
 												// limits the length of oligomers to 15 (and the order to 14)
 
-	int 					readFASTA( bool revcomp = false );	 // read in FASTA file
-	int 					readIntensities();		             // read in intensity file
+	int 					readFASTA( bool singleStrand = false );	// read in FASTA file
+	int 					readIntensities();	// read in intensity file
 };
 
 #endif /* SEQUENCESET_H_ */

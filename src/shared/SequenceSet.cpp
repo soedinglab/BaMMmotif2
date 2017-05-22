@@ -1,6 +1,6 @@
 #include "SequenceSet.h"
 
-SequenceSet::SequenceSet( std::string sequenceFilepath, bool revcomp, std::string intensityFilepath ){
+SequenceSet::SequenceSet( std::string sequenceFilepath, bool singleStrand, std::string intensityFilepath ){
 
 	if( Alphabet::getSize() == 0 ){
 		std::cerr << "Error: Initialize Alphabet before constructing a SequenceSet" << std::endl;
@@ -21,7 +21,7 @@ SequenceSet::SequenceSet( std::string sequenceFilepath, bool revcomp, std::strin
 
 	baseFrequencies_ = new float[Y_[1]];
 
-	readFASTA( revcomp );
+	readFASTA( singleStrand );
 
 	if( !( intensityFilepath.empty() ) ){
 		intensityFilepath_ = intensityFilepath;
@@ -282,7 +282,7 @@ void SequenceSet::debug(){
 
 }
 
-int SequenceSet::readFASTA( bool revcomp ){
+int SequenceSet::readFASTA( bool singleStrand ){
 
 	/**
 	 * while reading in the sequences do:
@@ -339,7 +339,7 @@ int SequenceSet::readFASTA( bool revcomp ){
 								}
 								baseCounts[encoding[i]-1]++; // count base
 							}
-							sequences_.push_back( new Sequence( encoding, L, header, Y_, revcomp ) );
+							sequences_.push_back( new Sequence( encoding, L, header, Y_, singleStrand ) );
 
 							sequence.clear();
 							header.clear();
@@ -379,7 +379,7 @@ int SequenceSet::readFASTA( bool revcomp ){
 			}
 		}
 
-		if( !( header.empty() ) ){ // store the last sequence
+		if( !( header.empty() ) ){				// store the last sequence
 
 			if( !( sequence.empty() ) ){
 
@@ -410,14 +410,14 @@ int SequenceSet::readFASTA( bool revcomp ){
 					}
 					baseCounts[encoding[i]-1]++; // count base
 				}
-				sequences_.push_back( new Sequence( encoding, L, header, Y_, revcomp ) );
+				sequences_.push_back( new Sequence( encoding, L, header, Y_, singleStrand ) );
 
 				sequence.clear();
 				header.clear();
 
 				free( encoding );
 
-			} else{
+			} else {
 
 				std::cerr << "Warning: Ignore FASTA entry without sequence: " << sequenceFilepath_ << std::endl;
 				header.clear();
