@@ -28,7 +28,6 @@ public:
 	float* 					getBaseFrequencies();
 
 	void					print();			// print sequences
-	void                    debug();            // exhaustive printouts
 
 private:
 
