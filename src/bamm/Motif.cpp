@@ -202,15 +202,15 @@ void Motif::initFromBindingSites( char* filename ){
 		}
 	}
 
-	// calculate v from k-mer counts n
+	// calculate v and p from k-mer counts n
 	calculateV();
+	calculateP();
 
 	// set isInitialized
 	isInitialized_ = true;
 
 	// optional: save initial model
 	if( Global::saveInitialModel ){
-		calculateP();
 		write( -1 );
 	}
 }
@@ -268,7 +268,7 @@ void Motif::initFromPWM( float** PWM, int asize, int count ){
 		float normFactor = 0.0f;
 		// calculate positional prior:
 		float pos0 = 1.0f - Global::q;
-		float pos1 = Global::q / ( float )LW1;
+		float pos1 = Global::q / static_cast<float>( LW1 );
 
 		// todo: could be parallelized by extracting 8 sequences at once
 		// todo: should be written in a faster way
@@ -320,18 +320,8 @@ void Motif::initFromPWM( float** PWM, int asize, int count ){
 			}
 		}
 	}
-/*
-	// todo: checking the counts
-	for( k = 0; k < K+1; k++ ){
-		for( y = 0; y < Y_[k+1]; y++ ){
-			for( j = 0; j < W_; j++ ){
-				std::cout << "n_[" << k << "][" << y << "][" << j << "]=" << n_[k][y][j] << '\t';
-				std::cout << "v_[" << k << "][" << y << "][" << j << "]=" << v_[k][y][j] << std::endl;
-			}
-		}
-	}
-	*/
 
+	// calculate probabilities p
 	calculateP();
 
 	// set isInitialized
@@ -371,15 +361,11 @@ void Motif::initFromBaMM( char* filename ){
 		getline( file, line );
 	}
 
+	// calculate probabilities p
+	calculateP();
+
 	// set isInitialized
 	isInitialized_ = true;
-
-	// optional: save initial model
-	// TOdo: delete after
-	if( Global::saveInitialModel ){
-		calculateP();
-		write( -1 );
-	}
 
 }
 
