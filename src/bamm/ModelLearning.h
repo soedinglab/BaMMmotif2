@@ -51,7 +51,7 @@ private:
 	void 					optimize_q();		// optimize hyper-parameter q
 
 							// sample z and q by collapsed Gibbs sampling
-	void					Gibbs_sampling_z_q();
+	void					Gibbs_sample_z_q();
 
 							// update alphas for all the orders up to K, given the learning rate
 	void					stochastic_optimize_alphas( int order, int width, float learningrate, int t );
@@ -65,6 +65,8 @@ private:
 							// Gibbs sampling alphas with Metropolis-Hastings algorithm
 	void					GibbsMH_sample_alphas( int iteration );
 
+							// sampling a's from the distribution of the log posterior
+	void					discrete_sample_alphas( int iteration );
 
 	// calculate the prior of alphas
 	double					calc_prior_alphas( double** alphas, int order );

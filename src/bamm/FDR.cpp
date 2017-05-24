@@ -256,7 +256,7 @@ void FDR::calculatePvalues(){
 
 	/**
 	 *  calculate p-values for the log odds scores from positive sequence set
-	 * 	later used for evaluating models using fdrtool R package
+	 * 	later used for ranking models using fdrtool R package
 	 */
 
 	// Method 1:
@@ -306,7 +306,7 @@ void FDR::calculatePvalues(){
 	}
 
 	// for MOPS model:
-	// Sort log odds scores from large to small
+	// Sort log odds scores in descending order
 	std::sort( posScoreAll_.begin(), posScoreAll_.end(), std::greater<float>() );
 	std::sort( negScoreAll_.begin(), negScoreAll_.end(), std::greater<float>() );
 
@@ -328,7 +328,7 @@ void FDR::calculatePvalues(){
 	}
 
 	// for ZOOPS model:
-	// Sort log odds scores from large to small
+	// Sort log odds scores in descending order
 	std::sort( posScoreMax_.begin(), posScoreMax_.end(), std::greater<float>() );
 	std::sort( negScoreMax_.begin(), negScoreMax_.end(), std::greater<float>() );
 
