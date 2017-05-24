@@ -258,7 +258,7 @@ void ModelLearning::EStep(){
 		llikelihood_ += logf( normFactor );
 	}
 
-	std::cout << "N0=" << N0 << std::endl;
+//	std::cout << "N0=" << N0 << std::endl;
 }
 
 void ModelLearning::MStep(){
