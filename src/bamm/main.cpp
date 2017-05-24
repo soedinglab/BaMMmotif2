@@ -39,9 +39,9 @@ int main( int nargs, char* args[] ){
 
 	if( !Global::bgModelGiven ){
 	bgModel = new BackgroundModel( *Global::negSequenceSet,
-													Global::bgModelOrder,
-													Global::bgModelAlpha,
-													Global::interpolateBG );
+									Global::bgModelOrder,
+									Global::bgModelAlpha,
+									Global::interpolateBG );
 	} else {
 		bgModel = new BackgroundModel( Global::bgModelFilename );
 	}
@@ -57,7 +57,7 @@ int main( int nargs, char* args[] ){
 
 	MotifSet motifs;
 
-	int motifNum = ( Global::num > motifs.getN() ) ? Global::num : motifs.getN();
+	int motifNum = ( Global::num > motifs.getN() ) ? motifs.getN() : Global::num;
 
 	for( int n = 0; n < motifNum; n++ ){
 		// initialize the model
