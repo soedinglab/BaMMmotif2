@@ -408,9 +408,11 @@ void ModelLearning::GibbsSampling(){
 		}
 	}
 
+/*
 	// todo: only for writing out the log posterior of alphas
 	std::string opath = std::string( Global::outputDirectory ) + "/Kj.lposA";
 	std::ofstream ofile( opath );
+*/
 
 	// iterate over
 	while( iterate && iteration < Global::maxCGSIterations ){
@@ -430,18 +432,18 @@ void ModelLearning::GibbsSampling(){
 
 			stochastic_optimize_alphas( K, W, eta, iteration );
 
-			for( j = 0; j < W; j++ ){
+/*			for( j = 0; j < W; j++ ){
 
 				ofile << std::scientific << std::setprecision( 8 ) << calc_gradient_alphas( alpha_, K, j ) << '\t' << alpha_[K][j] << '\t';
 
 			}
-			ofile << std::endl;
+			ofile << std::endl;*/
 
 		} else if( Global::GibbsMHalphas ){
 
 			GibbsMH_sample_alphas( iteration );
 
-			if( iteration > 35 ){
+/*			if( iteration > 35 ){
 
 				for( j = 0; j < W; j++ ){
 
@@ -450,31 +452,33 @@ void ModelLearning::GibbsSampling(){
 				}
 
 				ofile << std::endl;
-			}
+			}*/
 
 		} else if( Global::dissampleAlphas ){
 
 			discrete_sample_alphas( iteration );
 
-			// todo:
+/*			// todo:
 			for( j = 0; j < W; j++ ){
 
 				ofile << std::scientific << std::setprecision( 8 ) << calc_logCondProb_a( iteration, log( alpha_[K][j] ), K, j )
 						<< '\t' << log( alpha_[K][j] )<< '\t';
 			}
-			ofile << std::endl;
+			ofile << std::endl;*/
 
 		} else if( Global::debugAlphas ){
 			// set up a sequential numbers for alphas with the highest order
 			for( j = 0; j < W; j++ ){
 				alpha_[K][j] = exp( ( double )iteration / 20.0 );
 			}
+/*
 			// todo: only for writing out the log posterior of alphas
 			for( j = 0; j < W; j++ ){
 				ofile << std::scientific << std::setprecision( 8 ) << calc_logCondProb_a( iteration, ( double )iteration / 20.0, K, j )
 						<< '\t' << ( double )iteration / 20.0 << '\t';
 			}
 			ofile << std::endl;
+*/
 
 		}
 	}
