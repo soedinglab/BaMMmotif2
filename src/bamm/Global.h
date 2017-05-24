@@ -68,6 +68,8 @@ public:
                                                             // instead of background frequencies of mono-nucleotides
 
 	// background model options
+    static char*		bgModelFilename;					// path to the background model file
+    static bool			bgModelGiven;						// flag to show if the background model is given or not
 	static int			bgModelOrder;						// background model order, defaults to 2
 	static std::vector<float> bgModelAlpha;					// background model alpha
 
@@ -83,7 +85,8 @@ public:
 	static int 			maxCGSIterations;					// maximum number of iterations for CGS
 	static bool			noInitialZ;							// enable initializing z with one E-step
 	static bool			noAlphaOptimization;				// disable alpha optimization in CGS
-	static bool			alphaSampling;						// enable alpha sampling in CGS
+	static bool			GibbsMHalphas;						// enable alpha sampling in CGS using Gibbs Metropolis-Hastings
+	static bool			dissampleAlphas;					// enable alpha sampling in CGS using discretely sampling
 	static bool			noZSampling;						// disable sampling of z in CGS
 	static bool			noQSampling;						// disable sampling of q in CGS
 	static float		eta;								// learning rate for optimizing alphas, only for tuning

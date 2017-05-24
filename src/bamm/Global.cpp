@@ -41,6 +41,8 @@ bool                Global::interpolate = true;             // calculate prior p
 bool                Global::interpolateBG = true;           // calculate prior probabilities from lower-order probabilities
                                                             // instead of background frequencies of mononucleotides
 // background model options
+char*				Global::bgModelFilename = NULL;			// path to the background model file
+bool				Global::bgModelGiven = false;			// flag to show if the background model is given or not
 int        			Global::bgModelOrder = 2;				// background model order, defaults to 2
 std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.0f );	// background model alpha
 
@@ -56,7 +58,8 @@ bool				Global::CGS = false;					// flag to trigger Collapsed Gibbs sampling
 int 				Global::maxCGSIterations = 100;			// maximum number of iterations for CGS, it should be larger than 5
 bool				Global::noInitialZ = false;				// enable initializing z with one E-step
 bool				Global::noAlphaOptimization = false;	// disable alpha optimization in CGS
-bool				Global::alphaSampling = false;			// enable alpha sampling in CGS
+bool				Global::GibbsMHalphas = false;			// enable alpha sampling in CGS using Gibbs Metropolis-Hastings
+bool				Global::dissampleAlphas = false;		// enable alpha sampling in CGS using discretely sampling
 bool				Global::noZSampling = false;			// disable q sampling in CGS
 bool				Global::noQSampling = false;			// disable q sampling in CGS
 float				Global::eta = 0.2f;						// learning rate for Gibbs sampling, only for tuning
@@ -226,6 +229,10 @@ int Global::readArguments( int nargs, char* args[] ){
 	}
 
 	// background model options
+	if( opt >> GetOpt::Option( "bgModel", bgModelFilename ) ){
+		bgModelGiven = true;
+	}
+
 	opt >> GetOpt::Option( 'K', "Order", bgModelOrder );
 
 	if( opt >> GetOpt::OptionPresent( 'A', "Alpha" ) ){
@@ -264,8 +271,9 @@ int Global::readArguments( int nargs, char* args[] ){
 	if( opt >> GetOpt::OptionPresent( "CGS", CGS ) ){
 		opt >> GetOpt::Option( "maxCGSIterations", maxCGSIterations );
 		opt >> GetOpt::OptionPresent( "noInitialZ", noInitialZ );
-		opt >> GetOpt::OptionPresent( "noAlphaOptimization", noAlphaOptimization );
-		opt >> GetOpt::OptionPresent( "alphaSampling", alphaSampling );
+		opt >> GetOpt::OptionPresent( "noAlphaOpti", noAlphaOptimization );
+		opt >> GetOpt::OptionPresent( "GibbsMH", GibbsMHalphas );
+		opt >> GetOpt::OptionPresent( "dissample", dissampleAlphas );
 		opt >> GetOpt::OptionPresent( "noZSampling", noZSampling );
 		opt >> GetOpt::OptionPresent( "noQSampling", noQSampling );
 		opt >> GetOpt::Option( "eta", eta );

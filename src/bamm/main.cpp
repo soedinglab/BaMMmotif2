@@ -35,10 +35,17 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "************************\n" );
 	fprintf( stderr, "*   Background Model   *\n" );
 	fprintf( stderr, "************************\n" );
-	BackgroundModel* bgModel = new BackgroundModel( *Global::negSequenceSet,
+	BackgroundModel* bgModel;
+
+	if( !Global::bgModelGiven ){
+	bgModel = new BackgroundModel( *Global::negSequenceSet,
 													Global::bgModelOrder,
 													Global::bgModelAlpha,
 													Global::interpolateBG );
+	} else {
+		bgModel = new BackgroundModel( Global::bgModelFilename );
+	}
+
 	if( Global::saveBgModel ){
 		bgModel->write( Global::outputDirectory );
 	}
@@ -47,14 +54,10 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*********************\n" );
 	fprintf( stderr, "*   Initial Motif   *\n" );
 	fprintf( stderr, "*********************\n" );
+
 	MotifSet motifs;
 
-	int motifNum = ( Global::num ) ? Global::num : motifs.getN();
-
-	if( motifNum > motifs.getN() ){
-		std::cout << "--num is larger than the number of the initial motifs." << std::endl;
-		exit( -1 );
-	}
+	int motifNum = ( Global::num > motifs.getN() ) ? Global::num : motifs.getN();
 
 	for( int n = 0; n < motifNum; n++ ){
 		// initialize the model
