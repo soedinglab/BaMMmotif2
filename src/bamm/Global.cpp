@@ -38,7 +38,7 @@ float				Global::modelGamma = 3.0f;
 std::vector<int>    Global::addColumns( 2 );				// add columns to the left and right of initial model
 bool                Global::interpolate = true;             // calculate prior probabilities from lower-order probabilities
                                                             // instead of background frequencies of mononucleotides
-bool                Global::interpolateBG = true;           // calculate prior probabilities from lower-order probabilities
+bool                Global::interpolateBG = true;			// calculate prior probabilities from lower-order probabilities
                                                             // instead of background frequencies of mononucleotides
 // background model options
 char*				Global::bgModelFilename = NULL;			// path to the background model file
@@ -97,7 +97,7 @@ void Global::init( int nargs, char* args[] ){
 
 	// read in positive and negative sequence set
 	posSequenceSet = new SequenceSet( posSequenceFilename, ss );
-	negSequenceSet = new SequenceSet( negSequenceFilename, true );
+	negSequenceSet = new SequenceSet( negSequenceFilename, ss );
 
 	// generate fold indices for positive and negative sequence set
 	Global::posFoldIndices = generateFoldIndices( posSequenceSet->getN(), cvFold );

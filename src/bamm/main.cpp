@@ -35,13 +35,14 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "************************\n" );
 	fprintf( stderr, "*   Background Model   *\n" );
 	fprintf( stderr, "************************\n" );
+
 	BackgroundModel* bgModel;
 
 	if( !Global::bgModelGiven ){
-	bgModel = new BackgroundModel( *Global::negSequenceSet,
-									Global::bgModelOrder,
-									Global::bgModelAlpha,
-									Global::interpolateBG );
+		bgModel = new BackgroundModel( *Global::negSequenceSet,
+										Global::bgModelOrder,
+										Global::bgModelAlpha,
+										Global::interpolateBG );
 	} else {
 		bgModel = new BackgroundModel( Global::bgModelFilename );
 	}
