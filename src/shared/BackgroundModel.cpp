@@ -4,7 +4,7 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 		                          int order,
 		                          std::vector<float> alpha,
 		                          bool interpolate,
-		                          std::vector< std::vector<int> > foldIndices,
+		                          std::vector<std::vector<int>> foldIndices,
 		                          std::vector<int> folds ){
 
 	//name_.assign( baseName( sequenceSet.getSequenceFilepath().c_str() ) );
@@ -66,6 +66,7 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 			int s_idx = foldIndices[folds[f]][f_idx];
 			// get sequence length
 			int L = seqs[s_idx]->getL();
+
 			int* kmer = seqs[s_idx]->getKmer();
 			// loop over order
 			for( int k = 0; k <= K_; k++ ){
@@ -73,10 +74,12 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 				for( int i = k; i < L; i++ ){
 					// extract (k+1)mer
 					int y = kmer[i] % Y_[k+1];
+
 					// skip non-defined alphabet letters
 					if( y >= 0 ){
 						// count (k+1)mer
 						n_[k][y]++;
+
 					}
 				}
 			}
@@ -228,7 +231,7 @@ double BackgroundModel::calculateLogLikelihood( SequenceSet& sequenceSet,
 			for( int n = 0; n < sequenceSet.getN(); n++ ){
 				foldIndices[0].push_back( n );
 			}
-		} else{
+		} else {
 			folds.resize( foldIndices.size() );
 			std::iota( std::begin( folds ), std::end( folds ), 0 );
 		}
@@ -380,9 +383,8 @@ void BackgroundModel::print(){
 		std::cout << std::endl;
 
 		for( int k = 0; k <= K_; k++ ){
-			std::cout << n_[k][0];
-			for( int y = 1; y < Y_[k+1]; y++ ){
-				std::cout << " " << n_[k][y];
+			for( int y = 0; y < Y_[k+1]; y++ ){
+				std::cout << n_[k][y] << " ";
 			}
 			std::cout << std::endl;
 		}
@@ -420,9 +422,8 @@ void BackgroundModel::write( char* dir ){
 		file << std::endl;
 
 		for( int k = 0; k <= K_; k++ ){
-			file << std::scientific << std::setprecision( 6 ) << v_[k][0];
-			for( int y = 1; y < Y_[k+1]; y++ ){
-				file << std::scientific << std::setprecision( 6 ) << " " << v_[k][y];
+			for( int y = 0; y < Y_[k+1]; y++ ){
+				file << std::scientific << std::setprecision( 6 ) << v_[k][y] << " ";
 			}
 			file << std::endl;
 		}
@@ -451,7 +452,7 @@ void BackgroundModel::write( char* dir ){
 		for( int y = 0; y < Y_[k+1]; y++ ){
 			// omit last base (e.g. ACG) from y (e.g. ACGT)
 			int yk = y / Y_[1];
-			p[k][y] =  v_[k][y] * p[k-1][yk];
+			p[k][y] = v_[k][y] * p[k-1][yk];
 		}
 	}
 
@@ -467,15 +468,14 @@ void BackgroundModel::write( char* dir ){
 		file << std::endl;
 
 		for( int k = 0; k <= K_; k++ ){
-			file << std::scientific << std::setprecision( 6 ) << v_[k][0];
-			for( int y = 1; y < Y_[k+1]; y++ ){
-				file << std::scientific << std::setprecision( 6 ) << " " << p[k][y];
+			for( int y = 0; y < Y_[k+1]; y++ ){
+				file << std::scientific << std::setprecision( 6 ) << p[k][y] << " " ;
 			}
 			file << std::endl;
 		}
 		file.close();
 
-	} else{
+	} else {
 
 		std::cerr << "Error: Cannot write into output directory: " << dir << std::endl;
 		exit( -1 );
@@ -502,6 +502,7 @@ void BackgroundModel::calculateV(){
 
 	// calculate probabilities for order k > 0
 	for( int k = 1; k <= K_; k++ ){
+
 		for( int y = 0; y < Y_[k+1]; y++ ){
 			// omit first base (e.g. CGT) from y (e.g. ACGT)
 			int y2 = y % Y_[k];
@@ -515,16 +516,6 @@ void BackgroundModel::calculateV(){
 						   / ( static_cast<float>( n_[k-1][yk] ) + A_[k] );
 			}
 		}
-		// normalize probabilities
-		float factor = 0.0f;
-		for( int y = 0; y < Y_[k+1]; y++ ){
-			factor += v_[k][y];
-			if( ( y+1 ) % Y_[1] == 0 ){
-				for( int i = 0; i < Y_[1]; i++ ){
-					v_[k][y-i] /= factor;
-				}
-				factor = 0.0f;
-			}
-		}
+
 	}
 }

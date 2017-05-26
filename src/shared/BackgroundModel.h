@@ -23,7 +23,7 @@ public:
 			         int order,
 			         std::vector<float> alpha,
 			         bool interpolate = true,
-			         std::vector< std::vector<int> > foldIndices = std::vector< std::vector<int> >(),
+			         std::vector<std::vector<int>> foldIndices = std::vector<std::vector<int>>(),
 			         std::vector<int> folds = std::vector<int>() );
 
 	BackgroundModel( std::string filePath );
@@ -41,16 +41,16 @@ public:
 
 	// calculate the log likelihood for the sequence set
 	// afterwards v_ contains log probabilities
-	double calculateLogLikelihood( SequenceSet& sequenceSet,
+	double 	calculateLogLikelihood( SequenceSet& sequenceSet,
 			                       std::vector<std::vector<int>> foldIndices = std::vector<std::vector<int>>(),
 			                       std::vector<int> folds = std::vector<int>() );
 
 	// calculate positional likelihoods for the sequence set
 	// and write likelihoods to file
-	void calculatePosLikelihoods( SequenceSet& sequenceSet,
-			                      char* outputDirectory,
-			                      std::vector<std::vector<int>> foldIndices = std::vector<std::vector<int>>(),
-			                      std::vector<int> folds = std::vector<int>() );
+	void 	calculatePosLikelihoods( SequenceSet& sequenceSet,
+			                      	  char* outputDirectory,
+			                      	  std::vector<std::vector<int>> foldIndices = std::vector<std::vector<int>>(),
+			                      	  std::vector<int> folds = std::vector<int>() );
 
 
 	void 	print();
