@@ -92,7 +92,7 @@ MotifSet::MotifSet(){
 					// extend the length due to addColumns option
 					length += Global::addColumns.at( 0 ) + Global::addColumns.at( 1 );
 
-					if( length > minL ){					// binding sites should be shorter than the shortest posSeq
+					if( length > minL ){					// PWM should not be shorter than the shortest posSeq
 						fprintf( stderr, "Error: Width of PWM exceeds the length "
 								"of the shortest sequence in the sequence set.\n" );
 						exit( -1 );
