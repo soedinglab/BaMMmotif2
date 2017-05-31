@@ -400,11 +400,12 @@ void ModelLearning::GibbsSampling(){
 		Gibbs_sample_z_q();
 	}
 
-	if( Global::GibbsMHalphas ){
-
-		std::vector<std::vector<float>> a_avg( K+1 );
-		for( k = 0; k < K+1; k++ ){
-			a_avg[k].resize( W );
+	// vector to store the last a few alphas
+	std::vector<std::vector<double>> alpha_avg( K+1 );
+	for( k = 0; k < K+1; k++ ){
+		alpha_avg[k].resize( W );
+		for( j = 0; j < W; j++ ){
+			alpha_avg[k][j] = 0.0;
 		}
 	}
 
@@ -419,13 +420,13 @@ void ModelLearning::GibbsSampling(){
 
 		iteration++;
 
-		float llikelihood_prev;
-		llikelihood_prev = llikelihood_;
+//		float llikelihood_prev;
+//		llikelihood_prev = llikelihood_;
 
 		// Gibbs sampling position z and fraction q
 		if( !Global::noZSampling )	Gibbs_sample_z_q();
 
-		std::cout << "diff_llikelihood=" << llikelihood_ - llikelihood_prev << std::endl;
+//		std::cout << "diff_llikelihood=" << llikelihood_ - llikelihood_prev << std::endl;
 
 		// update alphas by stochastic optimization
 		if( !Global::noAlphaOptimization ){
@@ -442,6 +443,14 @@ void ModelLearning::GibbsSampling(){
 		} else if( Global::GibbsMHalphas ){
 
 			GibbsMH_sample_alphas( iteration );
+
+			if( iteration > Global::maxCGSIterations - 10 ){
+				for( k = 0; k < K+1; k++ ){
+					for( j = 0; j < W; j++ ){
+						alpha_avg[k][j] += alpha_[k][j];
+					}
+				}
+			}
 
 /*			if( iteration > 35 ){
 
@@ -483,11 +492,16 @@ void ModelLearning::GibbsSampling(){
 		}
 	}
 
+	// obtaining a motif model:
+	// average alphas over the last few steps for GibbsMH
+	for( k = 0; k < K+1; k++ ){
+		for( j = 0; j < W; j++ ){
+			alpha_[k][j] = alpha_avg[k][j] / 10.0;
+		}
+	}
 	// update model parameter v
 	motif_->updateVz_n( n_z_, alpha_, K );
 
-
-/*
 	// run five steps of EM to optimize the final model with
 	// the optimum model parameters v's and the fixed alphas
 	for( size_t step = 0; step < 5; step++ ){
@@ -498,7 +512,6 @@ void ModelLearning::GibbsSampling(){
 		// M-step: update model parameters
 		MStep();
 	}
-*/
 
 	// calculate probabilities
 	motif_->calculateP();

@@ -60,7 +60,7 @@ private:
 	double					calc_gradient_alphas( double** alphas, int order, int position );
 
 							// calculate the log posterior of a's
-	double					calc_logCondProb_a( int iteration, double a, int k, int j );
+	double					calc_logCondProb_a( int iteration, double a, int order, int position );
 
 							// Gibbs sampling alphas with Metropolis-Hastings algorithm
 	void					GibbsMH_sample_alphas( int iteration );
