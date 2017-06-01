@@ -178,7 +178,7 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( int L ){
 	int K = Global::modelOrder;
 
 	uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
-	std::string header = "pseudo sequence";
+	std::string header = "> pseudo sequence";
 
 	for( i = 0; i < L; i++ ){
 		sequence[i] = 1;
