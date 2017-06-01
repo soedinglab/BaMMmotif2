@@ -72,7 +72,7 @@ private:
 	double					calc_prior_alphas( double** alphas, int order );
 
 	// calculate the likelihood of alphas
-	double					calc_likelihood_alphas( double** alphas, int order );
+	double					calc_llikelihood_alphas( double** alphas, int order );
 
 	std::vector<int>		Y_;					// contains 1 at position 0
 												// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1

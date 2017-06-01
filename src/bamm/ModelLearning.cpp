@@ -328,7 +328,6 @@ void ModelLearning::GibbsSampling(){
 					"|___________________________|\n\n" );
 
 	clock_t t0 = clock();
-	bool iterate = true;							// flag for iterating before convergence
 	int iteration = 0;
 
 	int K = Global::modelOrder;
@@ -400,7 +399,7 @@ void ModelLearning::GibbsSampling(){
 		Gibbs_sample_z_q();
 	}
 
-	// vector to store the last a few alphas
+	// vector to store the last a few alphas for sampling methods
 	std::vector<std::vector<double>> alpha_avg( K+1 );
 	for( k = 0; k < K+1; k++ ){
 		alpha_avg[k].resize( W );
@@ -409,14 +408,14 @@ void ModelLearning::GibbsSampling(){
 		}
 	}
 
-/*
 	// todo: only for writing out the log posterior of alphas
 	std::string opath = std::string( Global::outputDirectory ) + "/Kj.lposA";
 	std::ofstream ofile( opath );
-*/
 
+
+	double llikelihood = calc_llikelihood_alphas( alpha_, K );
 	// iterate over
-	while( iterate && iteration < Global::maxCGSIterations ){
+	while( iteration < Global::maxCGSIterations ){
 
 		iteration++;
 
@@ -467,6 +466,13 @@ void ModelLearning::GibbsSampling(){
 
 			discrete_sample_alphas( iteration );
 
+			if( iteration > Global::maxCGSIterations - 10 ){
+				for( k = 0; k < K+1; k++ ){
+					for( j = 0; j < W; j++ ){
+						alpha_avg[k][j] += alpha_[k][j];
+					}
+				}
+			}
 /*			// todo:
 			for( j = 0; j < W; j++ ){
 
@@ -476,27 +482,27 @@ void ModelLearning::GibbsSampling(){
 			ofile << std::endl;*/
 
 		} else if( Global::debugAlphas ){
-			// set up a sequential numbers for alphas with the highest order
-			for( j = 0; j < W; j++ ){
-				alpha_[K][j] = exp( ( double )iteration / 20.0 );
-			}
-/*
+
 			// todo: only for writing out the log posterior of alphas
 			for( j = 0; j < W; j++ ){
 				ofile << std::scientific << std::setprecision( 8 ) << calc_logCondProb_a( iteration, ( double )iteration / 20.0, K, j )
 						<< '\t' << ( double )iteration / 20.0 << '\t';
 			}
 			ofile << std::endl;
-*/
-
 		}
+
+		// todo: check the log likelihood
+		std::cout << calc_llikelihood_alphas( alpha_, K ) - llikelihood << std::endl;
+		llikelihood = calc_llikelihood_alphas( alpha_, K );
 	}
 
 	// obtaining a motif model:
-	// average alphas over the last few steps for GibbsMH
-	for( k = 0; k < K+1; k++ ){
-		for( j = 0; j < W; j++ ){
-			alpha_[k][j] = alpha_avg[k][j] / 10.0;
+	if( Global::GibbsMHalphas || Global::dissampleAlphas ){
+		// average alphas over the last few steps for GibbsMH
+		for( k = 0; k < K+1; k++ ){
+			for( j = 0; j < W; j++ ){
+				alpha_[k][j] = alpha_avg[k][j] / 10.0;
+			}
 		}
 	}
 	// update model parameter v
@@ -807,27 +813,31 @@ void ModelLearning::discrete_sample_alphas( int iter ){
 	int K = Global::modelOrder;
 	int W = motif_->getW();
 
+	std::string opath = std::string( Global::outputDirectory ) + '/'
+						+ Global::posSequenceBasename + ".lpobKj";
+	std::ofstream ofile( opath.c_str() );
+
 	for( int k = 0; k < K+1; k++ ){
 
 		for( int j = 0; j < W; j++ ){
 
-			std::vector<double> logCondProb;
-			double new_CondProb;
-			double sum = 0.0;
-			for( int it = 0; it < 200; it++ ){
-				new_CondProb = exp( calc_logCondProb_a( iter, static_cast<double>( it ) / 10.0, k, j ) );
-				logCondProb.push_back( new_CondProb );
-				sum += new_CondProb;
-			}
-			for( int it = 0; it < 200; it++ ){
-				logCondProb[it] /= sum;
+			std::vector<double> condProb;
+
+			double condProb_new;
+
+			double base = calc_logCondProb_a( iter, 0.0, k, j );
+
+			for( int it = 0; it < 100; it++ ){
+
+				condProb_new = exp( calc_logCondProb_a( iter, static_cast<double>( it ) / 10.0, k, j ) - base );
+
+				condProb.push_back( condProb_new );
+
 			}
 
-			std::discrete_distribution<> posterior_dist( logCondProb.begin(), logCondProb.end() );
+			std::discrete_distribution<> posterior_dist( condProb.begin(), condProb.end() );
 
-			double new_a = posterior_dist( Global::rngx ) / 10.0;
-	//		std::cout << new_a << std::endl;
-			alpha_[k][j] = exp( new_a );
+			alpha_[k][j] = exp( posterior_dist( Global::rngx ) / 10.0 );
 		}
 	}
 }
@@ -910,8 +920,8 @@ double ModelLearning::calc_logCondProb_a( int iteration, double a, int k, int j 
 	int y, y2, ya;
 
 	bool be_printed = false;
-/*
-	if( iteration == Global::maxCGSIterations && j == 4 && k == Global::modelOrder ){
+
+/*	if( iteration == 3 && j == 12 && k == Global::modelOrder ){
 		be_printed = true;
 	}*/
 
@@ -993,7 +1003,7 @@ double ModelLearning::calc_logCondProb_a( int iteration, double a, int k, int j 
 											<< "+" << alpha <<")" << std::endl;
 
 			// !!! important: correction for the occasions when zero or one k-mer is present
-			if( n_z_[k-1][y][j-1] <= 1 ){
+/*			if( n_z_[k-1][y][j-1] <= 1 ){
 
 				logCondProbA = -a - Global::modelBeta * pow( Global::modelGamma, static_cast<double>( k ) ) / alpha;
 
@@ -1001,7 +1011,7 @@ double ModelLearning::calc_logCondProb_a( int iteration, double a, int k, int j 
 
 			}
 
-			if( be_printed ) std::cout << std::endl;
+			if( be_printed ) std::cout << std::endl;*/
 		}
 
 	}
@@ -1028,56 +1038,68 @@ double ModelLearning::calc_prior_alphas( double** alpha, int k ){
 	return logPrior;
 }
 
-double ModelLearning::calc_likelihood_alphas( double** alpha, int k ){
+double ModelLearning::calc_llikelihood_alphas( double** alpha, int k ){
 	// calculate partial log likelihood of alphas due to equation 46 in the theory
 
-	double logLikelihood = 0.0f;
+	double logLikelihood = 0.0;
 	float*** v = motif_->getV();
 	float** v_bg = bg_->getV();
 	double N = static_cast<double>( posSeqs_.size() ) - 1.0;
 	int W = motif_->getW();
-	int y, y2, j;
+	int y, y2, ya, j;
 
-	for( j = 0; j < W; j++ ){
 
-		// the third term of equation 46
-		logLikelihood += ( double )ipow( Y_[1], k ) * boost::math::lgamma( alpha[k][j] );
 
-		// the forth term of equation 46
-		for( y = 0; y < Y_[k+1]; y++ ){
+	if( k == 0 ){
+		for( j = 0; j < W; j++ ){
+			for( y = 0; y < Y_[k]; y++ ){
 
-			y2 = y % Y_[k];									// cutoff the first nucleotide in the (k+1)-mer
+				// the third term of equation 50
+				logLikelihood += boost::math::lgamma( alpha[k][j] );
 
-			if( k == 0 ){
-				// the first part
-				logLikelihood += boost::math::lgamma( ( double )n_z_[k][y][j] + alpha[k][j] * v_bg[k][y] );
+				// the first part of the forth term of equation 50
+				logLikelihood += boost::math::lgamma( static_cast<double>( n_z_[k][y][j] ) + alpha[k][j] * v_bg[k][y] );
 
-				// the second part
+				// the second part of the forth term of equation 50
 				logLikelihood -= boost::math::lgamma( alpha[k][j] * v_bg[k][y] );
 
-			} else {
-				// the first part
-				logLikelihood += boost::math::lgamma( ( double )n_z_[k][y][j] + alpha[k][j] * v[k-1][y2][j] );
-
-				// the second part
-				logLikelihood -= boost::math::lgamma( alpha[k][j] * v[k-1][y2][j] );
-
 			}
 
-			// the missing part for v_bg
-			logLikelihood -= ( double )n_z_[k][y][j] * logf( v_bg[k][y] );
-
+			// the fifth term of equation 50
+			logLikelihood -= boost::math::lgamma( static_cast<double>( N ) + alpha[k][j] );
 		}
 
-		// the last term of equation 46
-		for( y = 0; y < Y_[k]; y++ ){
-			if( j == 0 || k == 0 ){
-				logLikelihood -= boost::math::lgamma( N / ( double )Y_[k] + alpha[k][j] );
-			} else {
-				logLikelihood -= boost::math::lgamma( ( double )n_z_[k-1][y][j-1] + alpha[k][j] );
+	} else {
+		for( j = 0; j < W; j++ ){
+			// the third, forth and fifth terms of equation 50
+			for( y = 0; y < Y_[k]; y++ ){
+
+				// the third term of equation 50
+				logLikelihood += boost::math::lgamma( alpha[k][j] );
+
+				// the forth term of equation 50
+				for( int A = 0; A < Y_[1]; A++ ){
+
+					ya = y * Y_[1] + A;
+
+					y2 = ya % Y_[k];
+
+					if( n_z_[k][ya][j] > 0 ){
+
+						// the first part of the forth term
+						logLikelihood += boost::math::lgamma( static_cast<double>( n_z_[k][ya][j] ) + alpha[k][j] * v[k-1][y2][j] );
+
+						// the second part of the forth term
+						logLikelihood -= boost::math::lgamma( alpha[k][j] * v[k-1][y2][j] );
+					}
+
+				}
+
+				// the fifth term
+				logLikelihood -= boost::math::lgamma( static_cast<double>( n_z_[k-1][y][j-1] ) + alpha[k][j] );
+
 			}
 		}
-
 	}
 
 	return logLikelihood;
@@ -1170,13 +1192,18 @@ void ModelLearning::write( int N ){
 
 	// output parameter alphas alpha[k][j]
 	std::string opath_alpha = opath + ".alphas";
+	std::string opath_a = opath + ".logalphas";
 	std::ofstream ofile_alpha( opath_alpha.c_str() );
+	std::ofstream ofile_a( opath_a.c_str() );
 	for( k = 0; k < K+1; k++ ){
 		ofile_alpha << "> k=" << k << std::endl;
+		ofile_a << "> k=" << k << std::endl;
 		for( j = 0; j < W; j++ ){
 			ofile_alpha << std::setprecision( 3 ) << alpha_[k][j] << '\t';
+			ofile_a << std::setprecision( 3 ) << log( alpha_[k][j] ) << '\t';
 		}
 		ofile_alpha << std::endl;
+		ofile_a << std::endl;
 	}
 
 /*	// output responsibilities r[n][i]
