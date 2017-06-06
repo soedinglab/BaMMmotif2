@@ -492,8 +492,8 @@ void ModelLearning::GibbsSampling(){
 		}
 
 		// todo: check the log likelihood
-		std::cout << calc_llikelihood_alphas( alpha_, K ) - llikelihood << std::endl;
-		llikelihood = calc_llikelihood_alphas( alpha_, K );
+//		std::cout << calc_llikelihood_alphas( alpha_, K ) - llikelihood << std::endl;
+//		llikelihood = calc_llikelihood_alphas( alpha_, K );
 	}
 
 	// obtaining a motif model:
@@ -1003,7 +1003,7 @@ double ModelLearning::calc_logCondProb_a( int iteration, double a, int k, int j 
 											<< "+" << alpha <<")" << std::endl;
 
 			// !!! important: correction for the occasions when zero or one k-mer is present
-/*			if( n_z_[k-1][y][j-1] <= 1 ){
+			if( n_z_[k-1][y][j-1] <= 1 ){
 
 				logCondProbA = -a - Global::modelBeta * pow( Global::modelGamma, static_cast<double>( k ) ) / alpha;
 
@@ -1011,7 +1011,7 @@ double ModelLearning::calc_logCondProb_a( int iteration, double a, int k, int j 
 
 			}
 
-			if( be_printed ) std::cout << std::endl;*/
+			if( be_printed ) std::cout << std::endl;
 		}
 
 	}
