@@ -116,20 +116,23 @@ int main( int nargs, char* args[] ){
 
 			if( ! Global::EM and ! Global::CGS ){
 
-				//std::cout << "no Optimization takes place EM! CGS!\n";
+				std::cout << "no Optimization takes place EM! CGS!\n";
 
 				// use provided bgModelFile if initialized with bamm format
 				if( Global::BaMMFilename != NULL ){
-					//std::cout << "init with BaMMfile \n";
+					std::cout << "init with BaMMfile \n";
 					if( Global::bgModelFile == NULL ){
-						//std::cout << "bgModel not provided! \n";
+						std::cout << "bgModel not provided! \n";
 						std::cout << "No background Model File provided for initial search motif!\n";
 						exit(-1);
 					}
+					std::cout << "bgModelFile as new BGmodel used.. \n";
+
 					bg = new BackgroundModel( Global::bgModelFile );
+					std::cout << "... initialized!\n";
 				}
 				else{
-					//std::cout << "not optimized with BammFile\n";
+					std::cout << "not optimized with BammFile\n";
 					// use bgModel generated when reading in PWM File
 					if( Global::PWMFilename != NULL ){
 						//std::cout << "Init with PWM instead \n";
@@ -146,19 +149,24 @@ int main( int nargs, char* args[] ){
 
 			}
 
-			// generate M * Npos negative sequences
-			int M = std::min(int(pow(10,6)/Global::posSequenceSet->getN()),5);
-
+    		std::cout << "Seqgenerator, neg seqs... ";
 			SeqGenerator neg_seqs( Global::posSequenceSet->getSequences(), model.getMotif() );
-			neg_seqs.sample_negative_seqset( M );
-
+			std::cout << ".. sample seqset... ";
+			neg_seqs.sample_negative_seqset(  );
+			std::cout << "DONE!\n";
 			// generate and score negative sequence set
+			std::cout << "generate negative sequence set... ";
 			ScoreSeqSet neg_seqset( model.getMotif(), bg, neg_seqs.getSeqs());
+			std::cout << "... and score it ...";
 			neg_seqset.score();
+			std::cout << "DONE!\n";
 
 			// score positive sequence set
+			std::cout << "generate positive sequence set... ";
 			ScoreSeqSet pos_seqset( model.getMotif(), bg, Global::posSequenceSet->getSequences());
+			std::cout << "... and score it ...";
 			pos_seqset.score();
+			std::cout << "DONE!\n";
 
 			// collapse and rank negative scores
 			std::vector<float> neg_scores = neg_seqset.getScoreAll();
@@ -171,6 +179,11 @@ int main( int nargs, char* args[] ){
 
 			// calculate p- and e-values for positive scores based on negative scores
 			pos_seqset.calcPvalues(neg_scores);
+
+			fprintf( stderr, "\n" );
+    		fprintf( stderr, "***************************\n" );
+    		fprintf( stderr, "*   print PValues         *\n" );
+			fprintf( stderr, "***************************\n" );
 
 			// print out scores and p-/e-values larger than p-values based cutoff
 			pos_seqset.writePvalues( n, Global:: pvalCutoff );

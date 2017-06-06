@@ -71,7 +71,9 @@ void SeqGenerator::calculate_kmer_frequency(){
 
 
 // generate negative sequences
-std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_negative_seqset(int M){
+std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_negative_seqset( ){
+
+	int M = std::min(int(pow(10,6)/Global::posSequenceSet->getN()),5);
 
 	std::vector<std::unique_ptr<Sequence>> sampleSet;
 

@@ -21,7 +21,7 @@ public:
 	SeqGenerator( std::vector<Sequence*> seqs, Motif* motif = NULL );
 	~SeqGenerator();
 
-	std::vector<std::unique_ptr<Sequence>> 	sample_negative_seqset( int M = 1 );
+	std::vector<std::unique_ptr<Sequence>> 	sample_negative_seqset( );
 	std::vector<std::unique_ptr<Sequence>> 	sample_pseudo_seqset();
 	std::vector<Sequence*>                  getSeqs();
 
