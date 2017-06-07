@@ -209,7 +209,7 @@ void ModelLearning::EStep(){
 
 	motif_->calculateLinearS( bg_->getV() );
 	float** s = motif_->getS();
-	int N0 = 0;
+//	int N0 = 0;
 	// parallel the code
 //	#pragma omp parallel for
 
@@ -253,7 +253,7 @@ void ModelLearning::EStep(){
 			r_[n][i] /= normFactor;
 		}
 
-		if( r_[n][0] > 0.7 ) N0++;
+//		if( r_[n][0] > 0.7 ) N0++;
 		// calculate log likelihood over all sequences
 		llikelihood_ += logf( normFactor );
 	}
@@ -408,36 +408,18 @@ void ModelLearning::GibbsSampling(){
 		}
 	}
 
-	// todo: only for writing out the log posterior of alphas
-	std::string opath = std::string( Global::outputDirectory ) + "/Kj.lposA";
-	std::ofstream ofile( opath );
-
-
-	double llikelihood = calc_llikelihood_alphas( alpha_, K );
 	// iterate over
 	while( iteration < Global::maxCGSIterations ){
 
 		iteration++;
 
-//		float llikelihood_prev;
-//		llikelihood_prev = llikelihood_;
-
 		// Gibbs sampling position z and fraction q
 		if( !Global::noZSampling )	Gibbs_sample_z_q();
-
-//		std::cout << "diff_llikelihood=" << llikelihood_ - llikelihood_prev << std::endl;
 
 		// update alphas by stochastic optimization
 		if( !Global::noAlphaOptimization ){
 
 			stochastic_optimize_alphas( K, W, eta, iteration );
-
-/*			for( j = 0; j < W; j++ ){
-
-				ofile << std::scientific << std::setprecision( 8 ) << calc_gradient_alphas( alpha_, K, j ) << '\t' << alpha_[K][j] << '\t';
-
-			}
-			ofile << std::endl;*/
 
 		} else if( Global::GibbsMHalphas ){
 
@@ -451,17 +433,6 @@ void ModelLearning::GibbsSampling(){
 				}
 			}
 
-/*			if( iteration > 35 ){
-
-				for( j = 0; j < W; j++ ){
-
-					ofile << std::scientific << std::setprecision( 8 ) << calc_logCondProb_a( iteration, log( alpha_[K][j] ), K, j )
-							<< '\t' << log( alpha_[K][j] )<< '\t';
-				}
-
-				ofile << std::endl;
-			}*/
-
 		} else if( Global::dissampleAlphas ){
 
 			discrete_sample_alphas( iteration );
@@ -473,27 +444,7 @@ void ModelLearning::GibbsSampling(){
 					}
 				}
 			}
-/*			// todo:
-			for( j = 0; j < W; j++ ){
-
-				ofile << std::scientific << std::setprecision( 8 ) << calc_logCondProb_a( iteration, log( alpha_[K][j] ), K, j )
-						<< '\t' << log( alpha_[K][j] )<< '\t';
-			}
-			ofile << std::endl;*/
-
-		} else if( Global::debugAlphas ){
-
-			// todo: only for writing out the log posterior of alphas
-			for( j = 0; j < W; j++ ){
-				ofile << std::scientific << std::setprecision( 8 ) << calc_logCondProb_a( iteration, ( double )iteration / 20.0, K, j )
-						<< '\t' << ( double )iteration / 20.0 << '\t';
-			}
-			ofile << std::endl;
 		}
-
-		// todo: check the log likelihood
-//		std::cout << calc_llikelihood_alphas( alpha_, K ) - llikelihood << std::endl;
-//		llikelihood = calc_llikelihood_alphas( alpha_, K );
 	}
 
 	// obtaining a motif model:
@@ -505,6 +456,7 @@ void ModelLearning::GibbsSampling(){
 			}
 		}
 	}
+
 	// update model parameter v
 	motif_->updateVz_n( n_z_, alpha_, K );
 
@@ -688,13 +640,13 @@ void ModelLearning::Gibbs_sample_z_q(){
 
 	}
 
+/*
 	// sampling q:
 	if( !Global::noQSampling ){
 		boost::math::beta_distribution<> q_beta_dist( N - N_0 + 1, N_0 + 1);
 		q_ = ( float )quantile( q_beta_dist, ( float )rand() / ( float )RAND_MAX );
 	}
-
-//	std::cout << "N=" << N - N_0 << ",\t q=" << ( float )( N - N_0 ) / ( float )N  << ",\t";
+*/
 
 }
 
@@ -812,10 +764,6 @@ void ModelLearning::discrete_sample_alphas( int iter ){
 
 	int K = Global::modelOrder;
 	int W = motif_->getW();
-
-	std::string opath = std::string( Global::outputDirectory ) + '/'
-						+ Global::posSequenceBasename + ".lpobKj";
-	std::ofstream ofile( opath.c_str() );
 
 	for( int k = 0; k < K+1; k++ ){
 
@@ -1116,17 +1064,11 @@ void ModelLearning::print(){
 void ModelLearning::write( int N ){
 
 	/**
-	 * 	 * save EM parameters in four flat files:
-	 * (1) posSequenceBasename.EMcount:			refined fractional counts of (k+1)-mers
-	 * (2) posSequenceBasename.EMweight: 		responsibilities, posterior distributions
-	 * (3) posSequenceBasename.EMalpha:			optimized hyper-parameter alphas
-	 * (4) posSequenceBasename.EMposition:		position of motif(s) on each sequence
-	 * or
-	 * 	 * save CGS parameters in four flat files:
-	 * (1) posSequenceBasename.CGScount:		refined integral counts of (k+1)-mers
-	 * (2) posSequenceBasename.CGSweight:		responsibilities, posterior distributions
-	 * (3) posSequenceBasename.CGSalpha:		optimized hyper-parameter alphas
-	 * (4) posSequenceBasename.CGSposition:		position of motif on each sequence
+	 * 	 * save BaMM (hyper-)parameters in four flat files:
+	 * (1) posSequenceBasename.counts:			refined fractional counts of (k+1)-mers
+	 * (2) posSequenceBasename.weights: 		responsibilities, posterior distributions
+	 * (3) posSequenceBasename.alphas:			optimized hyper-parameter alphas
+	 * (4) posSequenceBasename.positions:		position of motif(s) on each sequence
 	 */
 
 	int k, y, j, i;
@@ -1137,7 +1079,7 @@ void ModelLearning::write( int N ){
 						+ Global::posSequenceBasename + "_motif_" + std::to_string( N+1 );
 
 	// output (k+1)-mer counts n[k][y][j]
-	std::string opath_n = opath + ".kmecounts";
+	std::string opath_n = opath + ".counts";
 	std::ofstream ofile_n( opath_n.c_str() );
 	if( Global::EM ){
 		for( j = 0; j < W; j++ ){
@@ -1162,7 +1104,7 @@ void ModelLearning::write( int N ){
 	}
 
 	// output position(s) of motif(s): pos_[n][i]
-	std::string opath_pos = opath + ".motifpos";
+	std::string opath_pos = opath + ".positions";
 	std::ofstream ofile_pos( opath_pos.c_str() );
 
 	ofile_pos << "seq" << '\t' << "position" << std::endl;
@@ -1192,18 +1134,13 @@ void ModelLearning::write( int N ){
 
 	// output parameter alphas alpha[k][j]
 	std::string opath_alpha = opath + ".alphas";
-	std::string opath_a = opath + ".logalphas";
 	std::ofstream ofile_alpha( opath_alpha.c_str() );
-	std::ofstream ofile_a( opath_a.c_str() );
 	for( k = 0; k < K+1; k++ ){
 		ofile_alpha << "> k=" << k << std::endl;
-		ofile_a << "> k=" << k << std::endl;
 		for( j = 0; j < W; j++ ){
 			ofile_alpha << std::setprecision( 3 ) << alpha_[k][j] << '\t';
-			ofile_a << std::setprecision( 3 ) << log( alpha_[k][j] ) << '\t';
 		}
 		ofile_alpha << std::endl;
-		ofile_a << std::endl;
 	}
 
 /*	// output responsibilities r[n][i]
