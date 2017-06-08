@@ -318,10 +318,9 @@ void Motif::initFromPWM( float** PWM, int asize, int count ){
 }
 
 // initialize v from Bayesian Markov model file and set isInitialized
-void Motif::initFromBaMM( char* filename, int Order ){
+void Motif::initFromBaMM( char* filename ){
 
-	int k, y, i,j,n;
-	int asize = Alphabet::getSize();
+	int k, y, j;
 	std::ifstream file;
 	file.open( filename, std::ifstream::in );
 	std::string line;
@@ -330,7 +329,7 @@ void Motif::initFromBaMM( char* filename, int Order ){
 	for( j = 0; j < W_; j++ ){
 
 		// loop over order k
-		for( k = 0; k < Order+1 ; k++ ){
+		for( k = 0; k < Global::modelOrder+1 ; k++ ){
 
 			getline( file, line );
 
@@ -350,103 +349,6 @@ void Motif::initFromBaMM( char* filename, int Order ){
 		getline( file, line );
 	}
 
-	// fill up higher orders in case initialization is lower than selected modelOrder
-	if( Order < Global::modelOrder ){
-
-
-		// learn higher-order model based on the weights from the PWM
-			// compute log odd scores s[y][j], log likelihoods of the highest order K
-			std::vector<std::vector<float>> score;
-			score.resize( asize );
-			for( y = 0; y < asize ; y++ ){
-				score[y].resize( W_ );
-			}
-			for( y = 0; y < asize ; y++ ){
-				for( j = 0; j < W_; j++ ){
-					score[y][j] = v_[0][y][j] / f_bg_[y];
-				}
-			}
-
-			// sampling z from each sequence of the sequence set based on the weights:
-			std::vector<Sequence*> posSet = Global::posSequenceSet->getSequences();
-			int N = Global::posSequenceSet->getN();
-
-			for( n = 0; n < N; n++ ){
-
-				int LW1 = posSet[n]->getL() - W_ + 1;
-
-				// motif position
-				int z;
-
-				// get the kmer array
-				int* kmer = posSet[n]->getKmer();
-
-				// calculate responsibilities over all LW1 positions on n'th sequence
-				std::vector<float> r;
-				r.resize( LW1 + 1 );
-
-				std::vector<float> posteriors;
-				float normFactor = 0.0f;
-				// calculate positional prior:
-				float pos0 = 1.0f - Global::q;
-				float pos1 = Global::q / ( float )LW1;
-
-				// todo: could be parallelized by extracting 8 sequences at once
-				// todo: should be written in a faster way
-				for( i = 1; i <= LW1; i++ ){
-					r[i] = 1.0f;
-					for( j = 0; j < W_; j++ ){
-						// extract monomers on the motif at position i over W of the n'th sequence
-						y = ( kmer[i-1+j] >= 0 ) ? kmer[i-1+j] % asize : -1;
-						if( y >= 0 )	r[i] *= score[y][j];
-					}
-					r[i] *= pos1;
-					normFactor += r[i];
-				}
-				// for sequences that do not contain motif
-				r[0] = pos0;
-				normFactor += r[0];
-				for( i = 0; i <= LW1; i++ ){
-					r[i] /= normFactor;
-					posteriors.push_back( r[i] );
-				}
-				// draw a new position z from discrete posterior distribution
-				std::discrete_distribution<> posterior_dist( posteriors.begin(), posteriors.end() );
-
-				// draw a sample z randomly
-				z = posterior_dist( Global::rngx );
-
-				// count kmers with sampled z
-				if( z > 0 ){
-					for( k = 0; k < Global::modelOrder + 1; k++ ){
-						for( j = 0; j < W_; j++ ){
-							y = ( kmer[z-1+j] >= 0 ) ? kmer[z-1+j] % Y_[k+1] : -1;
-							if( y >= 0 )	n_[k][y][j]++;
-						}
-					}
-				}
-			}
-
-		// calculate motif model from counts for higher order
-		// for k > Order:
-		for( k = Order+1; k < Global::modelOrder+1; k++ ){
-			for( y = 0; y < Y_[k+1]; y++ ){
-				int y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer y
-				int yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer y
-				for( j = 0; j < k; j++ ){							// when j < k, i.e. p(A|CG) = p(A|C)
-					v_[k][y][j] = v_[k-1][y2][j];
-				}
-				for( j = k; j < W_; j++ ){
-					v_[k][y][j] = ( static_cast<float>( n_[k][y][j] ) + Global::modelAlpha.at(k) * v_[k-1][y2][j] )
-								/ ( static_cast<float>( n_[k-1][yk][j-1] ) + Global::modelAlpha.at(k) );
-				}
-			}
-		}
-
-		// set isInitialized
-		calculateP();
-
-	}
 	// set isInitialized
 	isInitialized_ = true;
 
@@ -458,6 +360,8 @@ void Motif::initFromBaMM( char* filename, int Order ){
 	}
 
 }
+
+
 
 int Motif::getC(){
 	return C_;

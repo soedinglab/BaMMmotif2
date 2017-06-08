@@ -141,6 +141,7 @@ MotifSet::MotifSet(){
 		}
 	} else if( Global::BaMMFilename != NULL ){
 
+
 		// read file to calculate motif length
 		std::ifstream file;
 		file.open( Global::BaMMFilename, std::ifstream::in );
@@ -174,8 +175,8 @@ MotifSet::MotifSet(){
 				}
 			}
 
-			// remember initOrder
-			int initOrder = order;
+			// adjust modelOrder
+			Global::modelOrder = order;
 
 			// adjust Alphabet
 			char* alphabetType = new char[9];
@@ -198,7 +199,7 @@ MotifSet::MotifSet(){
 			Motif* motif = new Motif( length );
 
 			// initialize motif from file
-			motif->initFromBaMM( Global::BaMMFilename, initOrder );
+			motif->initFromBaMM( Global::BaMMFilename );
 
 			motifs_.push_back( motif );
 
@@ -207,7 +208,6 @@ MotifSet::MotifSet(){
 	}
 	//	if( Global::verbose ) print();
 }
-
 MotifSet::~MotifSet(){
     for( size_t i = 0; i < motifs_.size(); i++ ){
         delete motifs_[i];
