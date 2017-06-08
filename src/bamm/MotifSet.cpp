@@ -124,11 +124,9 @@ MotifSet::MotifSet(){
 
 						std::stringstream number( row );
 
-						float weight;
-
 						y = 0;
-						while( number >> weight ){
-							PWM[y][j] = weight;
+
+						while( number >> PWM[y][j] ){
 							y++;
 						}
 
@@ -152,61 +150,48 @@ MotifSet::MotifSet(){
 		}
 	} else if( Global::BaMMFilename != NULL ){
 
+		// each BaMM file contains one optimized motif model
 		// read file to calculate motif length
 		std::ifstream file;
 		file.open( Global::BaMMFilename, std::ifstream::in );
 
 		if( !file.good() ){
+
 			std::cout << "Error: Cannot open BaMM file: " << Global::BaMMFilename << std::endl;
 			exit( -1 );
+
 		} else {
 
-			int length = 0;
-			int order  = -1;
-			int asize  = 0;
+			int model_length = 0;
+			int model_order  = -1;
 			std::string line;
-
 
 			// read file to calculate motif length, order and alphabet size
 			while( getline( file, line ) ){
 
 				if( line.empty() ){
-					length++;
-				}else{
-					if( length == 0 ){
-						order++;
-						if( order == 0 ){
-							for( unsigned int i = 0; i < line.length(); i++ ){
-								if( line[i] == ' ' )
-									asize++;
-							}
-						}
-					}
+					// count the number of empty lines as the motif length
+					model_length++;
+
+				} else if( model_length == 0 ){
+					// count the lines of the first position on the motif as the model model_order
+					model_order++;
+
 				}
 			}
 
-			// adjust modelOrder
-			Global::modelOrder = order;
+			std::cout << model_length << std::endl;
 
-			// adjust Alphabet
-			char* alphabetType = new char[9];
-			if( asize == 4 ){
-				strcpy( alphabetType, "STANDARD" );
-			} else {
-				if( asize == 6 ){
-					strcpy( alphabetType, "EXTENDED" );
-				}else{
-					// asize isn't enough to guess alphabet type: throw error
-					std::cout << "Error: Please provide Alphabet Type of your BaMM File: " << Global::BaMMFilename << std::endl;
-					exit( -1 );
-				}
-			}
-			// todo: what if asize = 5?
+			// extend the core region of the model due to the added columns
+			model_length += Global::addColumns.at( 0 ) + Global::addColumns.at( 1 );
 
-			Alphabet::init( alphabetType );
+			std::cout << model_length << std::endl;
+
+			// adjust model order due to the .bamm file
+			Global::modelOrder = model_order;
 
 			// construct an initial motif
-			Motif* motif = new Motif( length );
+			Motif* motif = new Motif( model_length );
 
 			// initialize motif from file
 			motif->initFromBaMM( Global::BaMMFilename );

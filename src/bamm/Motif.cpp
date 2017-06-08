@@ -227,7 +227,7 @@ void Motif::initFromPWM( float** PWM, int asize, int count ){
 			v_[0][y][j] = PWM[y][j];
 			norm += PWM[y][j];
 		}
-		// normalize PWMs to sum up the weights to 1
+		// normalize PWMs to sum the weights up to 1
 		for( y = 0; y < asize; y++ ){
 			v_[0][y][j] /= norm;
 		}
@@ -338,7 +338,17 @@ void Motif::initFromBaMM( char* filename ){
 	std::string line;
 
 	// loop over motif position j
-	for( j = 0; j < W_; j++ ){
+	// set each v to 0.25f in the flanking region
+	for( j = 0; j < Global::addColumns.at( 0 ); j++ ){
+		for( k = 0; k < Global::modelOrder+1; k++ ){
+			for( y = 0; y < Y_[k+1]; y++ ){
+				v_[k][y][j] = 1.0f / static_cast<float>( Y_[1] );
+			}
+		}
+	}
+
+	// read in the v's from the bamm file for the core region
+	for( j = Global::addColumns.at( 0 ); j < W_ - Global::addColumns.at( 1 ); j++ ){
 
 		// loop over order k
 		for( k = 0; k < Global::modelOrder+1 ; k++ ){
@@ -347,13 +357,8 @@ void Motif::initFromBaMM( char* filename ){
 
 			std::stringstream number( line );
 
-			float probability;
-
 			y = 0;
-			while( number >> probability ){
-				// fill up for kmers y
-				v_[k][y][j] = probability;
-				//v_[k][y][j] = 1.0f / ( float )ipow( 4, k );
+			while( number >> v_[k][y][j] ){
 				y++;
 			}
 		}
@@ -361,12 +366,21 @@ void Motif::initFromBaMM( char* filename ){
 		getline( file, line );
 	}
 
+	// set each v to 0.25f in the flanking region
+	for( j = W_ - Global::addColumns.at( 1 ); j < W_; j++ ){
+		for( k = 0; k < Global::modelOrder+1 ; k++ ){
+			for( y = 0; y < Y_[k+1] ; y++ ){
+				v_[k][y][j] = 1.0f / static_cast<float>( Y_[1] );
+			}
+		}
+	}
+
 	// calculate probabilities p
 	calculateP();
 
 	// set isInitialized
 	isInitialized_ = true;
-
+	print();
 }
 
 int Motif::getC(){
@@ -474,12 +488,12 @@ void Motif::print(){
 
 	fprintf( stderr," _______________________\n"
 			"|                       |\n"
-			"|  n for Initial Model  |\n"
+			"|  v for Initial Model  |\n"
 			"|_______________________|\n\n" );
 	for( int j = 0; j < W_; j++ ){
 		for( int k = 0; k < Global::modelOrder+1; k++ ){
 			for( int y = 0; y < Y_[k+1]; y++ )
-				std::cout << std::scientific << n_[k][y][j] << '\t';
+				std::cout << std::scientific << v_[k][y][j] << '\t';
 			std::cout << std::endl;
 		}
 		std::cout << std::endl;
