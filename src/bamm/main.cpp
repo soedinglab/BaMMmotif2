@@ -37,9 +37,8 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "************************\n" );
 
 	BackgroundModel* bgModel;
-
 	if( !Global::bgModelGiven ){
-		bgModel = new BackgroundModel( *Global::negSequenceSet,
+		bgModel = new BackgroundModel( *Global::bgSequenceSet,
 										Global::bgModelOrder,
 										Global::bgModelAlpha,
 										Global::interpolateBG );

@@ -668,7 +668,7 @@ void ModelLearning::stochastic_optimize_alphas( int K, int W, float eta, int ite
 		for( j = 0; j < W; j++ ){
 
 			// re-parameterise alpha on log scale: alpha = e^a
-			double a  = log( alpha_[k][j] );
+			double a = log( alpha_[k][j] );
 
 			// get gradients w.r.t. stochastic objective at timestep t
 			gradient = alpha_[k][j] * calc_gradient_alphas( alpha_, k, j );
@@ -861,7 +861,7 @@ double ModelLearning::calc_gradient_alphas( double** alpha, int k, int j ){
 double ModelLearning::calc_logCondProb_a( int iteration, double a, int k, int j ){
 	// calculate partial log conditional probabilities of a's due to equation 50 in the theory
 
-	double logCondProbA = 0.0f;
+	double logCondProbA = 0.0;
 	float*** v = motif_->getV();
 	float** v_bg = bg_->getV();
 	int N = ( int )posSeqs_.size() - 1;
@@ -968,7 +968,7 @@ double ModelLearning::calc_logCondProb_a( int iteration, double a, int k, int j 
 }
 
 double ModelLearning::calc_prior_alphas( double** alpha, int k ){
-	// calculate partial log conditional probabilities of alphas due to equation 46 in the theory
+	// calculate partial log conditional probabilities of alphas due to equation 34 in the theory
 
 	double logPrior = 0.0;
 	int W = motif_->getW();
@@ -986,8 +986,84 @@ double ModelLearning::calc_prior_alphas( double** alpha, int k ){
 	return logPrior;
 }
 
+double ModelLearning::calc_lposterior_alphas( double** alpha, int k ){
+	// calculate partial log posterior of alphas for the order k, due to equation 50 in the theory
+
+	double logPosterior = 0.0;
+	float*** v = motif_->getV();
+	float** v_bg = bg_->getV();
+	int N = ( int )posSeqs_.size() - 1;
+
+	for( int j = 0; j < motif_->getW(); j++ ){
+
+		// the prior
+		logPosterior -= 2.0 * log( alpha[k][j] );
+
+		// the prior
+		logPosterior -= Global::modelBeta * pow( Global::modelGamma, ( double )k ) / alpha[k][j];
+
+		//
+		if( k == 0 ){
+
+			for( int y = 0; y < Y_[k]; y++ ){
+
+				// the third term of equation 50
+				logPosterior += boost::math::lgamma( alpha[k][j] );
+
+				// the first part of the forth term of equation 50
+				logPosterior += boost::math::lgamma( static_cast<double>( n_[k][y][j] ) + alpha[k][j] * v_bg[k][y] );
+
+				// the second part of the forth term of equation 50
+				logPosterior -= boost::math::lgamma( alpha[k][j] * v_bg[k][y] );
+
+			}
+
+			// the fifth term of equation 50
+			logPosterior -= boost::math::lgamma( static_cast<double>( N ) + alpha[k][j] );
+
+		} else {
+
+			// the third, forth and fifth terms of equation 50
+			for( int y = 0; y < Y_[k]; y++ ){
+
+				// !!! important: correction for the occasions when zero or one k-mer is present
+				if( n_[k-1][y][j-1] <= 1 ){
+
+					logPosterior = - 2.0 * log( alpha[k][j] ) - Global::modelBeta * pow( Global::modelGamma, static_cast<double>( k ) ) / alpha[k][j];
+
+				} else {
+					// the third term of equation 50
+					logPosterior += boost::math::lgamma( alpha[k][j] );
+
+					// the forth term of equation 50
+					for( int A = 0; A < Y_[1]; A++ ){
+
+						int ya = y * Y_[1] + A;
+
+						int y2 = ya % Y_[k];
+
+						if( n_[k][ya][j] > 0 ){
+
+							// the first part of the forth term
+							logPosterior += boost::math::lgamma( static_cast<double>( n_[k][ya][j] ) + alpha[k][j] * v[k-1][y2][j] );
+
+							// the second part of the forth term
+							logPosterior -= boost::math::lgamma( alpha[k][j] * v[k-1][y2][j] );
+						}
+
+					}
+
+					// the fifth term
+					logPosterior -= boost::math::lgamma( static_cast<double>( n_[k-1][y][j-1] ) + alpha[k][j] );
+				}
+			}
+		}
+	}
+	return logPosterior;
+}
+
 double ModelLearning::calc_llikelihood_alphas( double** alpha, int k ){
-	// calculate partial log likelihood of alphas due to equation 46 in the theory
+	// calculate partial log likelihood of alphas due to equation 50 in the theory
 
 	double logLikelihood = 0.0;
 	float*** v = motif_->getV();
@@ -996,10 +1072,10 @@ double ModelLearning::calc_llikelihood_alphas( double** alpha, int k ){
 	int W = motif_->getW();
 	int y, y2, ya, j;
 
-
-
 	if( k == 0 ){
+
 		for( j = 0; j < W; j++ ){
+
 			for( y = 0; y < Y_[k]; y++ ){
 
 				// the third term of equation 50
@@ -1018,6 +1094,7 @@ double ModelLearning::calc_llikelihood_alphas( double** alpha, int k ){
 		}
 
 	} else {
+
 		for( j = 0; j < W; j++ ){
 			// the third, forth and fifth terms of equation 50
 			for( y = 0; y < Y_[k]; y++ ){
@@ -1069,6 +1146,8 @@ void ModelLearning::write( int N ){
 	 * (2) posSequenceBasename.weights: 		responsibilities, posterior distributions
 	 * (3) posSequenceBasename.alphas:			optimized hyper-parameter alphas
 	 * (4) posSequenceBasename.positions:		position of motif(s) on each sequence
+	 * additional for checking:
+	 * (5) posSequenceBasename.lpos:			log posterior of alphas with different orders
 	 */
 
 	int k, y, j, i;
@@ -1132,7 +1211,7 @@ void ModelLearning::write( int N ){
 	}
 
 
-	// output parameter alphas alpha[k][j]
+	// output hyper-parameter alphas alpha[k][j]
 	std::string opath_alpha = opath + ".alphas";
 	std::ofstream ofile_alpha( opath_alpha.c_str() );
 	for( k = 0; k < K+1; k++ ){
@@ -1155,5 +1234,10 @@ void ModelLearning::write( int N ){
 		ofile_r << std::endl;
 	}*/
 
-
+	// output log posterior alphas
+	std::string opath_lpos = opath + ".lpos";
+	std::ofstream ofile_lpos( opath_lpos.c_str() );
+	for( k = 0; k < K+1; k++ ){
+		ofile_lpos << std::scientific << std::setprecision( 6 ) << calc_lposterior_alphas( alpha_, k ) << '\t';
+	}
 }

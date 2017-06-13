@@ -511,7 +511,7 @@ void BackgroundModel::calculateV(){
 			if( interpolate_ ){
 				v_[k][y] = ( static_cast<float>( n_[k][y] ) + A_[k] * v_[k-1][y2] )
 						   / ( static_cast<float>( n_[k-1][yk] ) + A_[k] );
-			} else{
+			} else {
 				v_[k][y] = ( static_cast<float>( n_[k][y] ) + A_[k] * 0.25f )
 						   / ( static_cast<float>( n_[k-1][yk] ) + A_[k] );
 			}

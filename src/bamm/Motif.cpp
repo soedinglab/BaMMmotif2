@@ -33,7 +33,7 @@ Motif::Motif( int length ){
 		s_[y] = ( float* )calloc( W_, sizeof( float ) );
 	}
 
-	f_bg_ = Global::negSequenceSet->getBaseFrequencies();
+	f_bg_ = Global::bgSequenceSet->getBaseFrequencies();
 }
 
 Motif::Motif( const Motif& other ){ 		// copy constructor
@@ -380,7 +380,7 @@ void Motif::initFromBaMM( char* filename ){
 
 	// set isInitialized
 	isInitialized_ = true;
-	print();
+
 }
 
 int Motif::getC(){

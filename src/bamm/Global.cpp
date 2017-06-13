@@ -6,12 +6,12 @@ char*               Global::outputDirectory = NULL;			// output directory
 
 char*               Global::posSequenceFilename = NULL;		// filename of positive sequence FASTA file
 std::string			Global::posSequenceBasename;			// basename of positive sequence FASTA file
-SequenceSet*        Global::posSequenceSet = NULL;			// positive Sequence Set
+SequenceSet*        Global::posSequenceSet = NULL;			// positive sequence set
 std::vector<std::vector<int>> Global::posFoldIndices;		// sequence indices for positive sequence set
 
 char*               Global::negSequenceFilename = NULL;		// filename of negative sequence FASTA file
 std::string			Global::negSequenceBasename;			// basename of negative sequence FASTA file
-SequenceSet*        Global::negSequenceSet = NULL;			// negative Sequence Set
+SequenceSet*        Global::negSequenceSet = NULL;			// negative sequence set
 std::vector<std::vector<int>> Global::negFoldIndices;		// sequence indices for given negative sequence set
 bool				Global::negSeqGiven = false;			// a flag for the negative sequence given by users
 // weighting options
@@ -32,7 +32,7 @@ bool				Global::zoops = true;					// learn ZOOPS model
 
 // model options
 int        			Global::modelOrder = 2;					// model order
-std::vector<float> 	Global::modelAlpha( modelOrder+1, 1.0f );	// initial alphas
+std::vector<float> 	Global::modelAlpha( modelOrder+1, 1.f );// initial alphas
 float				Global::modelBeta = 7.0f;				// alpha_k = beta x gamma^k for k > 0
 float				Global::modelGamma = 3.0f;
 std::vector<int>    Global::addColumns( 2 );				// add columns to the left and right of initial model
@@ -43,8 +43,11 @@ bool                Global::interpolateBG = true;			// calculate prior probabili
 // background model options
 char*				Global::bgModelFilename = NULL;			// path to the background model file
 bool				Global::bgModelGiven = false;			// flag to show if the background model is given or not
+char*				Global::bgSequenceFilename = NULL;		// path to the sequence file where the background model can be learned
+bool				Global::bgSeqGiven = false;				// flag to show if the background sequence set is given or not
+SequenceSet*        Global::bgSequenceSet = NULL;			// background sequence set
 int        			Global::bgModelOrder = 2;				// background model order, defaults to 2
-std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.0f );	// background model alpha
+std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.f );// background model alpha
 
 // EM options
 bool				Global::EM = false;						// flag to trigger EM learning
@@ -95,9 +98,10 @@ void Global::init( int nargs, char* args[] ){
 
 	Alphabet::init( alphabetType );
 
-	// read in positive and negative sequence set
+	// read in positive, negative and background sequence set
 	posSequenceSet = new SequenceSet( posSequenceFilename, ss );
 	negSequenceSet = new SequenceSet( negSequenceFilename, ss );
+	bgSequenceSet = new SequenceSet( bgSequenceFilename );
 
 	// generate fold indices for positive and negative sequence set
 	Global::posFoldIndices = generateFoldIndices( posSequenceSet->getN(), cvFold );
@@ -231,6 +235,13 @@ int Global::readArguments( int nargs, char* args[] ){
 	// background model options
 	if( opt >> GetOpt::Option( "bgModel", bgModelFilename ) ){
 		bgModelGiven = true;
+	}
+	// read in background sequence file
+	if( opt >> GetOpt::OptionPresent( "bgSeqFile" ) ){
+		bgSeqGiven = true;
+		opt >> GetOpt::Option( "bgSeqFile", bgSequenceFilename );
+	} else {
+	    bgSequenceFilename = negSequenceFilename;
 	}
 
 	opt >> GetOpt::Option( 'K', "Order", bgModelOrder );
@@ -380,7 +391,11 @@ void Global::printHelp(){
 			"				Order. The default is 2.\n"
 			"				Order of background model should not exceed order of motif model.\n\n");
 	printf("\n 			-A, --Alpha <FLOAT> \n"
-			"				Prior strength. The default is 10.0.\n\n");
+			"				Prior strength. The default value is 10.0.\n\n");
+	printf("\n 			--bgModel <STRING> \n"
+			"				Background model in bamm file format. Defaults to NULL.\n\n");
+	printf("\n 			--bgSeqFile <STRING> \n"
+			"				Sequence file which is used for generating background model. Defaults to NULL.\n\n");
 	printf("\n 		Options for EM: \n");
 	printf("\n 			--EM  \n"
 			"				trigger Expectation Maximization (EM) algorithm.\n\n");
@@ -441,6 +456,7 @@ void Global::destruct(){
     if( alphabetType ) 			delete[] alphabetType;
     if( posSequenceSet )	 	delete posSequenceSet;
     if( negSequenceSet ) 		delete negSequenceSet;
+    if( bgSequenceSet ) 		delete bgSequenceSet;
 }
 
 void Global::debug(){

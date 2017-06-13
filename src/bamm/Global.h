@@ -30,12 +30,12 @@ public:
 
 	static char*		posSequenceFilename;				// filename of positive sequence FASTA file
 	static std::string	posSequenceBasename;				// basename of positive sequence FASTA file
-	static SequenceSet*	posSequenceSet;						// positive Sequence Set
+	static SequenceSet*	posSequenceSet;						// positive sequence set
 	static std::vector<std::vector<int>> posFoldIndices;	// sequence indices for positive sequence set
 
 	static char*		negSequenceFilename;				// filename of negative sequence FASTA file
 	static std::string	negSequenceBasename;				// basename of negative sequence FASTA file
-	static SequenceSet*	negSequenceSet;						// negative Sequence Set
+	static SequenceSet*	negSequenceSet;						// negative sequence set
 	static std::vector<std::vector<int>> negFoldIndices;	// sequence indices for given negative sequence set
 	static bool			negSeqGiven;						// a flag for the negative sequence given by users
 
@@ -70,6 +70,9 @@ public:
 	// background model options
     static char*		bgModelFilename;					// path to the background model file
     static bool			bgModelGiven;						// flag to show if the background model is given or not
+    static char*		bgSequenceFilename;					// path to the sequence file where the background model can be learned
+    static bool			bgSeqGiven;							// flag to show if the background sequence set is given or not
+    static SequenceSet*	bgSequenceSet;						// background sequence set
 	static int			bgModelOrder;						// background model order, defaults to 2
 	static std::vector<float> bgModelAlpha;					// background model alpha
 

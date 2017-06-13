@@ -180,12 +180,8 @@ MotifSet::MotifSet(){
 				}
 			}
 
-			std::cout << model_length << std::endl;
-
 			// extend the core region of the model due to the added columns
 			model_length += Global::addColumns.at( 0 ) + Global::addColumns.at( 1 );
-
-			std::cout << model_length << std::endl;
 
 			// adjust model order due to the .bamm file
 			Global::modelOrder = model_order;

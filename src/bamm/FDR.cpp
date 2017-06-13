@@ -61,12 +61,17 @@ void FDR::evaluateMotif( int n ){
 		}
 
 		// obtain background model for each training set
-		BackgroundModel* bgModel = new BackgroundModel( *Global::negSequenceSet,
-													Global::bgModelOrder,
-													Global::bgModelAlpha,
-													Global::interpolateBG,
-													Global::negFoldIndices,
-													trainsetFolds );
+		BackgroundModel* bgModel;
+		if( !Global::bgModelGiven ){
+			bgModel = new BackgroundModel( *Global::bgSequenceSet,
+											Global::bgModelOrder,
+											Global::bgModelAlpha,
+											Global::interpolateBG,
+											Global::negFoldIndices,
+											trainsetFolds );
+		} else {
+			bgModel = new BackgroundModel( Global::bgModelFilename );
+		}
 
 		// learn motif from each training set
 		if( Global::EM ){
@@ -88,6 +93,7 @@ void FDR::evaluateMotif( int n ){
 				posScoreAll_.insert( std::end( posScoreAll_ ), std::begin( mops_scores[n] ), std::end( mops_scores[n] ) );
 			}
 		}
+
 		if( Global::zoops ){
 			zoops_scores = score_testset.getZoopsScores();
 			posScoreMax_.insert( std::end( posScoreMax_ ), std::begin( zoops_scores ), std::end( zoops_scores ) );
@@ -155,15 +161,15 @@ void FDR::evaluateMotif( int n ){
 
 void FDR::calculatePR(){
 
-	int M;
+	float M;
 	int posN = Global::posSequenceSet->getN();
 	int negN;
 	if( Global::negSeqGiven ){
 		negN = Global::negSequenceSet->getN();
-		M = negN / posN;
+		M = ( float )negN / ( float )posN;
 	} else {
-		M = Global::mFold;
-		negN = posN * M;
+		M = ( float )Global::mFold;
+		negN = posN * Global::mFold;
 	}
 
 	// for MOPS model:
@@ -188,8 +194,8 @@ void FDR::calculatePR(){
 				idx_negAll++;
 			}
 
-			MOPS_TP_.push_back( ( float )idx_posAll - ( float )idx_negAll / ( float )M );
-			MOPS_FP_.push_back( ( float )idx_negAll / ( float )M );
+			MOPS_TP_.push_back( ( float )idx_posAll - ( float )idx_negAll / M );
+			MOPS_FP_.push_back( ( float )idx_negAll / M );
 
 			if( E_TP_MOPS == MOPS_TP_[i] ){
 				idx_max = i;
@@ -231,9 +237,9 @@ void FDR::calculatePR(){
 			}
 
 			ZOOPS_TP_.push_back( ( float )idx_posMax );
-			ZOOPS_FP_.push_back( ( float )idx_negMax / ( float )M );
+			ZOOPS_FP_.push_back( ( float )idx_negMax / M );
 			PN_Pvalue_.push_back( ( ( float )idx_negMax + 0.5f )
-					/ ( ( float )( M * posScoreMax_.size() ) + 1.0f ) );
+					/ ( M * ( float )posScoreMax_.size() + 1.0f ) );
 
 			// take the faction of q sequences as real positives
 			if( idx_posMax == posN_est ){
