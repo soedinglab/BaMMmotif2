@@ -92,9 +92,9 @@ int main( int nargs, char* args[] ){
 			// generate pesudo positive sequence set based on the learned motif
 			SeqGenerator seqset( Global::posSequenceSet->getSequences(), model.getMotif() );
 
-			seqset.sample_pseudo_seqset();
+			seqset.sample_pseudo_seqset( Global::mFold );
 
-			seqset.write( seqset.sample_pseudo_seqset() );
+			seqset.write_pseudoset();
 
 		}
 
@@ -124,7 +124,7 @@ int main( int nargs, char* args[] ){
 		fprintf( stderr, "***********\n" );
 		for( int n = 0; n < motifNum; n++ ){
 			Motif* motif = new Motif( *motifs.getMotifs()[n] );
-			FDR fdr( motif );
+			FDR fdr( motif, Global::mFold, Global::cvFold );
 			fdr.evaluateMotif( n );
 			fdr.write( n );
 			delete motif;

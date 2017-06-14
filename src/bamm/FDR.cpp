@@ -2,16 +2,17 @@
 
 #include <float.h>		// -FLT_MAX
 
-FDR::FDR( Motif* motif ){
+FDR::FDR( Motif* motif, int mFold, int cvFold ){
 
 	motif_ = motif;
+	mFold_ = mFold;
+	cvFold_ = cvFold;
 
 	for( int k = 0; k < Global::Yk; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 
 	occ_frac_ = 0.0f;
-
 	occ_mult_ = 0.0f;
 
 }
@@ -29,12 +30,7 @@ void FDR::evaluateMotif( int n ){
 	std::vector<float> zoops_scores;
 	std::vector<std::vector<float>> scores;
 
-	int num = Global::posSequenceSet->getN();
-	if( num < 5000 ){
-		Global::mFold = 50000 / num;
-	}
-
-	for( int fold = 0; fold < Global::cvFold; fold++ ){
+	for( int fold = 0; fold < cvFold_; fold++ ){
 
 		if( Global::verbose ){
 			fprintf(stderr, " ________________________________\n"
@@ -47,8 +43,8 @@ void FDR::evaluateMotif( int n ){
 
 		// assign training folds
 		std::vector<int> trainsetFolds;
-		trainsetFolds.resize( Global::cvFold - 1 );
-		for( int f = 0; f < Global::cvFold; f++ ){
+		trainsetFolds.resize( cvFold_ - 1 );
+		for( int f = 0; f < cvFold_; f++ ){
 			if( f != fold ){
 				trainsetFolds.push_back( f );
 			}
@@ -103,7 +99,7 @@ void FDR::evaluateMotif( int n ){
 			std::vector<std::unique_ptr<Sequence>> negSet;
 			// generate negative sequence set
 			SeqGenerator seqs( testSet );
-			negSet = seqs.sample_negative_seqset();
+			negSet = seqs.sample_negative_seqset( mFold_ );
 			// score negative sequence set
 			scores = scoreSequenceSet( motif, bgModel, negSet );
 
@@ -168,8 +164,8 @@ void FDR::calculatePR(){
 		negN = Global::negSequenceSet->getN();
 		M = ( float )negN / ( float )posN;
 	} else {
-		M = ( float )Global::mFold;
-		negN = posN * Global::mFold;
+		M = ( float )mFold_;
+		negN = posN * mFold_;
 	}
 
 	// for MOPS model:
@@ -308,7 +304,7 @@ void FDR::calculatePvalues(){
 	if( Global::negSeqGiven ){
 		M = Global::negSequenceSet->getN() / Global::posSequenceSet->getN();
 	} else {
-		M = Global::mFold;
+		M = mFold_;
 	}
 
 	// for MOPS model:
@@ -430,7 +426,7 @@ void FDR::write( int n ){
 						<< "FDR" << '\t'
 						<< "Recall" << '\t'
 						<< "p-value" << '\t'
-						<< Global::mFold << std::endl;
+						<< mFold_ << std::endl;
 
 			for( i = 0; i < ZOOPS_FDR_.size(); i++ ){
 				ofile_zoops << ZOOPS_TP_[i]  << '\t'
@@ -503,7 +499,7 @@ void FDR::write( int n ){
 		if( Global::negSeqGiven ){
 			M = Global::negSequenceSet->getN() / Global::posSequenceSet->getN();
 		} else {
-			M = Global::mFold;
+			M = mFold_;
 		}
 
 		if( Global::zoops ){
