@@ -85,7 +85,7 @@ bool				Global::saveBaMMs = true;
 bool				Global::savePRs = true;					// write the precision, recall, TP and FP
 bool				Global::savePvalues = false;			// write p-values for each log odds score from sequence set
 bool				Global::saveLogOdds = false;			// write the log odds of positive and negative sets to disk
-bool				Global::saveInitialModel = false;		// write out the initial model to disk
+bool				Global::saveInitialBaMMs = false;		// write out the initial model to disk
 bool				Global::saveBgModel = false;			// write out the background model to disk
 bool                Global::scoreSeqset = false;            // write logOdds Scores of positive sequence set to disk
 int					Global::Yk = 10;						// the counts of numbers in Y_ array
@@ -182,7 +182,6 @@ int Global::readArguments( int nargs, char* args[] ){
 		exit( -1 );
 	}
 
-	opt >> GetOpt::OptionPresent( "saveInitialModel", saveInitialModel );
 	opt >> GetOpt::Option( "num", num );
 	opt >> GetOpt::OptionPresent( "mops", mops );
 //	opt >> GetOpt::OptionPresent( "zoops", zoops );
@@ -233,7 +232,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	}
 
 	// background model options
-	if( opt >> GetOpt::Option( "bgModel", bgModelFilename ) ){
+	if( opt >> GetOpt::Option( "bgModelFile", bgModelFilename ) ){
 		bgModelGiven = true;
 	}
 	// read in background sequence file
@@ -300,7 +299,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	if( opt >> GetOpt::OptionPresent( "FDR", FDR ) ){
 		opt >> GetOpt::Option( 'm', "mFold", mFold  );
 		opt >> GetOpt::Option( 'n', "cvFold", cvFold );
-		opt >> GetOpt::Option( 's', "samplingOrder", sOrder );
+		opt >> GetOpt::Option( 's', "sOrder", sOrder );
 	}
 	// scoring option
 	opt >> GetOpt::Option( "scoreCutoff", scoreCutoff );
@@ -310,6 +309,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "verbose", verbose );
 	opt >> GetOpt::OptionPresent( "debug", debugMode );
 	opt >> GetOpt::OptionPresent( "saveBaMMs", saveBaMMs );
+	opt >> GetOpt::OptionPresent( "saveInitialBaMMs", saveInitialBaMMs );
 //	opt >> GetOpt::OptionPresent( "savePRs", savePRs );
 	opt >> GetOpt::OptionPresent( "savePvalues", savePvalues );
 	opt >> GetOpt::OptionPresent( "saveLogOdds", saveLogOdds );
@@ -337,71 +337,71 @@ void Global::printHelp(){
 	printf("\n OPTIONS: \n");
 	printf("\n		Options for reading in sequence file: \n");
 	printf("\n			--alphabet <STRING> \n"
-			"				STANDARD.		For alphabet type ACGT; \n"
+			"				STANDARD.		For alphabet type ACGT, default setting; \n"
 			"				METHYLC. 		For alphabet type ACGTM; \n"
 			"				HYDROXYMETHYLC.	For alphabet type ACGTH; \n"
 			"				EXTENDED.		For alphabet type ACGTMH. \n\n");
 	printf("\n			--ss \n"
-			"				only search motif on single strand sequences \n\n");
+			"				Search motif only on single strand strands (positive sequences). \n"
+			"				This option is not recommended for analyzing ChIP-seq data. \n"
+			"				By default, BaMM searches motifs on both strands. \n\n");
 	printf("\n			--negSeqFile \n"
-			"				negative sequence file. \n\n");
+			"				FASTA file with negative/background sequences used to learn the\n"
+			"				(homogeneous) background BaMM. If not specified, the background BaMM\n"
+			"				is learned from the positive sequences. \n\n");
 	printf("\n		Options for HT-SELEX data: \n");
 	printf("\n			--intensityFile	<STRING> \n"
-			"				intensity file name. \n\n");
-	printf("\n		Options for initial model: \n");
+			"				Intensity file name. (Not implemented yet.) \n\n");
+	printf("\n		Options for initialize BaMM(s) from file: \n");
 	printf("\n 			--BaMMpatternFile <STRING> \n"
-			"				file that contains patterns.\n\n");
+			"				File with IUPAC patterns.(Not implemented yet.) \n\n");
 	printf("\n 			--bindingSiteFile <STRING> \n"
-			"				file that contains binding sites.\n\n");
+			"				File with binding sites of equal length (one per line).\n\n");
 	printf("\n 			--PWMFile <STRING> \n"
-			"				file that contains PWM data.\n");
+			"				File that contains position weight matrices (PWMs).\n");
 	printf("\n 			--BaMMFile <STRING> \n"
-			"				file that contains BaMM data.\n\n");
-	printf("\n 			--saveInitialModel \n"
-			"				save initial model.\n\n");
+			"				File that contains a model in bamm file format.\n\n");
 	printf("\n 			--num <INTEGER> \n"
-			"				number of models to be learned by BaMM. \n"
+			"				Number of models to be learned by BaMM!motif, specific for PWMs. \n"
 			"				By default, all the motifs will be optimized.\n\n");
 	printf("\n 			--mops \n"
-			"				learn more-than-one-motif-per-sequence (MOPS) model.\n"
-			"				By default, it is set default.\n\n");
+			"				Learn more-than-one-motif-per-sequence (MOPS) model.\n"
+			"				By default, it is set as false.\n\n");
 	printf("\n 			--zoops \n"
-			"				learn zero-or-one-motif-per-sequence (ZOOPS) model.\n"
-			"				By default, it is set true.\n\n");
-	printf("\n 		Options for inhomogeneous BaMM: \n");
+			"				Learn zero-or-one-motif-per-sequence (ZOOPS) model.\n"
+			"				By default, it is set as true.\n\n");
+	printf("\n 		Options for the (inhomogeneous) motif BaMM: \n");
 	printf("\n 			-k, --order <INTEGER> \n"
-			"				model Order. The default is 2. \n\n");
+			"				Model Order. The default is 2. \n\n");
 	printf("\n 			-a, --alpha <FLOAT> [<FLOAT>...] \n"
 			"				Order-specific prior strength. The default is 1.0 (for k = 0) and\n"
 			"				beta x gamma^k (for k > 0). The options -b and -r are ignored.\n\n");
 	printf("\n 			-b, --beta <FLOAT> \n"
-			"				parameter for calculating alphas: beta x gamma^k (for k > 0). \n"
-			"				The default is 20 (for k > 0) \n");
+			"				For calculating alphas: beta x gamma^k (for k > 0). \n"
+			"				The default is 7.0 (for k > 0) \n");
 	printf("\n 			-r, --gamma <FLOAT> \n"
-			"				parameter for calculating alphas: beta x gamma^k (for k > 0). \n"
-			"				The default is 3 (for k > 0) \n");
+			"				For calculating alphas: beta x gamma^k (for k > 0). \n"
+			"				The default is 3.0 (for k > 0) \n");
 	printf("\n 			--extend <INTEGER>{1, 2} \n"
 			"				Extend BaMMs by adding uniformly initialized positions to the left\n"
 			"				and/or right of initial BaMMs. e.g. invoking with --extend 0 2 adds\n"
 			"				two positions to the right of initial BaMMs. Invoking with --extend 2\n"
 			"				adds two positions to both sides of initial BaMMs. By default, BaMMs\n"
 			"				are not being extended.\n\n");
-	printf("\n 		Options for homogeneous (background) BaMM: \n");
+	printf("\n 		Options for the (homogeneous) background BaMM: \n");
 	printf("\n 			-K, --Order <INTEGER> \n"
 			"				Order. The default is 2.\n"
 			"				Order of background model should not exceed order of motif model.\n\n");
 	printf("\n 			-A, --Alpha <FLOAT> \n"
 			"				Prior strength. The default value is 10.0.\n\n");
-	printf("\n 			--bgModel <STRING> \n"
-			"				Background model in bamm file format. Defaults to NULL.\n\n");
-	printf("\n 			--bgSeqFile <STRING> \n"
-			"				Sequence file which is used for generating background model. Defaults to NULL.\n\n");
+	printf("\n 			--bgModelFile <STRING> \n"
+			"				Read in background model from a bamm-formatted file. Defaults to NULL.\n\n");
 	printf("\n 		Options for EM: \n");
 	printf("\n 			--EM  \n"
-			"				trigger Expectation Maximization (EM) algorithm.\n\n");
+			"				Triggers Expectation Maximization (EM) algorithm. Defaults to false.\n\n");
 	printf("\n 			-q <FLOAT> \n"
 			"				Prior probability for a positive sequence to contain a motif.\n"
-			"				The default is 0.9.\n\n");
+			"				The default value is 0.9.\n\n");
 	printf("\n 			-e, --epsilon <FLOAT> \n"
 			"				The EM algorithm is deemed to be converged when the sum over the\n"
 			"				absolute differences in BaMM probabilities from successive EM rounds\n"
@@ -414,31 +414,35 @@ void Global::printHelp(){
 			"				disable q optimization. Defaults to false. *For developers.\n\n");
 	printf("\n 		Options for CGS: \n");
 	printf("\n 			--CGS\n"
-			"				trigger Collapsed Gibbs Sampling (CGS) algorithm.\n\n");
+			"				Triggers Collapsed Gibbs Sampling (CGS) algorithm. Defaults to false.\n\n");
 	printf("\n 			--maxCGSIterations <INTEGER> (*) \n"
 			"				Limit the number of CGS iterations. \n"
-			"				It should be larger than 5 and is defaulted to 100.\n\n");
+			"				It should be larger than 5 and defaults to 100.\n\n");
 	printf("\n 			--noAlphaSampling (*) \n"
 			"				disable alpha sampling. Defaults to false. *For developers.\n\n");
 	printf("\n 			--noQSampling (*) \n"
 			"				disable q sampling. Defaults to false. *For developers.\n\n");
 	printf("\n 		Options for FDR: \n");
 	printf("\n 			--FDR\n"
-			"				triggers False-Discovery-Rate (FDR) estimation. The default is false.\n\n");
+			"				Triggers False-Discovery-Rate (FDR) estimation. Defaults to false.\n\n");
 	printf("\n 			-m, --mFold <INTEGER>\n"
-			"				number of negative sequences as multiple of positive sequences.\n"
+			"				Number of negative sequences as multiple of positive sequences.\n"
 			"				The default is 10.\n\n");
 	printf("\n 			-n, --cvFold <INTEGER>\n"
-			"				number of cross-validation folds. The default is 5.\n\n"
-			"			-s, --samplingOrder <INTERGER>\n"
-			"				order of k-mer for sampling negative set. The default is 2.\n\n");
+			"				Fold number for cross-validation. \n"
+			"				The default is 5, which means the training set is 4-fold of the test set.\n\n"
+			"			-s, --sOrder <INTERGER>\n"
+			"				The order of k-mer for sampling pseudo/negative set. The default is 2.\n\n");
 	printf("\n 		Options for output:	\n");
 	printf("\n 			--verbose \n"
-			"				verbose printouts. Defaults to false.\n\n");
+			"				Verbose printouts. Defaults to false.\n\n");
 	printf("\n 			--saveBaMMs\n"
 			"				Write optimized BaMM(s) parameters to disk.\n\n");
+	printf("\n 			--saveInitialBaMMs \n"
+			"				Save the initial BaMM model(s).\n\n");
 	printf("\n 			--savePRs\n"
-			"				Write true positives(TP), false positives(FP), FDR and recall values to disk.\n\n");
+			"				Write true positives(TP), false positives(FP), FDR and recall values to disk.\n"
+			"				Defaults to true.\n\n");
 	printf("\n 			--savePvalues\n"
 			"				Write p-values for plotting area under the Sensitivity-FDR curve (AUSFC)\n"
 			"				to disk.\n\n");

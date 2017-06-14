@@ -210,7 +210,7 @@ void Motif::initFromBindingSites( char* filename ){
 	isInitialized_ = true;
 
 	// optional: save initial model
-	if( Global::saveInitialModel ){
+	if( Global::saveInitialBaMMs ){
 		write( -1 );
 	}
 }

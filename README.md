@@ -37,63 +37,51 @@ DESCRIPTION
 OPTIONS
 
 Sequence options
-
-      --negSequenceSet <FILEPATH>
+      --alphabet <STRING>
+          STANDARD.  	For alphabet type ACGT, default setting;
+          METHYLC.   	For alphabet type ACGTM;
+          HYDROXYMETHYLC.  For alphabet type ACGTH;
+          EXTENDED.  	For alphabet type ACGTMH.
+      
+      --ss
+          Search motif only on single strand strands (positive sequences).
+          This option is not recommended for analyzing ChIP-seq data.
+          By default, BaMM searches motifs on both strands.
+          
+      --negSeqSet <FILEPATH>
           FASTA file with negative/background sequences used to learn the
           (homogeneous) background BaMM. If not specified, the background BaMM
           is learned from the positive sequences.
 
-      --reverseComp
-          Search motifs on both strands (positive sequences and reverse
-          complements). This option is e.g. recommended when using sequences
-          derived from ChIP-seq experiments.
-
-  Options to initialize a single BaMM from file
+  Options to initialize BaMM(s) from file
 
       --bindingSiteFile <FILEPATH>
           File with binding sites of equal length (one per line).
+      
+      --PWMFile <STRING>
+          File that contains position weight matrices (PWMs).
+      
+      --BaMMFile <STRING>
+          File that contains a model in bamm file format.
 
-      --markovModelFile <FILEPATH>
-          File with BaMM probabilities as obtained from BaMM!motif (omit
-          filename extension).
+      --num <INTEGER>
+          Number of models to be learned by BaMM!motif, specific for PWMs.
 
-  Options to initialize one or more BaMMs from XXmotif PWMs
+  Options for the (inhomogeneous) motif BaMMs
 
-      --minPWMs <INTEGER>
-          Minimum number of PWMs. The options --maxPValue and --minOccurrence
-          are ignored. The default is 1.
-
-      --maxPWMs <INTEGER>
-          Maximum number of PWMs.
-
-      --maxPValue <FLOAT>
-          Maximum p-value of PWMs. This filter is not applied to the top
-          minimum number of PWMs (see --minPWMs). The default is 1.0.
-
-      --minOccurrence <FLOAT>
-          Minimum fraction of sequences that contain the motif. This filter is
-          not applied to the top minimum number of PWMs (see --minPWMs). The
-          default is 0.05.
-
-      --rankPWMs <INTEGER> [<INTEGER>...]
-          PWM ranks in XXmotif results. The former options to initialize BaMMs
-          from PWMs are ignored.
-
-  Options for (inhomogeneous) motif BaMMs
-
-      -k <INTEGER>
-          Order. The default is 2.
+      -k|--order <INTEGER>
+          Model order. The default is 2.
 
       -a|--alpha <FLOAT> [<FLOAT>...]
           Order-specific prior strength. The default is 1.0 (for k = 0) and
-          20 x 3^(k-1) (for k > 0). The options -b and -g are ignored.
+          beta x gamma^k (for k > 0). The options -b and -g are ignored.
 
       -b|--beta <FLOAT>
-          Calculate order-specific alphas according to beta x gamma^(k-1) (for
-          k > 0). The default is 20.0.
+          Calculate order-specific alphas according to beta x gamma^k (for
+          k > 0). The default is 7.0.
 
       -g|--gamma <FLOAT>
-          Calculate order-specific alphas according to beta x gamma^(k-1) (for
+          Calculate order-specific alphas according to beta x gamma^k (for
           k > 0). The default is 3.0.
 
       --extend <INTEGER>{1,2}
@@ -110,9 +98,15 @@ Sequence options
 
       -A|--Alpha <FLOAT>
           Prior strength. The default is 10.0.
+      
+      --bgModelFile <STRING>
+          Read in background model from a bamm-formatted file. 
 
   EM options
 
+      --EM
+          Triggers Expectation Maximization (EM) algorithm.
+      
       -q <FLOAT>
           Prior probability for a positive sequence to contain a motif. The
           default is 0.9.
@@ -122,89 +116,42 @@ Sequence options
           absolute differences in BaMM probabilities from successive EM rounds
           is smaller than epsilon. The default is 0.001.
 
-  XXmotif options
+  Gibbs sampling options:
 
-      --XX-ZOOPS
-          Use the zero-or-one-occurrence-per-sequence model (default).
+      --CGS
+          Triggers Collapsed Gibbs Sampling (CGS) algorithm.
+      
+      --maxCGSIterations <INTEGER> 
+          Limit the number of CGS iterations.
+          It should be larger than 5 and defaults to 100.
 
-      --XX-MOPS
-          Use the multiple-occurrence-per-sequence model.
-
-      --XX-OOPS
-          Use the one-occurrence-per-sequence model.
-
-      --XX-seeds ALL|FIVEMERS|PALINDROME|TANDEM|NOPALINDROME|NOTANDEM
-          Define the nature of seed patterns. The default is to start using ALL
-          seed pattern variants.
-
-      --XX-gaps 0|1|2|3
-          Maximum number of gaps used for seed patterns. The default is 0.
-
-      --XX-pseudoCounts <FLOAT>
-          Percentage of pseudocounts. The default is 10.0.
-
-      --XX-mergeMotifsThreshold LOW|MEDIUM|HIGH
-          Define the similarity threshold used to merge PWMs. The default is to
-          merge PWMs with LOW similarity in order to reduce runtime.
-
-      --XX-maxPositions <INTEGER>
-          Limit the number of motif positions to reduce runtime. The default is
-          17.
-
-      --XX-noLengthOptimPWMs
-          Omit the length optimization of PWMs.
-
-      --XX-K <INTEGER>
-          Order of the (homogeneous) background BaMM. The default is either 2
-          (when learned on positive sequences) or 8 (when learned on background
-          sequences).
-
-      --XX-A <FLOAT>
-          Prior strength of the (homogeneous) background BaMM. The default is
-          10.0.
-
-      --XX-jumpStartPatternStage <STRING>
-          Jump-start pattern stage using an IUPAC pattern string.
-
-      --XX-jumpStartPWMStage <FILEPATH>
-          Jump-start PWM stage reading in a PWM from file.
-
-      --XX-localization
-          Calculate p-values for positional clustering of motif occurrences in
-          positive sequences of equal length. Improves the sensitivity to find
-          weak but positioned motifs.
-
-      --XX-localizationRanking
-          Rank motifs according to localization statistics.
-
-      --XX-downstreamPositions <INTEGER>
-          Distance between the anchor position (e.g. the transcription start
-          site) and the last positive sequence nucleotide. Corrects motif
-          positions in result plots. The default is 0.
-
-      --XX-batch
-          Suppress progress bars.
-
-  Options to score sequences
-
-      --scorePosSequenceSet
-          Score positive (training) sequences with optimized BaMMs.
-
-      --scoreNegSequenceSet
-          Score background (training) sequences with optimized BaMMs.
-
-      --scoreTestSequenceSet <FILEPATH> [<FILEPATH>...]
-          Score test sequences with optimized BaMMs. Test sequences can be
-          provided in a single or multiple FASTA files.
+  Options for model evaluation:
+      
+      --FDR
+          Triggers False-Discovery-Rate (FDR) estimation.
+        
+      -m|--mFold <INTEGER>
+          Number of negative sequences as multiple of positive sequences.
+          The default is 10.
+      
+      -n, --cvFold <INTEGER>
+          Fold number for cross-validation. 
+          The default is 5, which means the training set is 4-fold of the test set.
+          
+      -s, --sOrder <INTERGER>
+          The order of k-mer for sampling pseudo/negative set. The default is 2.
 
   Output options
-
-      --saveInitBaMMs
-          Write initialized BaMM(s) to disk.
 
       --saveBaMMs
           Write optimized BaMM(s) to disk.
 
+      --saveInitBaMMs
+          Write initialized BaMM(s) to disk.
+      
+      --saveBgModel
+          Write background model to disk.
+          
       --verbose
           Verbose terminal printouts.
 
@@ -213,9 +160,9 @@ Sequence options
 
 ## BaMM flat file format
 
-BaMMs are written to flat file when invoking BaMM!motif with the output option `--saveInitBaMMs` and/or `--saveBaMMs`. In this case, BaMM!motif generates three files for each (inhomogeneous) BaMM &ndash; one containing the probabilities (filename extension: probs), one containing the conditional probabilities (filename extension: conds), and one containing the background frequencies of mononucleotides in the positive sequences (file extension: freqs). The format is the same for the first two. While blank lines separate BaMM positions, lines 1 to *k*+1 of each BaMM position contain the (conditional) probabilities for order 0 to order *k*. For instance, the format for a BaMM of order 2 and length *W* is as follows:
+BaMMs are written to flat file when invoking BaMM!motif with the output option `--saveInitBaMMs` and/or `--saveBaMMs`. In this case, BaMM!motif generates two files for each inhomogeneous BaMM &ndash; one containing the probabilities (filename extension: `ihbp`) and one containing the conditional probabilities (filename extension: `.ihbcp`). The format is the same for these two files. While blank lines separate BaMM positions, lines 1 to *k*+1 of each BaMM position contain the (conditional) probabilities for order 0 to order *k*. For instance, the format for a BaMM of order 2 and length *W* is as follows:
 
-Filename extension: probs
+Filename extension: .ihbp
 
 P<sub>1</sub>(A) P<sub>1</sub>(C) P<sub>1</sub>(G) P<sub>1</sub>(T)<br>
 P<sub>1</sub>(AA) P<sub>1</sub>(AC) P<sub>1</sub>(AG) P<sub>1</sub>(AT) P<sub>1</sub>(CA) P<sub>1</sub>(CC) P<sub>1</sub>(CG) ... P<sub>1</sub>(TT)<br>
@@ -230,7 +177,7 @@ P<sub>W</sub>(A) P<sub>W</sub>(C) P<sub>W</sub>(G) P<sub>W</sub>(T)<br>
 P<sub>W</sub>(AA) P<sub>W</sub>(AC) P<sub>W</sub>(AG) P<sub>W</sub>(AT) P<sub>W</sub>(CA) P<sub>W</sub>(CC) P<sub>W</sub>CG) ... P<sub>W</sub>(TT)<br>
 P<sub>W</sub>(AAA) P<sub>W</sub>(AAC) P<sub>W</sub>(AAG) P<sub>W</sub>(AAT) P<sub>W</sub>(ACA) P<sub>W</sub>(ACC) P<sub>W</sub>(ACG) ... P<sub>W</sub>(TTT)<br>
 
-Filename extension: conds
+Filename extension: .ihbcp
 
 P<sub>1</sub>(A) P<sub>1</sub>(C) P<sub>1</sub>(G) P<sub>1</sub>(T)<br>
 P<sub>1</sub>(A|A) P<sub>1</sub>(C|A) P<sub>1</sub>(G|A) P<sub>1</sub>(T|A) P<sub>1</sub>(A|C) P<sub>1</sub>(C|C) P<sub>1</sub>(G|C) ... P<sub>1</sub>(T|T)<br>
@@ -245,31 +192,21 @@ P<sub>W</sub>(A) P<sub>W</sub>(C) P<sub>W</sub>(G) P<sub>W</sub>(T)<br>
 P<sub>W</sub>(A|A) P<sub>W</sub>(C|A) P<sub>W</sub>(G|A) P<sub>W</sub>(T|A) P<sub>W</sub>(A|C) P<sub>W</sub>(C|C) P<sub>W</sub>(G|C) ... P<sub>W</sub>(T|T)<br>
 P<sub>W</sub>(A|AA) P<sub>W</sub>(C|AA) P<sub>W</sub>(G|AA) P<sub>W</sub>(T|AA) P<sub>W</sub>(A|AC) P<sub>W</sub>(C|AC) P<sub>W</sub>(G|AC) ... P<sub>W</sub>(T|TT)<br>
 
-Filename extension: freqs
 
-P(A) P(C) P(G) P(T)<br>
+In addition, BaMM!motif generates two files for the homogeneous background BaMM &ndash; one containing the probabilities (filename extension: `.hbp`) and the other containing the conditional probabilities (filename extension: `.hbcp`). For instance, the format for a background BaMM of order 2 is as follows:
 
-Note that contexts are restricted to the binding site. For instance, P<sub>1</sub>(G|AC) and P<sub>2</sub>(G|AC) are defined as P<sub>1</sub>(G) and P<sub>2</sub>(G|C), respectively.
-
-In addition, BaMM!motif generates three files for the (homogeneous) background BaMM &ndash; one containing the probabilities (filename extension: probsBg), one containing the conditional probabilities (filename extension: condsBg), and one containing the background frequencies of mononucleotides (file extension: freqs). For instance, the format for a background BaMM of order 2 is as follows:
-
-Filename extension: probsBg
+Filename extension: .hbp
 
 P(A) P(C) P(G) P(T)<br>
 P(AA) P(AC) P(AG) P(AT) P(CA) P(CC) P(CG) ... P(TT)<br>
 P(AAA) P(AAC) P(AAG) P(AAT) P(ACA) P(ACC) P(ACG) ... P(TTT)<br>
 
-Filename extension: condsBg
+Filename extension: .hbcp
 
 P(A) P(C) P(G) P(T)<br>
 P(A|A) P(C|A) P(G|A) P(T|A) P(A|C) P(C|C) P(G|C) ... P(T|T)<br>
 P(A|AA) P(C|AA) P(G|AA) P(T|AA) P(A|AC) P(C|AC) P(G|AC) ... P(T|TT)<br>
 
-Filename extension: freqsBg
-
-P(A) P(C) P(G) P(T)<br>
-
-Note that the background frequencies of mononucleotides are identical to the probabilities of mononucleotides in the other two files.
 
 ## How to plot BaMM logos?
 

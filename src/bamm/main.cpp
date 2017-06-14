@@ -13,10 +13,11 @@
 
 int main( int nargs, char* args[] ){
 
+	clock_t t0 = clock();
+
 	// seed random number
 	srand( 42 );
-
-	clock_t t0 = clock();
+	Global::rngx.seed( 42 );
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "======================================\n" );
@@ -29,13 +30,12 @@ int main( int nargs, char* args[] ){
 	// initialization
 	Global::init( nargs, args );
 
-	Global::rngx.seed( 42 );
-
-	fprintf( stderr, "\n" );
-	fprintf( stderr, "************************\n" );
-	fprintf( stderr, "*   Background Model   *\n" );
-	fprintf( stderr, "************************\n" );
-
+	if( Global::verbose ){
+		fprintf( stderr, "\n" );
+		fprintf( stderr, "************************\n" );
+		fprintf( stderr, "*   Background Model   *\n" );
+		fprintf( stderr, "************************\n" );
+	}
 	BackgroundModel* bgModel;
 	if( !Global::bgModelGiven ){
 		bgModel = new BackgroundModel( *Global::bgSequenceSet,
@@ -50,11 +50,12 @@ int main( int nargs, char* args[] ){
 		bgModel->write( Global::outputDirectory );
 	}
 
-	fprintf( stderr, "\n" );
-	fprintf( stderr, "*********************\n" );
-	fprintf( stderr, "*   Initial Motif   *\n" );
-	fprintf( stderr, "*********************\n" );
-
+	if( Global::verbose ){
+		fprintf( stderr, "\n" );
+		fprintf( stderr, "*********************\n" );
+		fprintf( stderr, "*   Initial Motif   *\n" );
+		fprintf( stderr, "*********************\n" );
+	}
 	MotifSet motifs;
 
 	int motifNum = ( Global::num > motifs.getN() ) ? motifs.getN() : Global::num;
@@ -118,10 +119,12 @@ int main( int nargs, char* args[] ){
 
 	// evaluate motifs
 	if( Global::FDR ){
-		fprintf( stderr, "\n" );
-		fprintf( stderr, "***********\n" );
-		fprintf( stderr, "*   FDR   *\n" );
-		fprintf( stderr, "***********\n" );
+		if( Global::verbose ){
+			fprintf( stderr, "\n" );
+			fprintf( stderr, "***********\n" );
+			fprintf( stderr, "*   FDR   *\n" );
+			fprintf( stderr, "***********\n" );
+		}
 		for( int n = 0; n < motifNum; n++ ){
 			Motif* motif = new Motif( *motifs.getMotifs()[n] );
 			FDR fdr( motif, Global::mFold, Global::cvFold );

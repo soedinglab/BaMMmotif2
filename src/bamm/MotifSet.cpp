@@ -148,6 +148,7 @@ MotifSet::MotifSet(){
 				}
 			}
 		}
+
 	} else if( Global::BaMMFilename != NULL ){
 
 		// each BaMM file contains one optimized motif model

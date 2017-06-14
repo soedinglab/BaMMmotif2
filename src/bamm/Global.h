@@ -112,7 +112,7 @@ public:
 	static bool			savePRs;							// write the precision, recall, TP and FP
 	static bool			savePvalues;						// write p-values for each log odds score from sequence set
 	static bool			saveLogOdds;						// write the log odds of positive and negative sets to disk
-	static bool			saveInitialModel;					// write out the initial model to disk
+	static bool			saveInitialBaMMs;					// write out the initial model to disk
 	static bool 		saveBgModel;						// write out background model to disk
 	static bool         scoreSeqset;                        // write logOdds Scores of positive sequence set to disk
 	static int			Yk;									// the counts of numbers in Y_ array

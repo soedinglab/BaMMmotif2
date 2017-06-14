@@ -120,11 +120,12 @@ ModelLearning::~ModelLearning(){
 }
 
 int ModelLearning::EM(){
-
-	fprintf( stderr," ______\n"
-					"|      |\n"
-					"|  EM  |\n"
-					"|______|\n\n" );
+	if( Global::verbose ){
+		fprintf( stderr," ______\n"
+						"|      |\n"
+						"|  EM  |\n"
+						"|______|\n\n" );
+	}
 
 	clock_t t0 = clock();
 	bool 	iterate = true;									// flag for iterating before convergence
@@ -322,11 +323,12 @@ void ModelLearning::optimize_q(){
 
 void ModelLearning::GibbsSampling(){
 
-	fprintf(stderr, " ___________________________\n"
-					"|                           |\n"
-					"|  Collapsed Gibbs sampler  |\n"
-					"|___________________________|\n\n" );
-
+	if( Global::verbose ){
+		fprintf(stderr, " ___________________________\n"
+						"|                           |\n"
+						"|  Collapsed Gibbs sampler  |\n"
+						"|___________________________|\n\n" );
+	}
 	clock_t t0 = clock();
 	int iteration = 0;
 
