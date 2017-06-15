@@ -385,9 +385,9 @@ inline float digammaf( float x ){
 				.41676109e-15f, -.111670651e-15f } ;
 
 
-		register float Tn_1 = 1.0f ;	/* T_{n-1}(x), started at n=1 */
-		register float Tn = x-2.0f ;	/* T_{n}(x) , started at n=1 */
-		register float result = Kncoe[0] + Kncoe[1]*Tn ;
+		float Tn_1 = 1.0f ;	/* T_{n-1}(x), started at n=1 */
+		float Tn = x-2.0f ;	/* T_{n}(x) , started at n=1 */
+		float result = Kncoe[0] + Kncoe[1]*Tn ;
 
 		x -= 2.0f;
 
@@ -467,9 +467,9 @@ inline double digamma(double x)
 				.58047634271339391495076374966835526e-14, -.15553767189204733561108869588173845e-14,
 				.41676108598040807753707828039353330e-15, -.11167065064221317094734023242188463e-15 } ;
 
-		register double Tn_1 = 1.0 ;	/* T_{n-1}(x), started at n=1 */
-		register double Tn = x-2.0 ;	/* T_{n}(x) , started at n=1 */
-		register double resul = Kncoe[0] + Kncoe[1]*Tn ;
+		double Tn_1 = 1.0 ;	/* T_{n-1}(x), started at n=1 */
+		double Tn = x-2.0 ;	/* T_{n}(x) , started at n=1 */
+		double resul = Kncoe[0] + Kncoe[1]*Tn ;
 
 		x -= 2.0 ;
 
