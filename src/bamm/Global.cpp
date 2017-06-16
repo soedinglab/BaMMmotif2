@@ -240,7 +240,7 @@ int Global::readArguments( int nargs, char* args[] ){
 		bgSeqGiven = true;
 		opt >> GetOpt::Option( "bgSeqFile", bgSequenceFilename );
 	} else {
-	    bgSequenceFilename = negSequenceFilename;
+	    bgSequenceFilename = posSequenceFilename;
 	}
 
 	opt >> GetOpt::Option( 'K', "Order", bgModelOrder );
@@ -424,7 +424,7 @@ void Global::printHelp(){
 			"				disable q sampling. Defaults to false. *For developers.\n\n");
 	printf("\n 		Options for FDR: \n");
 	printf("\n 			--FDR\n"
-			"				Triggers False-Discovery-Rate (FDR) estimation. Defaults to false.\n\n");
+			"				Triggers False-Discovery-Rate (FDR) estimation. \n\n");
 	printf("\n 			-m, --mFold <INTEGER>\n"
 			"				Number of negative sequences as multiple of positive sequences.\n"
 			"				The default is 10.\n\n");
@@ -433,9 +433,12 @@ void Global::printHelp(){
 			"				The default is 5, which means the training set is 4-fold of the test set.\n\n"
 			"			-s, --sOrder <INTERGER>\n"
 			"				The order of k-mer for sampling pseudo/negative set. The default is 2.\n\n");
+	printf("\n 		Options for scoring sequence set:\n");
+	printf("\n 			--scoreSeqset \n"
+			"				Score positive sequence set. \n\n");
 	printf("\n 		Options for output:	\n");
 	printf("\n 			--verbose \n"
-			"				Verbose printouts. Defaults to false.\n\n");
+			"				Verbose printouts.\n\n");
 	printf("\n 			--saveBaMMs\n"
 			"				Write optimized BaMM(s) parameters to disk.\n\n");
 	printf("\n 			--saveInitialBaMMs \n"

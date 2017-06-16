@@ -129,8 +129,8 @@ void FDR::evaluateMotif( int n ){
 			}
 		}
 
-		delete motif;
-		delete bgModel;
+		if( motif ) 	delete motif;
+		if( bgModel ) 	delete bgModel;
 	}
 
 	if( Global::savePRs ){
@@ -159,7 +159,7 @@ void FDR::calculatePR(){
 
 	float M;
 	int posN = Global::posSequenceSet->getN();
-	int negN;
+	int negN = Global::negSequenceSet->getN();
 	if( Global::negSeqGiven ){
 		negN = Global::negSequenceSet->getN();
 		M = ( float )negN / ( float )posN;

@@ -98,7 +98,7 @@ Motif::~Motif(){
 	free( n_ );
 	free( p_ );
 
-	for( int y = 0; y < Y_[Global::modelOrder+1]; y++ ){
+	for( int y = -1; y < Y_[Global::modelOrder+1]; y++ ){
 		free( s_[y] );
 	}
 	free( s_-1 );

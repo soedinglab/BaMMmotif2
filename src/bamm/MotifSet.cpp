@@ -18,10 +18,11 @@ MotifSet::MotifSet(){
 		} else {
 			while( getline( file, pattern ) ){
 
-				length = ( int ) pattern.length();			// get length of the first sequence
+				length = ( int )pattern.length();			// get length of the first sequence
 
 				length += Global::addColumns.at( 0 ) + Global::addColumns.at( 1 );
 
+				// todo: better to use smart pointer to store motifs.
 				Motif* motif = new Motif( length );
 
 				motif->initFromBaMMPattern( pattern );
@@ -43,7 +44,7 @@ MotifSet::MotifSet(){
 			exit( -1 );
 		} else {
 			getline( file, bindingSite );					// get length of the first sequence
-			length = ( int ) bindingSite.length();
+			length = ( int )bindingSite.length();
 		}
 
 		length += Global::addColumns.at( 0 ) + Global::addColumns.at( 1 );
@@ -138,7 +139,7 @@ MotifSet::MotifSet(){
 					motifs_.push_back( motif );
 
 					// count the number of motifs
-					N_ ++;
+					N_++;
 
 					// free memory for PWM
 					for( y = 0; y < asize; y++ ){
@@ -216,16 +217,18 @@ int MotifSet::getN(){
 }
 
 void MotifSet::print(){
+
 	fprintf(stderr, " ____________________________\n"
-			"|                            |\n"
-			"| PROBABILITIES for MotifSet |\n"
-			"|____________________________|\n\n" );
+					"|                            |\n"
+					"| PROBABILITIES for MotifSet |\n"
+					"|____________________________|\n\n" );
+
 
 	for( int i = 0; i < N_; i++ ){
 		fprintf(stderr, " ________________________________________\n"
-				"|                                        |\n"
-				"| INITIALIZED PROBABILITIES for Motif %d  |\n"
-				"|________________________________________|\n\n", i+1 );
+						"|                                        |\n"
+						"| INITIALIZED PROBABILITIES for Motif %d  |\n"
+						"|________________________________________|\n\n", i+1 );
 		motifs_[i]->print();
 	}
 }

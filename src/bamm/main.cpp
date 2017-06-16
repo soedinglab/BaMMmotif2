@@ -107,7 +107,7 @@ int main( int nargs, char* args[] ){
 		// write out the learned model
 		motif->write( n );
 
-		if ( Global::scoreSeqset){
+		if( Global::scoreSeqset ){
 			// score the model on sequence set
 			ScoreSeqSet seqset( motif, bgModel, Global::posSequenceSet->getSequences() );
 			seqset.score();
@@ -138,11 +138,20 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "******************\n" );
 	fprintf( stderr, "*   Statistics   *\n" );
 	fprintf( stderr, "******************\n" );
-	std::cout << "Given alphabet type is " << Alphabet::getAlphabet();
-	std::cout << "\nGiven initial model is " << Global::initialModelBasename;
+	std::cout << "Alphabet type is " << Alphabet::getAlphabet();
+	std::cout << "\nGiven initial model is " << Global::initialModelBasename
+			<< ", BaMM order: " << Global::modelOrder
+			<< ", background model order: " << Global::bgModelOrder;
+	std::cout << "\nBaMM is learned from ";
+	if( Global::ss ){
+		std::cout << "single-stranded sequences.";
+	} else {
+		std::cout << "double-stranded sequences.";
+	}
+
 	// for positive sequence set
 	std::cout << "\nGiven positive sequence set is " << Global::posSequenceBasename
-			<< "\n	"<< Global::posSequenceSet->getN() << " sequences. max.length: " <<
+			<< "\n	"<< Global::posSequenceSet->getN() << " sequences, max.length: " <<
 			Global::posSequenceSet->getMaxL() << ", min.length: " <<
 			Global::posSequenceSet->getMinL() << "\n	base frequencies:";
 	for( int i = 0; i < Alphabet::getSize(); i++ ){
@@ -153,7 +162,7 @@ int main( int nargs, char* args[] ){
 	// for negative sequence set
 	if( Global::negSeqGiven ){
 		std::cout << "\nGiven negative sequence set is " << Global::negSequenceBasename
-				<< "\n	"<< Global::negSequenceSet->getN() << " sequences. max.length: "
+				<< "\n	"<< Global::negSequenceSet->getN() << " sequences, max.length: "
 				<< Global::negSequenceSet->getMaxL() << ", min.length: " <<
 				Global::negSequenceSet->getMinL() << "\n	base frequencies:";
 		for( int i = 0; i < Alphabet::getSize(); i++ )
@@ -162,7 +171,7 @@ int main( int nargs, char* args[] ){
 	}
 
 	if( Global::FDR ){
-		std::cout << "\nGiven folds for FDR estimation: " << Global::cvFold;
+		std::cout << "\nFolds for cross-validation (FDR estimation): " << Global::cvFold;
 	}
 
 	fprintf( stdout, "\n-------------- Runtime: %.2f seconds (%0.2f minutes) --------------\n",
