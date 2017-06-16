@@ -23,7 +23,7 @@ class FDR {
 
 public:
 
-	FDR( Motif* motif, int mFold, int cvFold );
+	FDR( Motif* motif, int cvFold );
 	~FDR();
 
 	void 	evaluateMotif( int n );
@@ -36,7 +36,7 @@ public:
 private:
 
 	Motif*				motif_;				// initial motif
-	int					mFold_;				// the count of negative sequences is m-fold of the count of positive sequences
+	float				mFold_;				// the count of negative sequences is m-fold of the count of positive sequences
 	int					cvFold_;			// for cross-validation, the train set is (cv-1)-fold of the testing set
 
 	std::vector<float> 	posScoreAll_;		// store log odds scores over all positions on the sequences

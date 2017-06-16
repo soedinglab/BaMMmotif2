@@ -127,7 +127,7 @@ int main( int nargs, char* args[] ){
 		}
 		for( int n = 0; n < motifNum; n++ ){
 			Motif* motif = new Motif( *motifs.getMotifs()[n] );
-			FDR fdr( motif, Global::mFold, Global::cvFold );
+			FDR fdr( motif, Global::cvFold );
 			fdr.evaluateMotif( n );
 			fdr.write( n );
 			delete motif;

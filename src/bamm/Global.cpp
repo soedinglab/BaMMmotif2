@@ -101,7 +101,7 @@ void Global::init( int nargs, char* args[] ){
 	// read in positive, negative and background sequence set
 	posSequenceSet = new SequenceSet( posSequenceFilename, ss );
 	negSequenceSet = new SequenceSet( negSequenceFilename, ss );
-	bgSequenceSet = new SequenceSet( bgSequenceFilename );
+	bgSequenceSet = new SequenceSet( bgSequenceFilename, ss );
 
 	// generate fold indices for positive and negative sequence set
 	Global::posFoldIndices = generateFoldIndices( posSequenceSet->getN(), cvFold );
