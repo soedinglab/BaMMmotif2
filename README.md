@@ -37,6 +37,7 @@ DESCRIPTION
 OPTIONS
 
 Sequence options
+
       --alphabet <STRING>
           STANDARD.  	For alphabet type ACGT, default setting;
           METHYLC.   	For alphabet type ACGTM;
