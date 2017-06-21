@@ -17,7 +17,7 @@
 #include <cassert>
 #include <stdlib.h>
 
-ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int> folds ){
+ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<size_t> folds ){
 
 	motif_ = motif;
 	bg_ = bg;
@@ -116,7 +116,6 @@ ModelLearning::~ModelLearning(){
 	free( alpha_ );
 	free( m1_t_ );
 	free( m2_t_ );
-
 }
 
 int ModelLearning::EM(){

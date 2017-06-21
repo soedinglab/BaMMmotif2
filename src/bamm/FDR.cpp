@@ -43,9 +43,9 @@ void FDR::evaluateMotif( int n ){
 		Motif* motif = new Motif( *motif_ );			// deep copy the initial motif
 
 		// assign training folds
-		std::vector<int> trainsetFolds;
+		std::vector<size_t> trainsetFolds;
 		trainsetFolds.resize( cvFold_ - 1 );
-		for( int f = 0; f < cvFold_; f++ ){
+		for( size_t f = 0; f < cvFold_; f++ ){
 			if( f != fold ){
 				trainsetFolds.push_back( f );
 			}
@@ -66,6 +66,7 @@ void FDR::evaluateMotif( int n ){
 											Global::interpolateBG,
 											Global::negFoldIndices,
 											trainsetFolds );
+
 		} else {
 			bgModel = new BackgroundModel( Global::bgModelFilename );
 		}
@@ -414,19 +415,20 @@ void FDR::write( int n ){
 			std::string opath_zoops_stats = opath + ".zoops.stats";
 			std::ofstream ofile_zoops( opath_zoops_stats );
 			// the headers:
-			ofile_zoops << "TP" << '\t'
-						<< "FP" << '\t'
-						<< "FDR" << '\t'
-						<< "Recall" << '\t'
-						<< "p-value" << '\t'
-						<< mFold_ << std::endl;
+			ofile_zoops << "TP" 	<< '\t'
+						<< "FP" 	<< '\t'
+						<< "FDR" 	<< '\t'
+						<< "Recall"	<< '\t'
+						<< "p-value"<< '\t'
+						<< mFold_ 	<< std::endl;
 
 			for( i = 0; i < ZOOPS_FDR_.size(); i++ ){
 				ofile_zoops << ZOOPS_TP_[i]  << '\t'
 							<< ZOOPS_FP_[i]  << '\t'
 							<< ZOOPS_FDR_[i] << '\t'
 							<< ZOOPS_Rec_[i] << '\t'
-							<< PN_Pvalue_[i] << std::endl;
+							<< PN_Pvalue_[i] << '\t'
+							<< std::endl;
 			}
 		}
 
@@ -434,10 +436,10 @@ void FDR::write( int n ){
 		if( Global::mops ){
 			std::string opath_mops_stats = opath + ".mops.stats";
 			std::ofstream ofile_mops( opath_mops_stats );
-			ofile_mops  << "TP" << '\t'
-						<< "FP" << '\t'
-						<< "FDR" << '\t'
-						<< "Recall" << std::endl;
+			ofile_mops  << "TP" 	<< '\t'
+						<< "FP" 	<< '\t'
+						<< "FDR" 	<< '\t'
+						<< "Recall"	<< std::endl;
 
 			for( i = 0; i < MOPS_FDR_.size(); i++ ){
 				ofile_mops  << MOPS_TP_[i]  << '\t'

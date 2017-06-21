@@ -15,7 +15,7 @@ class ModelLearning {
 
 public:
 
-	ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<int> folds = std::vector<int>() );
+	ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<size_t> folds = std::vector<size_t>() );
 	~ModelLearning();
 
 	int						EM();
@@ -31,7 +31,7 @@ private:
 	Motif* 					motif_;				// motif to optimize within the EM
 	BackgroundModel*		bg_;				// background model
 
-	std::vector<int>		folds_;				// folds to iterate over, for cross-validation
+	std::vector<size_t>		folds_;				// folds to iterate over, for cross-validation
 
 	float** 				r_;		        	// responsibilities at position i in sequence n
 	float*** 				n_;	            	// fractional counts n for (k+1)-mers y at motif position j

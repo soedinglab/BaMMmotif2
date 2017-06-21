@@ -4,8 +4,8 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 		                          int order,
 		                          std::vector<float> alpha,
 		                          bool interpolate,
-		                          std::vector<std::vector<int>> foldIndices,
-		                          std::vector<int> folds ){
+		                          std::vector<std::vector<size_t>> foldIndices,
+		                          std::vector<size_t> folds ){
 
 	//name_.assign( baseName( sequenceSet.getSequenceFilepath().c_str() ) );
 	name_ = baseName( sequenceSet.getSequenceFilepath().c_str() );
@@ -20,7 +20,7 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 	}
 
 	K_ = order;
-	for( int k = 0; k < 11; k++ ){
+	for( size_t k = 0; k < 11; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 
@@ -32,8 +32,8 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 
 			folds.push_back( 0 );
 
-			foldIndices.push_back( std::vector<int>() );
-			for( int n = 0; n < sequenceSet.getN(); n++ ){
+			foldIndices.push_back( std::vector<size_t>() );
+			for( size_t n = 0; n < sequenceSet.getN(); n++ ){
 				foldIndices[0].push_back( n );
 			}
 		} else{
@@ -45,8 +45,8 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 		folds.clear();
 		folds.push_back( 0 );
 
-		foldIndices.push_back( std::vector<int>() );
-		for( int n = 0; n < sequenceSet.getN(); n++ ){
+		foldIndices.push_back( std::vector<size_t>() );
+		for( size_t n = 0; n < sequenceSet.getN(); n++ ){
 			foldIndices[0].push_back( n );
 		}
 	}

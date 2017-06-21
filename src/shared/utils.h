@@ -71,7 +71,7 @@ static std::string						baseName( const char* filePath );
 // calculate posterior probabilities from log likelihoods
 std::vector<double>						calculatePosteriorProbabilities( std::vector<double> lLikelihoods );
 static void								createDirectory( char* dir );
-static std::vector< std::vector<int> >	generateFoldIndices( unsigned int N, unsigned int folds );
+static std::vector<std::vector<size_t>>	generateFoldIndices( size_t N, size_t folds );
 // calculate the power for integer base
 static int								ipow( unsigned int base, int exp );
 
@@ -80,7 +80,7 @@ std::vector<size_t> sortIndices( const std::vector<T> &v ); // returns a permuta
 
 inline std::string baseName( const char* filePath ){
 
-	int i = 0, start = 0, end = 0;
+	size_t i = 0, start = 0, end = 0;
 
 	while( filePath[++i] != '\0' ){
 		if( filePath[i] == '.' ){
@@ -155,12 +155,12 @@ inline void createDirectory( char* dir ){
 	}
 }
 
-inline std::vector< std::vector<int> > generateFoldIndices( unsigned int N, unsigned int folds ){
+inline std::vector<std::vector<size_t>> generateFoldIndices( size_t N, size_t folds ){
 
-	std::vector< std::vector<int> > indices( folds );
+	std::vector<std::vector<size_t>> indices( folds );
 
-	for( unsigned int i = 0; i < N; i += folds ){
-		for( unsigned int j = 0; j < folds; j++ ){
+	for( size_t i = 0; i < N; i += folds ){
+		for( size_t j = 0; j < folds; j++ ){
 		    if( i+j < N ){
 				indices[j].push_back( i+j );
 		    }
@@ -385,9 +385,9 @@ inline float digammaf( float x ){
 				.41676109e-15f, -.111670651e-15f } ;
 
 
-		register float Tn_1 = 1.0f ;	/* T_{n-1}(x), started at n=1 */
-		register float Tn = x-2.0f ;	/* T_{n}(x) , started at n=1 */
-		register float result = Kncoe[0] + Kncoe[1]*Tn ;
+		float Tn_1 = 1.0f ;	/* T_{n-1}(x), started at n=1 */
+		float Tn = x-2.0f ;	/* T_{n}(x) , started at n=1 */
+		float result = Kncoe[0] + Kncoe[1]*Tn ;
 
 		x -= 2.0f;
 
@@ -467,9 +467,9 @@ inline double digamma(double x)
 				.58047634271339391495076374966835526e-14, -.15553767189204733561108869588173845e-14,
 				.41676108598040807753707828039353330e-15, -.11167065064221317094734023242188463e-15 } ;
 
-		register double Tn_1 = 1.0 ;	/* T_{n-1}(x), started at n=1 */
-		register double Tn = x-2.0 ;	/* T_{n}(x) , started at n=1 */
-		register double resul = Kncoe[0] + Kncoe[1]*Tn ;
+		double Tn_1 = 1.0 ;	/* T_{n-1}(x), started at n=1 */
+		double Tn = x-2.0 ;	/* T_{n}(x) , started at n=1 */
+		double resul = Kncoe[0] + Kncoe[1]*Tn ;
 
 		x -= 2.0 ;
 

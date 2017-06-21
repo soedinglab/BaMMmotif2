@@ -23,8 +23,8 @@ public:
 			         int order,
 			         std::vector<float> alpha,
 			         bool interpolate = true,
-			         std::vector<std::vector<int>> foldIndices = std::vector<std::vector<int>>(),
-			         std::vector<int> folds = std::vector<int>() );
+			         std::vector<std::vector<size_t>> foldIndices = std::vector<std::vector<size_t>>(),
+			         std::vector<size_t> folds = std::vector<size_t>() );
 
 	BackgroundModel( std::string filePath );
 

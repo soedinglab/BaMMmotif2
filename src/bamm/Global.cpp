@@ -7,12 +7,12 @@ char*               Global::outputDirectory = NULL;			// output directory
 char*               Global::posSequenceFilename = NULL;		// filename of positive sequence FASTA file
 std::string			Global::posSequenceBasename;			// basename of positive sequence FASTA file
 SequenceSet*        Global::posSequenceSet = NULL;			// positive sequence set
-std::vector<std::vector<int>> Global::posFoldIndices;		// sequence indices for positive sequence set
+std::vector<std::vector<size_t>> Global::posFoldIndices;		// sequence indices for positive sequence set
 
 char*               Global::negSequenceFilename = NULL;		// filename of negative sequence FASTA file
 std::string			Global::negSequenceBasename;			// basename of negative sequence FASTA file
 SequenceSet*        Global::negSequenceSet = NULL;			// negative sequence set
-std::vector<std::vector<int>> Global::negFoldIndices;		// sequence indices for given negative sequence set
+std::vector<std::vector<size_t>> Global::negFoldIndices;		// sequence indices for given negative sequence set
 bool				Global::negSeqGiven = false;			// a flag for the negative sequence given by users
 // weighting options
 char*               Global::intensityFilename = NULL;		// filename of intensity file (i.e. for HT-SELEX data)
@@ -72,7 +72,7 @@ bool				Global::debugAlphas = false;
 // FDR options
 bool                Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
 int        			Global::mFold = 10;						// number of negative sequences as multiple of positive sequences
-int        			Global::cvFold = 5;						// size of cross-validation folds
+size_t        		Global::cvFold = 5;						// size of cross-validation folds
 int 				Global::sOrder = 2;						// the k-mer order for sampling negative sequence set
 
 // scoring options
@@ -184,7 +184,7 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	opt >> GetOpt::Option( "num", num );
 	opt >> GetOpt::OptionPresent( "mops", mops );
-//	opt >> GetOpt::OptionPresent( "zoops", zoops );
+	opt >> GetOpt::Option( "zoops", zoops );
 
 	// model options
 	opt >> GetOpt::Option( 'k', "order", modelOrder );
@@ -310,7 +310,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "debug", debugMode );
 	opt >> GetOpt::OptionPresent( "saveBaMMs", saveBaMMs );
 	opt >> GetOpt::OptionPresent( "saveInitialBaMMs", saveInitialBaMMs );
-//	opt >> GetOpt::OptionPresent( "savePRs", savePRs );
+	opt >> GetOpt::Option( "savePRs", savePRs );
 	opt >> GetOpt::OptionPresent( "savePvalues", savePvalues );
 	opt >> GetOpt::OptionPresent( "saveLogOdds", saveLogOdds );
 	opt >> GetOpt::OptionPresent( "saveBgModel", saveBgModel );
@@ -452,7 +452,7 @@ void Global::printHelp(){
 	printf("\n 			--saveLogOdds\n"
 			"				Write log odds scores from positive and negative sets to disk.\n\n");
 	printf("\n 			--saveBgModel\n"
-				"			Write background model to disk.\n\n");
+			"				Write background model to disk.\n\n");
 	printf("\n 			-h, --help\n"
 			"				Printout this help function.\n\n");
 	printf("\n============================================================================================\n");

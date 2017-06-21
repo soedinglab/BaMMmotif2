@@ -31,12 +31,12 @@ public:
 	static char*		posSequenceFilename;				// filename of positive sequence FASTA file
 	static std::string	posSequenceBasename;				// basename of positive sequence FASTA file
 	static SequenceSet*	posSequenceSet;						// positive sequence set
-	static std::vector<std::vector<int>> posFoldIndices;	// sequence indices for positive sequence set
+	static std::vector<std::vector<size_t>> posFoldIndices;	// sequence indices for positive sequence set
 
 	static char*		negSequenceFilename;				// filename of negative sequence FASTA file
 	static std::string	negSequenceBasename;				// basename of negative sequence FASTA file
 	static SequenceSet*	negSequenceSet;						// negative sequence set
-	static std::vector<std::vector<int>> negFoldIndices;	// sequence indices for given negative sequence set
+	static std::vector<std::vector<size_t>> negFoldIndices;	// sequence indices for given negative sequence set
 	static bool			negSeqGiven;						// a flag for the negative sequence given by users
 
 	// weighting options
@@ -99,7 +99,7 @@ public:
 	// FDR options
 	static bool			FDR;								// triggers False-Discovery-Rate (FDR) estimation
 	static int			mFold;								// number of negative sequences as multiple of positive sequences
-	static int			cvFold;								// number of cross-validation (cv) folds
+	static size_t		cvFold;								// number of cross-validation (cv) folds
 	static int 			sOrder;								// the k-mer order for sampling negative sequence set
 
 	// scoring options
