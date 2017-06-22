@@ -1,3 +1,4 @@
+#include <iomanip>
 #include <time.h>		// time(), clock_t, clock, CLOCKS_PER_SEC
 #include <stdio.h>
 
@@ -56,12 +57,13 @@ int main( int nargs, char* args[] ){
 		fprintf( stderr, "*   Initial Motif   *\n" );
 		fprintf( stderr, "*********************\n" );
 	}
+
 	MotifSet motifs;
 
-	int motifNum = ( Global::num > motifs.getN() ) ? motifs.getN() : Global::num;
+	size_t motifNum = ( Global::num > motifs.getN() ) ? motifs.getN() : Global::num;
 
-	for( int n = 0; n < motifNum; n++ ){
-		// initialize the model
+	for( size_t n = 0; n < motifNum; n++ ){
+		// deep copy each motif in the motif set
 		Motif* motif = new Motif( *motifs.getMotifs()[n] );
 
 		// train the model with either EM or Gibbs sampling
@@ -125,7 +127,7 @@ int main( int nargs, char* args[] ){
 			fprintf( stderr, "*   FDR   *\n" );
 			fprintf( stderr, "***********\n" );
 		}
-		for( int n = 0; n < motifNum; n++ ){
+		for( size_t n = 0; n < motifNum; n++ ){
 			Motif* motif = new Motif( *motifs.getMotifs()[n] );
 			FDR fdr( motif, Global::cvFold );
 			fdr.evaluateMotif( n );
@@ -154,7 +156,7 @@ int main( int nargs, char* args[] ){
 			<< "\n	"<< Global::posSequenceSet->getN() << " sequences, max.length: " <<
 			Global::posSequenceSet->getMaxL() << ", min.length: " <<
 			Global::posSequenceSet->getMinL() << "\n	base frequencies:";
-	for( int i = 0; i < Alphabet::getSize(); i++ ){
+	for( size_t i = 0; i < Alphabet::getSize(); i++ ){
 		std::cout << ' ' << Global::posSequenceSet->getBaseFrequencies()[i]
 		          << "(" << Alphabet::getAlphabet()[i] << ")";
 	}
@@ -165,7 +167,7 @@ int main( int nargs, char* args[] ){
 				<< "\n	"<< Global::negSequenceSet->getN() << " sequences, max.length: "
 				<< Global::negSequenceSet->getMaxL() << ", min.length: " <<
 				Global::negSequenceSet->getMinL() << "\n	base frequencies:";
-		for( int i = 0; i < Alphabet::getSize(); i++ )
+		for( size_t i = 0; i < Alphabet::getSize(); i++ )
 			std::cout << ' ' << Global::negSequenceSet->getBaseFrequencies()[i]
 					  << "(" << Alphabet::getAlphabet()[i] << ")";
 	}

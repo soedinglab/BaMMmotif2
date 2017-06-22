@@ -22,26 +22,26 @@ class SeqGenerator {
 	 */
 
 public:
-	SeqGenerator( std::vector<Sequence*> seqs, Motif* motif = NULL, int sOrder = Global::sOrder );
+	SeqGenerator( std::vector<Sequence*> seqs, Motif* motif = NULL, size_t sOrder = Global::sOrder );
 	~SeqGenerator();
 
-	std::vector<std::unique_ptr<Sequence>> 	sample_negative_seqset( int fold );
-	std::vector<std::unique_ptr<Sequence>> 	sample_pseudo_seqset( int fold );
+	std::vector<std::unique_ptr<Sequence>> 	sample_negative_seqset( size_t fold );
+	std::vector<std::unique_ptr<Sequence>> 	sample_pseudo_seqset( size_t fold );
 
 	void									write_pseudoset();
 
 private:
 
 	void									calculate_kmer_frequency();
-	std::unique_ptr<Sequence> 				sample_negative_sequence( int L );
-	std::unique_ptr<Sequence> 				sample_pseudo_sequence( int L );
+	std::unique_ptr<Sequence> 				sample_negative_sequence( size_t L );
+	std::unique_ptr<Sequence> 				sample_pseudo_sequence( size_t L );
 
 	std::vector<Sequence*> 	seqs_;			// positive sequence set
 	float**					freqs_;			// k-mer frequencies
-	int** 					count_;			// k-mer counts
+	size_t** 				count_;			// k-mer counts
 	Motif* 					motif_;			// the optimized motif
-	int						sOrder_;		// the order of k-mers for generating negative/pseudo sequence set
-	std::vector<int>		Y_;				// contains 1 at position 0
+	size_t					sOrder_;		// the order of k-mers for generating negative/pseudo sequence set
+	std::vector<size_t>		Y_;				// contains 1 at position 0
 											// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
 											// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
 };

@@ -17,18 +17,18 @@ public:
 	static void		destruct();
 	static void     debug();
 
-	static int		getSize();
+	static size_t	getSize();
 	static char* 	getAlphabet();
 	static char* 	getComplementAlphabet();
 	static uint8_t	getCode( char base );				// get encoding for base
 	static char		getBase( uint8_t code );			// get base from encoding
 	static uint8_t	getComplementCode( uint8_t code );	// get complement encoding from encoding
 
-	static void 	setSize( int size );
+	static void 	setSize( size_t size );
 
 private:
 
-	static int 		size_;					// alphabet size
+	static size_t	size_;					// alphabet size
 	static char* 	alphabet_;				// alphabet bases ([A,C,G,T], [A,C,G,T,mC], ...)
 	static char* 	complementAlphabet_;	// complementary alphabet bases ([T,G,C,A], [T,G,C,A,G], ...)
 	static uint8_t* baseToCode_;			// convert base to encoding
@@ -37,7 +37,7 @@ private:
 };
 
 inline uint8_t Alphabet::getCode( char base ){
-	return baseToCode_[( int )base];
+	return baseToCode_[( size_t )base];
 }
 
 inline char Alphabet::getBase( uint8_t code ){

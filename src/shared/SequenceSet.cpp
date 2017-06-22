@@ -9,13 +9,7 @@ SequenceSet::SequenceSet( std::string sequenceFilepath, bool singleStrand, std::
 
 	sequenceFilepath_ = sequenceFilepath;
 
-	// calculate the length of the subsequence that is max. extractable
-	// depends on the return type (int) of Sequence::extractKmer()
-	int l = static_cast<int>( floorf(
-				logf( static_cast<float>( std::numeric_limits<int>::max() ) ) /
-				logf( static_cast<float>( Alphabet::getSize() ) ) ) );
-
-	for( int i = 0; i <= l; i++ ){
+	for( size_t i = 0; i <= 11; i++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), i ) );
 	}
 
@@ -49,15 +43,15 @@ std::vector<Sequence*> SequenceSet::getSequences(){
 	return sequences_;
 }
 
-int SequenceSet::getN(){
+size_t SequenceSet::getN(){
 	return N_;
 }
 
-unsigned int SequenceSet::getMinL(){
+size_t SequenceSet::getMinL(){
 	return minL_;
 }
 
-unsigned int SequenceSet::getMaxL(){
+size_t SequenceSet::getMaxL(){
 	return maxL_;
 }
 
@@ -66,10 +60,6 @@ float* SequenceSet::getBaseFrequencies(){
 }
 
 void SequenceSet::print(){
-
-/*	for( int i = 0; i < N_; i++ ){
-		sequences_[i]->print();
-	}*/
 
 }
 
@@ -83,10 +73,10 @@ int SequenceSet::readFASTA( bool singleStrand ){
 	 * 4. calculate base frequencies
 	 */
 
-	int N = 0; // sequence counter
-	int maxL = 0;
-	int minL = std::numeric_limits<int>::max();
-	std::vector<unsigned int> baseCounts( Alphabet::getSize() );
+	size_t N = 0; // sequence counter
+	size_t maxL = 0;
+	size_t minL = std::numeric_limits<size_t>::max();
+	std::vector<size_t> baseCounts( Alphabet::getSize() );
 	std::string line, header, sequence;
 	std::ifstream file( sequenceFilepath_.c_str() ); // opens FASTA file
 
@@ -104,19 +94,19 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 							N++; // increment sequence counter
 
-							int L = static_cast<int>( sequence.length() );
+							size_t L = sequence.length();
 
-							if ( L > maxL ){
+							if( L > maxL ){
 								maxL = L;
 							}
-							if ( L < minL ){
+							if( L < minL ){
 								minL = L;
 							}
 
 							// translate sequence into encoding
 							uint8_t* encoding = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
 
-							for( int i = 0; i < L; i++ ){
+							for( size_t i = 0; i < L; i++ ){
 
 								encoding[i] = Alphabet::getCode( sequence[i] );
 
@@ -137,7 +127,7 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 							free( encoding );
 
-						} else{
+						} else {
 
 							std::cerr << "Warning: Ignore FASTA entry without sequence: " << sequenceFilepath_ << std::endl;
 							header.clear();
@@ -146,23 +136,22 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 					if( line.length() == 1 ){ // corresponds to ">\n"
 						// set header to sequence counter
-//						header = static_cast<std::ostringstream*>( &( std::ostringstream() << ( N+1 ) ) )->str();
 						header = std::to_string( N+1 );
-					} else{
+					} else {
 						header = line.substr( 1 );// fetch header
 					}
 
-				} else if ( !( header.empty() ) ){
+				} else if( !( header.empty() ) ){
 
 					if( line.find( ' ' ) != std::string::npos ){
 						// space character in sequence
 						std::cerr << "Error: FASTA sequence contains space character: " << sequenceFilepath_ << std::endl;
 						exit( -1 );
-					} else{
+					} else {
 						sequence += line;
 					}
 
-				} else{
+				} else {
 
 					std::cerr << "Error: Wrong FASTA format: " << sequenceFilepath_ << std::endl;
 					exit( -1 );
@@ -176,7 +165,7 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 				N++; // increment sequence counter
 
-				int L = static_cast<int>( sequence.length() );
+				size_t L = sequence.length();
 
 				if ( L > maxL ){
 					maxL = L;
@@ -188,7 +177,7 @@ int SequenceSet::readFASTA( bool singleStrand ){
 				// translate sequence into encoding
 				uint8_t* encoding = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
 
-				for( int i = 0; i < L; i++ ){
+				for( size_t i = 0; i < L; i++ ){
 
 					encoding[i] = Alphabet::getCode( sequence[i] );
 
@@ -217,7 +206,7 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 		file.close();
 
-	} else{
+	} else {
 
 		std::cerr << "Error: Cannot open FASTA file: " << sequenceFilepath_ << std::endl;
 		exit( -1 );
@@ -228,13 +217,13 @@ int SequenceSet::readFASTA( bool singleStrand ){
 	minL_ = minL;
 
 	 // calculate the sum of bases
-	unsigned int sumCounts = 0;
-	for( int i = 0; i < Y_[1]; i++ ){
+	size_t sumCounts = 0;
+	for( size_t i = 0; i < Y_[1]; i++ ){
 		sumCounts += baseCounts[i];
 	}
 
 	// calculate base frequencies
-	for( int i = 0; i < Y_[1]; i++ ){
+	for( size_t i = 0; i < Y_[1]; i++ ){
 		baseFrequencies_[i] = static_cast<float>( baseCounts[i] ) /
 		                      static_cast<float>( sumCounts );
 	}

@@ -73,7 +73,7 @@ std::vector<double>						calculatePosteriorProbabilities( std::vector<double> lL
 static void								createDirectory( char* dir );
 static std::vector<std::vector<size_t>>	generateFoldIndices( size_t N, size_t folds );
 // calculate the power for integer base
-static int								ipow( unsigned int base, int exp );
+static size_t							ipow( size_t base, size_t exp );
 
 template <typename T>
 std::vector<size_t> sortIndices( const std::vector<T> &v ); // returns a permutation which rearranges v into ascending order
@@ -121,7 +121,7 @@ inline std::vector<double> calculatePosteriorProbabilities( std::vector<double> 
 
 	double partition = 0.0;
 
-	for( unsigned int i = 0; i < N; i++ ){
+	for( size_t i = 0; i < N; i++ ){
 		if( lLikelihoods[i] >= limit ){
 			lLikelihoods[i] = exp( lLikelihoods[i] );
 			partition += lLikelihoods[i];
@@ -130,7 +130,7 @@ inline std::vector<double> calculatePosteriorProbabilities( std::vector<double> 
 
 	std::vector<double> posteriors( N );
 
-	for( unsigned int i = 0; i < N; i++ ){
+	for( size_t i = 0; i < N; i++ ){
 		if( lLikelihoods[i] >= limit ){
 			posteriors[order[i]] = lLikelihoods[i] / partition;
 		} else{
@@ -169,9 +169,9 @@ inline std::vector<std::vector<size_t>> generateFoldIndices( size_t N, size_t fo
 	return indices;
 }
 
-inline int ipow( unsigned int base, int exp ){
+inline size_t ipow( size_t base, size_t exp ){
 
-    int res = 1;
+	size_t res = 1;
 
     while( exp ){
         if( exp & 1 )

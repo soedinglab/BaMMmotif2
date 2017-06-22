@@ -7,12 +7,12 @@ char*               Global::outputDirectory = NULL;			// output directory
 char*               Global::posSequenceFilename = NULL;		// filename of positive sequence FASTA file
 std::string			Global::posSequenceBasename;			// basename of positive sequence FASTA file
 SequenceSet*        Global::posSequenceSet = NULL;			// positive sequence set
-std::vector<std::vector<size_t>> Global::posFoldIndices;		// sequence indices for positive sequence set
+std::vector<std::vector<size_t>> Global::posFoldIndices;	// sequence indices for positive sequence set
 
 char*               Global::negSequenceFilename = NULL;		// filename of negative sequence FASTA file
 std::string			Global::negSequenceBasename;			// basename of negative sequence FASTA file
 SequenceSet*        Global::negSequenceSet = NULL;			// negative sequence set
-std::vector<std::vector<size_t>> Global::negFoldIndices;		// sequence indices for given negative sequence set
+std::vector<std::vector<size_t>> Global::negFoldIndices;	// sequence indices for given negative sequence set
 bool				Global::negSeqGiven = false;			// a flag for the negative sequence given by users
 // weighting options
 char*               Global::intensityFilename = NULL;		// filename of intensity file (i.e. for HT-SELEX data)
@@ -26,16 +26,16 @@ char*               Global::bindingSiteFilename = NULL;		// filename of binding 
 char*               Global::PWMFilename = NULL;				// filename of PWM file
 char*               Global::BaMMFilename = NULL;			// filename of Markov model (.bamm) file
 std::string			Global::initialModelBasename;			// basename of initial model
-int					Global::num = 1;						// number of models that are to be optimized
+size_t				Global::num = 1;						// number of models that are to be optimized
 bool				Global::mops = false;					// learn MOPS model
 bool				Global::zoops = true;					// learn ZOOPS model
 
 // model options
-int        			Global::modelOrder = 2;					// model order
+size_t     			Global::modelOrder = 2;					// model order
 std::vector<float> 	Global::modelAlpha( modelOrder+1, 1.f );// initial alphas
 float				Global::modelBeta = 7.0f;				// alpha_k = beta x gamma^k for k > 0
 float				Global::modelGamma = 3.0f;
-std::vector<int>    Global::addColumns( 2 );				// add columns to the left and right of initial model
+std::vector<size_t>	Global::addColumns( 2 );				// add columns to the left and right of initial model
 bool                Global::interpolate = true;             // calculate prior probabilities from lower-order probabilities
                                                             // instead of background frequencies of mononucleotides
 bool                Global::interpolateBG = true;			// calculate prior probabilities from lower-order probabilities
@@ -45,20 +45,20 @@ char*				Global::bgModelFilename = NULL;			// path to the background model file
 bool				Global::bgModelGiven = false;			// flag to show if the background model is given or not
 char*				Global::bgSequenceFilename = NULL;		// path to the sequence file where the background model can be learned
 bool				Global::bgSeqGiven = false;				// flag to show if the background sequence set is given or not
-SequenceSet*        Global::bgSequenceSet = NULL;			// background sequence set
-int        			Global::bgModelOrder = 2;				// background model order, defaults to 2
+SequenceSet*		Global::bgSequenceSet = NULL;			// background sequence set
+size_t				Global::bgModelOrder = 2;				// background model order, defaults to 2
 std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.f );// background model alpha
 
 // EM options
 bool				Global::EM = false;						// flag to trigger EM learning
-int				 	Global::maxEMIterations = std::numeric_limits<int>::max();  // maximum number of iterations
+size_t			 	Global::maxEMIterations = std::numeric_limits<size_t>::max();  // maximum number of iterations
 float               Global::epsilon = 0.001f;				// threshold for likelihood convergence parameter
 bool                Global::noQOptimization = false;		// disable q optimization
 float				Global::q = 0.9f;						// prior probability for a positive sequence to contain a motif
 
 // CGS (Collapsed Gibbs sampling) options
 bool				Global::CGS = false;					// flag to trigger Collapsed Gibbs sampling
-int 				Global::maxCGSIterations = 100;			// maximum number of iterations for CGS, it should be larger than 5
+size_t 				Global::maxCGSIterations = 100;			// maximum number of iterations for CGS, it should be larger than 5
 bool				Global::noInitialZ = false;				// enable initializing z with one E-step
 bool				Global::noAlphaOptimization = false;	// disable alpha optimization in CGS
 bool				Global::GibbsMHalphas = false;			// enable alpha sampling in CGS using Gibbs Metropolis-Hastings
@@ -66,14 +66,13 @@ bool				Global::dissampleAlphas = false;		// enable alpha sampling in CGS using 
 bool				Global::noZSampling = false;			// disable q sampling in CGS
 bool				Global::noQSampling = false;			// disable q sampling in CGS
 float				Global::eta = 0.2f;						// learning rate for Gibbs sampling, only for tuning
-int					Global::interval = 10;					// interval for sampling z and q, only for tuning
 bool				Global::debugAlphas = false;
 
 // FDR options
-bool                Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
-int        			Global::mFold = 10;						// number of negative sequences as multiple of positive sequences
-size_t        		Global::cvFold = 5;						// size of cross-validation folds
-int 				Global::sOrder = 2;						// the k-mer order for sampling negative sequence set
+bool				Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
+size_t				Global::mFold = 10;						// number of negative sequences as multiple of positive sequences
+size_t				Global::cvFold = 5;						// size of cross-validation folds
+size_t				Global::sOrder = 2;						// the k-mer order for sampling negative sequence set
 
 // scoring options
 float 				Global::scoreCutoff = 0.0;				// score cutoff for printing logodds scores as motif hit
@@ -88,7 +87,6 @@ bool				Global::saveLogOdds = false;			// write the log odds of positive and neg
 bool				Global::saveInitialBaMMs = false;		// write out the initial model to disk
 bool				Global::saveBgModel = false;			// write out the background model to disk
 bool                Global::scoreSeqset = false;            // write logOdds Scores of positive sequence set to disk
-int					Global::Yk = 10;						// the counts of numbers in Y_ array
 bool				Global::generatePseudoSet = false;		// test for alpha learning
 std::mt19937		Global::rngx;
 
@@ -192,25 +190,25 @@ int Global::readArguments( int nargs, char* args[] ){
 	if( opt >> GetOpt::OptionPresent( 'a', "alpha" ) ){
 		modelAlpha.clear();
 		opt >> GetOpt::Option( 'a', "alpha", modelAlpha );
-		if( static_cast<int>( modelAlpha.size() ) != modelOrder+1 ){
-			if( static_cast<int>( modelAlpha.size() ) > modelOrder+1 ){
+		if( modelAlpha.size() != modelOrder+1 ){
+			if( modelAlpha.size()  > modelOrder+1 ){
 				modelAlpha.resize( modelOrder+1 );
-			} else{
+			} else {
 				modelAlpha.resize( modelOrder+1, modelAlpha.back() );
 			}
 		}
 	} else {
-		if( static_cast<int>( modelAlpha.size() ) != modelOrder+1 ){
-			if( static_cast<int>( modelAlpha.size() ) > modelOrder+1 ){
+		if( modelAlpha.size() != modelOrder+1 ){
+			if( modelAlpha.size() > modelOrder+1 ){
 				modelAlpha.resize( modelOrder+1 );
-			} else{
+			} else {
 				modelAlpha.resize( modelOrder+1, modelAlpha.back() );
 			}
 		}
 		opt >> GetOpt::Option( 'b', "beta", modelBeta );
 		opt >> GetOpt::Option( 'r', "gamma", modelGamma );
 		if( modelOrder > 0 ){
-			for( int k = 1; k < modelOrder + 1; k++ ){
+			for( size_t k = 1; k < modelOrder+1; k++ ){
 				// alpha = beta * gamma^k
 				modelAlpha[k] = modelBeta * powf( modelGamma, static_cast<float>( k ) );
 			}
@@ -248,23 +246,23 @@ int Global::readArguments( int nargs, char* args[] ){
 	if( opt >> GetOpt::OptionPresent( 'A', "Alpha" ) ){
 		bgModelAlpha.clear();
 		opt >> GetOpt::Option( 'A', "Alpha", bgModelAlpha );
-		if( static_cast<int>( bgModelAlpha.size() ) != bgModelOrder+1 ){
-			if( static_cast<int>( bgModelAlpha.size() ) > bgModelOrder+1 ){
+		if( bgModelAlpha.size() != bgModelOrder+1 ){
+			if( bgModelAlpha.size() > bgModelOrder+1 ){
 				bgModelAlpha.resize( bgModelOrder+1 );
-			} else{
+			} else {
 				bgModelAlpha.resize( bgModelOrder+1, bgModelAlpha.back() );
 			}
 		}
 	} else {
-		if( static_cast<int>( bgModelAlpha.size() ) != bgModelOrder+1 ){
-			if( static_cast<int>( bgModelAlpha.size() ) > bgModelOrder+1 ){
+		if( bgModelAlpha.size() != bgModelOrder+1 ){
+			if( bgModelAlpha.size() > bgModelOrder+1 ){
 				bgModelAlpha.resize( bgModelOrder+1 );
-			} else{
+			} else {
 				bgModelAlpha.resize( bgModelOrder+1, bgModelAlpha.back() );
 			}
 		}
 		if( bgModelOrder > 0 ){
-			for( int k = 1; k < bgModelOrder + 1; k++ ){
+			for( size_t k = 1; k < bgModelOrder+1; k++ ){
 				bgModelAlpha[k] = 10.0f;
 			}
 		}
@@ -287,7 +285,6 @@ int Global::readArguments( int nargs, char* args[] ){
 		opt >> GetOpt::OptionPresent( "noZSampling", noZSampling );
 		opt >> GetOpt::OptionPresent( "noQSampling", noQSampling );
 		opt >> GetOpt::Option( "eta", eta );
-		opt >> GetOpt::Option( "interval", interval );
 	}
 	opt >> GetOpt::OptionPresent( "debugAlphas", debugAlphas );
 	opt >> GetOpt::OptionPresent( "generatePseudoSet", generatePseudoSet );

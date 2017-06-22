@@ -10,7 +10,7 @@ MotifSet::MotifSet(){
 		std::ifstream file;
 		file.open( Global::BaMMpatternFilename, std::ifstream::in );
 		std::string pattern;
-		int length;
+		size_t length;
 		if( !file.good() ){
 			std::cout << "Error: Cannot open pattern sequence file: "
 					<< Global::BaMMpatternFilename << std::endl;
@@ -18,7 +18,7 @@ MotifSet::MotifSet(){
 		} else {
 			while( getline( file, pattern ) ){
 
-				length = ( int )pattern.length();			// get length of the first sequence
+				length = pattern.length();			// get length of the first sequence
 
 				length += Global::addColumns.at( 0 ) + Global::addColumns.at( 1 );
 
@@ -36,7 +36,7 @@ MotifSet::MotifSet(){
 		std::ifstream file;
 		file.open( Global::bindingSiteFilename, std::ifstream::in );
 		std::string bindingSite;
-		int length;
+		size_t length;
 
 		if( !file.good() ){
 			std::cout << "Error: Cannot open bindingSitesFile sequence file: "
@@ -44,7 +44,7 @@ MotifSet::MotifSet(){
 			exit( -1 );
 		} else {
 			getline( file, bindingSite );					// get length of the first sequence
-			length = ( int )bindingSite.length();
+			length = bindingSite.length();
 		}
 
 		length += Global::addColumns.at( 0 ) + Global::addColumns.at( 1 );
@@ -62,7 +62,7 @@ MotifSet::MotifSet(){
 		// read file to calculate motif length
 		std::ifstream file;
 		file.open( Global::PWMFilename, std::ifstream::in );
-		int minL = Global::posSequenceSet->getMinL();
+		size_t minL = Global::posSequenceSet->getMinL();
 
 		if( !file.good() ){
 
@@ -72,12 +72,11 @@ MotifSet::MotifSet(){
 
 		} else {
 
-			int length;									// length of motif with extension
-			int asize;									// alphabet size
+			size_t length;									// length of motif with extension
+			size_t asize;									// alphabet size
 			std::string line;
 			std::string row;
 
-			int y, j;
 			while( getline( file, line ) ){
 				// search for the line starting with "letter-probability matrix"
 				if( line[0] == 'l' ){
@@ -105,30 +104,28 @@ MotifSet::MotifSet(){
 					// parse PWM for each motif
 					float** PWM = new float*[asize];
 
-					for( y = 0; y < asize; y++ ){
+					for( size_t y = 0; y < asize; y++ ){
 
 						PWM[y] = new float[length];
 
-						for( j = 0; j < Global::addColumns.at( 0 ); j++ ){
+						for( size_t j = 0; j < Global::addColumns.at( 0 ); j++ ){
 							PWM[y][j] = 1.0f / ( float )asize;
 						}
-						for( j = length - Global::addColumns.at( 1 ); j < length; j++ ){
+						for( size_t j = length - Global::addColumns.at( 1 ); j < length; j++ ){
 							PWM[y][j] = 1.0f / ( float )asize;
 						}
 
 					}
 
 					// get the following W lines
-					for( j = Global::addColumns.at( 0 ); j < length - Global::addColumns.at( 1 ) ; j++ ){
+					for( size_t j = Global::addColumns.at( 0 ); j < length - Global::addColumns.at( 1 ) ; j++ ){
 
 						getline( file, row );
 
 						std::stringstream number( row );
 
-						y = 0;
-
-						while( number >> PWM[y][j] ){
-							y++;
+						for( size_t y = 0; y < asize; y++ ){
+							number >> PWM[y][j];
 						}
 
 					}
@@ -142,7 +139,7 @@ MotifSet::MotifSet(){
 					N_++;
 
 					// free memory for PWM
-					for( y = 0; y < asize; y++ ){
+					for( size_t y = 0; y < asize; y++ ){
 						delete[] PWM[y];
 					}
 					delete[] PWM;
@@ -164,8 +161,8 @@ MotifSet::MotifSet(){
 
 		} else {
 
-			int model_length = 0;
-			int model_order  = -1;
+			size_t model_length = 0;
+			size_t model_order_plus_1 = 0;
 			std::string line;
 
 			// read file to calculate motif length, order and alphabet size
@@ -176,8 +173,8 @@ MotifSet::MotifSet(){
 					model_length++;
 
 				} else if( model_length == 0 ){
-					// count the lines of the first position on the motif as the model model_order
-					model_order++;
+					// count the lines of the first position on the motif as the model model_order_plus_1
+					model_order_plus_1++;
 
 				}
 			}
@@ -186,7 +183,7 @@ MotifSet::MotifSet(){
 			model_length += Global::addColumns.at( 0 ) + Global::addColumns.at( 1 );
 
 			// adjust model order due to the .bamm file
-			Global::modelOrder = model_order;
+			Global::modelOrder = model_order_plus_1 - 1;
 
 			// construct an initial motif
 			Motif* motif = new Motif( model_length );
@@ -212,7 +209,7 @@ std::vector<Motif*> MotifSet::getMotifs(){
     return motifs_;
 }
 
-int MotifSet::getN(){
+size_t MotifSet::getN(){
     return N_;
 }
 
@@ -224,11 +221,11 @@ void MotifSet::print(){
 					"|____________________________|\n\n" );
 
 
-	for( int i = 0; i < N_; i++ ){
+	for( size_t i = 0; i < N_; i++ ){
 		fprintf(stderr, " ________________________________________\n"
 						"|                                        |\n"
 						"| INITIALIZED PROBABILITIES for Motif %d  |\n"
-						"|________________________________________|\n\n", i+1 );
+						"|________________________________________|\n\n", (int)i+1 );
 		motifs_[i]->print();
 	}
 }

@@ -5,7 +5,7 @@ char*               Global::outputDirectory = NULL;				// output directory
 
 char*				Global::extension = NULL;					// extension of files in FASTA format, defaults to fasta
 
-int					Global::modelOrder = 2;						// background model order
+size_t				Global::modelOrder = 2;						// background model order
 std::vector<float>	Global::modelAlpha( modelOrder+1, 1.0f );	// background model alpha
 float				Global::modelBeta = 10.0f;					// alpha_k = beta x gamma^(k-1) for k > 0
 float				Global::modelGamma = 2.0f;					// - " -

@@ -11,12 +11,12 @@
 #include "Motif.h"
 #include "../shared/BackgroundModel.h"
 
-/*
- * score sequences from sequence sets
- * using learned model and background
- */
-
 class ScoreSeqSet{
+	/*
+	 * This class is aimed for:
+	 * scoring sequences from the given sequence set
+	 * using learned model and background model
+	 */
 
 public:
 
@@ -28,7 +28,7 @@ public:
 	std::vector<std::vector<float>> getMopsScores();
 	std::vector<float> 				getZoopsScores();
 
-	void write( int N, float cutoff );
+	void write( size_t N, float cutoff );
 
 
 private:
@@ -40,7 +40,7 @@ private:
 	std::vector<std::vector<float>>	mops_scores_;
 	std::vector<float>				zoops_scores_;
 
-	std::vector<int>				Y_;		// contains 1 at position 0
+	std::vector<size_t>				Y_;		// contains 1 at position 0
 											// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
 											// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
 };

@@ -1,7 +1,7 @@
 #include "Sequence.h"
 #include "utils.h"
 
-Sequence::Sequence( uint8_t* sequence, int L, std::string header, std::vector<int> Y, bool singleStrand ){
+Sequence::Sequence( uint8_t* sequence, size_t L, std::string header, std::vector<size_t> Y, bool singleStrand ){
 
 	if( !singleStrand ){
 		L_ = 2 * L + 1;
@@ -13,9 +13,9 @@ Sequence::Sequence( uint8_t* sequence, int L, std::string header, std::vector<in
 		std::memcpy( sequence_, sequence, L_ );
 	}
 	header_ = header;
-	Y_ = new int[11];
-	for( int i = 0; i < 11; i++ ){
-		Y_[i] = ipow( Alphabet::getSize(), i );
+
+	for( size_t i = 0; i <= 11; i++ ){
+		Y_.push_back( ipow( Alphabet::getSize(), i ) );
 	}
 
 	/**
@@ -26,9 +26,9 @@ Sequence::Sequence( uint8_t* sequence, int L, std::string header, std::vector<in
 	 */
 
 	kmer_ = ( int* )calloc( L_, sizeof( int ) );
-	for( int i = 0; i < L_; i++ ){
-		for( int j = i < 8 ? i : 8; j >= 0; j-- ){
-			kmer_[i] += ( sequence_[i-j] - 1 ) * Y_[j];
+	for( size_t i = 0; i < L_; i++ ){
+		for( size_t j = i < 8 ? ( i+1 ) : 9; j > 0; j-- ){
+			kmer_[i] += ( static_cast<int>( sequence_[i-j+1] ) - 1 ) * static_cast<int>( Y_[j-1] );
 		}
 	}
 }
@@ -37,7 +37,7 @@ Sequence::~Sequence(){
 	if( sequence_ != NULL ){
 		free( sequence_ );
 	}
-	delete[] Y_;
+
 	free( kmer_ );
 }
 
@@ -45,7 +45,7 @@ uint8_t* Sequence::getSequence(){
 	return sequence_;
 }
 
-int Sequence::getL(){
+size_t Sequence::getL(){
 	return L_;
 }
 
@@ -72,15 +72,15 @@ void Sequence::setWeight( float weight ){
 void Sequence::print(){
 
 	std::cout << ">" << header_ << std::endl;
-	for( int i = 0; i < L_; i++ ){
+	for( size_t i = 0; i < L_; i++ ){
 		std::cout << Alphabet::getBase( sequence_[i] );
 	}
 	std::cout << std::endl;
 }
 
-void Sequence::appendRevComp( uint8_t* sequence, int L ){
+void Sequence::appendRevComp( uint8_t* sequence, size_t L ){
 
-	for( int i = 0; i < L; i++ ){
+	for( size_t i = 0; i < L; i++ ){
 		sequence_[i] = sequence[i];										// the sequence
 		sequence_[2*L-i] = Alphabet::getComplementCode( sequence[i] );	// and its reverse complement
 	}
