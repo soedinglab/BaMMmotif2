@@ -84,7 +84,7 @@ void ScoreSeqSet::write( size_t N, float cutoff ){
 	size_t 	end; 				// end of motif match
 
 	std::string opath = std::string( Global::outputDirectory ) + '/'
-			+ Global::posSequenceBasename +  "_motif_" + std::to_string( N+1 ) + ".logOdds";
+			+ Global::posSequenceBasename +  "_motif_" + std::to_string( N ) + ".logOdds";
 
 	std::ofstream ofile( opath );
 

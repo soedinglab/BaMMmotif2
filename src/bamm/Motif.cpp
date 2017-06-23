@@ -499,7 +499,7 @@ void Motif::write( size_t N ){						// write each motif with a number
 	 */
 
 	std::string opath = std::string( Global::outputDirectory )  + '/'
-			+ Global::posSequenceBasename + "_motif_" + std::to_string( N+1 );
+			+ Global::posSequenceBasename + "_motif_" + std::to_string( N );
 
 	// output conditional probabilities v[k][y][j] and probabilities prob[k][y][j]
 	std::string opath_v = opath + ".ihbcp"; 	// inhomogeneous bamm conditional probabilities

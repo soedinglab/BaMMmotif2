@@ -26,7 +26,6 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<siz
 	q_ = Global::q;
 
 	// define parameters
-	size_t LW2;
 	for( size_t k = 0; k < K_+8; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
@@ -53,7 +52,7 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<siz
 	z_ = ( size_t* )calloc( posSeqs_.size(), sizeof( int ) );
 
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
-		LW2 = posSeqs_[n]->getL() - W_ + 2;
+		size_t LW2 = posSeqs_[n]->getL() - W_ + 2;
 		r_[n] = ( float* )calloc( LW2, sizeof( float ) );
 		pos_[n] = ( float* )calloc( LW2, sizeof( float ) );
 	}
@@ -67,8 +66,8 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<siz
 		n_z_[k] = ( size_t** )calloc( Y_[k+1]+1, sizeof( size_t* ) )+1;
 		// allocate -K positions for j
 		for( int y = -1; y < static_cast<int>( Y_[k+1] ); y++ ){
-			n_[k][y] = ( float* )calloc( W_ + K_, sizeof( float ) )+K_;
-			n_z_[k][y] = ( size_t* )calloc( W_ + K_, sizeof( size_t ) )+K_;
+			n_[k][y] = ( float* )calloc( W_+K_, sizeof( float ) )+K_;
+			n_z_[k][y] = ( size_t* )calloc( W_+K_, sizeof( size_t ) )+K_;
 		}
 	}
 
@@ -1128,7 +1127,7 @@ void ModelLearning::write( size_t N ){
 	 */
 
 	std::string opath = std::string( Global::outputDirectory ) + '/'
-						+ Global::posSequenceBasename + "_motif_" + std::to_string( N+1 );
+						+ Global::posSequenceBasename + "_motif_" + std::to_string( N );
 
 	// output (k+1)-mer counts n[k][y][j]
 	std::string opath_n = opath + ".counts";

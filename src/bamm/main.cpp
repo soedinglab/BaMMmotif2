@@ -9,7 +9,6 @@
 #include "ModelLearning.h"
 #include "ScoreSeqSet.h"
 #include "SeqGenerator.h"
-
 #include "FDR.h"
 
 int main( int nargs, char* args[] ){
@@ -110,17 +109,17 @@ int main( int nargs, char* args[] ){
 
 		// write model parameters on the disc
 		if( Global::saveBaMMs ){
-			model.write( n );
+			model.write( n+1 );
 		}
 
 		// write out the learned model
-		motif->write( n );
+		motif->write( n+1 );
 
 		if( Global::scoreSeqset ){
 			// score the model on sequence set
 			ScoreSeqSet seqset( motif, bgModel, Global::posSequenceSet->getSequences() );
 			seqset.score();
-			seqset.write( n, Global::scoreCutoff );
+			seqset.write( n+1, Global::scoreCutoff );
 		}
 
 		delete motif;

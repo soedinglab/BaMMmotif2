@@ -67,14 +67,14 @@ private:
 											// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
 											// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
 
-							// score sequences for both positive and negative sets
+									// score sequences for both positive and negative sets
 	std::vector<std::vector<float>>	scoreSequenceSet( Motif* motif, BackgroundModel* bg, const std::vector<std::unique_ptr<Sequence>> & seqSet );
 
-							// calculate precision and recall for both ZOOPS and MOPS models
-	void 		   			calculatePR();
+									// calculate precision and recall for both ZOOPS and MOPS models
+	void 		   					calculatePR();
 
-							// calculate P-values for log odds scores of positive sequences
-	void					calculatePvalues();
+									// calculate P-values for log odds scores of positive sequences
+	void							calculatePvalues();
 
 };
 
