@@ -14,21 +14,24 @@ Sequence::Sequence( uint8_t* sequence, size_t L, std::string header, std::vector
 	}
 	header_ = header;
 
-	for( size_t i = 0; i <= 11; i++ ){
+	for( size_t i = 0; i < 12; i++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), i ) );
 	}
 
 	/**
-	 *  extract (k+1)mer y from positions (i-k,...,i) of the sequence
+	 *  extract (k+1)-mer y from positions (i-k,...,i) of the sequence
 	 *  e.g.		| monomer |                      dimer                      |      trimer     ... | ...
 	 *  (k+1)mer:	| A C G T | AA AC AG AT CA CC CG CT GA GC GG GT TA TC TG TT | AAA AAC AAG AAT ... | ...
 	 *  y:			| 0 1 2 3 |	 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 |  0   1   2   3  ... | ...
+	 *
+	 ** note:
+	 *  randomize the unknown letter N to A, C, G or T.
 	 */
 
-	kmer_ = ( int* )calloc( L_, sizeof( int ) );
+	kmer_ = ( size_t* )calloc( L_, sizeof( size_t ) );
 	for( size_t i = 0; i < L_; i++ ){
-		for( size_t j = i < 8 ? ( i+1 ) : 9; j > 0; j-- ){
-			kmer_[i] += ( static_cast<int>( sequence_[i-j+1] ) - 1 ) * static_cast<int>( Y_[j-1] );
+		for( size_t k = i < 10 ? i+1 : 11; k > 0; k-- ){
+			kmer_[i] += ( ( sequence_[i-k+1] == 0 ) ? ( size_t )rand() % Y_[1] : ( sequence_[i-k+1] - 1 ) ) * Y_[k-1];
 		}
 	}
 }
@@ -74,6 +77,7 @@ void Sequence::print(){
 	std::cout << ">" << header_ << std::endl;
 	for( size_t i = 0; i < L_; i++ ){
 		std::cout << Alphabet::getBase( sequence_[i] );
+//		std::cout << kmer_[i] << '\t';
 	}
 	std::cout << std::endl;
 }
@@ -81,7 +85,7 @@ void Sequence::print(){
 void Sequence::appendRevComp( uint8_t* sequence, size_t L ){
 
 	for( size_t i = 0; i < L; i++ ){
-		sequence_[i] = sequence[i];										// the sequence
+		sequence_[i] = sequence[i];										// the forward sequence
 		sequence_[2*L-i] = Alphabet::getComplementCode( sequence[i] );	// and its reverse complement
 	}
 }

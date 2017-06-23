@@ -12,7 +12,7 @@ class Motif {
 
 public:
 
-	Motif( size_t length /*, size_t order = Global::modelOrder, std::vector<float> alpha = Global::modelAlpha */);
+	Motif( size_t length, size_t order = Global::modelOrder, std::vector<float> alpha = Global::modelAlpha );
 	Motif( const Motif& other );								// copy constructor
 	~Motif();
 
@@ -44,11 +44,12 @@ public:
 
 private:
 
-//	bool		isInitialized_ = false;		    				// assert in all public methods
+	bool		isInitialized_ = false;		    				// assert in all public methods
 
 	size_t		C_ = 0;											// count the number of binding sites
 	size_t 		W_;					    						// motif length
-	size_t		K_ = Global::modelOrder;
+	size_t		K_;												// mortif model order
+	std::vector<float> A_;										// hyperparameter alphas
 	float***    v_;				                				// conditional probabilities for (k+1)-mers y at motif position j
 	float*		f_bg_;											// monomer frequencies from negative set
 	float***	p_;												// probabilities for (k+1)-mers y at motif position j
@@ -77,7 +78,7 @@ inline float*** Motif::getV(){
 // update v from fractional k-mer counts n and current alphas (e.g for EM)
 inline void Motif::updateV( float*** n, double** alpha, size_t K ){
 
-//	assert( isInitialized_ );
+	assert( isInitialized_ );
 
 	// sum up the n over (k+1)-mers at different position of motif
 	std::vector<float> sumN;
@@ -118,7 +119,7 @@ inline void Motif::updateV( float*** n, double** alpha, size_t K ){
 // update v from integral k-mer counts n and current alphas (e.g for CGS)
 inline void Motif::updateVz_n( size_t*** n, double** alpha, size_t K ){
 
-//	assert( isInitialized_ );
+	assert( isInitialized_ );
 
 	// sum up the monomers
 	size_t sumN = 0;

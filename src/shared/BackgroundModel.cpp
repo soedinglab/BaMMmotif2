@@ -57,17 +57,15 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 			// get sequence length
 			size_t L = seqs[s_idx]->getL();
 
-			int* kmer = seqs[s_idx]->getKmer();
+			size_t* kmer = seqs[s_idx]->getKmer();
 			// loop over order
 			// loop over sequence positions
 			for( size_t i = 0; i < L; i++ ){
-				if( kmer[i] >= 0 ){
-					for( size_t k = 0; k <= K_; k++ ){
-						// extract (k+1)mer
-						size_t y = static_cast<size_t>( kmer[i] ) % Y_[k+1];
-						// count (k+1)mer
-						n_[k][y]++;
-					}
+				for( size_t k = 0; k <= K_; k++ ){
+					// extract (k+1)mer
+					size_t y = kmer[i] % Y_[k+1];
+					// count (k+1)mer
+					n_[k][y]++;
 				}
 			}
 		}
@@ -243,18 +241,16 @@ double BackgroundModel::calculateLogLikelihood( SequenceSet& sequenceSet,
 			size_t s_idx = foldIndices[folds[f]][f_idx];
 			// get sequence length
 			size_t L = sequenceSet.getSequences()[s_idx]->getL();
-			int* kmer = sequenceSet.getSequences()[s_idx]->getKmer();
+			size_t* kmer = sequenceSet.getSequences()[s_idx]->getKmer();
 
 			// loop over sequence positions
 			for( size_t i = 0; i < L; i++ ){
-				if( kmer[i] >= 0 ){
-					// calculate k
-					size_t k = std::min( i, K_ );
-					// extract (k+1)mer
-					size_t y = static_cast<size_t>( kmer[i] ) % Y_[k+1];
-					// add log probabilities
-					lLikelihood += v_[k][y];
-				}
+				// calculate k
+				size_t k = std::min( i, K_ );
+				// extract (k+1)mer
+				size_t y = kmer[i] % Y_[k+1];
+				// add log probabilities
+				lLikelihood += v_[k][y];
 			}
 		}
 	}
@@ -310,17 +306,15 @@ void BackgroundModel::calculatePosLikelihoods( SequenceSet& sequenceSet,
 				size_t s_idx = foldIndices[folds[f]][f_idx];
 				// get sequence length
 				size_t L = sequenceSet.getSequences()[s_idx]->getL();
-				int* kmer = sequenceSet.getSequences()[s_idx]->getKmer();
+				size_t* kmer = sequenceSet.getSequences()[s_idx]->getKmer();
 				// loop over sequence positions
 				for( size_t i = 0; i < L; i++ ){
-					if( kmer[i] >= 0 ){
-						// calculate k
-						size_t k = std::min( i, K_ );
-						// extract (k+1)mer
-						size_t y = static_cast<size_t>( kmer[i] ) % Y_[k+1];
-						file << ( i == 0 ? "" : " " );
-						file << std::scientific << std::setprecision( 6 ) << v_[k][y];
-					}
+					// calculate k
+					size_t k = std::min( i, K_ );
+					// extract (k+1)mer
+					size_t y = kmer[i] % Y_[k+1];
+					file << ( i == 0 ? "" : " " );
+					file << std::scientific << std::setprecision( 6 ) << v_[k][y];
 				}
 				file << std::endl;
 			}

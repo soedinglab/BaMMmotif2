@@ -2,10 +2,11 @@
 
 #include "Motif.h"
 
-Motif::Motif( size_t length /*, size_t K, std::vector<float> alpha*/ ){
+Motif::Motif( size_t length, size_t K, std::vector<float> alpha ){
 
 	W_ = length;
-	K_ = Global::modelOrder;
+	K_ = K;
+	A_ = alpha;
 
 	for( size_t k = 0; k < K_+8; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
@@ -20,7 +21,7 @@ Motif::Motif( size_t length /*, size_t K, std::vector<float> alpha*/ ){
 		p_[k] = ( float** )calloc( Y_[k+1], sizeof( float* ) );
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
 			v_[k][y] = ( float* )calloc( W_, sizeof( float ) );
-			n_[k][y] = ( size_t* )calloc( W_+ K_, sizeof( size_t ) ) + K_;
+			n_[k][y] = ( size_t* )calloc( W_+K_, sizeof( size_t ) ) + K_;
 			p_[k][y] = ( float* )calloc( W_, sizeof( float ) );
 		}
 	}
@@ -37,8 +38,9 @@ Motif::Motif( size_t length /*, size_t K, std::vector<float> alpha*/ ){
 
 Motif::Motif( const Motif& other ){ 		// copy constructor
 
-	K_ = other.K_;
 	W_ = other.W_;
+	K_ = other.K_;
+	A_ = other.A_;
 
 	Y_.clear();
 	for( size_t k = 0; k < K_+8; k++ ){
@@ -76,7 +78,7 @@ Motif::Motif( const Motif& other ){ 		// copy constructor
 
 	f_bg_ = other.f_bg_;
 
-//	isInitialized_ = true;
+	isInitialized_ = true;
 }
 
 Motif::~Motif(){
@@ -203,7 +205,7 @@ void Motif::initFromBindingSites( char* filename ){
 	calculateP();
 
 	// set isInitialized
-//	isInitialized_ = true;
+	isInitialized_ = true;
 
 	// optional: save initial model
 	if( Global::saveInitialBaMMs ){
@@ -252,7 +254,7 @@ void Motif::initFromPWM( float** PWM, size_t asize, size_t count ){
 		size_t z;
 
 		// get the kmer array
-		int* kmer = posSet[n]->getKmer();
+		size_t* kmer = posSet[n]->getKmer();
 
 		// calculate responsibilities over all LW1 positions on n'th sequence
 		std::vector<float> r;
@@ -270,10 +272,8 @@ void Motif::initFromPWM( float** PWM, size_t asize, size_t count ){
 			r[i] = 1.0f;
 			for( size_t j = 0; j < W_; j++ ){
 				// extract monomers on the motif at position i over W of the n'th sequence
-				if( kmer[i-1+j] >= 0 ){
-					size_t y = static_cast<size_t>( kmer[i-1+j] ) % asize;
-					r[i] *= score[y][j];
-				}
+				size_t y = kmer[i-1+j] % asize;
+				r[i] *= score[y][j];
 			}
 			r[i] *= pos1;
 			normFactor += r[i];
@@ -295,10 +295,8 @@ void Motif::initFromPWM( float** PWM, size_t asize, size_t count ){
 		if( z > 0 ){
 			for( size_t k = 0; k < K_+1; k++ ){
 				for( size_t j = ( z <= K_ ) ? 1-z : -K_; j < W_; j++ ){
-					if( kmer[z-1+j] >= 0 ){
-						size_t y =  static_cast<size_t>(  kmer[z-1+j] ) % Y_[k+1];
-						n_[k][y][j]++;
-					}
+					size_t y = kmer[z-1+j] % Y_[k+1];
+					n_[k][y][j]++;
 				}
 			}
 		}
@@ -311,8 +309,8 @@ void Motif::initFromPWM( float** PWM, size_t asize, size_t count ){
 			size_t y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer y
 			size_t yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer y
 			for( size_t j = 0; j < W_; j++ ){
-				v_[k][y][j] = ( static_cast<float>( n_[k][y][j] ) + Global::modelAlpha.at(k) * v_[k-1][y2][j] )
-							/ ( static_cast<float>( n_[k-1][yk][j-1] ) + Global::modelAlpha.at(k) );
+				v_[k][y][j] = ( static_cast<float>( n_[k][y][j] ) + A_[k] * v_[k-1][y2][j] )
+							/ ( static_cast<float>( n_[k-1][yk][j-1] ) + A_[k] );
 			}
 		}
 	}
@@ -321,7 +319,7 @@ void Motif::initFromPWM( float** PWM, size_t asize, size_t count ){
 	calculateP();
 
 	// set isInitialized
-//	isInitialized_ = true;
+	isInitialized_ = true;
 
 }
 
@@ -374,7 +372,7 @@ void Motif::initFromBaMM( char* filename ){
 	calculateP();
 
 	// set isInitialized
-//	isInitialized_ = true;
+	isInitialized_ = true;
 
 }
 
@@ -399,8 +397,8 @@ void Motif::calculateV(){
 	// for k = 0, v_ = freqs:
 	for( size_t y = 0; y < Y_[1]; y++ ){
 		for( size_t j = 0; j < W_; j++ ){
-			v_[0][y][j] = ( static_cast<float>( n_[0][y][j] ) + Global::modelAlpha.at(0) * f_bg_[y] )
-						/ ( static_cast<float>( C_ ) + Global::modelAlpha.at(0) );
+			v_[0][y][j] = ( static_cast<float>( n_[0][y][j] ) + A_[0] * f_bg_[y] )
+						/ ( static_cast<float>( C_ ) + A_[0] );
 		}
 	}
 
@@ -410,8 +408,8 @@ void Motif::calculateV(){
 			size_t y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer y
 			size_t yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer y
 			for( size_t j = 0; j < W_; j++ ){
-				v_[k][y][j] = ( static_cast<float>( n_[k][y][j] ) + Global::modelAlpha.at(k) * v_[k-1][y2][j] )
-							/ ( static_cast<float>( n_[k-1][yk][j-1] ) + Global::modelAlpha.at(k) );
+				v_[k][y][j] = ( static_cast<float>( n_[k][y][j] ) + A_[k] * v_[k-1][y2][j] )
+							/ ( static_cast<float>( n_[k-1][yk][j-1] ) + A_[k] );
 			}
 		}
 	}

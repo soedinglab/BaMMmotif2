@@ -49,7 +49,7 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<siz
 	// allocate memory for r_[n][i], pos_[n][i], z_[n], normFactor_[n] and initialize them
 	r_ = ( float** )calloc( posSeqs_.size(), sizeof( float* ) );
 	pos_ = ( float** )calloc( posSeqs_.size(), sizeof( float* ) );
-	z_ = ( size_t* )calloc( posSeqs_.size(), sizeof( int ) );
+	z_ = ( size_t* )calloc( posSeqs_.size(), sizeof( size_t ) );
 
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 		size_t LW2 = posSeqs_[n]->getL() - W_ + 2;
@@ -72,15 +72,15 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<siz
 	}
 
 	// allocate memory for alpha_[k][j] and initialize it
-	alpha_ = ( double** )malloc( ( K_+1 ) * sizeof( double* ) );
+	A_ = ( double** )malloc( ( K_+1 ) * sizeof( double* ) );
 	m1_t_ = ( double** )calloc( K_+1, sizeof( double* ) );
 	m2_t_ = ( double** )calloc( K_+1, sizeof( double* ) );
 	for( size_t k = 0; k < K_+1; k++ ){
-		alpha_[k] = ( double* )malloc( W_ * sizeof( double ) );
+		A_[k] = ( double* )malloc( W_ * sizeof( double ) );
 		m1_t_[k] = ( double* )calloc( W_, sizeof( double ) );
 		m2_t_[k] = ( double* )calloc( W_, sizeof( double ) );
 		for( size_t j = 0; j < W_; j++ ){
-			alpha_[k][j] = Global::modelAlpha[k];
+			A_[k][j] = Global::modelAlpha[k];
 		}
 	}
 
@@ -103,13 +103,13 @@ ModelLearning::~ModelLearning(){
 		}
 		free( n_[k]-1 );
 		free( n_z_[k]-1 );
-		free( alpha_[k] );
+		free( A_[k] );
 		free( m1_t_[k] );
 		free( m2_t_[k] );
 	}
 	free( n_ );
 	free( n_z_ );
-	free( alpha_ );
+	free( A_ );
 	free( m1_t_ );
 	free( m2_t_ );
 }
@@ -213,7 +213,7 @@ void ModelLearning::EStep(){
 		size_t L = posSeqs_[n]->getL();
 		size_t LW1 = L - W_ + 1;
 		size_t LW2 = L - W_ + 2;
-		int* kmer = posSeqs_[n]->getKmer();
+		size_t* kmer = posSeqs_[n]->getKmer();
 		float normFactor = 0.0f;
 
 		// reset r_[n][i] and pos_[n][i]
@@ -228,7 +228,7 @@ void ModelLearning::EStep(){
 		for( size_t ij = 0; ij < L; ij++ ){
 
 			// extract (K+1)-mer y from positions (i-k,...,i)
-			int y = ( kmer[ij] >= 0 ) ? kmer[ij] % static_cast<int>( Y_[K_+1] ) : -1;
+			size_t y = kmer[ij] % Y_[K_+1];
 			// j runs over all motif positions
 			size_t padding = ( static_cast<int>( ij-L+W_ ) > 0 ) * ( ij-L+W_ );
 			for( size_t j = padding; j < ( W_ < (ij+1) ? W_ : ij+1 ); j++ ){
@@ -270,12 +270,12 @@ void ModelLearning::MStep(){
 	// n runs over all sequences
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 		size_t L = posSeqs_[n]->getL();
-		int* kmer = posSeqs_[n]->getKmer();
+		size_t* kmer = posSeqs_[n]->getKmer();
 
 		// ij = i+j runs over all positions i on sequence n
 		for( size_t ij = 0; ij < L; ij++ ){
 
-			int y = ( kmer[ij] >= 0 ) ? kmer[ij] % static_cast<int>( Y_[K_+1] ) : -1;
+			size_t y =kmer[ij] % Y_[K_+1];
 
 			size_t padding = ( static_cast<int>( ij-L+W_ ) > 0 ) * ( ij-L+W_ );
 
@@ -304,7 +304,7 @@ void ModelLearning::MStep(){
 	}
 
 	// update model parameters v[k][y][j]
-	motif_->updateV( n_, alpha_, K_ );
+	motif_->updateV( n_, A_, K_ );
 }
 
 void ModelLearning::optimize_q(){
@@ -350,7 +350,7 @@ void ModelLearning::GibbsSampling(){
 		// initialize z with a random number
 		for( size_t n = 0; n < posSeqs_.size(); n++ ){
 			size_t LW2 = posSeqs_[n]->getL() - motif_->getW() + 2;
-			z_[n] = ( size_t )rand() % LW2;
+			z_[n] = static_cast<size_t>( rand() ) % LW2;
 		}
 	}
 
@@ -367,10 +367,10 @@ void ModelLearning::GibbsSampling(){
 	// 2. count k-mers for the highest order K
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 		if( z_[n] > 0 ){
-			int* kmer = posSeqs_[n]->getKmer();
+			size_t* kmer = posSeqs_[n]->getKmer();
 			for( int j = ( z_[n] <= K_ ) ? 1-(int)z_[n] : -(int)K_; j < (int)W_; j++ ){
 				int pos = static_cast<int>( z_[n] )-1+j;
-				int y = ( kmer[pos] >= 0 ) ? kmer[pos] % static_cast<int>( Y_[K_+1] ) : -1;
+				size_t y = kmer[pos] % Y_[K_+1];
 				n_z_[K_][y][j]++;
 			}
 		}
@@ -420,7 +420,7 @@ void ModelLearning::GibbsSampling(){
 			if( iteration > Global::maxCGSIterations - 10 ){
 				for( size_t k = 0; k < K_+1; k++ ){
 					for( size_t j = 0; j < W_; j++ ){
-						alpha_avg[k][j] += alpha_[k][j];
+						alpha_avg[k][j] += A_[k][j];
 					}
 				}
 			}
@@ -432,7 +432,7 @@ void ModelLearning::GibbsSampling(){
 			if( iteration > Global::maxCGSIterations - 10 ){
 				for( size_t k = 0; k < K_+1; k++ ){
 					for( size_t j = 0; j < W_; j++ ){
-						alpha_avg[k][j] += alpha_[k][j];
+						alpha_avg[k][j] += A_[k][j];
 					}
 				}
 			}
@@ -444,13 +444,13 @@ void ModelLearning::GibbsSampling(){
 		// average alphas over the last few steps for GibbsMH
 		for( size_t k = 0; k < K_+1; k++ ){
 			for( size_t j = 0; j < W_; j++ ){
-				alpha_[k][j] = alpha_avg[k][j] / 10.0;
+				A_[k][j] = alpha_avg[k][j] / 10.0;
 			}
 		}
 	}
 
 	// update model parameter v
-	motif_->updateVz_n( n_z_, alpha_, K_ );
+	motif_->updateVz_n( n_z_, A_, K_ );
 
 	// run five steps of EM to optimize the final model with
 	// the optimum model parameters v's and the fixed alphas
@@ -485,7 +485,7 @@ void ModelLearning::Gibbs_sample_z_q(){
 	float** v_bg = bg_->getV();
 
 	// updated model parameters v excluding the n'th sequence
-	motif_->updateVz_n( n_z_, alpha_, K_ );
+	motif_->updateVz_n( n_z_, A_, K_ );
 	// compute log odd scores s[y][j], log likelihoods of the highest order K
 	motif_->calculateLinearS( v_bg );
 
@@ -497,7 +497,7 @@ void ModelLearning::Gibbs_sample_z_q(){
 
 		size_t L = posSeqs_[n]->getL();
 		size_t LW1 = L - W_ + 1;
-		int* kmer = posSeqs_[n]->getKmer();
+		size_t* kmer = posSeqs_[n]->getKmer();
 
 		// count k-mers at position z_i+j except the n'th sequence
 		// remove the k-mer counts from the sequence with the current z
@@ -512,26 +512,26 @@ void ModelLearning::Gibbs_sample_z_q(){
 
 				for( int j = ( z_[n] <= K_ ) ? 1-(int)z_[n] : -(int)K_; j < (int)W_; j++ ){
 					int pos = static_cast<int>( z_[n] )-1+j;
-					int y = ( kmer[pos] >= 0 ) ? kmer[pos] % static_cast<int>( Y_[k+1] ) : -1;
+					size_t y = kmer[pos] % Y_[k+1];
 
 					n_z_[k][y][j]--;
 
-					if( j >= 0 && y >= 0 ){
+					if( j >= 0 ){
 						if( k == 0 ){
-							v[k][y][j]= ( static_cast<float>( n_z_[k][y][j] ) + static_cast<float>( alpha_[k][j] ) * v_bg[k][y] )
-										/ ( N_1 + static_cast<float>( alpha_[k][j] ) );
+							v[k][y][j]= ( static_cast<float>( n_z_[k][y][j] ) + static_cast<float>( A_[k][j] ) * v_bg[k][y] )
+										/ ( N_1 + static_cast<float>( A_[k][j] ) );
 						} else {
 
-							size_t y2 = static_cast<size_t>( y ) % Y_[k];
-							size_t yk = static_cast<size_t>( y ) / Y_[1];
+							size_t y2 = y % Y_[k];
+							size_t yk = y / Y_[1];
 
-							v[k][y][j] = ( static_cast<float>( n_z_[k][y][j] ) + static_cast<float>( alpha_[k][j] ) * v[k-1][y2][j] )
-										/ ( static_cast<float>( n_z_[k-1][yk][j-1] ) + static_cast<float>( alpha_[k][j] ) );
+							v[k][y][j] = ( static_cast<float>( n_z_[k][y][j] ) + static_cast<float>( A_[k][j] ) * v[k-1][y2][j] )
+										/ ( static_cast<float>( n_z_[k-1][yk][j-1] ) + static_cast<float>( A_[k][j] ) );
 						}
 
 						if( k == K_ ){
 
-							size_t y_bg = static_cast<size_t>( y ) % Y_[K_bg+1];
+							size_t y_bg = y % Y_[K_bg+1];
 
 							s[y][j] = v[K_][y][j] / v_bg[K_bg][y_bg];
 
@@ -584,7 +584,7 @@ void ModelLearning::Gibbs_sample_z_q(){
 		for( size_t ij = 0; ij < L; ij++ ){
 
 			// extract (K+1)-mer y from positions (i-k,...,i)
-			int y = ( kmer[ij] >= 0 ) ? kmer[ij] % static_cast<int>( Y_[K_+1] ) : -1;
+			size_t y = kmer[ij] % Y_[K_+1];
 
 			// j runs over all motif positions
 			size_t padding = ( static_cast<int>( ij-L+W_ ) > 0 ) * ( ij-L+W_ );
@@ -623,7 +623,7 @@ void ModelLearning::Gibbs_sample_z_q(){
 			for( int j = ( z_[n] <= K_ ) ? 1-(int)z_[n] : -(int)K_; j < (int)W_; j++ ){
 				int pos = static_cast<int>( z_[n] )-1+j;
 				for( size_t k = 0; k < K_+1; k++ ){
-					int y = ( kmer[pos] >= 0 ) ? kmer[pos] % static_cast<int>( Y_[k+1] ) : -1;
+					size_t y = kmer[pos] % Y_[k+1];
 					n_z_[k][y][j]++;
 				}
 			}
@@ -658,10 +658,10 @@ void ModelLearning::stochastic_optimize_alphas( size_t K, size_t W_, float eta, 
 		for( size_t j = 0; j < W_; j++ ){
 
 			// re-parameterise alpha on log scale: alpha = e^a
-			double a = log( alpha_[k][j] );
+			double a = log( A_[k][j] );
 
 			// get gradients w.r.t. stochastic objective at timestep t
-			gradient = alpha_[k][j] * calc_gradient_alphas( alpha_, k, j );
+			gradient = A_[k][j] * calc_gradient_alphas( A_, k, j );
 
 			// update biased first moment estimate
 			m1_t_[k][j] = beta1 * m1_t_[k][j] + ( 1 - beta1 ) * gradient;
@@ -679,7 +679,7 @@ void ModelLearning::stochastic_optimize_alphas( size_t K, size_t W_, float eta, 
 			// Note: here change the sign in front of eta from '-' to '+'
 			a += eta * m1 / ( ( sqrt( m2 ) + epsilon ) * sqrt( t ) );
 
-			alpha_[k][j] = exp( a );
+			A_[k][j] = exp( a );
 		}
 
 	}
@@ -697,7 +697,7 @@ void ModelLearning::GibbsMH_sample_alphas( size_t iter ){
 //			for( int step = 0; step < 10; step++ ){
 
 				// Metropolis-Hasting sheme
-				double a_prev = log( alpha_[k][j] );
+				double a_prev = log( A_[k][j] );
 
 				double lprob_a_prev = calc_logCondProb_a( iter, a_prev, k, j );
 
@@ -722,13 +722,13 @@ void ModelLearning::GibbsMH_sample_alphas( size_t iter ){
 					// accept the trial sample if the ratio is not smaller than a random number between (0,1)
 					if( accept_ratio >= uni_random ){
 
-						alpha_[k][j] = exp( a_new );
+						A_[k][j] = exp( a_new );
 
 					}
 
 				} else {
 					// accept the trial sample
-					alpha_[k][j] = exp( a_new );
+					A_[k][j] = exp( a_new );
 
 				}
 
@@ -769,7 +769,7 @@ void ModelLearning::discrete_sample_alphas( size_t iter ){
 
 			std::discrete_distribution<> posterior_dist( condProb.begin(), condProb.end() );
 
-			alpha_[k][j] = exp( posterior_dist( Global::rngx ) / 10.0 );
+			A_[k][j] = exp( posterior_dist( Global::rngx ) / 10.0 );
 		}
 	}
 }
@@ -1136,7 +1136,7 @@ void ModelLearning::write( size_t N ){
 		for( size_t j = 0; j < W_; j++ ){
 			for( size_t k = 0; k < K_+1; k++ ){
 				for( size_t y = 0; y < Y_[k+1]; y++ ){
-					ofile_n << ( int )n_[k][y][j] << '\t';
+					ofile_n << static_cast<int>( n_[k][y][j] ) << '\t';
 				}
 				ofile_n << std::endl;
 			}
@@ -1164,13 +1164,13 @@ void ModelLearning::write( size_t N ){
 		float cutoff = 0.3f;	// threshold for having a motif on the sequence in terms of responsibilities
 		for( size_t n = 0; n < posSeqs_.size(); n++ ){
 
-			ofile_pos << n+1 << '\t';
+			ofile_pos << posSeqs_[n]->getHeader() << '\t';
 
 			size_t LW1 = posSeqs_[n]->getL() - W_ + 1;
 
 			for( size_t i = LW1; i > 0; i-- ){
 				if( r_[n][i] >= cutoff ){
-					ofile_pos << LW1-i << '\t';
+					ofile_pos << LW1-i+1 << '\t';
 				}
 			}
 
@@ -1178,7 +1178,7 @@ void ModelLearning::write( size_t N ){
 		}
 	} else if( Global::CGS ){
 		for( size_t n = 0; n < posSeqs_.size(); n++ ){
-			ofile_pos << n+1 << '\t' << z_[n]+1 <<'\t' << z_[n]+W_ << std::endl;
+			ofile_pos << posSeqs_[n]->getHeader() << '\t' << z_[n]+1 <<'\t' << z_[n]+W_ << std::endl;
 		}
 	}
 
@@ -1189,7 +1189,7 @@ void ModelLearning::write( size_t N ){
 	for( size_t k = 0; k < K_+1; k++ ){
 		ofile_alpha << "> k=" << k << std::endl;
 		for( size_t j = 0; j < W_; j++ ){
-			ofile_alpha << std::setprecision( 3 ) << alpha_[k][j] << '\t';
+			ofile_alpha << std::setprecision( 3 ) << A_[k][j] << '\t';
 		}
 		ofile_alpha << std::endl;
 	}
@@ -1210,6 +1210,6 @@ void ModelLearning::write( size_t N ){
 	std::string opath_lpos = opath + ".lpos";
 	std::ofstream ofile_lpos( opath_lpos.c_str() );
 	for( size_t k = 0; k < K_+1; k++ ){
-		ofile_lpos << std::scientific << std::setprecision( 6 ) << calc_lposterior_alphas( alpha_, k ) << '\t';
+		ofile_lpos << std::scientific << std::setprecision( 6 ) << calc_lposterior_alphas( A_, k ) << '\t';
 	}
 }

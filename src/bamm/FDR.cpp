@@ -365,7 +365,7 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 	for( size_t n = 0; n < seqSet.size(); n++ ){
 
 		size_t LW1 = seqSet[n]->getL() - W + 1;
-		int* kmer = seqSet[n]->getKmer();
+		size_t* kmer = seqSet[n]->getKmer();
 
 		maxScore = -FLT_MAX;
 
@@ -375,9 +375,9 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 
 			for( size_t j = 0; j < W; j++ ){
 
-				int y = ( kmer[i+j] >= 0 ) ? kmer[i+j] % static_cast<int>( Y_[K+1] ) : -1;
+				size_t y = kmer[i+j] % Y_[K+1];
 
-				logOdds += ( y >= 0 ) ? s[y][j] : 0;
+				logOdds += s[y][j];
 
 			}
 

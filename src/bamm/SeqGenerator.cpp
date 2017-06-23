@@ -42,18 +42,15 @@ void SeqGenerator::calculate_kmer_frequency(){
 	// count k-mers
 	for( size_t i = 0; i < seqs_.size(); i++ ){
 		size_t L = seqs_[i]->getL();
-		int* kmer = seqs_[i]->getKmer();
+		size_t* kmer = seqs_[i]->getKmer();
 		for( size_t k = 0; k < sOrder_+1; k++ ){
 			// loop over sequence positions
 			for( size_t j = k; j < L; j++ ){
 				// extract (k+1)-mer
 				// todo: this is not properly done with unknown alphabet N
-				int y = kmer[j] % static_cast<int>( Y_[k+1] );
-				// skip non-defined alphabet letters
-				if( y >= 0 ){
-					// count (k+1)mer
-					count_[k][y]++;
-				}
+				size_t y = kmer[j] % Y_[k+1];
+				// count (k+1)mer
+				count_[k][y]++;
 			}
 		}
 	}

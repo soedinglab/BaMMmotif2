@@ -39,10 +39,19 @@ void Alphabet::init( char* alphabetType ){
 	  	baseToCode_[( size_t )tolower( alphabet_[i] )] = ( uint8_t )( i + 1 );		// for lower case
 	  	codeToBase_[i+1] = alphabet_[i];
 	}
+	codeToBase_[0] = 'N';
+	for( size_t i = size_; i < 127; i++ ){
+		codeToBase_[i+1] = 'N';
+	}
 
-	codeToComplementCode_ = ( uint8_t* )calloc( size_+1, sizeof( uint8_t ) );
-	for( size_t i = 0; i < size_; i++ )
+	codeToComplementCode_ = ( uint8_t* )calloc( 128, sizeof( uint8_t ) );
+	for( size_t i = 0; i < size_; i++ ){
 		codeToComplementCode_[i+1] = baseToCode_[( size_t )complementAlphabet_[i]];
+	}
+	codeToComplementCode_[0] = 'N';
+	for( size_t i = size_; i < 127; i++ ){
+		codeToComplementCode_[i+1] = 'N';
+	}
 }
 
 void Alphabet::destruct(){

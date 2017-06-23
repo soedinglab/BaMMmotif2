@@ -22,7 +22,7 @@ public:
 
 	float 	        getIntensity();
 	float 	        getWeight();
-	int*			getKmer();						// get the value for 8-mer in the sequence
+	size_t*			getKmer();						// get the value for 10-mer in the sequence
 
 	void 	        setIntensity( float intensity );
 	void 	        setWeight( float weight );
@@ -39,7 +39,7 @@ private:
 
 	float			intensity_ = 0.0f;				// sequence intensity
 	float			weight_ = 0.0f;					// sequence weight calculated from its intensity
-	int*			kmer_;							// get the value for 8-mers
+	size_t*			kmer_;							// get the value for 8-mers
 
 	std::vector<size_t>			Y_;					// contains 1 at position 0
 													// and the number of oligomers y for increasing order k at positions k+1
@@ -48,7 +48,7 @@ private:
 													// limits the length of oligomers to 15 (and the order to 14)
 };
 
-inline int* Sequence::getKmer(){
+inline size_t* Sequence::getKmer(){
 	return kmer_;
 }
 

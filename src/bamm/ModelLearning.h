@@ -41,7 +41,7 @@ private:
 												// rightmost nucleotide at position j
 	size_t*					z_;					// observed position of motif in each sequence
 	float**					pos_;				// positional prior, pos[i]=0 means no motif is found on the sequence
-	double** 				alpha_;	        	// pseudo-count hyper-parameter for order k and motif position j
+	double** 				A_;	        		// pseudo-count hyper-parameter for order k and motif position j
 	float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif
 	float 					llikelihood_ = 0.0f;// log likelihood for each iteration
 	double**				m1_t_;				// first moment for alpha optimizer (ADAM)
