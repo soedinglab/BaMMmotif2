@@ -2,6 +2,7 @@
 
 **Ba**yesian **M**arkov **M**odel **motif** discovery software.
 
+
 ## Requirements
 To compile from source you need
 
@@ -12,7 +13,14 @@ To plot BaMM logos you need
 
   * [R](https://cran.r-project.org/) 2.14.1 or later
 
-## How to compile BaMM!motif?
+## Installation
+
+# Clone it from GIT
+
+      git clone git@github.com:soedinglab/BaMMmotif
+      cd BaMMmotif
+
+# How to compile BaMM!motif?
 
       mkdir build
       cd build
