@@ -53,14 +53,21 @@ int main( int nargs, char* args[] ){
 
 	if( Global::verbose ){
 		fprintf( stderr, "\n" );
-		fprintf( stderr, "*********************\n" );
-		fprintf( stderr, "*   Initial Motif   *\n" );
-		fprintf( stderr, "*********************\n" );
+		fprintf( stderr, "**************************\n" );
+		fprintf( stderr, "*   Initial Motif Model  *\n" );
+		fprintf( stderr, "**************************\n" );
 	}
 
 	MotifSet motifs;
 
 	size_t motifNum = ( Global::num > motifs.getN() ) ? motifs.getN() : Global::num;
+
+	if( Global::verbose ){
+		fprintf( stderr, "\n" );
+		fprintf( stderr, "********************\n" );
+		fprintf( stderr, "*   BaMM training  *\n" );
+		fprintf( stderr, "********************\n" );
+	}
 
 	for( size_t n = 0; n < motifNum; n++ ){
 		// deep copy each motif in the motif set
@@ -123,9 +130,9 @@ int main( int nargs, char* args[] ){
 	if( Global::FDR ){
 		if( Global::verbose ){
 			fprintf( stderr, "\n" );
-			fprintf( stderr, "***********\n" );
-			fprintf( stderr, "*   FDR   *\n" );
-			fprintf( stderr, "***********\n" );
+			fprintf( stderr, "*********************\n" );
+			fprintf( stderr, "*   Validate BaMM   *\n" );
+			fprintf( stderr, "*********************\n" );
 		}
 		for( size_t n = 0; n < motifNum; n++ ){
 			Motif* motif = new Motif( *motifs.getMotifs()[n] );
@@ -140,42 +147,7 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "******************\n" );
 	fprintf( stderr, "*   Statistics   *\n" );
 	fprintf( stderr, "******************\n" );
-	std::cout << "Alphabet type is " << Alphabet::getAlphabet();
-	std::cout << "\nGiven initial model is " << Global::initialModelBasename
-			<< ", BaMM order: " << Global::modelOrder
-			<< ", background model order: " << Global::bgModelOrder;
-	std::cout << "\nBaMM is learned from ";
-	if( Global::ss ){
-		std::cout << "single-stranded sequences.";
-	} else {
-		std::cout << "double-stranded sequences.";
-	}
-
-	// for positive sequence set
-	std::cout << "\nGiven positive sequence set is " << Global::posSequenceBasename
-			<< "\n	"<< Global::posSequenceSet->getN() << " sequences, max.length: " <<
-			Global::posSequenceSet->getMaxL() << ", min.length: " <<
-			Global::posSequenceSet->getMinL() << "\n	base frequencies:";
-	for( size_t i = 0; i < Alphabet::getSize(); i++ ){
-		std::cout << ' ' << Global::posSequenceSet->getBaseFrequencies()[i]
-		          << "(" << Alphabet::getAlphabet()[i] << ")";
-	}
-	std::cout << "\n	" << Global::q * 100 << "% of the sequences contain the optimized motif.";
-	// for negative sequence set
-	if( Global::negSeqGiven ){
-		std::cout << "\nGiven negative sequence set is " << Global::negSequenceBasename
-				<< "\n	"<< Global::negSequenceSet->getN() << " sequences, max.length: "
-				<< Global::negSequenceSet->getMaxL() << ", min.length: " <<
-				Global::negSequenceSet->getMinL() << "\n	base frequencies:";
-		for( size_t i = 0; i < Alphabet::getSize(); i++ )
-			std::cout << ' ' << Global::negSequenceSet->getBaseFrequencies()[i]
-					  << "(" << Alphabet::getAlphabet()[i] << ")";
-	}
-
-	if( Global::FDR ){
-		std::cout << "\nFolds for cross-validation (FDR estimation): " << Global::cvFold;
-	}
-
+	Global::printStat();
 	fprintf( stdout, "\n-------------- Runtime: %.2f seconds (%0.2f minutes) --------------\n",
 			( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC, ( ( float )( clock() - t0 ) ) / ( CLOCKS_PER_SEC * 60.0f ) );
 

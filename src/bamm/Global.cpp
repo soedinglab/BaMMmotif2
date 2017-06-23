@@ -323,6 +323,45 @@ int Global::readArguments( int nargs, char* args[] ){
 	return 0;
 }
 
+void Global::printStat(){
+
+	std::cout << "Alphabet type is " << Alphabet::getAlphabet();
+	std::cout << "\nGiven initial model is " << Global::initialModelBasename
+			<< ", BaMM order: " << Global::modelOrder
+			<< ", background model order: " << Global::bgModelOrder;
+	std::cout << "\nBaMM is learned from ";
+	if( Global::ss ){
+		std::cout << "single-stranded sequences.";
+	} else {
+		std::cout << "double-stranded sequences.";
+	}
+
+	// for positive sequence set
+	std::cout << "\nGiven positive sequence set is " << Global::posSequenceBasename
+			<< "\n	"<< Global::posSequenceSet->getN() << " sequences, max.length: " <<
+			Global::posSequenceSet->getMaxL() << ", min.length: " <<
+			Global::posSequenceSet->getMinL() << "\n	base frequencies:";
+	for( size_t i = 0; i < Alphabet::getSize(); i++ ){
+		std::cout << ' ' << Global::posSequenceSet->getBaseFrequencies()[i]
+		          << "(" << Alphabet::getAlphabet()[i] << ")";
+	}
+	std::cout << "\n	" << Global::q * 100 << "% of the sequences contain the optimized motif.";
+	// for negative sequence set
+	if( Global::negSeqGiven ){
+		std::cout << "\nGiven negative sequence set is " << Global::negSequenceBasename
+				<< "\n	"<< Global::negSequenceSet->getN() << " sequences, max.length: "
+				<< Global::negSequenceSet->getMaxL() << ", min.length: " <<
+				Global::negSequenceSet->getMinL() << "\n	base frequencies:";
+		for( size_t i = 0; i < Alphabet::getSize(); i++ )
+			std::cout << ' ' << Global::negSequenceSet->getBaseFrequencies()[i]
+					  << "(" << Alphabet::getAlphabet()[i] << ")";
+	}
+
+	if( Global::FDR ){
+		std::cout << "\nFolds for cross-validation (FDR estimation): " << Global::cvFold;
+	}
+}
+
 void Global::printHelp(){
 	printf("\n============================================================================================\n");
 	printf("\n SYNOPSIS:	BaMMmotif OUTDIR SEQFILE [options] \n\n");
