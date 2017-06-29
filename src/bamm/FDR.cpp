@@ -8,10 +8,7 @@ FDR::FDR( Motif* motif, size_t cvFold ){
 	float fold = ( float )Global::negSequenceSet->getN() / ( float )Global::posSequenceSet->getN();
 	mFold_ = ( Global::negSeqGiven ) ? fold : ( float )Global::mFold;
 	cvFold_ = cvFold;
-
-	for( size_t k = 0; k < motif_->getK()+8; k++ ){
-		Y_.push_back( ipow( Alphabet::getSize(), k ) );
-	}
+	Y_ = motif->getY();
 
 	occ_frac_ = 0.0f;
 	occ_mult_ = 0.0f;
@@ -98,6 +95,8 @@ void FDR::evaluateMotif( size_t n ){
 		}
 
 		if( !Global::negSeqGiven ){
+
+			// sample negative sequence set based on k-mer frequencies
 			std::vector<std::unique_ptr<Sequence>> negSet;
 			// generate negative sequence set
 			SeqGenerator seqs( testSet );

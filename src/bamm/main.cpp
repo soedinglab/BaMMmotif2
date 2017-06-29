@@ -119,7 +119,7 @@ int main( int nargs, char* args[] ){
 			// score the model on sequence set
 			ScoreSeqSet seqset( motif, bgModel, Global::posSequenceSet->getSequences() );
 			seqset.score();
-			seqset.write( n+1, Global::scoreCutoff );
+			seqset.write( Global::outputDirectory, Global::scoreCutoff );
 		}
 
 		delete motif;

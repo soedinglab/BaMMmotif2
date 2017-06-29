@@ -8,7 +8,7 @@ Motif::Motif( size_t length, size_t K, std::vector<float> alpha ){
 	K_ = K;
 	A_ = alpha;
 
-	for( size_t k = 0; k < K_+8; k++ ){
+	for( size_t k = 0; k < K_+5; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 
@@ -21,14 +21,13 @@ Motif::Motif( size_t length, size_t K, std::vector<float> alpha ){
 		p_[k] = ( float** )calloc( Y_[k+1], sizeof( float* ) );
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
 			v_[k][y] = ( float* )calloc( W_, sizeof( float ) );
-			n_[k][y] = ( size_t* )calloc( W_+K_, sizeof( size_t ) ) + K_;
+			n_[k][y] = ( size_t* )calloc( W_, sizeof( size_t ) );
 			p_[k][y] = ( float* )calloc( W_, sizeof( float ) );
 		}
 	}
 
-	s_ = ( float** )calloc( Y_[K_+1]+1, sizeof( float* ) )+1;
-
-	for( int y = -1; y < static_cast<int>( Y_[K_+1] ); y++ ){
+	s_ = ( float** )calloc( Y_[K_+1], sizeof( float* ) );
+	for( size_t y = 0; y < Y_[K_+1]; y++ ){
 		s_[y] = ( float* )calloc( W_, sizeof( float ) );
 	}
 
@@ -41,11 +40,7 @@ Motif::Motif( const Motif& other ){ 		// copy constructor
 	W_ = other.W_;
 	K_ = other.K_;
 	A_ = other.A_;
-
-	Y_.clear();
-	for( size_t k = 0; k < K_+8; k++ ){
-		Y_.push_back( ipow( Alphabet::getSize(), k ) );
-	}
+	Y_ = other.Y_;
 
 	v_ = ( float*** )malloc( ( K_+1 ) * sizeof( float** ) );
 	n_ = ( size_t*** )malloc( ( K_+1 ) * sizeof( size_t** ) );
@@ -56,21 +51,19 @@ Motif::Motif( const Motif& other ){ 		// copy constructor
 		p_[k] = ( float** )malloc( Y_[k+1] * sizeof( float* ) );
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
 			v_[k][y] = ( float* )malloc( W_ * sizeof( float ) );
-			n_[k][y] = ( size_t* )malloc( ( W_ + K_ ) * sizeof( size_t ) ) + K_;
+			n_[k][y] = ( size_t* )malloc( ( W_ ) * sizeof( size_t ) );
 			p_[k][y] = ( float* )malloc( W_ * sizeof( float ) );
 			for( size_t j = 0; j < W_; j++ ){
 				v_[k][y][j] = other.v_[k][y][j];
 				p_[k][y][j] = other.p_[k][y][j];
-			}
-			for( int j = -(int)K_; j < (int)W_; j++ ){
 				n_[k][y][j] = other.n_[k][y][j];
 			}
 		}
 	}
 
-	s_ = ( float** )calloc( Y_[K_+1]+1, sizeof( float* ) )+1;
-	for( int y = -1; y < static_cast<int>( Y_[K_+1] ); y++ ){
-		s_[y] = ( float* )calloc( W_, sizeof( float ) );
+	s_ = ( float** )malloc( Y_[K_+1] * sizeof( float* ) );
+	for( size_t y = 0; y < Y_[K_+1]; y++ ){
+		s_[y] = ( float* )malloc( W_ * sizeof( float ) );
 		for( size_t j = 0; j < W_; j++ ){
 			s_[y][j] = other.s_[y][j];
 		}
@@ -86,7 +79,7 @@ Motif::~Motif(){
 	for( size_t k = 0; k < K_+1; k++ ){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
 			free( v_[k][y] );
-			free( n_[k][y] - K_ );
+			free( n_[k][y] );
 			free( p_[k][y] );
 		}
 		free( v_[k] );
@@ -97,10 +90,10 @@ Motif::~Motif(){
 	free( n_ );
 	free( p_ );
 
-	for( int y = -1; y < Y_[K_+1]; y++ ){
+	for( size_t y = 0; y < Y_[K_+1]; y++ ){
 		free( s_[y] );
 	}
-	free( s_-1 );
+	free( s_ );
 
 }
 
@@ -192,7 +185,7 @@ void Motif::initFromBindingSites( char* filename ){
 		for( size_t k = 0; k < K_+1; k++ ){	// k runs over all orders
 			for( size_t j = k; j < bindingSiteWidth; j++ ){	// j runs over all true motif positions
 				size_t y = 0;
-				for( size_t n = k+1; n >= 1; n-- ){				// calculate y based on (k+1)-mer bases
+				for( size_t n = k+1; n >= 1; n-- ){			// calculate y based on (k+1)-mer bases
 					y += Y_[n-1] * ( Alphabet::getCode( bindingsite[j-n+1] ) - 1 );
 				}
 				n_[k][y][j]++;
@@ -294,8 +287,8 @@ void Motif::initFromPWM( float** PWM, size_t asize, size_t count ){
 		// count kmers with sampled z
 		if( z > 0 ){
 			for( size_t k = 0; k < K_+1; k++ ){
-				for( size_t j = ( z <= K_ ) ? 1-z : -K_; j < W_; j++ ){
-					size_t y = kmer[z-1+j] % Y_[k+1];
+				for( int j = ( z <= K_ ) ? 1-(int)z : -(int)K_; j < W_; j++ ){
+					size_t y = kmer[(int)z-1+j] % Y_[k+1];
 					n_[k][y][j]++;
 				}
 			}
@@ -388,10 +381,6 @@ float*** Motif::getP(){
 	return p_;
 }
 
-size_t*** Motif::getN(){
-	return n_;
-}
-
 void Motif::calculateV(){
 
 	// for k = 0, v_ = freqs:
@@ -441,7 +430,7 @@ void Motif::calculateP(){
 
 void Motif::calculateS( float** Vbg ){
 
-	size_t K_bg = ( Global::bgModelOrder < K_ ) ? Global::bgModelOrder : K_ ;
+	size_t K_bg = Global::bgModelOrder;
 
 	for( size_t y = 0; y < Y_[K_+1]; y++ ){
 		size_t y_bg = y % Y_[K_bg+1];
@@ -450,25 +439,17 @@ void Motif::calculateS( float** Vbg ){
 		}
 	}
 
-	for( size_t j = 0; j < W_; j++ ){
-		s_[-1][j] = 0.0f;
-	}
-
 }
 
 void Motif::calculateLinearS( float** Vbg ){
 
-	size_t K_bg = ( Global::bgModelOrder < K_ ) ? Global::bgModelOrder : K_;
+	size_t K_bg = Global::bgModelOrder;
 
 	for( size_t y = 0; y < Y_[K_+1]; y++ ){
 		size_t y_bg = y % Y_[K_bg+1];
 		for( size_t j = 0; j < W_; j++ ){
 			s_[y][j] = v_[K_][y][j] / Vbg[K_bg][y_bg];
 		}
-	}
-
-	for( size_t j = 0; j < W_; j++ ){
-		s_[-1][j] = 0.0f;
 	}
 }
 

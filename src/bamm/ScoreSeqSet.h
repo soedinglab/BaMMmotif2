@@ -28,7 +28,7 @@ public:
 	std::vector<std::vector<float>> getMopsScores();
 	std::vector<float> 				getZoopsScores();
 
-	void write( size_t N, float cutoff );
+	void write( char* dir, float cutoff );
 
 
 private:

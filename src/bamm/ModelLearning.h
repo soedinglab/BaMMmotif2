@@ -41,47 +41,48 @@ private:
 												// rightmost nucleotide at position j
 	size_t*					z_;					// observed position of motif in each sequence
 	float**					pos_;				// positional prior, pos[i]=0 means no motif is found on the sequence
-	double** 				A_;	        		// pseudo-count hyper-parameter for order k and motif position j
+	float** 				A_;	        		// pseudo-count hyper-parameter for order k and motif position j
 	float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif
+	size_t					N0_ = 0;			// count of sequences that do not contain a motif
 	float 					llikelihood_ = 0.0f;// log likelihood for each iteration
 	double**				m1_t_;				// first moment for alpha optimizer (ADAM)
 	double**				m2_t_;				// second moment for alpha optimizer (ADAM)
 	std::vector<Sequence*>	posSeqs_;			// copy positive sequences due to folds
+	std::vector<size_t>		Y_;
 
 	void 					EStep();			// E-step
 	void 					MStep();			// M-step
-	void 					optimize_q();		// optimize hyper-parameter q
+	void 					Optimize_q();		// optimize hyper-parameter q
 
-							// sample z and q by collapsed Gibbs sampling
-	void					Gibbs_sample_z_q();
+							// sample motif position z by collapsed Gibbs sampling
+	void					Collapsed_Gibbs_sample_z();
 
-							// update alphas for all the orders up to K, given the learning rate
-	void					stochastic_optimize_alphas( size_t order, size_t width, float learningrate, size_t t );
+							// sample sequence fraction q for motif by regular Gibbs sampling
+	void					Gibbs_sample_q();
 
-							// calculate the gradient of the log posterior of alphas
-	double					calc_gradient_alphas( double** alphas, size_t order, size_t position );
-
-							// calculate the log posterior of a's
-	double					calc_logCondProb_a( size_t iteration, double a, size_t order, size_t position );
+							// update alphas for all the orders up to K by stochastic gradient descent
+	void					Optimize_alphas_by_SGD( size_t order, size_t width, float learningrate, size_t t );
 
 							// Gibbs sampling alphas with Metropolis-Hastings algorithm
 	void					GibbsMH_sample_alphas( size_t iteration );
 
 							// sampling a's from the distribution of the log posterior
-	void					discrete_sample_alphas( size_t iteration );
+	void					Discrete_sample_alphas( size_t iteration );
 
-	// calculate the prior of alphas
-	double					calc_prior_alphas( double** alphas, size_t order );
+							// calculate the gradient of the log posterior of alphas
+	float					calc_gradient_alphas( float** alphas, size_t order, size_t position );
 
-	// calculate the log likelihood of alphas
-	double					calc_llikelihood_alphas( double** alphas, size_t order );
+							// calculate the log posterior of a's
+	float					calc_logCondProb_a( size_t iteration, float a, size_t order, size_t position );
 
-	// calculate the log posterior of alphas
-	double					calc_lposterior_alphas( double** alphas, size_t order );
+							// calculate the prior of alphas
+	float					calc_prior_alphas( float** alphas, size_t order );
 
-	std::vector<size_t>		Y_;					// contains 1 at position 0
-												// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
-												// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
+							// calculate the log likelihood of alphas
+	float					calc_llikelihood_alphas( float** alphas, size_t order );
+
+							// calculate the log posterior of alphas
+	float					calc_lposterior_alphas( float** alphas, size_t order );
 
 };
 
