@@ -16,21 +16,21 @@ To plot BaMM logos you need
 
 ## Installation
 
-# Clone it from GIT
+### Clone it from GIT
 
       git clone git@github.com:soedinglab/BaMMmotif
       cd BaMMmotif
 
-# How to compile BaMM!motif?
+### How to compile BaMM!motif?
 
 
-### Linux
+#### Linux
       mkdir build
       cd build
       cmake ..
       make
 
-### OS X
+#### OS X
 OS X ships clang instead of gcc. We recommend using [Homebrew](http://brew.sh/) to install gcc.
 
 Having installed Homebrew, all required dependencies can be installed using the `brew` command
@@ -203,7 +203,7 @@ Sequence options
 
 BaMMs are written to flat file when invoking BaMM!motif with the output option `--saveInitBaMMs` and/or `--saveBaMMs`. In this case, BaMM!motif generates two files for each inhomogeneous BaMM &ndash; one containing the probabilities (filename extension: `ihbp`) and one containing the conditional probabilities (filename extension: `.ihbcp`). The format is the same for these two files. While blank lines separate BaMM positions, lines 1 to *k*+1 of each BaMM position contain the (conditional) probabilities for order 0 to order *k*. For instance, the format for a BaMM of order 2 and length *W* is as follows:
 
-Filename extension: .ihbp
+Filename extension: `.ihbp`
 
 P<sub>1</sub>(A) P<sub>1</sub>(C) P<sub>1</sub>(G) P<sub>1</sub>(T)<br>
 P<sub>1</sub>(AA) P<sub>1</sub>(AC) P<sub>1</sub>(AG) P<sub>1</sub>(AT) P<sub>1</sub>(CA) P<sub>1</sub>(CC) P<sub>1</sub>(CG) ... P<sub>1</sub>(TT)<br>
@@ -218,7 +218,7 @@ P<sub>W</sub>(A) P<sub>W</sub>(C) P<sub>W</sub>(G) P<sub>W</sub>(T)<br>
 P<sub>W</sub>(AA) P<sub>W</sub>(AC) P<sub>W</sub>(AG) P<sub>W</sub>(AT) P<sub>W</sub>(CA) P<sub>W</sub>(CC) P<sub>W</sub>CG) ... P<sub>W</sub>(TT)<br>
 P<sub>W</sub>(AAA) P<sub>W</sub>(AAC) P<sub>W</sub>(AAG) P<sub>W</sub>(AAT) P<sub>W</sub>(ACA) P<sub>W</sub>(ACC) P<sub>W</sub>(ACG) ... P<sub>W</sub>(TTT)<br>
 
-Filename extension: .ihbcp
+Filename extension: `.ihbcp`
 
 P<sub>1</sub>(A) P<sub>1</sub>(C) P<sub>1</sub>(G) P<sub>1</sub>(T)<br>
 P<sub>1</sub>(A|A) P<sub>1</sub>(C|A) P<sub>1</sub>(G|A) P<sub>1</sub>(T|A) P<sub>1</sub>(A|C) P<sub>1</sub>(C|C) P<sub>1</sub>(G|C) ... P<sub>1</sub>(T|T)<br>
@@ -236,13 +236,13 @@ P<sub>W</sub>(A|AA) P<sub>W</sub>(C|AA) P<sub>W</sub>(G|AA) P<sub>W</sub>(T|AA) 
 
 In addition, BaMM!motif generates two files for the homogeneous background BaMM &ndash; one containing the probabilities (filename extension: `.hbp`) and the other containing the conditional probabilities (filename extension: `.hbcp`). For instance, the format for a background BaMM of order 2 is as follows:
 
-Filename extension: .hbp
+Filename extension: `.hbp`
 
 P(A) P(C) P(G) P(T)<br>
 P(AA) P(AC) P(AG) P(AT) P(CA) P(CC) P(CG) ... P(TT)<br>
 P(AAA) P(AAC) P(AAG) P(AAT) P(ACA) P(ACC) P(ACG) ... P(TTT)<br>
 
-Filename extension: .hbcp
+Filename extension: `.hbcp`
 
 P(A) P(C) P(G) P(T)<br>
 P(A|A) P(C|A) P(G|A) P(T|A) P(A|C) P(C|C) P(G|C) ... P(T|T)<br>
@@ -263,18 +263,18 @@ The logo order is an integer between 0 to 8.
 
 ## Motif occurrence file
 
-Filename extension: .occcurrence
+Filename extension: `.occcurrence`
 
->sequence name:sequence length
-start:end:log odds score:strand:matched pattern
+    >sequence name:sequence length
+    start:end:log odds score:strand:matched pattern
 
 example: 
 
->chr6:205
-59:70:5.25:+:CTGGTGACTGAC
-333:344:0.103:-:CCAAGGTGTCAG
-337:348:4.76:-:GGTGTCAGTCAC
-365:376:0.129:-:GCAGAGACCCAC
+    >chr6:205
+    59:70:5.25:+:CTGGTGACTGAC
+    333:344:0.103:-:CCAAGGTGTCAG
+    337:348:4.76:-:GGTGTCAGTCAC
+    365:376:0.129:-:GCAGAGACCCAC
 
 ## License
 
