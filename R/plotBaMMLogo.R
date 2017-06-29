@@ -138,7 +138,6 @@ parser$add_argument('logo_order', help='logo order, it must be not higher than b
 args <- parser$parse_args()
 
 input_path <- args$input_path
-input_path <- "/home/wanwan/benchmark/tmp/JunD/k5/JunD_pseudo_k5_motif_1.ihbcp"
 
 # directory to hold the output log file
 dirname <- dirname(input_path)
@@ -152,7 +151,7 @@ filename <- splits[1]
 
 # read in logo order (max. order: 5)
 order <- args$logo_order
-order <- 1
+
 # background sequence logo
 bg <- FALSE
 
