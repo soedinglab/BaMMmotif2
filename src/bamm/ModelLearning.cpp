@@ -182,7 +182,8 @@ int ModelLearning::EM(){
 	motif_->calculateP();
 
 	// update the global parameter q
-	Global::q = ( float )( posSeqs_.size() - N0_ ) / ( float )posSeqs_.size();
+	// it does not suit for multiple models
+//	Global::q = ( float )( posSeqs_.size() - N0_ ) / ( float )posSeqs_.size();
 
 	// free memory
 	for( size_t y = 0; y < Y_[K_+1]; y++ ){
@@ -371,8 +372,7 @@ void ModelLearning::GibbsSampling(){
 		if( z_[n] > 0 ){
 			size_t* kmer = posSeqs_[n]->getKmer();
 			for( int j = ( z_[n] <= K_ ) ? 1-(int)z_[n] : -(int)K_; j < (int)W_; j++ ){
-				int pos = static_cast<int>( z_[n] )-1+j;
-				size_t y = kmer[pos] % Y_[K_+1];
+				size_t y = kmer[(int)z_[n]-1+j] % Y_[K_+1];
 				n_z_[K_][y][j]++;
 			}
 		}
@@ -472,7 +472,8 @@ void ModelLearning::GibbsSampling(){
 	motif_->calculateP();
 
 	// update the global parameter q
-	Global::q = ( float )( posSeqs_.size() - N0_ ) / ( float )posSeqs_.size();
+	// it does not suit for multiple models
+//	Global::q = ( float )( posSeqs_.size() - N0_ ) / ( float )posSeqs_.size();
 
 	fprintf( stdout, "\n--- Runtime for Collapsed Gibbs sampling: %.4f seconds ---\n", ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );
 }
@@ -1211,10 +1212,13 @@ void ModelLearning::write( size_t N ){
 		ofile_r << std::endl;
 	}*/
 
+/*
 	// output log posterior alphas
 	std::string opath_lpos = opath + ".lpos";
 	std::ofstream ofile_lpos( opath_lpos.c_str() );
 	for( size_t k = 0; k < K_+1; k++ ){
 		ofile_lpos << std::scientific << std::setprecision( 6 ) << calc_lposterior_alphas( A_, k ) << '\t';
 	}
+*/
+
 }

@@ -219,11 +219,16 @@ P(A|AA) P(C|AA) P(G|AA) P(T|AA) P(A|AC) P(C|AC) P(G|AC) ... P(T|TT)<br>
 
 ## How to plot BaMM logos?
 
-R scripts are provided in directory R to plot the BaMM logo from a BaMM flat file. To create a BaMM logo, edit the parameter setting in `plotBaMM.wrapper.R` and source the code in the R session using
+R scripts are provided in directory R to plot the BaMM logo from a BaMM flat file. 
 
-    source( "plotBaMM.wrapper.R" )
+There are two R files for plotting BaMM logos: 1. plotBaMMLogo.R and 2.generateLogo.R
 
-Please find comments on available plotting options in the wrapper.
+The required input is one of the output files from BaMM!motif with extension .ihbcp, .ihbp, .hbcp or .hbp.
+
+The logo order is an integer between 0 to 8.
+
+    plotBaMMLogo.R path_to_bamm_file logo_order
+
 
 ## License
 BaMM!motif is released under the GNU General Public License v3 or later. See LICENSE for more details.

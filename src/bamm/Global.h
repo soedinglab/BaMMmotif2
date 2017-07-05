@@ -120,6 +120,7 @@ public:
 	static void         destruct();
 	static void         debug();
 	static void			printStat();
+	static void			writeStat();
 	static char* 		String( const char *s );			// convert const char* to string, for GetOpt library
 
 	static std::mt19937	rngx;
