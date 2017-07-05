@@ -132,7 +132,7 @@ int ModelLearning::EM(){
 		v_before[y] = ( float* )calloc( W_, sizeof( float ) );
 	}
 
-	int EMIterations = 0;
+	size_t EMIterations = 0;
 	// iterate over
 	while( iterate && ( EMIterations < Global::maxEMIterations ) ){
 
@@ -639,7 +639,7 @@ void ModelLearning::Collapsed_Gibbs_sample_z(){
 void ModelLearning::Gibbs_sample_q(){
 
 	// sampling the fraction of sequences which contain the motif
-	boost::math::beta_distribution<float> q_beta_dist( posSeqs_.size() - N0_ + 1, N0_ + 1);
+	boost::math::beta_distribution<float> q_beta_dist( ( float )posSeqs_.size() - ( float )N0_ + 1.0f, ( float )N0_ + 1.0f );
 	q_ = ( float )quantile( q_beta_dist, ( float )rand() / ( float )RAND_MAX );
 //	q_ = ( float )( posSeqs_.size() - N0_ ) / ( float )posSeqs_.size();
 
@@ -681,7 +681,7 @@ void ModelLearning::Optimize_alphas_by_SGD( size_t K, size_t W_, float eta, size
 
 			// update parameter a due to alphas
 			// Note: here change the sign in front of eta from '-' to '+'
-			a += eta * m1 / ( ( sqrt( m2 ) + epsilon ) * sqrt( t ) );
+			a += static_cast<float>( eta * m1 / ( ( sqrt( m2 ) + epsilon ) * sqrt( t ) ) );
 
 			A_[k][j] = expf( a );
 		}
@@ -757,7 +757,7 @@ void ModelLearning::Discrete_sample_alphas( size_t iter ){
 
 		for( size_t j = 0; j < W_; j++ ){
 
-			std::vector<double> condProb;
+			std::vector<float> condProb;
 
 			float condProb_new;
 
@@ -765,7 +765,7 @@ void ModelLearning::Discrete_sample_alphas( size_t iter ){
 
 			for( size_t it = 0; it < 100; it++ ){
 
-				condProb_new = exp( calc_logCondProb_a( iter, static_cast<float>( it ) / 10.0f, k, j ) - base );
+				condProb_new = expf( calc_logCondProb_a( iter, static_cast<float>( it ) / 10.0f, k, j ) - base );
 
 				condProb.push_back( condProb_new );
 
@@ -788,7 +788,7 @@ float ModelLearning::calc_gradient_alphas( float** alpha, size_t k, size_t j ){
 	size_t N = posSeqs_.size() - 1;
 
 	// the first term of equation 47
-	gradient -= 2.0 / alpha[k][j];
+	gradient -= 2.0f / alpha[k][j];
 
 	// the second term of equation 47
 	gradient += Global::modelBeta * powf( Global::modelGamma, static_cast<float>( k ) ) / powf( alpha[k][j], 2.0f );
@@ -958,7 +958,7 @@ float ModelLearning::calc_prior_alphas( float** alpha, size_t k ){
 	for( size_t j = 0; j < W_; j++ ){
 
 		// the first term of equation 46
-		logPrior -= 2.0 * log( alpha[k][j] );
+		logPrior -= 2.0f * logf( alpha[k][j] );
 
 		// the second term of equation 46
 		logPrior -= Global::modelBeta * powf( Global::modelGamma, ( float )k ) / alpha[k][j];
@@ -979,7 +979,7 @@ float ModelLearning::calc_lposterior_alphas( float** alpha, size_t k ){
 	for( size_t j = 0; j < W_; j++ ){
 
 		// the prior
-		logPosterior -= 2.0 * logf( alpha[k][j] );
+		logPosterior -= 2.0f * logf( alpha[k][j] );
 
 		// the prior
 		logPosterior -= Global::modelBeta * powf( Global::modelGamma, ( float )k ) / alpha[k][j];

@@ -157,11 +157,13 @@ void Motif::initFromBindingSites( char* filename ){
 
 		// add alphabets randomly at the beginning of each binding site
 		for( size_t i = 0; i < Global::addColumns.at(0); i++ )
-			bindingsite.insert( bindingsite.begin(), Alphabet::getBase( static_cast<uint8_t>( rand() ) % Y_[1] + 1) );
+			bindingsite.insert( bindingsite.begin(),
+					Alphabet::getBase( static_cast<uint8_t>( rand() ) % static_cast<uint8_t>( Y_[1] ) + 1 ) );
 
 		// add alphabets randomly at the end of each binding site
 		for( size_t i = 0; i < Global::addColumns.at(1); i++ )
-			bindingsite.insert( bindingsite.end(), Alphabet::getBase( static_cast<uint8_t>( rand() ) % Y_[1] + 1 ) );
+			bindingsite.insert( bindingsite.end(),
+					Alphabet::getBase( static_cast<uint8_t>( rand() ) % static_cast<uint8_t>( Y_[1] ) + 1 ) );
 
 		bindingSiteWidth = bindingsite.length();
 
@@ -287,7 +289,7 @@ void Motif::initFromPWM( float** PWM, size_t asize, size_t count ){
 		// count kmers with sampled z
 		if( z > 0 ){
 			for( size_t k = 0; k < K_+1; k++ ){
-				for( int j = ( z <= K_ ) ? 1-(int)z : -(int)K_; j < W_; j++ ){
+				for( int j = ( z <= K_ ) ? 1-(int)z : -(int)K_; j < (int)W_; j++ ){
 					size_t y = kmer[(int)z-1+j] % Y_[k+1];
 					n_[k][y][j]++;
 				}
