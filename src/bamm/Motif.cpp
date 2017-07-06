@@ -146,14 +146,14 @@ void Motif::initFromBaMMPattern( std::string pattern ){
 // initialize v from binding sites file
 void Motif::initFromBindingSites( char* filename ){
 
-	std::ifstream file( filename );						// read file
-	std::string bindingsite;							// read each binding site sequence from each line
-	size_t bindingSiteWidth;							// length of binding site from each line
+	std::ifstream file( filename );							// read file
+	std::string bindingsite;								// read each binding site sequence from each line
+	size_t bindingSiteWidth;								// length of binding site from each line
 	size_t minL = Global::posSequenceSet->getMinL();
 
 	while( getline( file, bindingsite ).good() ){
 
-		C_++;											// count the number of binding sites
+		C_++;												// count the number of binding sites
 
 		// add alphabets randomly at the beginning of each binding site
 		for( size_t i = 0; i < Global::addColumns.at(0); i++ )
@@ -167,24 +167,24 @@ void Motif::initFromBindingSites( char* filename ){
 
 		bindingSiteWidth = bindingsite.length();
 
-		if( bindingSiteWidth != W_ ){					// all the binding sites should have the same length
+		if( bindingSiteWidth != W_ ){						// all the binding sites should have the same length
 			fprintf( stderr, "Error: Length of binding site on line %d differs.\n"
 					"Binding sites should have the same length.\n", (int)C_ );
 			exit( -1 );
 		}
-		if( bindingSiteWidth < K_+1 ){	// binding sites should be longer than the order of model
+		if( bindingSiteWidth < K_+1 ){						// binding sites should be longer than the order of model
 			fprintf( stderr, "Error: Length of binding site sequence "
 					"is shorter than model order.\n" );
 			exit( -1 );
 		}
-		if( bindingSiteWidth > minL ){					// binding sites should be shorter than the shortest posSeq
+		if( bindingSiteWidth > minL ){						// binding sites should be shorter than the shortest posSeq
 			fprintf( stderr, "Error: Length of binding site sequence "
 					"exceeds the length of posSet sequence.\n" );
 			exit( -1 );
 		}
 
 		// scan the binding sites and calculate k-mer counts n
-		for( size_t k = 0; k < K_+1; k++ ){	// k runs over all orders
+		for( size_t k = 0; k < K_+1; k++ ){					// k runs over all orders
 			for( size_t j = k; j < bindingSiteWidth; j++ ){	// j runs over all true motif positions
 				size_t y = 0;
 				for( size_t n = k+1; n >= 1; n-- ){			// calculate y based on (k+1)-mer bases
@@ -209,7 +209,7 @@ void Motif::initFromBindingSites( char* filename ){
 }
 
 // initialize v from PWM file
-void Motif::initFromPWM( float** PWM, size_t asize, size_t count ){
+void Motif::initFromPWM( float** PWM, size_t asize ){
 
 	// for k = 0, obtain v from PWM:
 	for( size_t j = 0; j < W_; j++ ){
@@ -289,7 +289,8 @@ void Motif::initFromPWM( float** PWM, size_t asize, size_t count ){
 		// count kmers with sampled z
 		if( z > 0 ){
 			for( size_t k = 0; k < K_+1; k++ ){
-				for( int j = ( z <= K_ ) ? 1-(int)z : -(int)K_; j < (int)W_; j++ ){
+				for( int j = k; j < (int)W_; j++ ){
+//				for( int j = ( z <= K_ ) ? 1-(int)z : -(int)K_; j < (int)W_; j++ ){
 					size_t y = kmer[(int)z-1+j] % Y_[k+1];
 					n_[k][y][j]++;
 				}
@@ -303,7 +304,10 @@ void Motif::initFromPWM( float** PWM, size_t asize, size_t count ){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
 			size_t y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer y
 			size_t yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer y
-			for( size_t j = 0; j < W_; j++ ){
+			for( size_t j = 0; j < k; j++ ){						// when j < k, i.e. p(A|CG) = p(A|C)
+				v_[k][y][j] = v_[k-1][y2][j];
+			}
+			for( size_t j = k; j < W_; j++ ){
 				v_[k][y][j] = ( static_cast<float>( n_[k][y][j] ) + A_[k] * v_[k-1][y2][j] )
 							/ ( static_cast<float>( n_[k-1][yk][j-1] ) + A_[k] );
 			}

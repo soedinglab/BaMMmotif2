@@ -11,10 +11,10 @@
 
 ScoreSeqSet::ScoreSeqSet( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqSet ){
 
-	motif_ = motif;
-	bg_ = bg;
-	seqSet_ = seqSet;
-	Y_ = motif->getY();
+	motif_	= motif;
+	bg_ 	= bg;
+	seqSet_	= seqSet;
+	Y_ 		= motif->getY();
 
 }
 
@@ -38,7 +38,7 @@ void ScoreSeqSet::score(){
 	for( size_t n = 0; n < seqSet_.size(); n++ ){
 
 		size_t 	LW1 = seqSet_[n]->getL() - W + 1;
-		size_t* 	kmer = seqSet_[n]->getKmer();
+		size_t* kmer = seqSet_[n]->getKmer();
 		float 	maxScore = -FLT_MAX;
 
 		for( size_t i = 0; i < LW1; i++ ){

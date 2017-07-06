@@ -78,6 +78,7 @@ MotifSet::MotifSet(){
 			std::string row;
 
 			while( getline( file, line ) ){
+
 				// search for the line starting with "letter-probability matrix"
 				if( line[0] == 'l' ){
 
@@ -131,7 +132,7 @@ MotifSet::MotifSet(){
 					}
 
 					// initialize each motif with a PWM
-					motif->initFromPWM( PWM, asize, N_ );
+					motif->initFromPWM( PWM, asize );
 
 					motifs_.push_back( motif );
 

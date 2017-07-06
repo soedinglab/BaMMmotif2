@@ -20,7 +20,7 @@ public:
 
 	void initFromBindingSites( char* filename );		// initialize v from binding site file
 
-	void initFromPWM( float** PWM, size_t asize, size_t count );// initialize v from PWM file
+	void initFromPWM( float** PWM, size_t asize );		// initialize v from PWM file
 
 	void initFromBaMM( char* filename );				// initialize v from bamm file and set isInitialized
 
@@ -31,8 +31,8 @@ public:
 	float***			getP();							// get probabilities p
 	float**				getS();							// get log odds scores for the highest order K at position j
 	std::vector<size_t> getY();
-	void        		updateV( float*** n, float** alpha, size_t k );// update v for EM
-	void        		updateVz_n( size_t*** n, float** alpha, size_t k );// update v for Collapsed Gibbs sampling
+	void        		updateV( float*** n, float** alpha, size_t k );		// update v for EM
+	void        		updateVz_n( size_t*** n, float** alpha, size_t k );	// update v for Collapsed Gibbs sampling
 
 	void				calculateP();					// calculate probabilities p
 	void				calculateS( float** Vbg );		// calculate log odds scores for the highest order K at position j
@@ -48,7 +48,7 @@ private:
 
 	size_t				C_ = 0;							// count the number of binding sites
 	size_t 				W_;					    		// motif length
-	size_t				K_;								// mortif model order
+	size_t				K_;								// motif model order
 	std::vector<float> 	A_;								// hyperparameter alphas
 	float***    		v_;				        		// conditional probabilities for (k+1)-mers y at motif position j
 	float*				f_bg_;							// monomer frequencies from negative set
