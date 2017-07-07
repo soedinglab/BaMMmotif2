@@ -2,11 +2,12 @@
 
 **Ba**yesian **M**arkov **M**odel **motif** discovery software.
 
+Johannes Soeding, Wanwan Ge, Anja Kiesel, Matthias Siebert
 
 ## Requirements
-To compile from source you need
+To compile from source, you need:
 
-  * [GCC](https://gcc.gnu.org/) compiler 4.7 or later
+  * [GCC](https://gcc.gnu.org/) compiler 4.7 or later  (we suggest GCC-5.x)
   * [CMake](http://cmake.org/) 2.8.11 or later
 
 To plot BaMM logos you need
@@ -22,17 +23,40 @@ To plot BaMM logos you need
 
 # How to compile BaMM!motif?
 
+
+### Linux
+      mkdir build
+      cd build
+      cmake ..
+      make
+
+### OS X
+OS X ships clang instead of gcc. We recommend using [Homebrew](http://brew.sh/) to install gcc.
+
+Having installed Homebrew, all required dependencies can be installed using the `brew` command
+
+      brew tap homebrew/versions
+      brew tap homebrew/science
+      brew install gcc5 cmake R
+
+Finally this will compile BaMM!motif
+
+      export CXX=g++-5
+      export CC=gcc-5
+      export LDFLAGS="-static-libgcc -static-libstdc++"
+
       mkdir build
       cd build
       cmake ..
       make
 
 ## How to use BaMM!motif from the command line?
-SYNOPSIS
+
+### SYNOPSIS
 
       BaMMmotif DIRPATH FILEPATH [OPTIONS]
 
-DESCRIPTION
+### DESCRIPTION
 
       Bayesian Markov Model motif discovery software.
 
@@ -42,15 +66,15 @@ DESCRIPTION
       FILEPATH
           FASTA file with positive sequences of equal length.
 
-OPTIONS
+### OPTIONS
 
 Sequence options
 
       --alphabet <STRING>
-          STANDARD.  	For alphabet type ACGT, default setting;
-          METHYLC.   	For alphabet type ACGTM;
+          STANDARD.  	     For alphabet type ACGT, default setting;
+          METHYLC.   	     For alphabet type ACGTM;
           HYDROXYMETHYLC.  For alphabet type ACGTH;
-          EXTENDED.  	For alphabet type ACGTMH.
+          EXTENDED.  	     For alphabet type ACGTMH.
       
       --ss
           Search motif only on single strand strands (positive sequences).
@@ -237,6 +261,27 @@ The logo order is an integer between 0 to 8.
 
     plotBaMMLogo.R path_to_bamm_file logo_order
 
+## Motif occurrence file
+
+Filename extension: .occcurrence
+
+>sequence name:sequence length
+start:end:log odds score:strand:matched pattern
+
+example: 
+
+>chr6:205
+59:70:5.25:+:CTGGTGACTGAC
+333:344:0.103:-:CCAAGGTGTCAG
+337:348:4.76:-:GGTGTCAGTCAC
+365:376:0.129:-:GCAGAGACCCAC
 
 ## License
+
 BaMM!motif is released under the GNU General Public License v3 or later. See LICENSE for more details.
+
+## Notes
+
+We are welcoming bug reports! Please contact us at soeding@mpibpc.mpg.de .
+
+For the seeding phase, we recommend to use our de novo motif discovery tool [PEnG-motif](https://github.com/soedinglab/PEnG-motif).
