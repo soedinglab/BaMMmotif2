@@ -358,7 +358,7 @@ std::vector<std::vector<float>> FDR::scoreSequenceSet( Motif* motif, BackgroundM
 	float maxScore;											// maximal logOddsScore over all positions for each sequence
 
 	// pre-calculate log odds scores given motif and bgModel
-	motif->calculateS( bg->getV() );
+	motif->calculateLogS( bg->getV() );
 	float** s = motif->getS();
 
 	for( size_t n = 0; n < seqSet.size(); n++ ){

@@ -31,11 +31,10 @@ public:
 	float***			getP();							// get probabilities p
 	float**				getS();							// get log odds scores for the highest order K at position j
 	std::vector<size_t> getY();
-	void        		updateV( float*** n, float** alpha, size_t k );		// update v for EM
-	void        		updateVz_n( size_t*** n, float** alpha, size_t k );	// update v for Collapsed Gibbs sampling
+	void        		updateV( float*** n, float** alpha, size_t k );	// update model profile v
 
 	void				calculateP();					// calculate probabilities p
-	void				calculateS( float** Vbg );		// calculate log odds scores for the highest order K at position j
+	void				calculateLogS( float** Vbg );		// calculate log odds scores for the highest order K at position j
 	void				calculateLinearS( float** Vbg );// calculate log odds scores for the highest order K at position j
 														// in linear space for speeding up
 
@@ -49,17 +48,17 @@ private:
 	size_t				C_ = 0;							// count the number of binding sites
 	size_t 				W_;					    		// motif length
 	size_t				K_;								// motif model order
-	std::vector<float> 	A_;								// hyperparameter alphas
+	float**			 	A_;								// hyperparameter alphas
 	float***    		v_;				        		// conditional probabilities for (k+1)-mers y at motif position j
 	float*				f_bg_;							// monomer frequencies from negative set
 	float***			p_;								// probabilities for (k+1)-mers y at motif position j
 	float**				s_;								// log odds scores for (K+1)-mers y at motif position j
-	size_t***			n_;								// counts of (k+1)-mer for all y at motif position j
+	float***			n_;								// counts of (k+1)-mer for all y at motif position j
 	std::vector<size_t>	Y_;								// contains 1 at position 0
 														// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
 														// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
 
-	void 				calculateV();					// calculate v from k-mer counts n and global alphas
+	void 				calculateV( float*** n );		// calculate v from k-mer counts n and global alphas
 
 };
 
@@ -79,35 +78,32 @@ inline std::vector<size_t> Motif::getY(){
 	return Y_;
 }
 
-// update v from fractional k-mer counts n and current alphas (e.g for EM)
+// update v from fractional k-mer counts n and current alphas
 inline void Motif::updateV( float*** n, float** alpha, size_t K ){
 
 	assert( isInitialized_ );
 
 	// sum up the n over (k+1)-mers at different position of motif
-	std::vector<float> sumN;
-	sumN.resize( W_ );
-	for( size_t j = 0; j < W_; j++ ){
-		for( size_t y = 0; y < Y_[1]; y++ ){
-			sumN[j] += n[0][y][j];
-		}
+	float sumN = 0.0f;
+	for( size_t y = 0; y < Y_[1]; y++ ){
+		sumN += n[0][y][0];
 	}
 
 	// for k = 0, v_ = freqs:
 	for( size_t y = 0; y < Y_[1]; y++ ){
 		for( size_t j = 0; j < W_; j++ ){
 			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * f_bg_[y] )
-						/ ( sumN[j] + alpha[0][j] );
+						/ ( sumN + alpha[0][j] );
 		}
 	}
 
 	// for k > 0:
 	for( size_t k = 1; k < K+1; k++ ){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
-			size_t y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
-			size_t yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer
+			size_t y2 = y % Y_[k];				// cut off the first nucleotide in (k+1)-mer
+			size_t yk = y / Y_[1];				// cut off the last nucleotide in (k+1)-mer
 			//todo: Merge first loop into second one (by allowing contexts to extend left of the motif)
-			for( size_t j = 0; j < k; j++ ){						// when j < k, i.e. p(A|CG) = p(A|C)
+			for( size_t j = 0; j < k; j++ ){	// when j < k, i.e. p(A|CG) = p(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
 			}
 			//todo: Vectorize in AVX2 / SSE2
@@ -119,41 +115,5 @@ inline void Motif::updateV( float*** n, float** alpha, size_t K ){
 	}
 }
 
-
-// update v from integral k-mer counts n and current alphas (e.g for CGS)
-inline void Motif::updateVz_n( size_t*** n, float** alpha, size_t K ){
-
-	assert( isInitialized_ );
-
-	// sum up the monomers
-	float sumN = 0.0f;
-	for( size_t y = 0; y < Y_[1]; y++ ){
-		sumN += static_cast<float>( n[0][y][0] );
-	}
-
-	// for k = 0, v_ = freqs:
-	for( size_t y = 0; y < Y_[1]; y++ ){
-		for( size_t j = 0; j < W_; j++ ){
-			v_[0][y][j] = ( static_cast<float>( n[0][y][j] ) + alpha[0][j] * f_bg_[y] )
-						/ ( sumN + alpha[0][j] );
-		}
-	}
-
-	// for 1 <= k <= K:
-	for( size_t k = 1; k < K+1; k++ ){
-		for( size_t y = 0; y < Y_[k+1]; y++ ){
-			size_t y2 = y % Y_[k];									// cut off the first nucleotide in (k+1)-mer
-			size_t yk = y / Y_[1];									// cut off the last nucleotide in (k+1)-mer
-			//todo: Vectorize in AVX2 / SSE2
-			for( size_t j = 0; j < k; j++ ){						// when j < k, i.e. p(A|CG) = p(A|C)
-				v_[k][y][j] = v_[k-1][y2][j];
-			}
-			for( size_t j = k; j < W_; j++ ){
-				v_[k][y][j] = ( static_cast<float>( n[k][y][j] ) + alpha[k][j] * v_[k-1][y2][j] )
-							/ ( static_cast<float>( n[k-1][yk][j-1] ) + alpha[k][j] );
-			}
-		}
-	}
-}
 
 #endif /* MOTIF_H_ */

@@ -99,7 +99,7 @@ void Global::init( int nargs, char* args[] ){
 	// read in positive, negative and background sequence set
 	posSequenceSet = new SequenceSet( posSequenceFilename, ss );
 	negSequenceSet = new SequenceSet( negSequenceFilename, ss );
-	bgSequenceSet = new SequenceSet( bgSequenceFilename, ss );
+	bgSequenceSet  = new SequenceSet( bgSequenceFilename, ss );
 
 	// generate fold indices for positive and negative sequence set
 	Global::posFoldIndices = generateFoldIndices( posSequenceSet->getN(), cvFold );
@@ -294,7 +294,7 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	// FDR options
 	if( opt >> GetOpt::OptionPresent( "FDR", FDR ) ){
-		opt >> GetOpt::Option( 'm', "mFold", mFold  );
+		opt >> GetOpt::Option( 'm', "mFold", mFold );
 		opt >> GetOpt::Option( 'n', "cvFold", cvFold );
 		opt >> GetOpt::Option( 's', "sOrder", sOrder );
 	}
@@ -355,7 +355,7 @@ void Global::printStat(){
 			std::cout << ' ' << Global::negSequenceSet->getBaseFrequencies()[i]
 					  << "(" << Alphabet::getAlphabet()[i] << ")";
 	} else {
-		std::cout << "\nThe background model is generated based on cond.prob of " <<Global::sOrder << "-mers.";
+		std::cout << "\nThe background model is generated based on cond.prob of " << Global::sOrder << "-mers.";
 	}
 
 	if( Global::FDR ){
@@ -401,7 +401,7 @@ void Global::writeStat(){
 			ofile << ' ' << Global::negSequenceSet->getBaseFrequencies()[i]
 					  << "(" << Alphabet::getAlphabet()[i] << ")";
 	} else {
-		ofile << "\nThe background model is generated based on cond.prob of " <<Global::sOrder << "-mers.";
+		ofile << "\nThe background model is generated based on cond.prob of " << Global::sOrder << "-mers.";
 	}
 
 	if( Global::FDR ){

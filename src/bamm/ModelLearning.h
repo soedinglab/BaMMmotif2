@@ -37,8 +37,6 @@ private:
 
 	float** 				r_;		        	// responsibilities at position i in sequence n
 	float*** 				n_;	            	// fractional counts n for (k+1)-mers y at motif position j
-	size_t***				n_z_;				// n^z_j(y_1:k), the k-mer counts(for 0<k<K+2 ) with y_k's
-												// rightmost nucleotide at position j
 	size_t*					z_;					// observed position of motif in each sequence
 	float**					pos_;				// positional prior, pos[i]=0 means no motif is found on the sequence
 	float** 				A_;	        		// pseudo-count hyper-parameter for order k and motif position j

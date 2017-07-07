@@ -15,10 +15,6 @@ int main( int nargs, char* args[] ){
 
 	clock_t t0 = clock();
 
-	// seed random number
-	srand( 42 );
-	Global::rngx.seed( 42 );
-
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "======================================\n" );
 	fprintf( stderr, "=      Welcome to use BaMMmotif      =\n" );
@@ -26,6 +22,10 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "=              by Soeding Group      =\n" );
 	fprintf( stderr, "=  http://www.mpibpc.mpg.de/soeding  =\n" );
 	fprintf( stderr, "======================================\n" );
+
+	// seed random number
+	srand( 42 );
+	Global::rngx.seed( 42 );
 
 	// initialization
 	Global::init( nargs, args );
@@ -75,13 +75,16 @@ int main( int nargs, char* args[] ){
 		// train the model with either EM or Gibbs sampling
 		ModelLearning model( motif, bgModel );
 
-		if( Global::EM ){
+		if( Global::saveInitialBaMMs ){
+			// optional: save initial model
+			motif->write( 0 );
+		}
 
+		if( Global::EM ){
 			// learn motifs by EM
 			model.EM();
 
 		} else if ( Global::CGS ){
-
 			// learn motifs by collapsed Gibbs sampling
 			model.GibbsSampling();
 

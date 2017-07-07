@@ -30,7 +30,7 @@ void ScoreSeqSet::score(){
 	size_t W = motif_->getW();
 
 	// pre-calculate log odds scores given motif and bg model
-	motif_->calculateS( bg_->getV() );
+	motif_->calculateLogS( bg_->getV() );
 	float** s = motif_->getS();
 
 	mops_scores_.resize( seqSet_.size() );
