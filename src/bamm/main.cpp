@@ -122,7 +122,7 @@ int main( int nargs, char* args[] ){
 			// score the model on sequence set
 			ScoreSeqSet seqset( motif, bgModel, Global::posSequenceSet->getSequences() );
 			seqset.score();
-			seqset.write( Global::outputDirectory, Global::scoreCutoff );
+			seqset.write( Global::outputDirectory, n+1, Global::scoreCutoff );
 		}
 
 		delete motif;
@@ -150,8 +150,9 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "*   Statistics   *\n" );
 	fprintf( stderr, "******************\n" );
 	Global::printStat();
+
 	// write down the statistics
-	Global::writeStat();
+	// Global::writeStat();
 
 	fprintf( stdout, "\n-------------- Runtime: %.2f seconds (%0.2f minutes) --------------\n",
 			( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC, ( ( float )( clock() - t0 ) ) / ( CLOCKS_PER_SEC * 60.0f ) );

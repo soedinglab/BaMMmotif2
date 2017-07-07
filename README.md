@@ -150,6 +150,14 @@ Sequence options
       -s, --sOrder <INTERGER>
           The order of k-mer for sampling pseudo/negative set. The default is 2.
 
+  Options for motif occurrences:
+      --scoreSeqset
+          Triggers scoring of the sequence set in order to find motif occurrences.
+      
+      --scoreCutoff <FLOAT>
+          Cutoff for scoring the sequence set, in order to find motif occurrences.
+          The default for this log odds score is zero. 
+          
   Output options
 
       --saveBaMMs

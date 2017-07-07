@@ -26,7 +26,7 @@ char*               Global::bindingSiteFilename = NULL;		// filename of binding 
 char*               Global::PWMFilename = NULL;				// filename of PWM file
 char*               Global::BaMMFilename = NULL;			// filename of Markov model (.bamm) file
 std::string			Global::initialModelBasename;			// basename of initial model
-size_t				Global::num = 1;						// number of models that are to be optimized
+size_t				Global::num = std::numeric_limits<size_t>::max(); // number of models that are to be optimized
 bool				Global::mops = false;					// learn MOPS model
 bool				Global::zoops = true;					// learn ZOOPS model
 
@@ -74,8 +74,9 @@ size_t				Global::mFold = 10;						// number of negative sequences as multiple o
 size_t				Global::cvFold = 5;						// size of cross-validation folds
 size_t				Global::sOrder = 2;						// the k-mer order for sampling negative sequence set
 
-// scoring options
-float 				Global::scoreCutoff = 0.0;				// score cutoff for printing logodds scores as motif hit
+// motif occurrence options
+bool                Global::scoreSeqset = false;            // write logOdds Scores of positive sequence set to disk
+float 				Global::scoreCutoff = 0.0f;				// score cutoff for printing log odds scores as motif hit
 
 // printout options
 bool                Global::verbose = false;
@@ -86,7 +87,6 @@ bool				Global::savePvalues = false;			// write p-values for each log odds score
 bool				Global::saveLogOdds = false;			// write the log odds of positive and negative sets to disk
 bool				Global::saveInitialBaMMs = false;		// write out the initial model to disk
 bool				Global::saveBgModel = false;			// write out the background model to disk
-bool                Global::scoreSeqset = false;            // write logOdds Scores of positive sequence set to disk
 bool				Global::generatePseudoSet = false;		// test for alpha learning
 std::mt19937		Global::rngx;
 
@@ -298,7 +298,8 @@ int Global::readArguments( int nargs, char* args[] ){
 		opt >> GetOpt::Option( 'n', "cvFold", cvFold );
 		opt >> GetOpt::Option( 's', "sOrder", sOrder );
 	}
-	// scoring option
+	// motif occurrence option
+	opt >> GetOpt::OptionPresent( "scoreSeqset", scoreSeqset );
 	opt >> GetOpt::Option( "scoreCutoff", scoreCutoff );
 
 	// printout options
@@ -310,7 +311,6 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "savePvalues", savePvalues );
 	opt >> GetOpt::OptionPresent( "saveLogOdds", saveLogOdds );
 	opt >> GetOpt::OptionPresent( "saveBgModel", saveBgModel );
-	opt >> GetOpt::OptionPresent( "scoreSeqset", scoreSeqset );
 
 	// for remaining unknown options
 	if( opt.options_remain() ){
@@ -518,7 +518,9 @@ void Global::printHelp(){
 			"				The order of k-mer for sampling pseudo/negative set. The default is 2.\n\n");
 	printf("\n 		Options for scoring sequence set:\n");
 	printf("\n 			--scoreSeqset \n"
-			"				Score positive sequence set. \n\n");
+			"				Score the sequence set. \n\n");
+	printf("\n 			--scoreCutoff \n"
+			"				Cutoff for scoring the sequence set, in order to find motif occurrences. \n\n");
 	printf("\n 		Options for output:	\n");
 	printf("\n 			--verbose \n"
 			"				Verbose printouts.\n\n");
@@ -533,9 +535,12 @@ void Global::printHelp(){
 			"				Write p-values for plotting area under the Sensitivity-FDR curve (AUSFC)\n"
 			"				to disk.\n\n");
 	printf("\n 			--saveLogOdds\n"
-			"				Write log odds scores from positive and negative sets to disk.\n\n");
+			"				Write log odds scores from positive and negative sets to disk.\n"
+			"				The default for this log odds score is zero.\n\n");
 	printf("\n 			--saveBgModel\n"
 			"				Write background model to disk.\n\n");
+	printf("\n 			--scoreSeqset\n"
+			"				Find the motif occurrences on the sequences and write them out.\n\n");
 	printf("\n 			-h, --help\n"
 			"				Printout this help function.\n\n");
 	printf("\n============================================================================================\n");

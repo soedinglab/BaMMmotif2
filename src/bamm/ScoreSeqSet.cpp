@@ -71,7 +71,7 @@ std::vector<float> ScoreSeqSet::getZoopsScores(){
 	return zoops_scores_;
 }
 
-void ScoreSeqSet::write( char* dir, float cutoff ){
+void ScoreSeqSet::write( char* dir, size_t n, float cutoff ){
 	/**
 	 * save log odds scores in one flat file:
 	 * posSequenceBasename.logOdds
@@ -80,7 +80,7 @@ void ScoreSeqSet::write( char* dir, float cutoff ){
 	bool 	first_hit = true;
 	size_t 	end; 				// end of motif match
 
-	std::string opath = std::string( dir ) +"/posSet.logOdds";
+	std::string opath = std::string( dir ) + "/motif_" + std::to_string( n ) + ".occurrence";
 
 	std::ofstream ofile( opath );
 

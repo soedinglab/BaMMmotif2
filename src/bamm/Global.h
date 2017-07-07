@@ -101,7 +101,8 @@ public:
 	static size_t		cvFold;								// number of cross-validation (cv) folds
 	static size_t		sOrder;								// the k-mer order for sampling negative sequence set
 
-	// scoring options
+	// motif occurrence options
+	static bool         scoreSeqset;                        // write logOdds Scores of positive sequence set to disk
 	static float        scoreCutoff;                        // cutoff for logOdds scores to print out as motif hits
 
 	// other options
@@ -113,7 +114,6 @@ public:
 	static bool			saveLogOdds;						// write the log odds of positive and negative sets to disk
 	static bool			saveInitialBaMMs;					// write out the initial model to disk
 	static bool 		saveBgModel;						// write out background model to disk
-	static bool         scoreSeqset;                        // write logOdds Scores of positive sequence set to disk
 	static bool			generatePseudoSet;					// test for alpha learning
 
 	static void         init( int nargs, char* args[] );
