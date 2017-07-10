@@ -149,7 +149,7 @@ Sequence options
           absolute differences in BaMM probabilities from successive EM rounds
           is smaller than epsilon. The default is 0.001.
 
-  Gibbs sampling options:
+  Gibbs sampling options
 
       --CGS
           Triggers Collapsed Gibbs Sampling (CGS) algorithm.
@@ -158,7 +158,7 @@ Sequence options
           Limit the number of CGS iterations.
           It should be larger than 5 and defaults to 100.
 
-  Options for model evaluation:
+  Options for model evaluation
       
       --FDR
           Triggers False-Discovery-Rate (FDR) estimation.
@@ -174,7 +174,8 @@ Sequence options
       -s, --sOrder <INTERGER>
           The order of k-mer for sampling pseudo/negative set. The default is 2.
 
-  Options for motif occurrences:
+  Options for motif occurrences
+  
       --scoreSeqset
           Triggers scoring of the sequence set in order to find motif occurrences.
       
