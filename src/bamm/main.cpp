@@ -90,23 +90,7 @@ int main( int nargs, char* args[] ){
 
 		} else {
 
-			std::cout << "Model is not optimized!\n";
-
-			//exit( -1 );	// allow to do FDR on Initial Model i.e. for PWMs or precalculated BaMMs
-
-		}
-
-		if( Global::generatePseudoSet ){
-
-			// optimize motifs by EM
-			model.EM();
-
-			// generate pesudo positive sequence set based on the learned motif
-			SeqGenerator seqset( Global::posSequenceSet->getSequences(), model.getMotif() );
-
-			seqset.sample_pseudo_seqset( Global::mFold );
-
-			seqset.write_pseudoset();
+			std::cout << "Note: the model is not optimized!\n";
 
 		}
 
@@ -116,13 +100,28 @@ int main( int nargs, char* args[] ){
 		}
 
 		// write out the learned model
-		motif->write( n+1 );
+		// motif->write( n+1 );
+		model.getMotif()->write( n+1 );
 
 		if( Global::scoreSeqset ){
 			// score the model on sequence set
 			ScoreSeqSet seqset( motif, bgModel, Global::posSequenceSet->getSequences() );
 			seqset.score();
 			seqset.write( Global::outputDirectory, n+1, Global::scoreCutoff );
+		}
+
+		if( Global::generatePseudoSet ){
+
+			// optimize motifs by EM
+			model.EM();
+
+			// generate pseudo positive sequence set based on the learned motif
+			SeqGenerator seqset( Global::posSequenceSet->getSequences(), model.getMotif() );
+
+			seqset.sample_pseudo_seqset( Global::mFold );
+
+			seqset.write_pseudoset();
+
 		}
 
 		delete motif;

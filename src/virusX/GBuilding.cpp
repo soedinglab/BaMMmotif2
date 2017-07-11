@@ -67,8 +67,8 @@ int Global::readArguments( int nargs, char* args[] ){
 	if( opt >> GetOpt::OptionPresent( 'a', "alpha" ) ){
 		modelAlpha.clear();
 		opt >> GetOpt::Option( 'a', "alpha", modelAlpha );
-		if( static_cast<int>( modelAlpha.size() ) != modelOrder+1 ){
-			if( static_cast<int>( modelAlpha.size() ) > modelOrder+1 ){
+		if( modelAlpha.size() != modelOrder+1 ){
+			if( modelAlpha.size() > modelOrder+1 ){
 				modelAlpha.resize( modelOrder+1 );
 			} else{
 				modelAlpha.resize( modelOrder+1, modelAlpha.back() );
@@ -91,8 +91,8 @@ int Global::readArguments( int nargs, char* args[] ){
 		if( opt >> GetOpt::OptionPresent( 'g', "gamma" ) ){
 			opt >> GetOpt::Option( 'g', "gamma", modelGamma );
 		}
-		if( static_cast<int>( modelAlpha.size() ) != modelOrder+1 ){
-			if( static_cast<int>( modelAlpha.size() ) > modelOrder+1 ){
+		if( modelAlpha.size() != modelOrder+1 ){
+			if( modelAlpha.size() > modelOrder+1 ){
 				modelAlpha.resize( modelOrder+1 );
 			} else{
 				modelAlpha.resize( modelOrder+1, modelAlpha.back() );

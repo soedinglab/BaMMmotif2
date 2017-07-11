@@ -116,12 +116,10 @@ int ModelLearning::EM(){
 	bool 	iterate = true;									// flag for iterating before convergence
 
 	float 	v_diff, llikelihood_prev, llikelihood_diff = 0.0f;
-	float**	v_before;										// hold the parameters of the highest-order before EM
-
-	// allocate memory for parameters v[y][j] with the highest order
-	v_before = ( float** )calloc( Y_[K_+1], sizeof( float* ) );
+	std::vector<std::vector<float>> v_before;
+	v_before.resize( Y_[K_+1] );
 	for( size_t y = 0; y < Y_[K_+1]; y++ ){
-		v_before[y] = ( float* )calloc( W_, sizeof( float ) );
+		v_before[y].resize( W_ );
 	}
 
 	size_t EMIterations = 0;
@@ -168,16 +166,18 @@ int ModelLearning::EM(){
 
 		if( v_diff < Global::epsilon )					iterate = false;
 		if( llikelihood_diff < 0 && EMIterations > 1 )	iterate = false;
+
+		// for making a movie
+		bool make_movie = true;
+		if( make_movie ){
+			motif_->calculateP();
+			motif_->write( EMIterations + 2 );
+		}
 	}
+
 
 	// calculate probabilities
 	motif_->calculateP();
-
-	// free memory
-	for( size_t y = 0; y < Y_[K_+1]; y++ ){
-		free( v_before[y] );
-	}
-	free( v_before );
 
 	fprintf( stdout, "\n--- Runtime for EM: %.4f seconds ---\n", ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );
     return 0;
@@ -1097,6 +1097,17 @@ Motif* ModelLearning::getMotif(){
 }
 
 void ModelLearning::print(){
+
+	// print out motif parameter v
+	for( size_t j = 0; j < W_; j++ ){
+		for( size_t k = 0; k < K_+1; k++ ){
+			for( size_t y = 0; y < Y_[k+1]; y++ ){
+				std::cout << std::setprecision(5) << motif_->getV()[k][y][j] << '\t';
+			}
+			std::cout << std::endl;
+		}
+		std::cout << std::endl;
+	}
 
 }
 
