@@ -21,8 +21,7 @@ Motif::Motif( size_t length, size_t K, std::vector<float> alpha ){
 		p_[k] = ( float** )calloc( Y_[k+1], sizeof( float* ) );
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
 			v_[k][y] = ( float* )calloc( W_, sizeof( float ) );
-			// allocate -K positions for k-mer counts n
-			n_[k][y] = ( float* )calloc( W_+K_, sizeof( float ) )+K_;
+			n_[k][y] = ( float* )calloc( W_, sizeof( float ) );
 			p_[k][y] = ( float* )calloc( W_, sizeof( float ) );
 		}
 		A_[k] = ( float* )calloc( W_, sizeof( float ) );
@@ -57,14 +56,11 @@ Motif::Motif( const Motif& other ){ 		// copy constructor
 		p_[k] = ( float** )malloc( Y_[k+1] * sizeof( float* ) );
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
 			v_[k][y] = ( float* )malloc( W_ * sizeof( float ) );
-			n_[k][y] = ( float* )malloc( (W_+K_) * sizeof( float ) )+K_;
+			n_[k][y] = ( float* )malloc( W_ * sizeof( float ) );
 			p_[k][y] = ( float* )malloc( W_ * sizeof( float ) );
 			for( size_t j = 0; j < W_; j++ ){
 				v_[k][y][j] = other.v_[k][y][j];
 				p_[k][y][j] = other.p_[k][y][j];
-				n_[k][y][j] = other.n_[k][y][j];
-			}
-			for( int j = -(int)K_; j < 0; j++ ){
 				n_[k][y][j] = other.n_[k][y][j];
 			}
 		}
@@ -93,7 +89,7 @@ Motif::~Motif(){
 	for( size_t k = 0; k < K_+1; k++ ){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
 			free( v_[k][y] );
-			free( n_[k][y] - K_ );
+			free( n_[k][y] );
 			free( p_[k][y] );
 		}
 		free( v_[k] );
@@ -226,7 +222,7 @@ void Motif::initFromPWM( float** PWM, size_t asize ){
 	// set k-mer counts to zero
 	for( size_t k = 0; k < K_+1; k++ ){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
-			for( int j = -(int)K_; j < (int)W_; j++ ){
+			for( size_t j = 0; j < W_; j++ ){
 				n_[k][y][j] = 0.0f;
 			}
 		}
@@ -310,8 +306,8 @@ void Motif::initFromPWM( float** PWM, size_t asize ){
 		// count kmers with sampled z
 		if( z > 0 ){
 			for( size_t k = 0; k < K_+1; k++ ){
-				for( int j = ( z <= K_ ) ? 1-(int)z : -(int)K_; j < (int)W_; j++ ){
-					size_t y = kmer[(int)z-1+j] % Y_[k+1];
+				for( size_t j = 0; j < W_; j++ ){
+					size_t y = kmer[z-1+j] % Y_[k+1];
 					n_[k][y][j]++;
 				}
 			}

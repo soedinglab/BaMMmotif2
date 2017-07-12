@@ -36,6 +36,7 @@ private:
 	std::vector<size_t>		folds_;				// folds to iterate over, for cross-validation
 
 	float** 				r_;		        	// responsibilities at position i in sequence n
+	float**					s_;					// log odds scores
 	float*** 				n_;	            	// fractional counts n for (k+1)-mers y at motif position j
 	size_t*					z_;					// observed position of motif in each sequence
 	float**					pos_;				// positional prior, pos[i]=0 means no motif is found on the sequence

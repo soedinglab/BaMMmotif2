@@ -23,6 +23,7 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<siz
 	W_ = motif_->getW();
 	Y_ = motif_->getY();
 	q_ = Global::q;
+	s_ = motif_->getS();
 
 	// define parameters
 	// deep copy positive sequences
@@ -55,9 +56,8 @@ ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<siz
 	n_ = ( float*** )calloc( K_+1, sizeof( float** ) );
 	for( size_t k = 0; k < K_+1; k++ ){
 		n_[k] = ( float** )calloc( Y_[k+1], sizeof( float* ) );
-		// allocate -K positions for j
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
-			n_[k][y] = ( float* )calloc( W_+K_, sizeof( float ) )+K_;
+			n_[k][y] = ( float* )calloc( W_, sizeof( float ) );
 		}
 	}
 
@@ -88,7 +88,7 @@ ModelLearning::~ModelLearning(){
 
 	for( size_t k = 0; k < K_+1; k++ ){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
-			free( n_[k][y] - K_ );
+			free( n_[k][y] );
 		}
 		free( n_[k] );
 		free( A_[k] );
@@ -169,7 +169,7 @@ int ModelLearning::EM(){
 		bool make_movie = false;
 		if( make_movie ){
 			motif_->calculateP();
-			motif_->write( EMIterations + 2 );
+			motif_->write( EMIterations + 1 );
 		}
 	}
 
@@ -186,8 +186,6 @@ void ModelLearning::EStep(){
 	llikelihood_ = 0.0f;
 
 	motif_->calculateLinearS( bg_->getV() );
-
-	float** s = motif_->getS();
 
 	// count sequences that do not contain a motif
 	N0_ = 0;
@@ -221,7 +219,7 @@ void ModelLearning::EStep(){
 			// j runs over all motif positions
 			size_t padding = ( static_cast<int>( ij-L+W_ ) > 0 ) * ( ij-L+W_ );
 			for( size_t j = padding; j < ( W_ < (ij+1) ? W_ : ij+1 ); j++ ){
-				r_[n][LW1-ij+j] *= s[y][j];
+				r_[n][LW1-ij+j] *= s_[y][j];
 			}
 		}
 
@@ -338,7 +336,7 @@ void ModelLearning::GibbsSampling(){
 	} else {
 		// initialize z with a random number
 		for( size_t n = 0; n < posSeqs_.size(); n++ ){
-			size_t LW2 = posSeqs_[n]->getL() - motif_->getW() + 2;
+			size_t LW2 = posSeqs_[n]->getL() - W_ + 2;
 			z_[n] = static_cast<size_t>( rand() ) % LW2;
 		}
 	}
@@ -347,7 +345,7 @@ void ModelLearning::GibbsSampling(){
 	// 1. reset n_z_[k][y][j] to 0
 	for( size_t k = 0; k < K_+1; k++ ){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
-			for( int j = -(int)K_; j < (int)W_; j++ ){
+			for( size_t j = 0; j < W_; j++ ){
 				n_[k][y][j] = 0.0f;
 			}
 		}
@@ -357,8 +355,8 @@ void ModelLearning::GibbsSampling(){
 	for( size_t n = 0; n < posSeqs_.size(); n++ ){
 		if( z_[n] > 0 ){
 			size_t* kmer = posSeqs_[n]->getKmer();
-			for( int j = ( z_[n] <= K_ ) ? 1-(int)z_[n] : -(int)K_; j < (int)W_; j++ ){
-				size_t y = kmer[(int)z_[n]-1+j] % Y_[K_+1];
+			for( size_t j = 0; j < W_; j++ ){
+				size_t y = kmer[z_[n]-1+j] % Y_[K_+1];
 				n_[K_][y][j]++;
 			}
 		}
@@ -368,7 +366,7 @@ void ModelLearning::GibbsSampling(){
 	for( size_t k = K_; k > 0; k-- ){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
 			size_t y2 = y % Y_[k];
-			for( int j = -(int)K_; j < (int)W_; j++ ){
+			for( size_t j = 0; j < W_; j++ ){
 				n_[k-1][y2][j] += n_[k][y][j];
 			}
 		}
@@ -428,6 +426,13 @@ void ModelLearning::GibbsSampling(){
 				}
 			}
 		}
+
+		// for making a movie
+		bool make_movie = true;
+		if( make_movie ){
+			motif_->calculateP();
+			motif_->write( iteration + 1 );
+		}
 	}
 
 	// obtaining a motif model:
@@ -468,17 +473,17 @@ void ModelLearning::Collapsed_Gibbs_sample_z(){
 
 	llikelihood_ = 0.0f;
 
+	// updated model parameters v excluding the n'th sequence
+	motif_->updateV( n_, A_, K_ );
+
 	float*** v = motif_->getV();
 	float** v_bg = bg_->getV();
 
-	// updated model parameters v excluding the n'th sequence
-	motif_->updateV( n_, A_, K_ );
 	// compute log odd scores s[y][j], log likelihoods of the highest order K
 	motif_->calculateLinearS( v_bg );
 
-	float** s = motif_->getS();
-
 	// sampling z:
+	bool run_slow = false;			// a flag to switch between slow and fast version of counting k-mers
 	// loop over all sequences and drop one sequence each time and update r
 	for( size_t n = 0; n < N; n++ ){
 
@@ -492,62 +497,69 @@ void ModelLearning::Collapsed_Gibbs_sample_z(){
 		/*
 		 * -------------- faster version of removing k-mer ------------------
 		 */
+		float sumN = 0.0f;
+		for( size_t a = 0 ; a < Y_[1]; a++ ){
+			sumN += n_[0][a][0];
+		}
 
-		if( z_[n] > 0 ){
+		if( !run_slow && z_[n] > 0 ){
 
-			for( size_t k = 0; k < K_+1; k++ ){
+			for( size_t j = 0; j < W_; j++ ){
 
-				for( int j = ( z_[n] <= K_ ) ? 1-(int)z_[n] : -(int)K_; j < (int)W_; j++ ){
-					size_t y = kmer[(int)z_[n]-1+j] % Y_[k+1];
+				// for k = 0:
+				size_t y = kmer[z_[n]-1+j] % Y_[1];
+				n_[0][y][j]--;
 
+				v[0][y][j]= ( n_[0][y][j] + A_[0][j] * v_bg[0][y] )
+							/ ( sumN + A_[0][j] );
+				size_t y_bg = y % Y_[K_bg+1];
+				s_[y][j] = v[K_][y][j] / v_bg[K_bg][y_bg];
+
+				// for 1 <= k <= K_:
+				for( size_t k = 1; k < K_+1; k++){
+					y = kmer[z_[n]-1+j] % Y_[k+1];
 					n_[k][y][j]--;
+					size_t y2 = y % Y_[k];
+					size_t yk = y / Y_[1];
+					y_bg = y % Y_[K_bg+1];
 
-					if( j >= 0 ){
-						if( k == 0 ){
-							v[k][y][j]= ( n_[k][y][j] + A_[k][j] * v_bg[k][y] )
-										/ ( q_ * ( float )N + A_[k][j] );
-						} else {
+					if( j == 0 ){
 
-							size_t y2 = y % Y_[k];
-							size_t yk = y / Y_[1];
+						v[k][y][j] = v[k-1][y2][j];
 
-							v[k][y][j] = ( n_[k][y][j] + A_[k][j] * v[k-1][y2][j] )
-										/ ( n_[k-1][yk][j-1] + A_[k][j] );
-						}
+					} else {
 
-						if( k == K_ ){
-
-							size_t y_bg = y % Y_[K_bg+1];
-
-							s[y][j] = v[K_][y][j] / v_bg[K_bg][y_bg];
-
-						}
+						v[k][y][j] = ( n_[k][y][j] + A_[k][j] * v[k-1][y2][j] )
+									/ ( n_[k-1][yk][j-1] + A_[k][j] );
 					}
+
+					s_[y][j] = v[K_][y][j] / v_bg[K_bg][y_bg];
 				}
+
 			}
 		}
 
 		/*
 		 * -------------- slower version of removing k-mer -----------------------
 		 */
-/*
+		if( run_slow ){
 
-		if( z_[n] > 0 ){
-			for( j = ( z_[n] <= K ) ? 1-z_[n] : -K; j < W_; j++ ){
-				for( k = 0; k < K+1; k++ ){
-					y = ( kmer[z_[n]-1+j] >= 0 ) ? kmer[z_[n]-1+j] % Y_[k+1] : -1;
-					n_z_[k][y][j]--;
+			// remove the k-mer counts from the sequence with the current z
+			if( z_[n] > 0 ){
+				for( size_t j = 0; j < W_; j++ ){
+					for( size_t k = 0; k < K_+1; k++ ){
+						size_t y = kmer[z_[n]-1+j] % Y_[k+1];
+						n_[k][y][j]--;
+					}
 				}
 			}
+
+			// updated model parameters v excluding the n'th sequence
+			motif_->updateV( n_, A_, K_ );
+			// compute log odd scores s[y][j], log likelihoods of the highest order K
+			motif_->calculateLinearS( bg_->getV() );
+
 		}
-
-		// updated model parameters v excluding the n'th sequence
-		motif_->updateVz_n( n_z_, alpha_, K );
-		// compute log odd scores s[y][j], log likelihoods of the highest order K
-		motif_->calculateLinearS( bg_->getV() );
-
-		s = motif_->getS();
-*/
 
 		/*
 		 * ------- sampling equation -------
@@ -575,7 +587,7 @@ void ModelLearning::Collapsed_Gibbs_sample_z(){
 			// j runs over all motif positions
 			size_t padding = ( static_cast<int>( ij-L+W_ ) > 0 ) * ( ij-L+W_ );
 			for( size_t j = padding; j < ( W_ < (ij+1) ? W_ : ij+1 ); j++ ){
-				r_[n][LW1-ij+j] *= s[y][j];
+				r_[n][LW1-ij+j] *= s_[y][j];
 			}
 		}
 		for( size_t i = 1; i <= LW1; i++ ){
@@ -606,9 +618,9 @@ void ModelLearning::Collapsed_Gibbs_sample_z(){
 
 		} else {
 			// add the k-mer counts from the current sequence with the updated z
-			for( int j = ( z_[n] <= K_ ) ? 1-(int)z_[n] : -(int)K_; j < (int)W_; j++ ){
+			for( size_t j = 0; j < W_; j++ ){
 				for( size_t k = 0; k < K_+1; k++ ){
-					size_t y = kmer[(int)z_[n]-1+j] % Y_[k+1];
+					size_t y = kmer[z_[n]-1+j] % Y_[k+1];
 					n_[k][y][j]++;
 				}
 			}
@@ -762,10 +774,10 @@ float ModelLearning::calc_gradient_alphas( float** alpha, size_t k, size_t j ){
 	// calculate partial gradient of the log posterior of alphas due to equation 47 in the theory
 	// Note that j >= k
 
-	float gradient = 0.0f;
-	float*** v = motif_->getV();
-	float** v_bg = bg_->getV();
-	float N = static_cast<float>( posSeqs_.size() - 1 );
+	float 		gradient = 0.0f;
+	float*** 	v = motif_->getV();
+	float** 	v_bg = bg_->getV();
+	float 		N = static_cast<float>( posSeqs_.size() - 1 );
 
 	// the first term of equation 47
 	gradient -= 2.0f / alpha[k][j];
@@ -808,6 +820,7 @@ float ModelLearning::calc_gradient_alphas( float** alpha, size_t k, size_t j ){
 			gradient -= boost::math::digamma( N + alpha[k][j] );
 
 		} else if( j == 0 ){
+
 			float sum = 0.0f;
 			for( size_t a = 0; a < Y_[1]; a++ ){
 				size_t ya = y * Y_[1] + a;
@@ -830,7 +843,7 @@ float ModelLearning::calc_logCondProb_a( size_t iteration, float a, size_t k, si
 	float logCondProbA = 0.0f;
 	float*** v = motif_->getV();
 	float** v_bg = bg_->getV();
-	size_t N = posSeqs_.size() - 1;
+	float N = static_cast<float>( posSeqs_.size() - 1 );
 	bool be_printed = false;
 
 /*	if( iteration == 3 && j == 12 && k == Global::modelOrder ){
@@ -868,7 +881,7 @@ float ModelLearning::calc_logCondProb_a( size_t iteration, float a, size_t k, si
 		}
 
 		// the fifth term of equation 50
-		logCondProbA -= boost::math::lgamma( static_cast<float>( N ) + alpha );
+		logCondProbA -= boost::math::lgamma( N + alpha );
 
 	} else {
 
@@ -908,6 +921,7 @@ float ModelLearning::calc_logCondProb_a( size_t iteration, float a, size_t k, si
 			if( be_printed )  std::cout << std::endl;
 
 			// the fifth term
+			// Note: here it might be problematic when j = 0
 			logCondProbA -= boost::math::lgamma( n_[k-1][y][j-1] + alpha );
 
 			if( be_printed ) std::cout << -boost::math::lgamma( n_[k-1][y][j-1] + alpha ) << '\t' << logCondProbA
@@ -989,6 +1003,7 @@ float ModelLearning::calc_lposterior_alphas( float** alpha, size_t k ){
 			for( size_t y = 0; y < Y_[k]; y++ ){
 
 				// !!! important: correction for the occasions when zero or one k-mer is present
+				// Note: here it might be problematic when j = 0
 				if( n_[k-1][y][j-1] <= 1.0f ){
 
 					logPosterior = - 2.0f * logf( alpha[k][j] ) - Global::modelBeta * powf( Global::modelGamma, ( float )k ) / alpha[k][j];
@@ -1081,6 +1096,7 @@ float ModelLearning::calc_llikelihood_alphas( float** alpha, size_t k ){
 				}
 
 				// the fifth term
+				// Note: here it might be problematic when j = 0
 				logLikelihood -= boost::math::lgamma( n_[k-1][y][j-1] + alpha[k][j] );
 
 			}
@@ -1166,9 +1182,11 @@ void ModelLearning::write( size_t N ){
 	} else if( Global::CGS ){
 		for( size_t n = 0; n < posSeqs_.size(); n++ ){
 			ofile_pos << posSeqs_[n]->getHeader() << '\t';
-			if( z_[n] > 0 ) ofile_pos << z_[n] << ':' << z_[n]+W_-1 << '\t';
-			for( size_t b = 0; b < W_; b++ ){
-				ofile_pos << Alphabet::getBase( posSeqs_[n]->getSequence()[z_[n]+b] );
+			if( z_[n] > 0 ){
+				ofile_pos << z_[n] << ':' << z_[n]+W_-1 << '\t';
+				for( size_t b = 0; b < W_; b++ ){
+					ofile_pos << Alphabet::getBase( posSeqs_[n]->getSequence()[z_[n]+b] );
+				}
 			}
 			ofile_pos << std::endl;
 		}
