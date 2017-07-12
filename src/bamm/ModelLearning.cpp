@@ -7,15 +7,13 @@
 
 #include "ModelLearning.h"
 #include "SeqGenerator.h"
-
 #include <cmath>								/* lgamma function */
-
+#include <cassert>
+#include <stdlib.h>
 #include <boost/math/special_functions.hpp>		/* gamma function and digamma function */
 #include <boost/math/special_functions/digamma.hpp>
 #include <boost/math/distributions/beta.hpp>
 #include <boost/random.hpp>
-#include <cassert>
-#include <stdlib.h>
 
 ModelLearning::ModelLearning( Motif* motif, BackgroundModel* bg, std::vector<size_t> folds ){
 
@@ -143,7 +141,7 @@ int ModelLearning::EM(){
 		MStep();
 
 		// * optional: optimize parameter q
-//		if( !Global::noQOptimization )		optimize_q();
+		if( !Global::noQOptimization )		Optimize_q();
 
 		// check parameter difference for convergence
 		v_diff = 0.0f;
@@ -168,7 +166,7 @@ int ModelLearning::EM(){
 		if( llikelihood_diff < 0 && EMIterations > 1 )	iterate = false;
 
 		// for making a movie
-		bool make_movie = true;
+		bool make_movie = false;
 		if( make_movie ){
 			motif_->calculateP();
 			motif_->write( EMIterations + 2 );
@@ -747,7 +745,7 @@ void ModelLearning::Discrete_sample_alphas( size_t iter ){
 
 			for( size_t it = 0; it < 100; it++ ){
 
-				condProb_new = expf( calc_logCondProb_a( iter, static_cast<float>( it ) / 10.0f, k, j ) - base );
+				condProb_new = expf( calc_logCondProb_a( iter, ( float )it / 10.0f, k, j ) - base );
 
 				condProb.push_back( condProb_new );
 
@@ -773,7 +771,7 @@ float ModelLearning::calc_gradient_alphas( float** alpha, size_t k, size_t j ){
 	gradient -= 2.0f / alpha[k][j];
 
 	// the second term of equation 47
-	gradient += Global::modelBeta * powf( Global::modelGamma, static_cast<float>( k ) ) / powf( alpha[k][j], 2.0f );
+	gradient += Global::modelBeta * powf( Global::modelGamma, ( float )k ) / powf( alpha[k][j], 2.0f );
 
 	// the third term of equation 47
 	gradient += static_cast<float>( Y_[k] ) * boost::math::digamma( alpha[k][j] );
@@ -919,7 +917,7 @@ float ModelLearning::calc_logCondProb_a( size_t iteration, float a, size_t k, si
 			// !!! important: correction for the occasions when zero or one k-mer is present
 			if( n_[k-1][y][j-1] - 1.0f <= 0.0000001f ){
 
-				logCondProbA = -a - Global::modelBeta * powf( Global::modelGamma, static_cast<float>( k ) ) / alpha;
+				logCondProbA = -a - Global::modelBeta * powf( Global::modelGamma, ( float )k ) / alpha;
 
 				if( be_printed ) std::cout << "* 6 : " << logCondProbA << " since n_[k-1][y][j-1]<=1" << std::endl;
 
@@ -956,7 +954,7 @@ float ModelLearning::calc_lposterior_alphas( float** alpha, size_t k ){
 	float logPosterior = 0.0f;
 	float*** v = motif_->getV();
 	float** v_bg = bg_->getV();
-	size_t N = posSeqs_.size() - 1;
+	float N = static_cast<float>( posSeqs_.size() - 1 );
 
 	for( size_t j = 0; j < W_; j++ ){
 
@@ -975,7 +973,7 @@ float ModelLearning::calc_lposterior_alphas( float** alpha, size_t k ){
 				logPosterior += boost::math::lgamma( alpha[k][j] );
 
 				// the first part of the forth term of equation 50
-				logPosterior += boost::math::lgamma( static_cast<float>( n_[k][y][j] ) + alpha[k][j] * v_bg[k][y] );
+				logPosterior += boost::math::lgamma( n_[k][y][j] + alpha[k][j] * v_bg[k][y] );
 
 				// the second part of the forth term of equation 50
 				logPosterior -= boost::math::lgamma( alpha[k][j] * v_bg[k][y] );
@@ -983,7 +981,7 @@ float ModelLearning::calc_lposterior_alphas( float** alpha, size_t k ){
 			}
 
 			// the fifth term of equation 50
-			logPosterior -= boost::math::lgamma( static_cast<float>( N ) + alpha[k][j] );
+			logPosterior -= boost::math::lgamma( N + alpha[k][j] );
 
 		} else {
 
@@ -991,9 +989,9 @@ float ModelLearning::calc_lposterior_alphas( float** alpha, size_t k ){
 			for( size_t y = 0; y < Y_[k]; y++ ){
 
 				// !!! important: correction for the occasions when zero or one k-mer is present
-				if( n_[k-1][y][j-1] <= 1 ){
+				if( n_[k-1][y][j-1] <= 1.0f ){
 
-					logPosterior = - 2.0f * logf( alpha[k][j] ) - Global::modelBeta * powf( Global::modelGamma, static_cast<float>( k ) ) / alpha[k][j];
+					logPosterior = - 2.0f * logf( alpha[k][j] ) - Global::modelBeta * powf( Global::modelGamma, ( float )k ) / alpha[k][j];
 
 				} else {
 					// the third term of equation 50
@@ -1009,7 +1007,7 @@ float ModelLearning::calc_lposterior_alphas( float** alpha, size_t k ){
 						if( n_[k][ya][j] > 0 ){
 
 							// the first part of the forth term
-							logPosterior += boost::math::lgamma( static_cast<float>( n_[k][ya][j] ) + alpha[k][j] * v[k-1][y2][j] );
+							logPosterior += boost::math::lgamma( n_[k][ya][j] + alpha[k][j] * v[k-1][y2][j] );
 
 							// the second part of the forth term
 							logPosterior -= boost::math::lgamma( alpha[k][j] * v[k-1][y2][j] );
@@ -1018,7 +1016,7 @@ float ModelLearning::calc_lposterior_alphas( float** alpha, size_t k ){
 					}
 
 					// the fifth term
-					logPosterior -= boost::math::lgamma( static_cast<float>( n_[k-1][y][j-1] ) + alpha[k][j] );
+					logPosterior -= boost::math::lgamma( n_[k-1][y][j-1] + alpha[k][j] );
 				}
 			}
 		}
@@ -1052,7 +1050,7 @@ float ModelLearning::calc_llikelihood_alphas( float** alpha, size_t k ){
 			}
 
 			// the fifth term of equation 50
-			logLikelihood -= boost::math::lgamma( static_cast<float>( N ) + alpha[k][j] );
+			logLikelihood -= boost::math::lgamma( N + alpha[k][j] );
 		}
 
 	} else {
@@ -1143,7 +1141,7 @@ void ModelLearning::write( size_t N ){
 	std::string opath_pos = opath + ".positions";
 	std::ofstream ofile_pos( opath_pos.c_str() );
 
-	ofile_pos << "seq" << '\t' << "position" << std::endl;
+	ofile_pos << "seq" << '\t' << "start:end" << '\t' << "pattern" << std::endl;
 
 	if( Global::EM ){
 		float cutoff = 0.3f;	// threshold for having a motif on the sequence in terms of responsibilities
@@ -1155,7 +1153,11 @@ void ModelLearning::write( size_t N ){
 
 			for( size_t i = LW1; i > 0; i-- ){
 				if( r_[n][i] >= cutoff ){
-					ofile_pos << LW1-i+1 << '\t';
+					ofile_pos << LW1-i+1 << ':' << LW1-i+W_<< '\t';
+					for( size_t b = 0; b < W_; b++ ){
+						ofile_pos << Alphabet::getBase( posSeqs_[n]->getSequence()[LW1-i+1+b] );
+					}
+					ofile_pos << '\t';
 				}
 			}
 
@@ -1164,7 +1166,10 @@ void ModelLearning::write( size_t N ){
 	} else if( Global::CGS ){
 		for( size_t n = 0; n < posSeqs_.size(); n++ ){
 			ofile_pos << posSeqs_[n]->getHeader() << '\t';
-			if( z_[n] > 0 ) ofile_pos << z_[n] /*<<'\t' << z_[n]+W_-1*/;
+			if( z_[n] > 0 ) ofile_pos << z_[n] << ':' << z_[n]+W_-1 << '\t';
+			for( size_t b = 0; b < W_; b++ ){
+				ofile_pos << Alphabet::getBase( posSeqs_[n]->getSequence()[z_[n]+b] );
+			}
 			ofile_pos << std::endl;
 		}
 	}
