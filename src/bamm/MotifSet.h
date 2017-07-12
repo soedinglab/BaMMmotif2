@@ -12,7 +12,7 @@ public:
 	~MotifSet();
 
 	std::vector<Motif*> getMotifs();		// get motifs
-	int			 		getN();				// get number of motifs
+	size_t		 		getN();				// get number of motifs
 
 	void 				print();			// print motifs to console
 	void 				write();			// write motifs to files (basename.bmm)
@@ -20,7 +20,7 @@ public:
 private:
 
 	std::vector<Motif*> motifs_;			// motifs
-	int          		N_ = 0;				// number of motifs
+	size_t         		N_ = 0;				// number of motifs
 
 };
 

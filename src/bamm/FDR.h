@@ -23,19 +23,21 @@ class FDR {
 
 public:
 
-	FDR( Motif* motif );
+	FDR( Motif* motif, size_t cvFold );
 	~FDR();
 
-	void 	evaluateMotif( int n );
+	void 	evaluateMotif( size_t n );
 
 	float 	getPrec_middle_ZOOPS();			// get precision when recall = 0.5 for ZOOPS model
 	float 	getPrec_middle_MOPS();			// get precision when recall = 0.5 for MOPS model
 	void 	print();
-	void	write( int n );
+	void	write( size_t n );
 
 private:
 
 	Motif*				motif_;				// initial motif
+	float				mFold_;				// the count of negative sequences is m-fold of the count of positive sequences
+	size_t				cvFold_;			// for cross-validation, the train set is (cv-1)-fold of the testing set
 
 	std::vector<float> 	posScoreAll_;		// store log odds scores over all positions on the sequences
 	std::vector<float> 	posScoreMax_;		// store maximal log odds score from each sequence
@@ -61,18 +63,18 @@ private:
 	std::vector<float>	ZOOPS_Pvalue_;		// p-values for scores from positive set with ZOOPS model
 	std::vector<float>	MOPS_Pvalue_;		// p-values for scores from positive set with MOPS model
 
-	std::vector<int>	Y_;					// contains 1 at position 0
+	std::vector<size_t>	Y_;					// contains 1 at position 0
 											// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
 											// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
 
-							// score sequences for both positive and negative sets
+									// score sequences for both positive and negative sets
 	std::vector<std::vector<float>>	scoreSequenceSet( Motif* motif, BackgroundModel* bg, const std::vector<std::unique_ptr<Sequence>> & seqSet );
 
-							// calculate precision and recall for both ZOOPS and MOPS models
-	void 		   			calculatePR();
+									// calculate precision and recall for both ZOOPS and MOPS models
+	void 		   					calculatePR();
 
-							// calculate P-values for log odds scores of positive sequences
-	void					calculatePvalues();
+									// calculate P-values for log odds scores of positive sequences
+	void							calculatePvalues();
 
 };
 

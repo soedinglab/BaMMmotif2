@@ -20,7 +20,7 @@ public:
 
 	static char*				extension;			// extension of files in FASTA format, defaults to fasta
 
-	static int					modelOrder;			// background model order
+	static size_t				modelOrder;			// background model order
 	static std::vector<float> 	modelAlpha;			// background model alpha
 	static float				modelBeta;			// alpha_k = beta x gamma^(k-1) for k > 0
 	static float				modelGamma;			// - " -

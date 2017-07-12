@@ -1,7 +1,7 @@
 #include "Sequence.h"
 #include "utils.h"
 
-Sequence::Sequence( uint8_t* sequence, int L, std::string header, std::vector<int> Y, bool singleStrand ){
+Sequence::Sequence( uint8_t* sequence, size_t L, std::string header, std::vector<size_t> Y, bool singleStrand ){
 
 	if( !singleStrand ){
 		L_ = 2 * L + 1;
@@ -13,32 +13,34 @@ Sequence::Sequence( uint8_t* sequence, int L, std::string header, std::vector<in
 		std::memcpy( sequence_, sequence, L_ );
 	}
 	header_ = header;
-	Y_ = new int[11];
-	for( int i = 0; i < 11; i++ ){
-		Y_[i] = ipow( Alphabet::getSize(), i );
+
+	for( size_t i = 0; i < 12; i++ ){
+		Y_.push_back( ipow( Alphabet::getSize(), i ) );
 	}
 
 	/**
-	 *  extract (k+1)mer y from positions (i-k,...,i) of the sequence
+	 *  extract (k+1)-mer y from positions (i-k,...,i) of the sequence
 	 *  e.g.		| monomer |                      dimer                      |      trimer     ... | ...
 	 *  (k+1)mer:	| A C G T | AA AC AG AT CA CC CG CT GA GC GG GT TA TC TG TT | AAA AAC AAG AAT ... | ...
 	 *  y:			| 0 1 2 3 |	 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 |  0   1   2   3  ... | ...
+	 *
+	 ** note:
+	 *  randomize the unknown letter N to A, C, G or T.
 	 */
 
-	kmer_ = ( int* )calloc( L_, sizeof( int ) );
-	for( int i = 0; i < L_; i++ ){
-		for( int j = i < 8 ? i : 8; j >= 0; j-- ){
-			kmer_[i] += ( sequence_[i-j] > 0 ) ? ( sequence_[i-j] -1 ) * Y_[j] : -Y[10];
+	kmer_ = ( size_t* )calloc( L_, sizeof( size_t ) );
+	for( size_t i = 0; i < L_; i++ ){
+		for( size_t k = i < 10 ? i+1 : 11; k > 0; k-- ){
+			kmer_[i] += ( ( sequence_[i-k+1] == 0 ) ? ( size_t )rand() % Y_[1] : ( sequence_[i-k+1] - 1 ) ) * Y_[k-1];
 		}
 	}
-
 }
 
 Sequence::~Sequence(){
 	if( sequence_ != NULL ){
 		free( sequence_ );
 	}
-	delete[] Y_;
+
 	free( kmer_ );
 }
 
@@ -46,7 +48,7 @@ uint8_t* Sequence::getSequence(){
 	return sequence_;
 }
 
-int Sequence::getL(){
+size_t Sequence::getL(){
 	return L_;
 }
 
@@ -73,16 +75,17 @@ void Sequence::setWeight( float weight ){
 void Sequence::print(){
 
 	std::cout << ">" << header_ << std::endl;
-	for( int i = 0; i < L_; i++ ){
+	for( size_t i = 0; i < L_; i++ ){
 		std::cout << Alphabet::getBase( sequence_[i] );
+//		std::cout << kmer_[i] << '\t';
 	}
 	std::cout << std::endl;
 }
 
-void Sequence::appendRevComp( uint8_t* sequence, int L ){
+void Sequence::appendRevComp( uint8_t* sequence, size_t L ){
 
-	for( int i = 0; i < L; i++ ){
-		sequence_[i] = sequence[i];										// the sequence
+	for( size_t i = 0; i < L; i++ ){
+		sequence_[i] = sequence[i];										// the forward sequence
 		sequence_[2*L-i] = Alphabet::getComplementCode( sequence[i] );	// and its reverse complement
 	}
 }

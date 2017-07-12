@@ -1,8 +1,9 @@
 #include "BackgroundModelSet.h"
 
-BackgroundModelSet::BackgroundModelSet( char* inputDirectory, char* extension, int order, std::vector<float> alpha, bool interpolate ){
+BackgroundModelSet::BackgroundModelSet( char* inputDirectory, char* extension, size_t order, std::vector<float> alpha, bool interpolate ){
 
 	DIR* dir;
+
 	struct dirent* ent;
 
 	struct stat sb;
@@ -27,7 +28,7 @@ BackgroundModelSet::BackgroundModelSet( char* inputDirectory, char* extension, i
 		}
 		closedir( dir );
 
-	} else{
+	} else {
 		perror( inputDirectory );
 	}
 }
@@ -57,7 +58,7 @@ BackgroundModelSet::BackgroundModelSet( char* inputDirectory, char* extension ){
 		}
 		closedir( dir );
 
-	} else{
+	} else {
 		perror( inputDirectory );
 	}
 }

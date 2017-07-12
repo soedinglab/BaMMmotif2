@@ -1,5 +1,4 @@
-#!/usr/bin/Rscript
-
+#!/usr/bin/env Rscript
 #####################################################
 # Plot three curves for false discovery rate estimation
 # 1. The (TP+FP)+ versus FP- curve for the MOPS

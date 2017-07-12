@@ -85,7 +85,7 @@ void BackgroundModelSetScore::score( char* inputDirectorySeqs, char* extensionSe
 		}
 		closedir( dir );
 
-	} else{
+	} else {
 		perror( inputDirectorySeqs );
 	}
 }

@@ -16,19 +16,18 @@ class SequenceSet{
 
 public:
 
-	SequenceSet( std::string sequenceFilepath, bool revcomp = false, std::string intensityFilepath = "" );
+	SequenceSet( std::string sequenceFilepath, bool singleStrand = false, std::string intensityFilepath = "" );
 	~SequenceSet();
 
 	std::string				getSequenceFilepath();
 	std::string				getIntensityFilepath();
 	std::vector<Sequence*> 	getSequences();
-	int 					getN();
-	unsigned int 			getMinL();
-	unsigned int			getMaxL();
+	size_t 					getN();
+	size_t 					getMinL();
+	size_t					getMaxL();
 	float* 					getBaseFrequencies();
 
 	void					print();			// print sequences
-	void                    debug();            // exhaustive printouts
 
 private:
 
@@ -36,19 +35,19 @@ private:
 	std::string				intensityFilepath_;	// path to intensity file
 
 	std::vector<Sequence*>	sequences_;			// sequences
-	int 					N_;					// number of sequences
-	unsigned int 			minL_;				// length of the shortest sequence
-	unsigned int 			maxL_;				// length of the longest sequence
+	size_t 					N_;					// number of sequences
+	size_t 					minL_;				// length of the shortest sequence
+	size_t 					maxL_;				// length of the longest sequence
 	float*	 				baseFrequencies_;	// kmer frequencies
 
-	std::vector<int>		Y_;					// contains 1 at position 0
+	std::vector<size_t>		Y_;					// contains 1 at position 0
 												// and the number of oligomers y for increasing order k at positions k+1
 												// e.g.
 												// alphabet size_ = 4: Y_ = 4^0 4^1 4^2 ... 4^15 < std::numeric_limits<int>::max()
 												// limits the length of oligomers to 15 (and the order to 14)
 
-	int 					readFASTA( bool revcomp = false );	 // read in FASTA file
-	int 					readIntensities();		             // read in intensity file
+	int 					readFASTA( bool singleStrand = false );	// read in FASTA file
+	int 					readIntensities();	// read in intensity file
 };
 
 #endif /* SEQUENCESET_H_ */

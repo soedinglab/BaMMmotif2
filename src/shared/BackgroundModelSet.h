@@ -17,7 +17,7 @@ class BackgroundModelSet{
 public:
 
 	// learn background models from sequences
-	BackgroundModelSet( char* inputDirectory, char* extension, int order, std::vector<float> alpha, bool interpolate );
+	BackgroundModelSet( char* inputDirectory, char* extension, size_t order, std::vector<float> alpha, bool interpolate );
 	// read in background models from files
 	BackgroundModelSet( char* inputDirectory, char* extension );
 
