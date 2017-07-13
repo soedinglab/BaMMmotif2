@@ -34,12 +34,8 @@
 *.out
 *.app
 
-
 # CMake
 #######
-
-
-CMakeFiles
 CMakeScripts
 Testing
 Makefile
@@ -48,10 +44,8 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 
-
 # Eclipse
 #########
-
 .metadata
 bin/
 tmp/
@@ -109,10 +103,8 @@ local.properties
 .scala_dependencies
 .worksheet
 
-
 # netbeans
 ##########
-
 nbproject/private/
 build/
 nbbuild/
