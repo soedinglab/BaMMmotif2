@@ -428,7 +428,7 @@ void ModelLearning::GibbsSampling(){
 		}
 
 		// for making a movie
-		bool make_movie = true;
+		bool make_movie = false;
 		if( make_movie ){
 			motif_->calculateP();
 			motif_->write( iteration + 1 );
