@@ -109,52 +109,6 @@ Motif::~Motif(){
 
 }
 
-// initialize v from IUPAC pattern (BaMM pattern)
-void Motif::initFromBaMMPattern( std::string pattern ){
-
-	// todo: under construction
-	// calculate v from the kmers in the pattern
-	// for k = 0:
-	for( size_t j = 0; j < pattern.length(); j++ ){
-		if( pattern[j] == 'A' ){
-			v_[0][0][j] = 1.0f;
-		} else if( pattern[j] == 'C' ){
-			v_[0][1][j] = 1.0f;
-		} else if( pattern[j] == 'G' ){
-			v_[0][2][j] = 1.0f;
-		} else if( pattern[j] == 'T' ){
-			v_[0][3][j] = 1.0f;
-		} else if( pattern[j] == 'S' ){
-			v_[0][1][j] = 0.5f;
-			v_[0][2][j] = 0.5f;
-		} else if( pattern[j] == 'W' ){
-			v_[0][0][j] = 0.5f;
-			v_[0][3][j] = 0.5f;
-		} else if( pattern[j] == 'R' ){
-			v_[0][0][j] = 0.5f;
-			v_[0][2][j] = 0.5f;
-		} else if( pattern[j] == 'Y' ){
-			v_[0][1][j] = 0.5f;
-			v_[0][3][j] = 0.5f;
-		} else if( pattern[j] == 'M' ){
-			v_[0][0][j] = 0.5f;
-			v_[0][1][j] = 0.5f;
-		} else if( pattern[j] == 'K' ){
-			v_[0][2][j] = 0.5f;
-			v_[0][3][j] = 0.5f;
-		}
-	}
-	// for k > 0:
-	for( size_t k = 1; k < K_+1; k++ ){
-		for( size_t j = k; j < pattern.length(); j++ ){
-			// todo: under construction...
-		}
-	}
-
-	// set isInitialized
-//	isInitialized_ = true;
-}
-
 // initialize v from binding sites file
 void Motif::initFromBindingSites( char* filename ){
 

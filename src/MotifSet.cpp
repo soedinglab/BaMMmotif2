@@ -4,13 +4,13 @@
 #include <string>		// compare
 
 MotifSet::MotifSet( char* indir, size_t l_flank, size_t r_flank,
-		size_t order, std::string tag ){
+		std::string tag ){
 
 	indir_ = indir;
 	l_flank_ = l_flank;
 	r_flank_ = r_flank;
-	K_ = order;
 	tag_ = tag;
+	N_ = 0;
 
 	if( tag_.compare( "bindingsites" ) == 0 ){
 
@@ -38,12 +38,14 @@ MotifSet::MotifSet( char* indir, size_t l_flank, size_t r_flank,
 
 		N_ = 1;
 
+		// todo: here to delete motif
+		// delete motif;  // Error
+
 	} else if( tag_.compare( "PWM" ) == 0 ){
 
 		// read file to calculate motif length
 		std::ifstream file;
 		file.open( indir_, std::ifstream::in );
-		size_t minL = Global::posSequenceSet->getMinL();
 
 		if( !file.good() ){
 
@@ -53,8 +55,8 @@ MotifSet::MotifSet( char* indir, size_t l_flank, size_t r_flank,
 
 		} else {
 
-			size_t length;									// length of motif with extension
-			size_t asize;									// alphabet size
+			size_t length;						// length of motif
+			size_t asize;						// alphabet size
 			std::string line;
 			std::string row;
 
@@ -64,21 +66,15 @@ MotifSet::MotifSet( char* indir, size_t l_flank, size_t r_flank,
 				if( line[0] == 'l' ){
 
 					// get the size of alphabet after "alength= "
-					std::stringstream Asize( line.substr( line.find( "h=" ) + 2 ) );
-					Asize >> asize;
+					std::stringstream A( line.substr( line.find( "h=" ) + 2 ) );
+					A >> asize;
 
 					// get the length of motif after "w= "
-					std::stringstream Width( line.substr( line.find( "w=" ) + 2 ) );
-					Width >> length;
+					std::stringstream W( line.substr( line.find( "w=" ) + 2 ) );
+					W >> length;
 
 					// extend the length due to addColumns option
 					length += l_flank_ + r_flank_;
-
-					if( length > minL ){
-						fprintf( stderr, "Error: Width of PWM exceeds the length "
-								"of the shortest sequence in the sequence set.\n" );
-						exit( -1 );
-					}
 
 					// construct an initial motif
 					Motif* motif = new Motif( length );
@@ -138,13 +134,13 @@ MotifSet::MotifSet( char* indir, size_t l_flank, size_t r_flank,
 
 		if( !file.good() ){
 
-			std::cout << "Error: Cannot open bamm file: " << indir_ << std::endl;
+			std::cout << "Error: Cannot open file: " << indir_ << std::endl;
 			exit( -1 );
 
 		} else {
 
 			size_t model_length = 0;
-			size_t model_order_plus_1 = 0;
+			size_t model_order = 0;
 			std::string line;
 
 			// read file to calculate motif length, order and alphabet size
@@ -155,8 +151,8 @@ MotifSet::MotifSet( char* indir, size_t l_flank, size_t r_flank,
 					model_length++;
 
 				} else if( model_length == 0 ){
-					// count the lines of the first position on the motif as the model model_order_plus_1
-					model_order_plus_1++;
+					// count the lines of the first position
+					model_order++;
 
 				}
 			}
@@ -164,8 +160,8 @@ MotifSet::MotifSet( char* indir, size_t l_flank, size_t r_flank,
 			// extend the core region of the model due to the added columns
 			model_length += l_flank_ + r_flank_;
 
-			// adjust model order due to the .bamm file
-			Global::modelOrder = model_order_plus_1 - 1;
+			// adjust model order, extra 1
+			model_order -= 1;
 
 			// construct an initial motif
 			Motif* motif = new Motif( model_length );
