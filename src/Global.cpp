@@ -21,11 +21,9 @@ char*				Global::alphabetType = NULL;			// alphabet type is defaulted to standar
 bool                Global::ss = false;						// only search on single strand sequences
 
 // initial model(s) options
-char*               Global::BaMMpatternFilename = NULL;		// filename of BaMMpattern file
-char*               Global::bindingSiteFilename = NULL;		// filename of binding sites file
-char*               Global::PWMFilename = NULL;				// filename of PWM file
-char*               Global::BaMMFilename = NULL;			// filename of Markov model (.bamm) file
+char*				Global::initialModelFilename = NULL; 	// filename of initial model
 std::string			Global::initialModelBasename;			// basename of initial model
+std::string			Global::initialModelTag;				// tag for initializing the model
 size_t				Global::num = std::numeric_limits<size_t>::max(); // number of models that are to be optimized
 bool				Global::mops = false;					// learn MOPS model
 bool				Global::zoops = true;					// learn ZOOPS model
@@ -163,22 +161,21 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::Option( "intensityFile", intensityFilename );
 
 	// get initial model files
-	if( opt >> GetOpt::OptionPresent( "BaMMpatternFile" ) ){
-		opt >> GetOpt::Option( "BaMMpatternFile", BaMMpatternFilename );
-		initialModelBasename = baseName( BaMMpatternFilename );
-	} else if ( opt >> GetOpt::OptionPresent( "bindingSiteFile" ) ){
-		opt >> GetOpt::Option( "bindingSiteFile", bindingSiteFilename );
-		initialModelBasename = baseName( bindingSiteFilename );
+	std::string tag;
+	if ( opt >> GetOpt::OptionPresent( "bindingSiteFile" ) ){
+		opt >> GetOpt::Option( "bindingSiteFile", initialModelFilename );
+		initialModelTag = "bindingsites";
 	} else if ( opt >> GetOpt::OptionPresent( "PWMFile" ) ){
-		opt >> GetOpt::Option( "PWMFile", PWMFilename );
-		initialModelBasename = baseName( PWMFilename );
+		opt >> GetOpt::Option( "PWMFile", initialModelFilename );
+		initialModelTag = "PWM";
 	} else if( opt >> GetOpt::OptionPresent( "BaMMFile" ) ){
-		opt >> GetOpt::Option( "BaMMFile", BaMMFilename );
-		initialModelBasename = baseName( BaMMFilename );
+		opt >> GetOpt::Option( "BaMMFile", initialModelFilename );
+		initialModelTag = "BaMM";
 	} else {
 		fprintf( stderr, "Error: No initial model is provided.\n" );
 		exit( -1 );
 	}
+	initialModelBasename = baseName( initialModelFilename );
 
 	opt >> GetOpt::Option( "num", num );
 	opt >> GetOpt::OptionPresent( "mops", mops );

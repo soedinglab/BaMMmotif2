@@ -57,7 +57,9 @@ int main( int nargs, char* args[] ){
 		fprintf( stderr, "**************************\n" );
 	}
 
-	MotifSet motifs;
+	MotifSet motifs( Global::initialModelFilename,
+			Global::addColumns.at(0), Global::addColumns.at(1),
+			Global::modelOrder, Global::initialModelTag );
 
 	size_t motifNum = ( Global::num > motifs.getN() ) ? motifs.getN() : Global::num;
 

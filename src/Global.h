@@ -48,11 +48,9 @@ public:
 	static bool			ss;									// only search on single strand sequences
 
 	// initial model(s) options
-	static char*		BaMMpatternFilename;				// filename of BaMMpattern file
-	static char*		bindingSiteFilename;				// filename of binding sites file
-	static char*		PWMFilename;						// filename of PWM file
-	static char*		BaMMFilename;						// filename of Markov model (.bamm) file
+	static char*		initialModelFilename;				// filename of initial model
 	static std::string	initialModelBasename;				// basename of initial model
+	static std::string	initialModelTag;					// tag for initializing the model
 	static size_t		num;								// number of models that are to be optimized
 	static bool			mops;								// learn MOPS model
 	static bool			zoops;								// learn ZOOPS model

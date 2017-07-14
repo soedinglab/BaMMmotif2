@@ -1,72 +1,53 @@
 #include "MotifSet.h"
 
 #include <fstream>		// std::fstream
+#include <string>		// compare
 
-MotifSet::MotifSet(){
+MotifSet::MotifSet( char* indir, size_t l_flank, size_t r_flank,
+		size_t order, std::string tag ){
 
-	if( Global::BaMMpatternFilename != NULL ){
+	indir_ = indir;
+	l_flank_ = l_flank;
+	r_flank_ = r_flank;
+	K_ = order;
+	tag_ = tag;
 
-		// scan file and conduct for IUPAC pattern
-		std::ifstream file;
-		file.open( Global::BaMMpatternFilename, std::ifstream::in );
-		std::string pattern;
-		size_t length;
-		if( !file.good() ){
-			std::cout << "Error: Cannot open pattern sequence file: "
-					<< Global::BaMMpatternFilename << std::endl;
-			exit( -1 );
-		} else {
-			while( getline( file, pattern ) ){
-
-				length = pattern.length();			// get length of the first sequence
-
-				length += Global::addColumns.at( 0 ) + Global::addColumns.at( 1 );
-
-				// todo: better to use smart pointer to store motifs.
-				Motif* motif = new Motif( length );
-
-				motif->initFromBaMMPattern( pattern );
-
-				motifs_.push_back( motif );
-			}
-		}
-
-	} else if( Global::bindingSiteFilename != NULL ){
+	if( tag_.compare( "bindingsites" ) == 0 ){
 
 		std::ifstream file;
-		file.open( Global::bindingSiteFilename, std::ifstream::in );
+		file.open( indir_, std::ifstream::in );
 		std::string bindingSite;
 		size_t length;
 
 		if( !file.good() ){
-			std::cout << "Error: Cannot open bindingSitesFile sequence file: "
-					<< Global::bindingSiteFilename << std::endl;
+			std::cout << "Error: Cannot open binding sites file: "
+					<< indir_ << std::endl;
 			exit( -1 );
 		} else {
-			getline( file, bindingSite );					// get length of the first sequence
+			getline( file, bindingSite );	// get length of the first sequence
 			length = bindingSite.length();
 		}
 
-		length += Global::addColumns.at( 0 ) + Global::addColumns.at( 1 );
+		length += l_flank_ + r_flank_;
 
 		Motif* motif = new Motif( length );
 
-		motif->initFromBindingSites( Global::bindingSiteFilename );
+		motif->initFromBindingSites( indir_ );
 
 		motifs_.push_back( motif );
 
 		N_ = 1;
 
-	} else if( Global::PWMFilename != NULL ){
+	} else if( tag_.compare( "PWM" ) == 0 ){
 
 		// read file to calculate motif length
 		std::ifstream file;
-		file.open( Global::PWMFilename, std::ifstream::in );
+		file.open( indir_, std::ifstream::in );
 		size_t minL = Global::posSequenceSet->getMinL();
 
 		if( !file.good() ){
 
-			std::cout << "Error: Cannot open PWM file: " << Global::PWMFilename << std::endl;
+			std::cout << "Error: Cannot open PWM file: " << indir_ << std::endl;
 
 			exit( -1 );
 
@@ -91,9 +72,9 @@ MotifSet::MotifSet(){
 					Width >> length;
 
 					// extend the length due to addColumns option
-					length += Global::addColumns.at( 0 ) + Global::addColumns.at( 1 );
+					length += l_flank_ + r_flank_;
 
-					if( length > minL ){					// PWM should not be shorter than the shortest posSeq
+					if( length > minL ){
 						fprintf( stderr, "Error: Width of PWM exceeds the length "
 								"of the shortest sequence in the sequence set.\n" );
 						exit( -1 );
@@ -109,17 +90,17 @@ MotifSet::MotifSet(){
 
 						PWM[y] = new float[length];
 
-						for( size_t j = 0; j < Global::addColumns.at( 0 ); j++ ){
+						for( size_t j = 0; j < l_flank_; j++ ){
 							PWM[y][j] = 1.0f / ( float )asize;
 						}
-						for( size_t j = length - Global::addColumns.at( 1 ); j < length; j++ ){
+						for( size_t j = length - r_flank_; j < length; j++ ){
 							PWM[y][j] = 1.0f / ( float )asize;
 						}
 
 					}
 
 					// get the following W lines
-					for( size_t j = Global::addColumns.at( 0 ); j < length - Global::addColumns.at( 1 ) ; j++ ){
+					for( size_t j = l_flank_; j < length - r_flank_ ; j++ ){
 
 						getline( file, row );
 
@@ -148,16 +129,16 @@ MotifSet::MotifSet(){
 			}
 		}
 
-	} else if( Global::BaMMFilename != NULL ){
+	} else if( tag.compare( "BaMM" ) == 0 ){
 
 		// each BaMM file contains one optimized motif model
 		// read file to calculate motif length
 		std::ifstream file;
-		file.open( Global::BaMMFilename, std::ifstream::in );
+		file.open( indir_, std::ifstream::in );
 
 		if( !file.good() ){
 
-			std::cout << "Error: Cannot open BaMM file: " << Global::BaMMFilename << std::endl;
+			std::cout << "Error: Cannot open bamm file: " << indir_ << std::endl;
 			exit( -1 );
 
 		} else {
@@ -181,7 +162,7 @@ MotifSet::MotifSet(){
 			}
 
 			// extend the core region of the model due to the added columns
-			model_length += Global::addColumns.at( 0 ) + Global::addColumns.at( 1 );
+			model_length += l_flank_ + r_flank_;
 
 			// adjust model order due to the .bamm file
 			Global::modelOrder = model_order_plus_1 - 1;
@@ -190,14 +171,13 @@ MotifSet::MotifSet(){
 			Motif* motif = new Motif( model_length );
 
 			// initialize motif from file
-			motif->initFromBaMM( Global::BaMMFilename );
+			motif->initFromBaMM( indir_ );
 
 			motifs_.push_back( motif );
 
 			N_ = 1;
 		}
 	}
-	//	if( Global::verbose ) print();
 }
 
 MotifSet::~MotifSet(){
@@ -226,10 +206,11 @@ void MotifSet::print(){
 		fprintf(stderr, " ________________________________________\n"
 						"|                                        |\n"
 						"| INITIALIZED PROBABILITIES for Motif %d  |\n"
-						"|________________________________________|\n\n", (int)i+1 );
+						"|________________________________________|\n\n",
+						( int )i+1 );
 		motifs_[i]->print();
 	}
 }
-void MotifSet::write(){
+void MotifSet::write( char* outdir ){
 
 }
