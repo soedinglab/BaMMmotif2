@@ -13,52 +13,53 @@ class Motif {
 public:
 
 	Motif( size_t length, size_t order = Global::modelOrder, std::vector<float> alpha = Global::modelAlpha );
-	Motif( const Motif& other );						// copy constructor
+	Motif( const Motif& other );					// copy constructor
 	~Motif();
 
-	void initFromBaMMPattern( std::string pattern );	// initialize v from IUPAC pattern (PEnG!motif)
+	void initFromBindingSites( char* indir, size_t l_flank, size_t r_flank );
 
-	void initFromBindingSites( char* filename );		// initialize v from binding site file
+	void initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset = Global::posSequenceSet );
 
-	void initFromPWM( float** PWM, size_t asize );		// initialize v from PWM file
+	void initFromBaMM( char* indir, size_t l_flank, size_t r_flank );
 
-	void initFromBaMM( char* filename );				// initialize v from bamm file and set isInitialized
-
-	size_t				getC();							// get the count of motifs N
-	size_t				getW(); 						// get motif length w
-	size_t				getK();							// get motif model order k
-	float***    		getV();							// get conditional probabilities v
-	float***			getP();							// get probabilities p
-	float**				getS();							// get log odds scores for the highest order K at position j
+	size_t				getC();						// get binding site count C
+	size_t				getW(); 					// get motif length w
+	size_t				getK();						// get motif model order k
+	float***    		getV();						// get conditional probabilities v
+	float***			getP();						// get probabilities p
+	float**				getS();						// get log odds scores for the highest order K at position j
 	std::vector<size_t> getY();
-	void        		updateV( float*** n, float** alpha, size_t k );	// update model profile v
+	void        		updateV( float*** n, float** alpha, size_t k );
 
 	void				calculateP();					// calculate probabilities p
-	void				calculateLogS( float** Vbg );		// calculate log odds scores for the highest order K at position j
+	void				calculateLogS( float** Vbg );	// calculate log odds scores for the highest order K at position j
 	void				calculateLinearS( float** Vbg );// calculate log odds scores for the highest order K at position j
 														// in linear space for speeding up
 
-	void 				print();					   	// print v to console
-	void 				write( size_t N );				// write v (basename.ihbcp/.ihbp). Include header with alphabetType
+	void 				print();					// print v to console
+	void 				write( char* odir, std::string basename, size_t N );
 
 private:
 
-	bool				isInitialized_ = false;		   	// assert in all public methods
+	bool				isInitialized_ = false;		// assert in all public methods
 
-	size_t				C_ = 0;							// count the number of binding sites
-	size_t 				W_;					    		// motif length
-	size_t				K_;								// motif model order
-	float**			 	A_;								// hyperparameter alphas
-	float***    		v_;				        		// conditional probabilities for (k+1)-mers y at motif position j
-	float*				f_bg_;							// monomer frequencies from negative set
-	float***			p_;								// probabilities for (k+1)-mers y at motif position j
-	float**				s_;								// log odds scores for (K+1)-mers y at motif position j
-	float***			n_;								// counts of (k+1)-mer for all y at motif position j
-	std::vector<size_t>	Y_;								// contains 1 at position 0
-														// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
-														// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
+	size_t				C_;
+	size_t 				W_;
+	size_t				K_;
+	float**			 	A_;							// hyperparameter alphas
+	float***    		v_;				        	// conditional probabilities
+													// for (k+1)-mers y at motif
+													// position j
+	float*				f_bg_;						// monomer frequencies from
+													// background model
+	float***			p_;							// probabilities for (k+1)-mers y at motif position j
+	float**				s_;							// log odds scores for (K+1)-mers y at motif position j
+	float***			n_;							// counts of (k+1)-mer for all y at motif position j
+	std::vector<size_t>	Y_;							// contains 1 at position 0
+													// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
+													// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
 
-	void 				calculateV( float*** n );		// calculate v from k-mer counts n and global alphas
+	void 				calculateV( float*** n );	// calculate v from k-mer counts n and global alphas
 
 };
 
@@ -100,10 +101,11 @@ inline void Motif::updateV( float*** n, float** alpha, size_t K ){
 	// for k > 0:
 	for( size_t k = 1; k < K+1; k++ ){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
-			size_t y2 = y % Y_[k];				// cut off the first nucleotide in (k+1)-mer
-			size_t yk = y / Y_[1];				// cut off the last nucleotide in (k+1)-mer
-			//todo: Merge first loop into second one (by allowing contexts to extend left of the motif)
-			for( size_t j = 0; j < k; j++ ){	// when j < k, i.e. p(A|CG) = p(A|C)
+			size_t y2 = y % Y_[k];				// cut off the first nucleotide
+			size_t yk = y / Y_[1];				// cut off the last nucleotide
+			//todo: Merge first loop into second one
+			// (by allowing contexts to extend left of the motif)
+			for( size_t j = 0; j < k; j++ ){	// when j < k, p(A|CG) = p(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
 			}
 			//todo: Vectorize in AVX2 / SSE2

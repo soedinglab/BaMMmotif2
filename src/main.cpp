@@ -80,7 +80,7 @@ int main( int nargs, char* args[] ){
 
 		if( Global::saveInitialBaMMs ){
 			// optional: save initial model
-			motif->write( 0 );
+			motif->write( Global::outputDirectory, Global::posSequenceBasename, 0 );
 		}
 
 		if( Global::EM ){
@@ -99,12 +99,12 @@ int main( int nargs, char* args[] ){
 
 		// write model parameters on the disc
 		if( Global::saveBaMMs ){
-			model.write( n+1 );
+			model.write( Global::outputDirectory, Global::posSequenceBasename, n+1 );
 		}
 
 		// write out the learned model
 		// motif->write( n+1 );
-		model.getMotif()->write( n+1 );
+		model.getMotif()->write( Global::outputDirectory, Global::posSequenceBasename, n+1 );
 
 		if( Global::scoreSeqset ){
 			// score the model on sequence set

@@ -22,7 +22,7 @@ public:
 	void 					GibbsSampling();
 
 	void					print();
-	void					write( size_t n );
+	void					write( char* odir, std::string basename, size_t n );
 	Motif*					getMotif();
 
 

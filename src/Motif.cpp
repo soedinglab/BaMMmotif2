@@ -6,6 +6,7 @@ Motif::Motif( size_t length, size_t K, std::vector<float> alpha ){
 
 	W_ = length;
 	K_ = K;
+	C_ = 0;
 
 	for( size_t k = 0; k < K_+5; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
@@ -45,6 +46,7 @@ Motif::Motif( const Motif& other ){ 		// copy constructor
 	K_ = other.K_;
 	A_ = other.A_;
 	Y_ = other.Y_;
+	C_ = other.C_;
 
 	v_ = ( float*** )malloc( ( K_+1 ) * sizeof( float** ) );
 	n_ = ( float*** )malloc( ( K_+1 ) * sizeof( float** ) );
@@ -110,24 +112,23 @@ Motif::~Motif(){
 }
 
 // initialize v from binding sites file
-void Motif::initFromBindingSites( char* filename ){
+void Motif::initFromBindingSites( char* indir, size_t l_flank, size_t r_flank ){
 
-	std::ifstream file( filename );							// read file
+	std::ifstream file( indir );							// read file
 	std::string bindingsite;								// read each binding site sequence from each line
 	size_t bindingSiteWidth;								// length of binding site from each line
-	size_t minL = Global::posSequenceSet->getMinL();
 
 	while( getline( file, bindingsite ).good() ){
 
 		C_++;												// count the number of binding sites
 
 		// add alphabets randomly at the beginning of each binding site
-		for( size_t i = 0; i < Global::addColumns.at(0); i++ )
+		for( size_t i = 0; i < l_flank; i++ )
 			bindingsite.insert( bindingsite.begin(),
 					Alphabet::getBase( static_cast<uint8_t>( rand() ) % static_cast<uint8_t>( Y_[1] + 1 ) ) );
 
 		// add alphabets randomly at the end of each binding site
-		for( size_t i = 0; i < Global::addColumns.at(1); i++ )
+		for( size_t i = 0; i < r_flank; i++ )
 			bindingsite.insert( bindingsite.end(),
 					Alphabet::getBase( static_cast<uint8_t>( rand() ) % static_cast<uint8_t>( Y_[1] + 1 ) ) );
 
@@ -141,11 +142,6 @@ void Motif::initFromBindingSites( char* filename ){
 		if( bindingSiteWidth < K_+1 ){						// binding sites should be longer than the order of model
 			fprintf( stderr, "Error: Length of binding site sequence "
 					"is shorter than model order.\n" );
-			exit( -1 );
-		}
-		if( bindingSiteWidth > minL ){						// binding sites should be shorter than the shortest posSeq
-			fprintf( stderr, "Error: Length of binding site sequence "
-					"exceeds the length of posSet sequence.\n" );
 			exit( -1 );
 		}
 
@@ -171,7 +167,7 @@ void Motif::initFromBindingSites( char* filename ){
 }
 
 // initialize v from PWM file
-void Motif::initFromPWM( float** PWM, size_t asize ){
+void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset ){
 
 	// set k-mer counts to zero
 	for( size_t k = 0; k < K_+1; k++ ){
@@ -209,8 +205,8 @@ void Motif::initFromPWM( float** PWM, size_t asize ){
 	}
 
 	// sampling z from each sequence of the sequence set based on the weights:
-	std::vector<Sequence*> posSet = Global::posSequenceSet->getSequences();
-	size_t N = Global::posSequenceSet->getN();
+	std::vector<Sequence*> posSet = posSeqset->getSequences();
+	size_t N = posSeqset->getN();
 
 	for( size_t n = 0; n < N; n++ ){
 
@@ -292,15 +288,15 @@ void Motif::initFromPWM( float** PWM, size_t asize ){
 }
 
 // initialize v from Bayesian Markov model file and set isInitialized
-void Motif::initFromBaMM( char* filename ){
+void Motif::initFromBaMM( char* indir, size_t l_flank, size_t r_flank ){
 
 	std::ifstream file;
-	file.open( filename, std::ifstream::in );
+	file.open( indir, std::ifstream::in );
 	std::string line;
 
 	// loop over motif position j
 	// set each v to 0.25f in the flanking region
-	for( size_t j = 0; j < Global::addColumns.at( 0 ); j++ ){
+	for( size_t j = 0; j < l_flank; j++ ){
 		for( size_t k = 0; k < K_+1; k++ ){
 			for( size_t y = 0; y < Y_[k+1]; y++ ){
 				v_[k][y][j] = 1.0f / static_cast<float>( Y_[1] );
@@ -309,7 +305,7 @@ void Motif::initFromBaMM( char* filename ){
 	}
 
 	// read in the v's from the bamm file for the core region
-	for( size_t j = Global::addColumns.at( 0 ); j < W_ - Global::addColumns.at( 1 ); j++ ){
+	for( size_t j = l_flank; j < W_ - r_flank; j++ ){
 
 		// loop over order k
 		for( size_t k = 0; k < K_+1 ; k++ ){
@@ -328,7 +324,7 @@ void Motif::initFromBaMM( char* filename ){
 	}
 
 	// set each v to 0.25f in the flanking region
-	for( size_t j = W_ - Global::addColumns.at( 1 ); j < W_; j++ ){
+	for( size_t j = W_ - r_flank; j < W_; j++ ){
 		for( size_t k = 0; k < K_+1 ; k++ ){
 			for( size_t y = 0; y < Y_[k+1] ; y++ ){
 				v_[k][y][j] = 1.0f / static_cast<float>( Y_[1] );
@@ -444,7 +440,7 @@ void Motif::print(){
 	}
 }
 
-void Motif::write( size_t N ){
+void Motif::write( char* odir, std::string basename, size_t N ){
 
 	/**
 	 * save motif learned by BaMM in two flat files:
@@ -452,19 +448,23 @@ void Motif::write( size_t N ){
 	 * (2) posSequenceBasename.ihbp: 		probabilities of PWM after EM
 	 */
 
-	std::string opath = std::string( Global::outputDirectory )  + '/'
-			+ Global::posSequenceBasename + "_motif_" + std::to_string( N );
+	std::string opath = std::string( odir )  + '/'
+			+ basename + "_motif_" + std::to_string( N );
 
-	// output conditional probabilities v[k][y][j] and probabilities prob[k][y][j]
-	std::string opath_v = opath + ".ihbcp"; 	// inhomogeneous bamm conditional probabilities
-	std::string opath_p = opath + ".ihbp";		// inhomogeneous bamm probabilities
+	// output conditional probabilities v[k][y][j] and probabilities p[k][y][j]
+	std::string opath_v = opath + ".ihbcp"; 	// ihbcp: inhomogeneous bamm
+												// conditional probabilities
+	std::string opath_p = opath + ".ihbp";		// ihbp: inhomogeneous bamm
+												// probabilities
 	std::ofstream ofile_v( opath_v.c_str() );
 	std::ofstream ofile_p( opath_p.c_str() );
 	for( size_t j = 0; j < W_; j++ ){
 		for( size_t k = 0; k < K_+1; k++ ){
 			for( size_t y = 0; y < Y_[k+1]; y++ ){
-				ofile_v << std::scientific << std::setprecision(3) << v_[k][y][j] << ' ';
-				ofile_p << std::scientific << std::setprecision(3) << p_[k][y][j] << ' ';
+				ofile_v << std::scientific << std::setprecision(3)
+						<< v_[k][y][j] << ' ';
+				ofile_p << std::scientific << std::setprecision(3)
+						<< p_[k][y][j] << ' ';
 			}
 			ofile_v << std::endl;
 			ofile_p << std::endl;

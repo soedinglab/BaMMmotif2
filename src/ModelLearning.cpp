@@ -172,7 +172,7 @@ int ModelLearning::EM(){
 		bool make_movie = false;
 		if( make_movie ){
 			motif_->calculateP();
-			motif_->write( EMIterations + 1 );
+			motif_->write( Global::outputDirectory, Global::posSequenceBasename, EMIterations + 1 );
 		}
 	}
 
@@ -434,7 +434,7 @@ void ModelLearning::GibbsSampling(){
 		bool make_movie = false;
 		if( make_movie ){
 			motif_->calculateP();
-			motif_->write( iteration + 1 );
+			motif_->write( Global::outputDirectory, Global::posSequenceBasename, iteration + 1 );
 		}
 	}
 
@@ -1128,7 +1128,7 @@ void ModelLearning::print(){
 
 }
 
-void ModelLearning::write( size_t N ){
+void ModelLearning::write( char* odir, std::string basename, size_t N ){
 
 	/**
 	 * 	 * save BaMM (hyper-)parameters in four flat files:
@@ -1140,8 +1140,7 @@ void ModelLearning::write( size_t N ){
 	 * (5) posSequenceBasename.lpos:			log posterior of alphas with different orders
 	 */
 
-	std::string opath = std::string( Global::outputDirectory ) + '/'
-						+ Global::posSequenceBasename + "_motif_" + std::to_string( N );
+	std::string opath = std::string( odir ) + '/' + basename + "_motif_" + std::to_string( N );
 
 	// output (k+1)-mer counts n[k][y][j]
 	std::string opath_n = opath + ".counts";

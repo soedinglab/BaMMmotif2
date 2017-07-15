@@ -32,7 +32,7 @@ MotifSet::MotifSet( char* indir, size_t l_flank, size_t r_flank,
 
 		Motif* motif = new Motif( length );
 
-		motif->initFromBindingSites( indir_ );
+		motif->initFromBindingSites( indir_, l_flank_, r_flank_ );
 
 		motifs_.push_back( motif );
 
@@ -167,7 +167,7 @@ MotifSet::MotifSet( char* indir, size_t l_flank, size_t r_flank,
 			Motif* motif = new Motif( model_length );
 
 			// initialize motif from file
-			motif->initFromBaMM( indir_ );
+			motif->initFromBaMM( indir_, l_flank_, r_flank_ );
 
 			motifs_.push_back( motif );
 
