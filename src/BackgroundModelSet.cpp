@@ -1,6 +1,7 @@
 #include "BackgroundModelSet.h"
 
-BackgroundModelSet::BackgroundModelSet( char* inputDirectory, char* extension, size_t order, std::vector<float> alpha, bool interpolate ){
+BackgroundModelSet::BackgroundModelSet( char* indir, char* extension,
+				size_t order, std::vector<float> alpha, bool interpolate ){
 
 	DIR* dir;
 
@@ -8,11 +9,12 @@ BackgroundModelSet::BackgroundModelSet( char* inputDirectory, char* extension, s
 
 	struct stat sb;
 
-	if( ( dir = opendir( inputDirectory ) ) != NULL ){
+	if( ( dir = opendir( indir ) ) != NULL ){
 
 		while( ( ent = readdir( dir ) ) != NULL ){
 
-			std::string filep = std::string( inputDirectory ) + '/' + std::string( ent->d_name );
+			std::string filep = std::string( indir ) + '/'
+								+ std::string( ent->d_name );
 
 			if( stat( filep.c_str(), &sb ) == 0 && S_ISREG( sb.st_mode ) ){
 
@@ -20,7 +22,10 @@ BackgroundModelSet::BackgroundModelSet( char* inputDirectory, char* extension, s
 				if( strcmp( ext+1, extension ) == 0 ){
 
 					SequenceSet* sequenceSet = new SequenceSet( filep );
-					BackgroundModel* bamm = new BackgroundModel( *sequenceSet, order, alpha, interpolate );
+					BackgroundModel* bamm = new BackgroundModel(
+										sequenceSet->getSequences(),
+										order, alpha, interpolate,
+										sequenceSet->getSequenceFilepath() );
 
 					backgroundModels_.push_back( bamm );
 				}
@@ -29,22 +34,23 @@ BackgroundModelSet::BackgroundModelSet( char* inputDirectory, char* extension, s
 		closedir( dir );
 
 	} else {
-		perror( inputDirectory );
+		perror( indir );
 	}
 }
 
-BackgroundModelSet::BackgroundModelSet( char* inputDirectory, char* extension ){
+BackgroundModelSet::BackgroundModelSet( char* indir, char* extension ){
 
 	DIR* dir;
 	struct dirent* ent;
 
 	struct stat sb;
 
-	if( ( dir = opendir( inputDirectory ) ) != NULL ){
+	if( ( dir = opendir( indir ) ) != NULL ){
 
 		while( ( ent = readdir( dir ) ) != NULL ){
 
-			std::string filep = std::string( inputDirectory ) + '/' + std::string( ent->d_name );
+			std::string filep = std::string( indir ) + '/' +
+								std::string( ent->d_name );
 
 			if( stat( filep.c_str(), &sb ) == 0 && S_ISREG( sb.st_mode ) ){
 
@@ -59,7 +65,7 @@ BackgroundModelSet::BackgroundModelSet( char* inputDirectory, char* extension ){
 		closedir( dir );
 
 	} else {
-		perror( inputDirectory );
+		perror( indir );
 	}
 }
 
@@ -78,26 +84,29 @@ size_t BackgroundModelSet::getN(){
     return( backgroundModels_.size() );
 }
 
-std::vector<double> BackgroundModelSet::calculateLogLikelihoods( SequenceSet& sequenceSet ){
+std::vector<double> BackgroundModelSet::calculateLogLikelihoods(
+		std::vector<Sequence*> seqs ){
 
 	std::vector<double> llikelihoods( backgroundModels_.size() );
 
 	for( size_t i = 0; i < backgroundModels_.size(); i++ ){
 
-		llikelihoods[i] = backgroundModels_[i]->calculateLogLikelihood( sequenceSet );
+		llikelihoods[i] = backgroundModels_[i]->calculateLogLikelihood( seqs );
 	}
 	return llikelihoods;
 }
 
-std::vector<double> BackgroundModelSet::calculatePosteriorProbabilities( SequenceSet& sequenceSet ){
+std::vector<double> BackgroundModelSet::calculatePosteriorProbabilities(
+		std::vector<Sequence*> seqs ){
 
-	return ::calculatePosteriorProbabilities( calculateLogLikelihoods( sequenceSet ) );
+	return ::calculatePosteriorProbabilities( calculateLogLikelihoods( seqs ) );
 }
 
-void BackgroundModelSet::calculatePosLikelihoods( SequenceSet& sequenceSet, char* outputDirectory ){
+void BackgroundModelSet::calculatePosLikelihoods( std::vector<Sequence*> seqs,
+		char* odir ){
 
 	for( size_t i = 0; i < backgroundModels_.size(); i++ ){
-		backgroundModels_[i]->calculatePosLikelihoods( sequenceSet, outputDirectory );
+		backgroundModels_[i]->calculatePosLikelihoods( seqs, odir );
 	}
 }
 
@@ -108,9 +117,9 @@ void BackgroundModelSet::print(){
 	}*/
 }
 
-void BackgroundModelSet::write( char* dir ){
+void BackgroundModelSet::write( char* odir ){
 
 	for( size_t i = 0; i < backgroundModels_.size(); i++ ){
-		backgroundModels_[i]->write( dir );
+		backgroundModels_[i]->write( odir );
 	}
 }

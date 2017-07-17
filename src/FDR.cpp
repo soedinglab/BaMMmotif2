@@ -45,14 +45,11 @@ void FDR::evaluateMotif( size_t n ){
 		std::vector<Sequence*> testSet;
 		std::vector<Sequence*> trainSet;
 
-		std::vector<size_t> trainsetFolds;
-		trainsetFolds.resize( cvFold_ - 1 );
 		for( size_t f = 0; f < cvFold_; f++ ){
 			if( f != fold ){
 				for( size_t i = 0; i < Global::posFoldIndices[f].size(); i++ ){
 					trainSet.push_back( posSeqs[Global::posFoldIndices[f][i]] );
 				}
-				trainsetFolds.push_back( f );
 			} else {
 				for( size_t i = 0; i < Global::posFoldIndices[f].size(); i++ ){
 					testSet.push_back( posSeqs[Global::posFoldIndices[f][i]] );
@@ -63,12 +60,10 @@ void FDR::evaluateMotif( size_t n ){
 		// obtain background model for each training set
 		BackgroundModel* bgModel;
 		if( !Global::bgModelGiven ){
-			bgModel = new BackgroundModel( *Global::negSequenceSet,
+			bgModel = new BackgroundModel( trainSet,
 											Global::bgModelOrder,
 											Global::bgModelAlpha,
-											Global::interpolateBG,
-											Global::negFoldIndices,
-											trainsetFolds );
+											Global::interpolateBG );
 
 		} else {
 			bgModel = new BackgroundModel( Global::bgModelFilename );

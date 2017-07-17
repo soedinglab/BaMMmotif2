@@ -1,8 +1,8 @@
 #include "BackgroundModelSetScore.h"
 
-BackgroundModelSetScore::BackgroundModelSetScore( char* inputDirectoryBaMMs, char* extensionBaMMs ){
+BackgroundModelSetScore::BackgroundModelSetScore( char* indir, char* extension ){
 
-	bamms_ = new BackgroundModelSet( inputDirectoryBaMMs, extensionBaMMs );
+	bamms_ = new BackgroundModelSet( indir, extension );
 
 	for( size_t i = 0; i < bamms_->getN(); i++ ){
 		bammNames_.push_back( bamms_->getBackgroundModels()[i]->getName() );
@@ -15,21 +15,22 @@ BackgroundModelSetScore::~BackgroundModelSetScore(){
 	}
 }
 
-void BackgroundModelSetScore::predict( char* inputDirectorySeqs, char* extensionSeqs ){
+void BackgroundModelSetScore::predict( char* indir, char* extensionSeqs ){
 
 	DIR* dir;
 	struct dirent* ent;
 
 	struct stat sb;
 
-	if( ( dir = opendir( inputDirectorySeqs ) ) != NULL ){
+	if( ( dir = opendir( indir ) ) != NULL ){
 
 		posteriors_.clear();
 		posteriors_.resize( bamms_->getN() );
 
 		while( ( ent = readdir( dir ) ) != NULL ){
 
-			std::string filep = std::string( inputDirectorySeqs ) + '/' + std::string( ent->d_name );
+			std::string filep = std::string( indir ) + '/' +
+								std::string( ent->d_name );
 
 			if( stat( filep.c_str(), &sb ) == 0 && S_ISREG( sb.st_mode ) ){
 
@@ -37,10 +38,11 @@ void BackgroundModelSetScore::predict( char* inputDirectorySeqs, char* extension
 				if( strcmp( extension+1, extensionSeqs ) == 0 ){
 
 					SequenceSet* sequenceSet = new SequenceSet( filep );
-					sequenceSetNames_.push_back( baseName( sequenceSet->getSequenceFilepath().c_str() ) );
+					sequenceSetNames_.push_back( baseName(
+							sequenceSet->getSequenceFilepath().c_str() ) );
 
 					// calculate posterior probabilities
-					std::vector<double> posteriors = bamms_->calculatePosteriorProbabilities( *sequenceSet );
+					std::vector<double> posteriors = bamms_->calculatePosteriorProbabilities( sequenceSet->getSequences() );
 					for( size_t i = 0; i < posteriors_.size(); i++ ){
 						posteriors_[i].push_back( posteriors[i] );
 					}
@@ -53,22 +55,22 @@ void BackgroundModelSetScore::predict( char* inputDirectorySeqs, char* extension
 		aggregate();
 
 	} else{
-		perror( inputDirectorySeqs );
+		perror( indir );
 	}
 }
 
-void BackgroundModelSetScore::score( char* inputDirectorySeqs, char* extensionSeqs, char* outputDirectory ){
+void BackgroundModelSetScore::score( char* indir, char* extensionSeqs, char* odir ){
 
 	DIR* dir;
 	struct dirent* ent;
 
 	struct stat sb;
 
-	if( ( dir = opendir( inputDirectorySeqs ) ) != NULL ){
+	if( ( dir = opendir( indir ) ) != NULL ){
 
 		while( ( ent = readdir( dir ) ) != NULL ){
 
-			std::string filep = std::string( inputDirectorySeqs ) + '/' + std::string( ent->d_name );
+			std::string filep = std::string( indir ) + '/' + std::string( ent->d_name );
 
 			if( stat( filep.c_str(), &sb ) == 0 && S_ISREG( sb.st_mode ) ){
 
@@ -79,14 +81,14 @@ void BackgroundModelSetScore::score( char* inputDirectorySeqs, char* extensionSe
 					sequenceSetNames_.push_back( baseName( sequenceSet->getSequenceFilepath().c_str() ) );
 
 					// calculate positional likelihoods
-					bamms_->calculatePosLikelihoods( *sequenceSet, outputDirectory );
+					bamms_->calculatePosLikelihoods( sequenceSet->getSequences(), odir );
 				}
 			}
 		}
 		closedir( dir );
 
 	} else {
-		perror( inputDirectorySeqs );
+		perror( indir );
 	}
 }
 

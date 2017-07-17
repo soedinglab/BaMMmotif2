@@ -1,14 +1,12 @@
 #include "BackgroundModel.h"
 
-BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
+BackgroundModel::BackgroundModel( std::vector<Sequence*> seqs,
 									size_t order,
 									std::vector<float> alpha,
 									bool interpolate,
-									std::vector<std::vector<size_t>> foldIndices,
-									std::vector<size_t> folds ){
+									std::string filePath ){
 
-	//name_.assign( baseName( sequenceSet.getSequenceFilepath().c_str() ) );
-	name_ = baseName( sequenceSet.getSequenceFilepath().c_str() );
+	basename_ = baseName( filePath.c_str() );
 	K_ = order;
 	A_ = alpha;
 	interpolate_ = interpolate;
@@ -17,56 +15,26 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 
-	if( folds.empty() ){
-		if( foldIndices.empty() ){
-
-			folds.push_back( 0 );
-
-			foldIndices.push_back( std::vector<size_t>() );
-			for( size_t n = 0; n < sequenceSet.getN(); n++ ){
-				foldIndices[0].push_back( n );
-			}
-		} else {
-			folds.resize( foldIndices.size() );
-			std::iota( std::begin( folds ), std::end( folds ), 0 );
-		}
-	} else if( foldIndices.empty() ){
-
-		folds.clear();
-		folds.push_back( 0 );
-
-		foldIndices.push_back( std::vector<size_t>() );
-		for( size_t n = 0; n < sequenceSet.getN(); n++ ){
-			foldIndices[0].push_back( n );
-		}
-	}
-
 	n_ = ( size_t** )malloc( ( K_+1 ) * sizeof( size_t* ) );
 	for( size_t k = 0; k <= K_; k++ ){
 		n_[k] = ( size_t* )calloc( Y_[k+1], sizeof( size_t ) );
 	}
 
 	// calculate counts
-	std::vector<Sequence*> seqs = sequenceSet.getSequences();
-	// loop over folds
-	for( size_t f = 0; f < folds.size(); f++ ){
-		// loop over fold indices
-		for( size_t f_idx = 0; f_idx < foldIndices[folds[f]].size(); f_idx++ ){
-			// get sequence index
-			size_t s_idx = foldIndices[folds[f]][f_idx];
-			// get sequence length
-			size_t L = seqs[s_idx]->getL();
+	for( size_t s_idx = 0; s_idx < seqs.size(); s_idx++ ){
+		// get sequence length
+		size_t L = seqs[s_idx]->getL();
 
-			size_t* kmer = seqs[s_idx]->getKmer();
+		size_t* kmer = seqs[s_idx]->getKmer();
+
+		// loop over sequence positions
+		for( size_t i = 0; i < L; i++ ){
 			// loop over order
-			// loop over sequence positions
-			for( size_t i = 0; i < L; i++ ){
-				for( size_t k = 0; k <= K_; k++ ){
-					// extract (k+1)mer
-					size_t y = kmer[i] % Y_[k+1];
-					// count (k+1)mer
-					n_[k][y]++;
-				}
+			for( size_t k = 0; k <= K_; k++ ){
+				// extract (k+1)mer
+				size_t y = kmer[i] % Y_[k+1];
+				// count (k+1)mer
+				n_[k][y]++;
 			}
 		}
 	}
@@ -81,7 +49,7 @@ BackgroundModel::BackgroundModel( SequenceSet& sequenceSet,
 
 BackgroundModel::BackgroundModel( std::string filePath ){
 
-	name_.assign( baseName( filePath.c_str() ) );
+	basename_ = baseName( filePath.c_str() );
 
 	n_ = NULL;
 	v_ = NULL;
@@ -97,7 +65,8 @@ BackgroundModel::BackgroundModel( std::string filePath ){
 			if( fscanf( file, "# K = %d\n", &K ) == 1 ){
 				K_ = static_cast<size_t>( K );
 			} else{
-				std::cerr << "Error: Wrong BaMM format: " << filePath << std::endl;
+				std::cerr << "Error: Wrong BaMM format: "
+						<< filePath << std::endl;
 				exit( -1 );
 			}
 			A_.resize( K_+1 );
@@ -106,14 +75,16 @@ BackgroundModel::BackgroundModel( std::string filePath ){
 			if( fscanf( file, "# A = %e", &A ) == 1 ){
 				A_[0] = A;
 			} else{
-				std::cerr << "Error: Wrong BaMM format: " << filePath << std::endl;
+				std::cerr << "Error: Wrong BaMM format: "
+						<< filePath << std::endl;
 				exit( -1 );
 			}
 			for( size_t k = 1; k <= K_; k++ ){
 				if( fscanf( file, "%e", &A ) == 1 ){
 					A_[k] = A;
 				} else {
-					std::cerr << "Error: Wrong BaMM format: " << filePath << std::endl;
+					std::cerr << "Error: Wrong BaMM format: "
+							<< filePath << std::endl;
 					exit( -1 );
 				}
 			}
@@ -136,7 +107,8 @@ BackgroundModel::BackgroundModel( std::string filePath ){
 
 					} else {
 
-						std::cerr << "Error: Wrong BaMM format: " << filePath << std::endl;
+						std::cerr << "Error: Wrong BaMM format: "
+								<< filePath << std::endl;
 						exit( -1 );
 					}
 				}
@@ -145,7 +117,8 @@ BackgroundModel::BackgroundModel( std::string filePath ){
 
 		} else {
 
-			std::cerr << "Error: Cannot open BaMM file: " << filePath << std::endl;
+			std::cerr << "Error: Cannot open BaMM file: "
+					<< filePath << std::endl;
 			exit( -1 );
 		}
 	}
@@ -168,7 +141,7 @@ BackgroundModel::~BackgroundModel(){
 }
 
 std::string BackgroundModel::getName(){
-    return name_;
+    return basename_;
 }
 
 size_t BackgroundModel::getOrder(){
@@ -199,131 +172,68 @@ bool BackgroundModel::vIsLog(){
 	return vIsLog_;
 }
 
-double BackgroundModel::calculateLogLikelihood( SequenceSet& sequenceSet,
-		                                        std::vector<std::vector<size_t>> foldIndices,
-		                                        std::vector<size_t> folds ){
+double BackgroundModel::calculateLogLikelihood( std::vector<Sequence*> seqs ){
 
 	if( !( vIsLog_ ) ){
 		logV();
 	}
 
-	if( folds.empty() ){
-		if( foldIndices.empty() ){
-
-			folds.push_back( 0 );
-
-			foldIndices.push_back( std::vector<size_t>() );
-			for( size_t n = 0; n < sequenceSet.getN(); n++ ){
-				foldIndices[0].push_back( n );
-			}
-		} else {
-			folds.resize( foldIndices.size() );
-			std::iota( std::begin( folds ), std::end( folds ), 0 );
-		}
-	} else if( foldIndices.empty() ){
-
-		folds.clear();
-		folds.push_back( 0 );
-
-		foldIndices.push_back( std::vector<size_t>() );
-		for( size_t n = 0; n < sequenceSet.getN(); n++ ){
-			foldIndices[0].push_back( n );
-		}
-	}
-
 	double lLikelihood = 0.0;
 
-	// loop over folds
-	for( size_t f = 0; f < folds.size(); f++ ){
-		// loop over fold indices
-		for( size_t f_idx = 0; f_idx < foldIndices[folds[f]].size(); f_idx++ ){
-			// get sequence index
-			size_t s_idx = foldIndices[folds[f]][f_idx];
-			// get sequence length
-			size_t L = sequenceSet.getSequences()[s_idx]->getL();
-			size_t* kmer = sequenceSet.getSequences()[s_idx]->getKmer();
+	for( size_t s_idx = 0; s_idx < seqs.size(); s_idx++ ){
 
-			// loop over sequence positions
-			for( size_t i = 0; i < L; i++ ){
-				// calculate k
-				size_t k = std::min( i, K_ );
-				// extract (k+1)mer
-				size_t y = kmer[i] % Y_[k+1];
-				// add log probabilities
-				lLikelihood += v_[k][y];
-			}
+		// get sequence length
+		size_t L = seqs[s_idx]->getL();
+		size_t* kmer = seqs[s_idx]->getKmer();
+
+		// loop over sequence positions
+		for( size_t i = 0; i < L; i++ ){
+			// calculate k
+			size_t k = std::min( i, K_ );
+			// extract (k+1)mer
+			size_t y = kmer[i] % Y_[k+1];
+			// add log probabilities
+			lLikelihood += v_[k][y];
 		}
 	}
 
 	return lLikelihood;
 }
 
-void BackgroundModel::calculatePosLikelihoods( SequenceSet& sequenceSet,
-		                                       char* outputDirectory,
-		                                       std::vector<std::vector<size_t>> foldIndices,
-		                                       std::vector<size_t> folds ){
+void BackgroundModel::calculatePosLikelihoods( std::vector<Sequence*> seqs,
+		                                       char* odir ){
 
 	if( vIsLog_ ){
 		expV();
 	}
 
-	if( folds.empty() ){
-		if( foldIndices.empty() ){
-
-			folds.push_back( 0 );
-
-			foldIndices.push_back( std::vector<size_t>() );
-			for( size_t n = 0; n < sequenceSet.getN(); n++ ){
-				foldIndices[0].push_back( n );
-			}
-		} else{
-			folds.resize( foldIndices.size() );
-			std::iota( std::begin( folds ), std::end( folds ), 0 );
-		}
-	} else if( foldIndices.empty() ){
-
-		folds.clear();
-		folds.push_back( 0 );
-
-		foldIndices.push_back( std::vector<size_t>() );
-		for( size_t n = 0; n < sequenceSet.getN(); n++ ){
-			foldIndices[0].push_back( n );
-		}
-	}
-
-	std::ofstream file( std::string( outputDirectory ) + '/'
-			            + name_ + '_'
-			            + baseName( sequenceSet.getSequenceFilepath().c_str() )
-			            + ".lhs" );
+	std::ofstream file( std::string( odir ) + '/'
+			            + basename_ + '_' + ".lhs" );
 
 	if( file.is_open() ){
 
-		// loop over folds
-		for( size_t f = 0; f < folds.size(); f++ ){
-			// loop over fold indices
-			for( size_t f_idx = 0; f_idx < foldIndices[folds[f]].size(); f_idx++ ){
-				// get sequence index
-				size_t s_idx = foldIndices[folds[f]][f_idx];
-				// get sequence length
-				size_t L = sequenceSet.getSequences()[s_idx]->getL();
-				size_t* kmer = sequenceSet.getSequences()[s_idx]->getKmer();
-				// loop over sequence positions
-				for( size_t i = 0; i < L; i++ ){
-					// calculate k
-					size_t k = std::min( i, K_ );
-					// extract (k+1)mer
-					size_t y = kmer[i] % Y_[k+1];
-					file << ( i == 0 ? "" : " " );
-					file << std::scientific << std::setprecision( 6 ) << v_[k][y];
-				}
-				file << std::endl;
+		for( size_t s_idx = 0; s_idx < seqs.size(); s_idx++ ){
+			// get sequence length
+			size_t L = seqs[s_idx]->getL();
+			size_t* kmer = seqs[s_idx]->getKmer();
+			// loop over sequence positions
+			for( size_t i = 0; i < L; i++ ){
+				// calculate k
+				size_t k = std::min( i, K_ );
+				// extract (k+1)mer
+				size_t y = kmer[i] % Y_[k+1];
+				file << ( i == 0 ? "" : " " );
+				file << std::scientific << std::setprecision( 6 ) << v_[k][y];
 			}
+			file << std::endl;
+
 		}
 		file.close();
 
 	} else {
 
-		std::cerr << "Error: Cannot write into output directory: " << outputDirectory << std::endl;
+		std::cerr << "Error: Cannot write into output directory: "
+				<< odir << std::endl;
 		exit( -1 );
 	}
 }
@@ -344,7 +254,7 @@ void BackgroundModel::print(){
 		std::cout << std::endl;
 	}
 
-	std::cout << "name = " << name_ << std::endl << std::endl;
+	std::cout << "name = " << basename_ << std::endl << std::endl;
 	std::cout << "K = " << K_ << std::endl;
 	std::cout << "A =";
 	for( size_t k = 0; k <= K_; k++ ){
@@ -383,13 +293,14 @@ void BackgroundModel::print(){
 	}
 }
 
-void BackgroundModel::write( char* dir ){
+void BackgroundModel::write( char* odir ){
 
     if( vIsLog_ ){
         expV();
     }
 
-	std::ofstream file( std::string( dir ) + '/' + name_ + ( interpolate_ ? ".hbcp" : ".hnbcp" ) );
+	std::ofstream file( std::string( odir ) + '/' + basename_ +
+			( interpolate_ ? ".hbcp" : ".hnbcp" ) );
 	if( file.is_open() ){
 
 		file << "# K = " << K_ << std::endl;
@@ -401,7 +312,8 @@ void BackgroundModel::write( char* dir ){
 
 		for( size_t k = 0; k <= K_; k++ ){
 			for( size_t y = 0; y < Y_[k+1]; y++ ){
-				file << std::scientific << std::setprecision( 6 ) << v_[k][y] << " ";
+				file << std::scientific << std::setprecision( 6 )
+					<< v_[k][y] << " ";
 			}
 			file << std::endl;
 		}
@@ -409,7 +321,8 @@ void BackgroundModel::write( char* dir ){
 
 	} else{
 
-		std::cerr << "Error: Cannot write into output directory: " << dir << std::endl;
+		std::cerr << "Error: Cannot write into output directory: "
+				<< odir << std::endl;
 		exit( -1 );
 	}
 
@@ -435,7 +348,8 @@ void BackgroundModel::write( char* dir ){
 	}
 
 	file.clear();
-	file.open( std::string( dir ) + '/' + name_ + ( interpolate_ ? ".hbp" : ".hnbp" ) );
+	file.open( std::string( odir ) + '/' + basename_ +
+			( interpolate_ ? ".hbp" : ".hnbp" ) );
 	if( file.is_open() ){
 
 		file << "# K = " << K_ << std::endl;
@@ -447,7 +361,8 @@ void BackgroundModel::write( char* dir ){
 
 		for( size_t k = 0; k <= K_; k++ ){
 			for( size_t y = 0; y < Y_[k+1]; y++ ){
-				file << std::scientific << std::setprecision( 6 ) << p[k][y] << " " ;
+				file << std::scientific << std::setprecision( 6 )
+					<< p[k][y] << " " ;
 			}
 			file << std::endl;
 		}
@@ -455,7 +370,8 @@ void BackgroundModel::write( char* dir ){
 
 	} else {
 
-		std::cerr << "Error: Cannot write into output directory: " << dir << std::endl;
+		std::cerr << "Error: Cannot write into output directory: "
+				<< odir << std::endl;
 		exit( -1 );
 	}
 
@@ -474,7 +390,8 @@ void BackgroundModel::calculateV(){
 
 	// calculate probabilities for order k = 0
 	for( size_t y = 0; y < Y_[1]; y++ ){
-		v_[0][y] = ( static_cast<float>( n_[0][y] ) + A_[0] * 0.25f ) // cope with absent bases using pseudocounts
+		// cope with absent bases using pseudocounts
+		v_[0][y] = ( static_cast<float>( n_[0][y] ) + A_[0] * 0.25f )
 				   / ( static_cast<float>( baseCounts ) + A_[0] );
 	}
 

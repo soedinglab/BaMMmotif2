@@ -17,9 +17,10 @@ class BackgroundModelSet{
 public:
 
 	// learn background models from sequences
-	BackgroundModelSet( char* inputDirectory, char* extension, size_t order, std::vector<float> alpha, bool interpolate );
+	BackgroundModelSet( char* indir, char* extension, size_t order,
+						std::vector<float> alpha, bool interpolate );
 	// read in background models from files
-	BackgroundModelSet( char* inputDirectory, char* extension );
+	BackgroundModelSet( char* indir, char* extension );
 
 	~BackgroundModelSet();
 
@@ -28,17 +29,18 @@ public:
 
 	// calculate log likelihoods for the sequence set
 	// afterwards the background models contain log probabilities in v_
-	std::vector<double> calculateLogLikelihoods( SequenceSet& sequenceSet );
+	std::vector<double> calculateLogLikelihoods( std::vector<Sequence*> seqs );
 
 	// calculate posterior probabilities for the sequence set
-	std::vector<double> calculatePosteriorProbabilities( SequenceSet& sequenceSet );
+	std::vector<double> calculatePosteriorProbabilities( std::vector<Sequence*>
+															seqs );
 
 	// calculate positional likelihoods for the sequence set
 	// and write likelihoods to file
-	void calculatePosLikelihoods( SequenceSet& sequenceSet, char* outputDirectory );
+	void calculatePosLikelihoods( std::vector<Sequence*> seqs, char* odir );
 
 	void print();
-	void write( char* dir );
+	void write( char* odir );
 
 private:
 

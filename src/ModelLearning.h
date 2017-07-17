@@ -61,7 +61,7 @@ private:
 	float 					eta_ = Global::eta;	// learning rate for alpha learning
 	double**				m1_t_;				// first moment for alpha optimizer (ADAM)
 	double**				m2_t_;				// second moment for alpha optimizer (ADAM)
-	std::mt19937			rngx_ = Global::rngx;
+	std::mt19937			rngx_;
 
 	std::vector<size_t>		Y_;
 

@@ -15,7 +15,7 @@
 
 #include <boost/math/special_functions.hpp>			/* gamma function */
 #include <boost/math/special_functions/digamma.hpp> /* digamma function */
-#include <boost/math/distributions/beta.hpp>
+#include <boost/math/distributions/beta.hpp>		/* beta distribution */
 #include <boost/random.hpp>
 
 ModelLearning::ModelLearning( Motif* motif,
@@ -62,6 +62,7 @@ ModelLearning::ModelLearning( Motif* motif,
 		m2_t_[k] = ( double* )calloc( W_, sizeof( double ) );
 	}
 
+	rngx_.seed( 42 );
 }
 
 ModelLearning::~ModelLearning(){

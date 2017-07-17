@@ -19,12 +19,11 @@ class BackgroundModel{
 
 public:
 
-	BackgroundModel( SequenceSet& sequenceSet,
+	BackgroundModel( std::vector<Sequence*> sequenceSet,
 					size_t order,
 			        std::vector<float> alpha,
 			        bool interpolate = true,
-			        std::vector<std::vector<size_t>> foldIndices = std::vector<std::vector<size_t>>(),
-			        std::vector<size_t> folds = std::vector<size_t>() );
+					std::string filePath = "" );
 
 	BackgroundModel( std::string filePath );
 
@@ -41,16 +40,12 @@ public:
 
 	// calculate the log likelihood for the sequence set
 	// afterwards v_ contains log probabilities
-	double 	calculateLogLikelihood( SequenceSet& sequenceSet,
-			                       std::vector<std::vector<size_t>> foldIndices = std::vector<std::vector<size_t>>(),
-			                       std::vector<size_t> folds = std::vector<size_t>() );
+	double 	calculateLogLikelihood( std::vector<Sequence*> sequenceSet );
 
 	// calculate positional likelihoods for the sequence set
 	// and write likelihoods to file
-	void 	calculatePosLikelihoods( SequenceSet& sequenceSet,
-			                      	  char* outputDirectory,
-			                      	  std::vector<std::vector<size_t>> foldIndices = std::vector<std::vector<size_t>>(),
-			                      	  std::vector<size_t> folds = std::vector<size_t>() );
+	void 	calculatePosLikelihoods( std::vector<Sequence*> sequenceSet,
+			                      	  char* odir  );
 
 
 	void 	print();
@@ -64,22 +59,22 @@ private:
 	// calculate conditional probabilities from counts
 	void 	calculateV();
 
-	std::string			name_;					// basename of sequence set file
+	std::string			basename_;			// basename of sequence set file
 
-	size_t**			n_;						// oligomer counts
-	float** 			v_;						// oligomer conditional probabilities
+	size_t**			n_;					// oligomer counts
+	float** 			v_;					// oligomer conditional probabilities
 
-	bool				vIsLog_ = false;		// v_ contains log probabilities
+	bool				vIsLog_ = false;	// v_ contains log probabilities
 
-	size_t				K_;						// order
-	std::vector<float>	A_;						// order-specific alphas
+	size_t				K_;					// order
+	std::vector<float>	A_;					// order-specific alphas
 
-	bool				interpolate_ = true;	// calculate prior probabilities from lower-order probabilities
-												// instead of background frequencies of mononucleotides
+	bool				interpolate_ = true;// calculate prior probabilities
+											// from lower-order probabilities
+											// instead of background frequencies
+											// of mononucleotides
 
-	std::vector<size_t>	Y_;						// contains 1 at position 0
-												// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
-												// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
+	std::vector<size_t>	Y_;
 };
 
 inline float** BackgroundModel::getV(){

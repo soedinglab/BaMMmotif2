@@ -38,10 +38,11 @@ int main( int nargs, char* args[] ){
 	}
 	BackgroundModel* bgModel;
 	if( !Global::bgModelGiven ){
-		bgModel = new BackgroundModel( *Global::bgSequenceSet,
+		bgModel = new BackgroundModel( Global::bgSequenceSet->getSequences(),
 										Global::bgModelOrder,
 										Global::bgModelAlpha,
-										Global::interpolateBG );
+										Global::interpolateBG,
+										Global::bgSequenceSet->getSequenceFilepath());
 	} else {
 		bgModel = new BackgroundModel( Global::bgModelFilename );
 	}
