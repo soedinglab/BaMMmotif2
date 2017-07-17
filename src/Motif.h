@@ -27,13 +27,15 @@ public:
 
 	void initFromBaMM( char* indir, size_t l_flank, size_t r_flank );
 
-	size_t				getC();						// get binding site count C
+	size_t				getC();						// get counts for binding sites
 	size_t				getW(); 					// get motif length w
 	size_t				getK();						// get motif model order k
+	float**				getA();						// get motif hyperparameter alpha
 	float***    		getV();						// get conditional probabilities v
 	float***			getP();						// get probabilities p
 	float**				getS();						// get log odds scores for the highest order K at position j
 	std::vector<size_t> getY();
+
 	void        		updateV( float*** n, float** alpha, size_t k );
 
 	void				calculateP();					// calculate probabilities p
@@ -59,7 +61,7 @@ private:
 													// background model
 	float***			p_;							// probabilities for (k+1)-mers y at motif position j
 	float**				s_;							// log odds scores for (K+1)-mers y at motif position j
-	float***			n_;							// counts of (k+1)-mer for all y at motif position j
+	float***			n_;							// fractional counts of (k+1)-mer for all y at motif position j
 	std::vector<size_t>	Y_;							// contains 1 at position 0
 													// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
 													// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
@@ -74,6 +76,10 @@ inline size_t Motif::getW(){
 
 inline size_t Motif::getK(){
 	return K_;
+}
+
+inline float** Motif::getA(){
+	return A_;
 }
 
 inline float*** Motif::getV(){

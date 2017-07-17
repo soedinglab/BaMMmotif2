@@ -76,7 +76,10 @@ int main( int nargs, char* args[] ){
 		Motif* motif = new Motif( *motifs.getMotifs()[n] );
 
 		// train the model with either EM or Gibbs sampling
-		ModelLearning model( motif, bgModel );
+		ModelLearning model( motif,
+							bgModel,
+							Global::posSequenceSet->getSequences(),
+							Global::q );
 
 		if( Global::saveInitialBaMMs ){
 			// optional: save initial model
@@ -123,7 +126,7 @@ int main( int nargs, char* args[] ){
 
 			seqset.sample_pseudo_seqset( Global::mFold );
 
-			seqset.write_pseudoset();
+			seqset.write_pseudoset( Global::outputDirectory, Global::posSequenceBasename );
 
 		}
 

@@ -28,7 +28,7 @@ public:
 	std::vector<std::unique_ptr<Sequence>> 	sample_negative_seqset( size_t fold );
 	std::vector<std::unique_ptr<Sequence>> 	sample_pseudo_seqset( size_t fold );
 
-	void									write_pseudoset();
+	void				write_pseudoset( char* outdir, std::string basename );
 
 private:
 

@@ -23,6 +23,7 @@ void FDR::evaluateMotif( size_t n ){
 
 	std::vector<Sequence*> posSeqs = Global::posSequenceSet->getSequences();
 	std::vector<Sequence*> negSeqs = Global::negSequenceSet->getSequences();
+	float q = Global::posSequenceSet->getQ();
 
 	std::vector<std::vector<float>> mops_scores;
 	std::vector<float> zoops_scores;
@@ -40,18 +41,23 @@ void FDR::evaluateMotif( size_t n ){
 		Motif* motif = new Motif( *motif_ );			// deep copy the initial motif
 
 		// assign training folds
+		// draw sequences for each test set and train set
+		std::vector<Sequence*> testSet;
+		std::vector<Sequence*> trainSet;
+
 		std::vector<size_t> trainsetFolds;
 		trainsetFolds.resize( cvFold_ - 1 );
 		for( size_t f = 0; f < cvFold_; f++ ){
 			if( f != fold ){
+				for( size_t i = 0; i < Global::posFoldIndices[f].size(); i++ ){
+					trainSet.push_back( posSeqs[Global::posFoldIndices[f][i]] );
+				}
 				trainsetFolds.push_back( f );
+			} else {
+				for( size_t i = 0; i < Global::posFoldIndices[f].size(); i++ ){
+					testSet.push_back( posSeqs[Global::posFoldIndices[f][i]] );
+				}
 			}
-		}
-
-		// draw sequences for each test set
-		std::vector<Sequence*> testSet;
-		for( size_t i = 0; i < Global::posFoldIndices[fold].size(); i++ ){
-			testSet.push_back( posSeqs[Global::posFoldIndices[fold][i]] );
 		}
 
 		// obtain background model for each training set
@@ -70,10 +76,10 @@ void FDR::evaluateMotif( size_t n ){
 
 		// learn motif from each training set
 		if( Global::EM ){
-			ModelLearning model( motif, bgModel, trainsetFolds );
+			ModelLearning model( motif, bgModel, trainSet, q );
 			model.EM();
 		} else if ( Global::CGS ){
-			ModelLearning model( motif, bgModel, trainsetFolds );
+			ModelLearning model( motif, bgModel, trainSet, q );
 			model.GibbsSampling();
 		}
 

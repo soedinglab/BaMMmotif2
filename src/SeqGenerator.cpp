@@ -287,15 +287,14 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( size_t L ){
 
 }
 
-void SeqGenerator::write_pseudoset(){
+void SeqGenerator::write_pseudoset( char* odir, std::string basename ){
 
 	/**
 	 * save the generated sequence set in one file:
 	 * (1) posSequenceBasename_pseudo.fasta
 	 */
 
-	std::string opath = std::string( Global::outputDirectory ) + '/'
-			+ Global::posSequenceBasename + "_pseudo.fasta";
+	std::string opath = std::string( odir ) + '/' + basename + "_pseudo.fasta";
 
 	std::ofstream ofile( opath );
 
