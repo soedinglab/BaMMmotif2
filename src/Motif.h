@@ -12,13 +12,18 @@ class Motif {
 
 public:
 
-	Motif( size_t length, size_t order = Global::modelOrder, std::vector<float> alpha = Global::modelAlpha );
+	Motif( size_t length,
+			size_t order = Global::modelOrder,
+			std::vector<float> alpha = Global::modelAlpha,
+			float* f_bg = Global::bgSequenceSet->getBaseFrequencies() );
+
 	Motif( const Motif& other );					// copy constructor
 	~Motif();
 
 	void initFromBindingSites( char* indir, size_t l_flank, size_t r_flank );
 
-	void initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset = Global::posSequenceSet );
+	void initFromPWM( float** PWM, size_t asize,
+						SequenceSet* posSeqset = Global::posSequenceSet );
 
 	void initFromBaMM( char* indir, size_t l_flank, size_t r_flank );
 

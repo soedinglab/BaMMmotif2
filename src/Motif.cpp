@@ -2,7 +2,7 @@
 
 #include "Motif.h"
 
-Motif::Motif( size_t length, size_t K, std::vector<float> alpha ){
+Motif::Motif( size_t length, size_t K, std::vector<float> alpha, float* f_bg ){
 
 	W_ = length;
 	K_ = K;
@@ -36,7 +36,7 @@ Motif::Motif( size_t length, size_t K, std::vector<float> alpha ){
 		s_[y] = ( float* )calloc( W_, sizeof( float ) );
 	}
 
-	f_bg_ = Global::bgSequenceSet->getBaseFrequencies();
+	f_bg_ = f_bg;
 
 }
 
@@ -207,6 +207,8 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset ){
 	// sampling z from each sequence of the sequence set based on the weights:
 	std::vector<Sequence*> posSet = posSeqset->getSequences();
 	size_t N = posSeqset->getN();
+	float q = posSeqset->getQ();
+	std::mt19937 rngx;
 
 	for( size_t n = 0; n < N; n++ ){
 
@@ -225,8 +227,8 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset ){
 		std::vector<float> posteriors;
 		float normFactor = 0.0f;
 		// calculate positional prior:
-		float pos0 = 1.0f - Global::q;
-		float pos1 = Global::q / static_cast<float>( LW1 );
+		float pos0 = 1.0f - q;
+		float pos1 = q / static_cast<float>( LW1 );
 
 		// todo: could be parallelized by extracting 8 sequences at once
 		// todo: should be written in a faster way
@@ -251,7 +253,7 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset ){
 		std::discrete_distribution<size_t> posterior_dist( posteriors.begin(), posteriors.end() );
 
 		// draw a sample z randomly
-		z = posterior_dist( Global::rngx );
+		z = posterior_dist( rngx );
 
 		// count kmers with sampled z
 		if( z > 0 ){
@@ -401,7 +403,7 @@ void Motif::calculateP(){
 
 void Motif::calculateLogS( float** Vbg ){
 
-	size_t K_bg = Global::bgModelOrder;
+	size_t K_bg = ( sizeof( Vbg ) < K_ ) ? sizeof( Vbg ) : K_;
 
 	for( size_t y = 0; y < Y_[K_+1]; y++ ){
 		size_t y_bg = y % Y_[K_bg+1];
@@ -414,7 +416,7 @@ void Motif::calculateLogS( float** Vbg ){
 
 void Motif::calculateLinearS( float** Vbg ){
 
-	size_t K_bg = ( Global::bgModelOrder < K_ ) ? Global::bgModelOrder : K_;
+	size_t K_bg = ( sizeof( Vbg ) < K_ ) ? sizeof( Vbg ) : K_;
 
 	for( size_t y = 0; y < Y_[K_+1]; y++ ){
 		size_t y_bg = y % Y_[K_bg+1];

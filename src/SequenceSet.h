@@ -16,7 +16,10 @@ class SequenceSet{
 
 public:
 
-	SequenceSet( std::string sequenceFilepath, bool singleStrand = false, std::string intensityFilepath = "" );
+	SequenceSet( std::string sequenceFilepath,
+			bool singleStrand = false,
+			std::string intensityFilepath = "",
+			float q = 0.9f );
 	~SequenceSet();
 
 	std::string				getSequenceFilepath();
@@ -25,6 +28,7 @@ public:
 	size_t 					getN();
 	size_t 					getMinL();
 	size_t					getMaxL();
+	float					getQ();
 	float* 					getBaseFrequencies();
 
 	void					print();			// print sequences
@@ -38,6 +42,8 @@ private:
 	size_t 					N_;					// number of sequences
 	size_t 					minL_;				// length of the shortest sequence
 	size_t 					maxL_;				// length of the longest sequence
+	float					q_;					// the fraction of sequences with
+												// motif
 	float*	 				baseFrequencies_;	// kmer frequencies
 
 	std::vector<size_t>		Y_;					// contains 1 at position 0

@@ -1,6 +1,9 @@
 #include "SequenceSet.h"
 
-SequenceSet::SequenceSet( std::string sequenceFilepath, bool singleStrand, std::string intensityFilepath ){
+SequenceSet::SequenceSet( std::string sequenceFilepath,
+							bool singleStrand,
+							std::string intensityFilepath,
+							float q ){
 
 	if( Alphabet::getSize() == 0 ){
 		std::cerr << "Error: Initialize Alphabet before constructing a SequenceSet" << std::endl;
@@ -21,6 +24,8 @@ SequenceSet::SequenceSet( std::string sequenceFilepath, bool singleStrand, std::
 		intensityFilepath_ = intensityFilepath;
 		readIntensities();
 	}
+
+	q_ = q;
 
 }
 
@@ -53,6 +58,10 @@ size_t SequenceSet::getMinL(){
 
 size_t SequenceSet::getMaxL(){
 	return maxL_;
+}
+
+float SequenceSet::getQ(){
+	return q_;
 }
 
 float* SequenceSet::getBaseFrequencies(){
