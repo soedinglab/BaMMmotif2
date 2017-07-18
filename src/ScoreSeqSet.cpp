@@ -9,7 +9,9 @@
 
 #include <float.h>		// -FLT_MAX
 
-ScoreSeqSet::ScoreSeqSet( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqSet ){
+ScoreSeqSet::ScoreSeqSet( Motif* motif,
+							BackgroundModel* bg,
+							std::vector<Sequence*> seqSet ){
 
 	motif_	= motif;
 	bg_ 	= bg;
@@ -80,7 +82,8 @@ void ScoreSeqSet::write( char* dir, size_t n, float cutoff ){
 	bool 	first_hit = true;
 	size_t 	end; 				// end of motif match
 
-	std::string opath = std::string( dir ) + "/motif_" + std::to_string( n ) + ".occurrence";
+	std::string opath = std::string( dir ) + "/motif_" +
+						std::to_string( n ) + ".occurrence";
 
 	std::ofstream ofile( opath );
 
@@ -96,13 +99,15 @@ void ScoreSeqSet::write( char* dir, size_t n, float cutoff ){
 			if( mops_scores_ [n][i] > cutoff ){
 				if( first_hit ){
 					// >header:sequence_length
-					ofile << '>' << seqSet_[n]->getHeader() <<  ':' << seqlen << std::endl;
+					ofile << '>' << seqSet_[n]->getHeader()
+						<<  ':' << seqlen << std::endl;
 					first_hit = false;
 				}
 				// start:end:score:strand:sequence_matching
 				end = i + motif_->getW()-1;
 
-				ofile << i << ':' << end << ':' << std::setprecision( 3 ) << mops_scores_[n][i] << ':' <<
+				ofile << i << ':' << end << ':' << std::setprecision( 3 )
+						<< mops_scores_[n][i] << ':' <<
 						( ( i < seqlen ) ? '+' : '-' ) << ':' ;
 				for( size_t m = i; m <= end; m++ ){
 					ofile << Alphabet::getBase( seqSet_[n]->getSequence()[m] );

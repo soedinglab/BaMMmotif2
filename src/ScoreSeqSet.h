@@ -15,12 +15,17 @@ class ScoreSeqSet{
 	/*
 	 * This class is aimed for:
 	 * scoring sequences from the given sequence set
-	 * using learned model and background model
+	 * using the (learned) model and background model,
+	 * find the occurrences of motifs on each sequence
+	 * and output these sequences when the log odds score
+	 * is larger than certain cutoff (default:0)
 	 */
 
 public:
 
-	ScoreSeqSet( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqSet );
+	ScoreSeqSet( Motif* motif,
+					BackgroundModel* bg,
+					std::vector<Sequence*> seqSet );
 	~ScoreSeqSet();
 
 	void score();
@@ -40,9 +45,7 @@ private:
 	std::vector<std::vector<float>>	mops_scores_;
 	std::vector<float>				zoops_scores_;
 
-	std::vector<size_t>				Y_;		// contains 1 at position 0
-											// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
-											// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
+	std::vector<size_t>				Y_;
 };
 
 

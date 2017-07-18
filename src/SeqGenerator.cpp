@@ -1,6 +1,8 @@
 #include "SeqGenerator.h"
 
-SeqGenerator::SeqGenerator( std::vector<Sequence*> seqs, Motif* motif, size_t sOrder ){
+SeqGenerator::SeqGenerator( std::vector<Sequence*> seqs,
+							Motif* motif,
+							size_t sOrder ){
 
 	seqs_ = seqs;
 	motif_= motif;
@@ -47,7 +49,6 @@ void SeqGenerator::calculate_kmer_frequency(){
 			// loop over sequence positions
 			for( size_t j = k; j < L; j++ ){
 				// extract (k+1)-mer
-				// todo: this is not properly done with unknown alphabet N
 				size_t y = kmer[j] % Y_[k+1];
 				// count (k+1)mer
 				count_[k][y]++;
@@ -58,7 +59,8 @@ void SeqGenerator::calculate_kmer_frequency(){
 	// calculate frequencies
 	size_t normFactor = 0;
 	for( size_t y = 0; y < Y_[1]; y++ )	normFactor += count_[0][y];
-	for( size_t y = 0; y < Y_[1]; y++ )	freqs_[0][y] = ( float )count_[0][y] / ( float )normFactor;
+	for( size_t y = 0; y < Y_[1]; y++ )	freqs_[0][y] = ( float )count_[0][y]
+													/ ( float )normFactor;
 	for( size_t k = 1; k < sOrder_+1; k++ ){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
 			size_t yk = y / Y_[1];
@@ -100,7 +102,7 @@ std::unique_ptr<Sequence> SeqGenerator::sample_negative_sequence( size_t L ){
 			sequence[0] = a;
 			break;
 		}
-		if( sequence[0] == 0 )	sequence[0] = a;		// Trick: this is to solve the numerical problem
+		if( sequence[0] == 0 )	sequence[0] = a;	// Trick: this solves the numerical problem
 	}
 
 	// sample the next ( sOrder-1 ) nucleotides
@@ -113,7 +115,7 @@ std::unique_ptr<Sequence> SeqGenerator::sample_negative_sequence( size_t L ){
 		}
 
 		// sample a nucleotide based on k-mer frequency
-		random = ( double )rand() / ( double )RAND_MAX;	// get another random double number
+		random = ( double )rand() / ( double )RAND_MAX;
 		f = 0.0f;
 		for( uint8_t a = 1; a <= Y_[1]; a++ ){
 			f += freqs_[i][yk+a-1];
@@ -121,12 +123,12 @@ std::unique_ptr<Sequence> SeqGenerator::sample_negative_sequence( size_t L ){
 				sequence[i] = a;
 				break;
 			}
-			if( sequence[i] == 0 )	sequence[i] = a;	// Trick: this is to solve the numerical problem
+			if( sequence[i] == 0 )	sequence[i] = a;// Trick: this solves the numerical problem
 		}
 	}
 
 	for( size_t i = sOrder_; i < L; i++ ){
-		random = ( double )rand() / ( double )RAND_MAX;	// get another random double number
+		random = ( double )rand() / ( double )RAND_MAX;
 		// calculate y of K-mer
 		size_t yk = 0;
 		for( size_t k = sOrder_; k > 0; k-- ){
@@ -141,7 +143,7 @@ std::unique_ptr<Sequence> SeqGenerator::sample_negative_sequence( size_t L ){
 				sequence[i] = a;
 				break;
 			}
-			if( sequence[i] == 0 )	sequence[i] = a;	// Trick: this is to solve the numerical problem
+			if( sequence[i] == 0 )	sequence[i] = a;// Trick: this solves the numerical problem
 		}
 	}
 
@@ -188,7 +190,7 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( size_t L ){
 			sequence[0] = a;
 			break;
 		}
-		if( sequence[0] == 0 )	sequence[0] = a;		// Trick: this is to solve the numerical problem
+		if( sequence[0] == 0 )	sequence[0] = a;	// Trick: this solves the numerical problem
 	}
 
 	// sample the next ( K-1 ) nucleotides
@@ -201,7 +203,7 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( size_t L ){
 		}
 
 		// sample a nucleotide based on k-mer frequency
-		random = ( double )rand() / ( double )RAND_MAX;	// get another random double number
+		random = ( double )rand() / ( double )RAND_MAX;
 		f = 0.0f;
 		for( uint8_t a = 1; a <= Y_[1]; a++ ){
 			f += freqs_[i][yk+a-1];
@@ -209,7 +211,7 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( size_t L ){
 				sequence[i] = a;
 				break;
 			}
-			if( sequence[i] == 0 )	sequence[i] = a;	// Trick: this is to solve the numerical problem
+			if( sequence[i] == 0 )	sequence[i] = a;	// Trick: this solves the numerical problem
 		}
 	}
 	// sample nucleotides till the half length of the sequence, due to k-mer frequencies
@@ -223,7 +225,7 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( size_t L ){
 		}
 
 		// sample a nucleotide based on k-mer frequency
-		random = ( double )rand() / ( double )RAND_MAX;	// get another random double number
+		random = ( double )rand() / ( double )RAND_MAX;
 		f = 0.0f;
 		for( uint8_t a = 1; a <= Y_[1]; a++ ){
 			f += freqs_[sOrder_][yk+a-1];
@@ -231,7 +233,7 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( size_t L ){
 				sequence[i] = a;
 				break;
 			}
-			if( sequence[i] == 0 )	sequence[i] = a;	// Trick: this is to solve the numerical problem
+			if( sequence[i] == 0 )	sequence[i] = a;	// Trick: this solves the numerical problem
 		}
 	}
 
@@ -245,7 +247,7 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( size_t L ){
 			yk += ( sequence[j+mid-k] - 1 ) * Y_[k];
 		}
 		// sample a nucleotide based on k-mer frequency
-		random = ( double )rand() / ( double )RAND_MAX;	// get another random double number
+		random = ( double )rand() / ( double )RAND_MAX;
 		f = 0.0f;
 		for( uint8_t a = 1; a <= Y_[1]; a++ ){
 			f += v[sOrder_][yk+a-1][j];
@@ -253,7 +255,7 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( size_t L ){
 				sequence[j+mid] = a;
 				break;
 			}
-			if( sequence[j+mid] == 0 )	sequence[j+mid] = a;	// Trick: this is to solve the numerical problem
+			if( sequence[j+mid] == 0 )	sequence[j+mid] = a;	// Trick: this solves the numerical problem
 		}
 
 	}
@@ -267,7 +269,7 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( size_t L ){
 		}
 
 		// sample a nucleotide based on k-mer frequency
-		random = ( double )rand() / ( double )RAND_MAX;	// get another random double number
+		random = ( double )rand() / ( double )RAND_MAX;
 		f = 0.0f;
 		for( uint8_t a = 1; a <= Y_[1]; a++ ){
 			f += freqs_[sOrder_][yk+a-1];
@@ -275,7 +277,7 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( size_t L ){
 				sequence[i] = a;
 				break;
 			}
-			if( sequence[i] == 0 )	sequence[i] = a;	// Trick: this is to solve the numerical problem
+			if( sequence[i] == 0 )	sequence[i] = a;	// Trick: this solves the numerical problem
 		}
 	}
 
@@ -287,7 +289,7 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( size_t L ){
 
 }
 
-void SeqGenerator::write_pseudoset( char* odir, std::string basename ){
+void SeqGenerator::write_pseudoset( char* odir, std::string basename, size_t fold ){
 
 	/**
 	 * save the generated sequence set in one file:
@@ -298,7 +300,7 @@ void SeqGenerator::write_pseudoset( char* odir, std::string basename ){
 
 	std::ofstream ofile( opath );
 
-	std::vector<std::unique_ptr<Sequence>> seqs = sample_pseudo_seqset( Global::mFold );
+	std::vector<std::unique_ptr<Sequence>> seqs = sample_pseudo_seqset( fold );
 	for( size_t n = 0; n < seqs.size(); n++ ){
 		ofile << "> " << seqs[n]->getHeader() << std::endl;
 		for( size_t i = 0; i < seqs[n]->getL(); i++ ){

@@ -114,42 +114,45 @@ Motif::~Motif(){
 // initialize v from binding sites file
 void Motif::initFromBindingSites( char* indir, size_t l_flank, size_t r_flank ){
 
-	std::ifstream file( indir );							// read file
-	std::string bindingsite;								// read each binding site sequence from each line
-	size_t bindingSiteWidth;								// length of binding site from each line
+	std::ifstream file( indir );			// read file
+	std::string bindingsite;				// get binding site sequence from each line
+	size_t bindingSiteWidth;				// length of binding site
 
 	while( getline( file, bindingsite ).good() ){
 
-		C_++;												// count the number of binding sites
+		C_++;								// count the number of binding sites
 
 		// add alphabets randomly at the beginning of each binding site
 		for( size_t i = 0; i < l_flank; i++ )
 			bindingsite.insert( bindingsite.begin(),
-					Alphabet::getBase( static_cast<uint8_t>( rand() ) % static_cast<uint8_t>( Y_[1] + 1 ) ) );
+					Alphabet::getBase( static_cast<uint8_t>( rand() )
+							% static_cast<uint8_t>( Y_[1] + 1 ) ) );
 
 		// add alphabets randomly at the end of each binding site
 		for( size_t i = 0; i < r_flank; i++ )
 			bindingsite.insert( bindingsite.end(),
-					Alphabet::getBase( static_cast<uint8_t>( rand() ) % static_cast<uint8_t>( Y_[1] + 1 ) ) );
+					Alphabet::getBase( static_cast<uint8_t>( rand() )
+							% static_cast<uint8_t>( Y_[1] + 1 ) ) );
 
 		bindingSiteWidth = bindingsite.length();
 
-		if( bindingSiteWidth != W_ ){						// all the binding sites should have the same length
+		if( bindingSiteWidth != W_ ){	// all binding sites have the same length
 			fprintf( stderr, "Error: Length of binding site on line %d differs.\n"
 					"Binding sites should have the same length.\n", (int)C_ );
 			exit( -1 );
 		}
-		if( bindingSiteWidth < K_+1 ){						// binding sites should be longer than the order of model
+		if( bindingSiteWidth < K_+1 ){	// binding sites should be longer than the order of model
 			fprintf( stderr, "Error: Length of binding site sequence "
 					"is shorter than model order.\n" );
 			exit( -1 );
 		}
 
 		// scan the binding sites and calculate k-mer counts n
-		for( size_t k = 0; k < K_+1; k++ ){					// k runs over all orders
-			for( size_t j = k; j < bindingSiteWidth; j++ ){	// j runs over all true motif positions
+		for( size_t k = 0; k < K_+1; k++ ){
+			for( size_t j = k; j < bindingSiteWidth; j++ ){
 				size_t y = 0;
-				for( size_t n = k+1; n >= 1; n-- ){			// calculate y based on (k+1)-mer bases
+				for( size_t n = k+1; n >= 1; n-- ){
+					// calculate y based on (k+1)-mer bases
 					y += Y_[n-1] * ( Alphabet::getCode( bindingsite[j-n+1] ) - 1 );
 				}
 				n_[k][y][j]++;
@@ -235,7 +238,8 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset ){
 		for( size_t i = 1; i <= LW1; i++ ){
 			r[i] = 1.0f;
 			for( size_t j = 0; j < W_; j++ ){
-				// extract monomers on the motif at position i over W of the n'th sequence
+				// extract monomers from motif at position i
+				// over W of the n'th sequence
 				size_t y = kmer[i-1+j] % asize;
 				r[i] *= score[y][j];
 			}
@@ -250,7 +254,8 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset ){
 			posteriors.push_back( r[i] );
 		}
 		// draw a new position z from discrete posterior distribution
-		std::discrete_distribution<size_t> posterior_dist( posteriors.begin(), posteriors.end() );
+		std::discrete_distribution<size_t> posterior_dist( posteriors.begin(),
+															posteriors.end() );
 
 		// draw a sample z randomly
 		z = posterior_dist( rngx );
@@ -270,9 +275,9 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset ){
 	// for k > 0:
 	for( size_t k = 1; k < K_+1; k++ ){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
-			size_t y2 = y % Y_[k];					// cut off the first nucleotide in (k+1)-mer y
-			size_t yk = y / Y_[1];					// cut off the last nucleotide in (k+1)-mer y
-			for( size_t j = 0; j < k; j++ ){		// when j < k, i.e. p(A|CG) = p(A|C)
+			size_t y2 = y % Y_[k];			// cut off first nt in (k+1)-mer y
+			size_t yk = y / Y_[1];			// cut off last nt in (k+1)-mer y
+			for( size_t j = 0; j < k; j++ ){// when j < k, i.e. p(A|CG) = p(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
 			}
 			for( size_t j = k; j < W_; j++ ){
@@ -367,8 +372,8 @@ void Motif::calculateV( float*** n ){
 	// for k > 0:
 	for( size_t k = 1; k < K_+1; k++ ){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
-			size_t y2 = y % Y_[k];					// cut off the first nucleotide in (k+1)-mer y
-			size_t yk = y / Y_[1];					// cut off the last nucleotide in (k+1)-mer y
+			size_t y2 = y % Y_[k];				// cut off first nucleotide in (k+1)-mer y
+			size_t yk = y / Y_[1];				// cut off last nucleotide in (k+1)-mer y
 			for( size_t j = 0; j < W_; j++ ){
 				v_[k][y][j] = ( n[k][y][j] + A_[k][j] * v_[k-1][y2][j] )
 							/ ( n[k-1][yk][j-1] + A_[k][j] );
@@ -389,10 +394,10 @@ void Motif::calculateP(){
 	// when k > 0:
 	for( size_t k = 1; k < K_+1; k++){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
-			size_t y2 = y % Y_[k];					// cut off the first nucleotide in (k+1)-mer
-			size_t yk = y / Y_[1];					// cut off the last nucleotide in (k+1)-mer
+			size_t y2 = y % Y_[k];				// cut off first nucleotide in (k+1)-mer
+			size_t yk = y / Y_[1];				// cut off last nucleotide in (k+1)-mer
 			for( size_t j = 0; j < k; j++ ){
-				p_[k][y][j] = p_[k-1][y2][j];		// i.e. p(ACG) = p(CG)
+				p_[k][y][j] = p_[k-1][y2][j];	// i.e. p(ACG) = p(CG)
 			}
 			for( size_t j = k; j < W_; j++ ){
 				p_[k][y][j] =  v_[k][y][j] * p_[k-1][yk][j-1];

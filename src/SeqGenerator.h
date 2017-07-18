@@ -22,28 +22,32 @@ class SeqGenerator {
 	 */
 
 public:
-	SeqGenerator( std::vector<Sequence*> seqs, Motif* motif = NULL, size_t sOrder = Global::sOrder );
+	SeqGenerator( std::vector<Sequence*> seqs,
+					Motif* motif = NULL,
+					size_t sOrder = 2 );
 	~SeqGenerator();
 
-	std::vector<std::unique_ptr<Sequence>> 	sample_negative_seqset( size_t fold );
+	std::vector<std::unique_ptr<Sequence>>	sample_negative_seqset( size_t fold );
 	std::vector<std::unique_ptr<Sequence>> 	sample_pseudo_seqset( size_t fold );
 
-	void				write_pseudoset( char* outdir, std::string basename );
+	void						write_pseudoset( char* odir,
+													std::string basename,
+													size_t fold );
 
 private:
 
-	void									calculate_kmer_frequency();
-	std::unique_ptr<Sequence> 				sample_negative_sequence( size_t L );
-	std::unique_ptr<Sequence> 				sample_pseudo_sequence( size_t L );
+	void						calculate_kmer_frequency();
+	std::unique_ptr<Sequence> 	sample_negative_sequence( size_t L );
+	std::unique_ptr<Sequence> 	sample_pseudo_sequence( size_t L );
 
-	std::vector<Sequence*> 	seqs_;			// positive sequence set
-	float**					freqs_;			// k-mer frequencies
-	size_t** 				count_;			// k-mer counts
-	Motif* 					motif_;			// the optimized motif
-	size_t					sOrder_;		// the order of k-mers for generating negative/pseudo sequence set
-	std::vector<size_t>		Y_;				// contains 1 at position 0
-											// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
-											// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
+	std::vector<Sequence*> 		seqs_;			// positive sequence set
+	float**						freqs_;			// k-mer frequencies
+	size_t** 					count_;			// k-mer counts
+	Motif* 						motif_;			// the optimized motif
+	size_t						sOrder_;		// the order of k-mers for
+												// generating negative/pseudo
+												// sequence set
+	std::vector<size_t>			Y_;
 };
 
 #endif /* SEQGENERATOR_H_ */

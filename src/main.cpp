@@ -84,7 +84,8 @@ int main( int nargs, char* args[] ){
 
 		if( Global::saveInitialBaMMs ){
 			// optional: save initial model
-			motif->write( Global::outputDirectory, Global::posSequenceBasename, 0 );
+			motif->write( Global::outputDirectory,
+							Global::posSequenceBasename, 0 );
 		}
 
 		if( Global::EM ){
@@ -103,16 +104,19 @@ int main( int nargs, char* args[] ){
 
 		// write model parameters on the disc
 		if( Global::saveBaMMs ){
-			model.write( Global::outputDirectory, Global::posSequenceBasename, n+1 );
+			model.write( Global::outputDirectory,
+							Global::posSequenceBasename, n+1 );
 		}
 
 		// write out the learned model
 		// motif->write( n+1 );
-		model.getMotif()->write( Global::outputDirectory, Global::posSequenceBasename, n+1 );
+		model.getMotif()->write( Global::outputDirectory,
+									Global::posSequenceBasename, n+1 );
 
 		if( Global::scoreSeqset ){
 			// score the model on sequence set
-			ScoreSeqSet seqset( motif, bgModel, Global::posSequenceSet->getSequences() );
+			ScoreSeqSet seqset( motif, bgModel,
+								Global::posSequenceSet->getSequences() );
 			seqset.score();
 			seqset.write( Global::outputDirectory, n+1, Global::scoreCutoff );
 		}
@@ -123,11 +127,15 @@ int main( int nargs, char* args[] ){
 			model.EM();
 
 			// generate pseudo positive sequence set based on the learned motif
-			SeqGenerator seqset( Global::posSequenceSet->getSequences(), model.getMotif() );
+			SeqGenerator seqset( Global::posSequenceSet->getSequences(),
+									model.getMotif(),
+									Global::sOrder );
 
 			seqset.sample_pseudo_seqset( Global::mFold );
 
-			seqset.write_pseudoset( Global::outputDirectory, Global::posSequenceBasename );
+			seqset.write_pseudoset( Global::outputDirectory,
+									Global::posSequenceBasename,
+									Global::mFold );
 
 		}
 
