@@ -1,7 +1,11 @@
 #include "Sequence.h"
 #include "utils.h"
 
-Sequence::Sequence( uint8_t* sequence, size_t L, std::string header, std::vector<size_t> Y, bool singleStrand ){
+Sequence::Sequence( uint8_t* sequence,
+					size_t L,
+					std::string header,
+					std::vector<size_t> Y,
+					bool singleStrand ){
 
 	if( !singleStrand ){
 		L_ = 2 * L + 1;
@@ -31,7 +35,8 @@ Sequence::Sequence( uint8_t* sequence, size_t L, std::string header, std::vector
 	kmer_ = ( size_t* )calloc( L_, sizeof( size_t ) );
 	for( size_t i = 0; i < L_; i++ ){
 		for( size_t k = i < 10 ? i+1 : 11; k > 0; k-- ){
-			kmer_[i] += ( ( sequence_[i-k+1] == 0 ) ? ( size_t )rand() % Y_[1] : ( sequence_[i-k+1] - 1 ) ) * Y_[k-1];
+			kmer_[i] += ( ( sequence_[i-k+1] == 0 ) ? ( size_t )rand() % Y_[1] :
+						( sequence_[i-k+1] - 1 ) ) * Y_[k-1];
 		}
 	}
 }
@@ -85,7 +90,9 @@ void Sequence::print(){
 void Sequence::appendRevComp( uint8_t* sequence, size_t L ){
 
 	for( size_t i = 0; i < L; i++ ){
-		sequence_[i] = sequence[i];										// the forward sequence
-		sequence_[2*L-i] = Alphabet::getComplementCode( sequence[i] );	// and its reverse complement
+		// the forward sequence
+		sequence_[i] = sequence[i];
+		// the reverse complement
+		sequence_[2*L-i] = Alphabet::getComplementCode( sequence[i] );
 	}
 }

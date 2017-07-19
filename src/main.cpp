@@ -131,11 +131,10 @@ int main( int nargs, char* args[] ){
 									model.getMotif(),
 									Global::sOrder );
 
-			seqset.sample_pseudo_seqset( Global::mFold );
+			seqset.generate_seqset_with_embedded_motif( Global::mFold );
 
-			seqset.write_pseudoset( Global::outputDirectory,
-									Global::posSequenceBasename,
-									Global::mFold );
+			seqset.write_seqset_with_embedded_motif( Global::outputDirectory,
+									Global::posSequenceBasename );
 
 		}
 

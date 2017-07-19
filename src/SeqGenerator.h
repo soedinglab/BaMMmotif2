@@ -27,12 +27,10 @@ public:
 					size_t sOrder = 2 );
 	~SeqGenerator();
 
-	std::vector<std::unique_ptr<Sequence>>	sample_negative_seqset( size_t fold );
-	std::vector<std::unique_ptr<Sequence>> 	sample_pseudo_seqset( size_t fold );
+	std::vector<std::unique_ptr<Sequence>> generate_negative_seqset( size_t fold );
+	void generate_seqset_with_embedded_motif( size_t fold );
 
-	void						write_pseudoset( char* odir,
-													std::string basename,
-													size_t fold );
+	void write_seqset_with_embedded_motif( char* odir, std::string basename );
 
 private:
 
@@ -47,6 +45,8 @@ private:
 	size_t						sOrder_;		// the order of k-mers for
 												// generating negative/pseudo
 												// sequence set
+	std::vector<std::unique_ptr<Sequence>> pseudo_posset_;
+
 	std::vector<size_t>			Y_;
 };
 

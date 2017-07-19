@@ -6,7 +6,8 @@ SequenceSet::SequenceSet( std::string sequenceFilepath,
 							float q ){
 
 	if( Alphabet::getSize() == 0 ){
-		std::cerr << "Error: Initialize Alphabet before constructing a SequenceSet" << std::endl;
+		std::cerr << "Error: Initialize Alphabet before "
+				"constructing a SequenceSet" << std::endl;
 		exit( -1 );
 	}
 
@@ -138,7 +139,8 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 						} else {
 
-							std::cerr << "Warning: Ignore FASTA entry without sequence: " << sequenceFilepath_ << std::endl;
+							std::cerr << "Warning: Ignore FASTA entry without sequence: "
+									<< sequenceFilepath_ << std::endl;
 							header.clear();
 						}
 					}
@@ -154,7 +156,8 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 					if( line.find( ' ' ) != std::string::npos ){
 						// space character in sequence
-						std::cerr << "Error: FASTA sequence contains space character: " << sequenceFilepath_ << std::endl;
+						std::cerr << "Error: FASTA sequence contains space character: "
+								<< sequenceFilepath_ << std::endl;
 						exit( -1 );
 					} else {
 						sequence += line;
@@ -162,7 +165,8 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 				} else {
 
-					std::cerr << "Error: Wrong FASTA format: " << sequenceFilepath_ << std::endl;
+					std::cerr << "Error: Wrong FASTA format: "
+							<< sequenceFilepath_ << std::endl;
 					exit( -1 );
 				}
 			}
@@ -208,7 +212,8 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 			} else {
 
-				std::cerr << "Warning: Ignore FASTA entry without sequence: " << sequenceFilepath_ << std::endl;
+				std::cerr << "Warning: Ignore FASTA entry without sequence: "
+						<< sequenceFilepath_ << std::endl;
 				header.clear();
 			}
 		}
@@ -217,7 +222,8 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 	} else {
 
-		std::cerr << "Error: Cannot open FASTA file: " << sequenceFilepath_ << std::endl;
+		std::cerr << "Error: Cannot open FASTA file: "
+				<< sequenceFilepath_ << std::endl;
 		exit( -1 );
 	}
 
@@ -242,6 +248,7 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 int SequenceSet::readIntensities(){
 
-	std::cerr << "Error: SequenceSet::readIntensities() is not implemented so far." << std::endl;
+	std::cerr << "Error: SequenceSet::readIntensities() "
+			"is not implemented so far." << std::endl;
 	exit( -1 );
 }

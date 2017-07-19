@@ -15,8 +15,8 @@
 # results are saved in a .bmscore file.
 
 # examples for running this script:
-# ./plotAUSFC_benchmark_fdrtool.R PATH_TO_zoops.stats_FILE BASENAME_OF_THE_FILE
-# ./plotAUSFC_benchmark_fdrtool.R /home/bamm_result/ JunD_motif_1
+# ./plotAUSFC_benchmark_fdrtool.R PATH_TO_zoops.stats_FILE BASENAME_OF_THE_FILE PATH_TO_OUTPUT_FILE
+# ./plotAUSFC_benchmark_fdrtool.R /home/bamm_result/ JunD_motif_1 /home/bamm_result/ausfc.txt
 
 #-----------------------------
 #
@@ -334,7 +334,7 @@ args <- parser$parse_args()
 dir <- args$target_directory
 prefix <- args$prefix
 output <- args$output_file
-
+print_PRcurve = TRUE
 results = c()
 for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))) {
   motifNumber <- sub(paste(c(dir, "/", prefix, "_motif_"), collapse=""), "", f)
@@ -371,6 +371,24 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
   list <- seq(1, len )
   recall <- ( 1 - fdr ) * list / ( 1 - eta0 ) / len
 
+  # calculate precision 
+  raw_fdr <- stats$V3
+  raw_recall <- stats$V4
+  precision = 1 - raw_fdr
+  if( print_PRcurve ){
+    pdf( file = paste(dir, '/', prefix, "_motif_", motifNumber, '_PRcurve.pdf', sep = "" ) )
+    plot(raw_recall, precision,
+         main=paste(prefix, "_motif_", motifNumber, "\n Precision-Recall curve", sep = ""),
+         xlab="Recall", ylab="Precision", xlim=c(0,1), ylim=c(0,1),
+         type='l', lwd=2.5, col="green")
+    # compute the area under the partical TP-FP curve(AUC5):
+    auprc = sum(diff(precision)*rollmean(raw_recall,2))
+    
+    # write the AUC on the plot with the precision of 4 digits:
+    text(0.1, 0.9, paste( "AUPRC: ", round(auprc, digits=4) ))
+    dev.off()
+  }
+  
   # modify the SF curve:
   # reset recall to 1 when it is larger than 1
   for(i in list){
@@ -399,7 +417,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
   }
 
   for(i in range){
-    if(fdr[i] >= 0.5 ){
+    if(fdr[i] > 0.5 ){
       right = i
       break
     }
@@ -411,10 +429,14 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
   sum_area = log10(0.5) + 2
   pdf( file = paste(dir, '/', prefix, "_motif_", motifNumber, '_SFCurve.pdf', sep = "" ) )
   plot(fdr[range], recall[range], log="x",
-       main=paste(prefix, "_motif_", motifNumber, "Sensitivity vs. FDR", sep=""),
+       main=paste(prefix, "_motif_", motifNumber, "\nSensitivity vs. FDR", sep=""),
        xlab="FDR", ylab="Sensitivity", xlim=c(0.01,0.5), ylim=c(0,1),
        type='l', lwd=2.5,
        col="deepskyblue")
+  # fill the area under the FDR-recall curve 
+#  polygon(c(min(fdr), fdr, max(fdr)), c(min(recall),recall,1), col="gray", border="gray")
+#  polygon(c(min(fdr), range, 0.5), c(min(recall),recall,1), col="gray", border="gray")
+  
   # compute  the area under the sensitivity-FDR curve(AUSFC):
   if(right == left){
     ausfc = 0
@@ -422,7 +444,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     ausfc = sum(diff(log10(fdr[range]))*rollmean(recall[range],2)) / sum_area
   }
   # write the AUSFC on the plot with the precision of 4 digits:
-  text(0.05, 0.95, paste( "AUSFC: ", round(ausfc, digits=4) ))
+  text(0.35, 0.05, paste( "AUSFC: ", round(ausfc, digits=4) ))
   dev.off()
 
   # plot TPR vs FPR

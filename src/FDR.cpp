@@ -101,7 +101,8 @@ void FDR::evaluateMotif( size_t n ){
 			std::vector<std::unique_ptr<Sequence>> negSet;
 			// generate negative sequence set
 			SeqGenerator seqs( testSet );
-			negSet = seqs.sample_negative_seqset( Global::mFold );
+			negSet = seqs.generate_negative_seqset( Global::mFold );
+
 			// score negative sequence set
 			scores = scoreSequenceSet( motif, bgModel, negSet );
 
