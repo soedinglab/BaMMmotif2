@@ -2,7 +2,7 @@
 
 **Ba**yesian **M**arkov **M**odel **motif** discovery software.
 
-Johannes Soeding, Wanwan Ge, Anja Kiesel, Matthias Siebert
+(C) Johannes Soeding, Wanwan Ge, Anja Kiesel, Matthias Siebert
 
 ## Requirements
 To compile from source, you need:
@@ -71,10 +71,10 @@ Finally this will compile BaMM!motif
 Sequence options
 
       --alphabet <STRING>
-          STANDARD.  	     For alphabet type ACGT, default setting;
-          METHYLC.   	     For alphabet type ACGTM;
-          HYDROXYMETHYLC.  For alphabet type ACGTH;
-          EXTENDED.  	     For alphabet type ACGTMH.
+          STANDARD.         For alphabet type ACGT, default setting;
+          METHYLC.          For alphabet type ACGTM;
+          HYDROXYMETHYLC.   For alphabet type ACGTH;
+          EXTENDED.         For alphabet type ACGTMH.
       
       --ss
           Search motif only on single strand strands (positive sequences).
