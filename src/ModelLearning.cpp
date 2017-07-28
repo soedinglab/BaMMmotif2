@@ -1175,16 +1175,20 @@ void ModelLearning::write( char* odir, std::string basename, size_t N ){
 		ofile_alpha << std::endl;
 	}
 
-/*	// output responsibilities r[n][i]
-	std::string opath_r = opath + ".weights";
-	std::ofstream ofile_r( opath_r.c_str() );
-	for( size_t n = 0; n < posSeqs_.size(); n++ ){
-		ofile_r << std::scientific << std::setprecision( 2 ) << r_[n][0] << ' ';
-		int LW1 = posSeqs_[n]->getL() - W_ + 1;
-		for( i = LW1; i > 0; i-- ){
-			ofile_r << std::setprecision( 2 ) << r_[n][i] << ' ';
+	// output responsibilities r[n][i]
+	bool write_r = false;		// flag for writing out the responsibilities
+	if( write_r ){
+		std::string opath_r = opath + ".weights";
+		std::ofstream ofile_r( opath_r.c_str() );
+		for( size_t n = 0; n < seqs_.size(); n++ ){
+			ofile_r << std::scientific << std::setprecision( 2 )
+					<< r_[n][0] << ' ';
+			size_t LW1 = seqs_[n]->getL() - W_ + 1;
+			for( size_t i = LW1; i > 0; i-- ){
+				ofile_r << std::setprecision( 2 ) << r_[n][i] << ' ';
+			}
+			ofile_r << std::endl;
 		}
-		ofile_r << std::endl;
-	}*/
+	}
 
 }

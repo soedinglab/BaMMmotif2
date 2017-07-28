@@ -32,12 +32,10 @@ public:
 	static char*		posSequenceFilename;				// filename of positive sequence FASTA file
 	static std::string	posSequenceBasename;				// basename of positive sequence FASTA file
 	static SequenceSet*	posSequenceSet;						// positive sequence set
-	static std::vector<std::vector<size_t>> posFoldIndices;	// sequence indices for positive sequence set
 
 	static char*		negSequenceFilename;				// filename of negative sequence FASTA file
 	static std::string	negSequenceBasename;				// basename of negative sequence FASTA file
 	static SequenceSet*	negSequenceSet;						// negative sequence set
-	static std::vector<std::vector<size_t>> negFoldIndices;	// sequence indices for given negative sequence set
 	static bool			negSeqGiven;						// a flag for the negative sequence given by users
 
 	// weighting options

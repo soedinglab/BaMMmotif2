@@ -7,12 +7,10 @@ char*               Global::outputDirectory = NULL;			// output directory
 char*               Global::posSequenceFilename = NULL;		// filename of positive sequence FASTA file
 std::string			Global::posSequenceBasename;			// basename of positive sequence FASTA file
 SequenceSet*        Global::posSequenceSet = NULL;			// positive sequence set
-std::vector<std::vector<size_t>> Global::posFoldIndices;	// sequence indices for positive sequence set
 
 char*               Global::negSequenceFilename = NULL;		// filename of negative sequence FASTA file
 std::string			Global::negSequenceBasename;			// basename of negative sequence FASTA file
 SequenceSet*        Global::negSequenceSet = NULL;			// negative sequence set
-std::vector<std::vector<size_t>> Global::negFoldIndices;	// sequence indices for given negative sequence set
 bool				Global::negSeqGiven = false;			// a flag for the negative sequence given by users
 // weighting options
 char*               Global::intensityFilename = NULL;		// filename of intensity file (i.e. for HT-SELEX data)
@@ -98,10 +96,6 @@ void Global::init( int nargs, char* args[] ){
 	posSequenceSet = new SequenceSet( posSequenceFilename, ss );
 	negSequenceSet = new SequenceSet( negSequenceFilename, ss );
 	bgSequenceSet  = new SequenceSet( bgSequenceFilename, ss );
-
-	// generate fold indices for positive and negative sequence set
-	Global::posFoldIndices = generateFoldIndices( posSequenceSet->getN(), cvFold );
-	Global::negFoldIndices = generateFoldIndices( negSequenceSet->getN(), cvFold );
 
 	// optional: read in sequence intensities (header and intensity columns?)
 	if( intensityFilename != 0 ){

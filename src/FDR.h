@@ -23,21 +23,40 @@ class FDR {
 
 public:
 
-	FDR( Motif* motif, size_t cvFold );
+	FDR( std::vector<Sequence*> posSeqs,
+		std::vector<Sequence*> negSeqs,
+		float q = 0.9f,
+		Motif* motif = NULL,
+		BackgroundModel* bgModel = NULL,
+		size_t cvFold = 5,
+		float mf = 10.0f );
 	~FDR();
 
-	void 	evaluateMotif( size_t n );
+	void 	evaluateMotif();
 
 	float 	getPrec_middle_ZOOPS();			// get precision when recall = 0.5 for ZOOPS model
 	float 	getPrec_middle_MOPS();			// get precision when recall = 0.5 for MOPS model
 	void 	print();
-	void	write( size_t n );
+	void	write( char* odir, std::string basename, size_t n );
 
 private:
 
+	std::vector<Sequence*> posSeqs_;
+	std::vector<Sequence*> negSeqs_;
+	float q_;
+
 	Motif*				motif_;				// initial motif
-	float				mFold_;				// the count of negative sequences is m-fold of the count of positive sequences
+	BackgroundModel*	bgModel_;			// initial background model
 	size_t				cvFold_;			// for cross-validation, the train set is (cv-1)-fold of the testing set
+	float				mFold_;				// the count of negative sequences is m-fold of the count of positive sequences
+
+	bool				mops_			= Global::mops;
+	bool				zoops_			= Global::zoops;
+	bool				EM_ 			= Global::EM;
+	bool				CGS_ 			= Global::CGS;
+	bool				savePRs_ 		= Global::savePRs;
+	bool				savePvalues_	= Global::savePvalues;
+	bool				saveLogOdds_	= Global::saveLogOdds;
 
 	std::vector<float> 	posScoreAll_;		// store log odds scores over all positions on the sequences
 	std::vector<float> 	posScoreMax_;		// store maximal log odds score from each sequence
@@ -48,7 +67,6 @@ private:
 	std::vector<float>	ZOOPS_Rec_;			// recall for ZOOPS model
 	std::vector<float>  ZOOPS_TP_;			// true positives for ZOOPS model
 	std::vector<float>  ZOOPS_FP_;			// false positives for ZOOPS model
-
 
 	std::vector<float>	MOPS_FDR_;			// precision for MOPS model
 	std::vector<float>	MOPS_Rec_;			// recall for MOPS model
@@ -63,18 +81,11 @@ private:
 	std::vector<float>	ZOOPS_Pvalue_;		// p-values for scores from positive set with ZOOPS model
 	std::vector<float>	MOPS_Pvalue_;		// p-values for scores from positive set with MOPS model
 
-	std::vector<size_t>	Y_;					// contains 1 at position 0
-											// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
-											// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
+			// calculate precision and recall for both ZOOPS and MOPS models
+	void 	calculatePR();
 
-									// score sequences for both positive and negative sets
-	std::vector<std::vector<float>>	scoreSequenceSet( Motif* motif, BackgroundModel* bg, const std::vector<std::unique_ptr<Sequence>> & seqSet );
-
-									// calculate precision and recall for both ZOOPS and MOPS models
-	void 		   					calculatePR();
-
-									// calculate P-values for log odds scores of positive sequences
-	void							calculatePvalues();
+			// calculate P-values for log odds scores of positive sequences
+	void	calculatePvalues();
 
 };
 

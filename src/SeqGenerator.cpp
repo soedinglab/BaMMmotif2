@@ -72,7 +72,8 @@ void SeqGenerator::calculate_kmer_frequency(){
 
 
 // generate negative sequences
-std::vector<std::unique_ptr<Sequence>> SeqGenerator::generate_negative_seqset( size_t fold ){
+std::vector<std::unique_ptr<Sequence>> SeqGenerator::generate_negative_seqset(
+		size_t fold ){
 
 	std::vector<std::unique_ptr<Sequence>> negset;
 
@@ -217,7 +218,8 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( size_t L ){
 			if( sequence[i] == 0 )	sequence[i] = a;
 		}
 	}
-	// sample nucleotides till the half length of the sequence, due to k-mer frequencies
+	// sample nucleotides till the half length of the sequence
+	// due to k-mer frequencies
 	size_t mid = L / 2;
 	for( size_t i = sOrder_; i < mid; i++ ){
 
@@ -241,7 +243,7 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( size_t L ){
 		}
 	}
 
-	// sample W-length nucleotides based on conditional probabilities of the motif
+	// sample W-nt based on conditional probabilities of the motif
 	size_t W = motif_->getW();
 	float*** v = motif_->getV();
 	for( size_t j = 0; j < W; j++ ){
@@ -295,14 +297,16 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( size_t L ){
 
 }
 
-void SeqGenerator::write_seqset_with_embedded_motif( char* odir, std::string basename ){
+void SeqGenerator::write_seqset_with_embedded_motif( char* odir,
+		std::string basename, size_t n ){
 
 	/**
 	 * save the generated sequence set in one file:
 	 * (1) posSequenceBasename_pseudo.fasta
 	 */
 
-	std::string opath = std::string( odir ) + '/' + basename + "_pseudo.fasta";
+	std::string opath = std::string( odir ) + '/' + basename +
+			"_pseudoset_embed_motif_" + std::to_string( n ) +".fasta";
 
 	std::ofstream ofile( opath );
 

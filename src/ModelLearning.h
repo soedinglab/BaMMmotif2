@@ -45,7 +45,7 @@ private:
 	float**					s_;					// log odds scores
 	float*** 				n_;	            	// fractional counts n for (k+1)-mers y at motif position j
 	size_t*					z_;					// observed position of motif in each sequence
-	float**					pos_;				// positional prior, pos[i]=0 means no motif is found on the sequence
+	float**					pos_;				// positional prior, pos[i][0] indicates the prior for no motif present on sequence i
 
 	float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif
 	std::vector<Sequence*>	seqs_;				// copy positive sequences due to folds

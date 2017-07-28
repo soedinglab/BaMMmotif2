@@ -30,7 +30,8 @@ public:
 	std::vector<std::unique_ptr<Sequence>> generate_negative_seqset( size_t fold );
 	void generate_seqset_with_embedded_motif( size_t fold );
 
-	void write_seqset_with_embedded_motif( char* odir, std::string basename );
+	void write_seqset_with_embedded_motif( char* odir, std::string basename,
+											size_t n );
 
 private:
 

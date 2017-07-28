@@ -71,7 +71,7 @@ static std::string						baseName( const char* filePath );
 // calculate posterior probabilities from log likelihoods
 std::vector<double>						calculatePosteriorProbabilities( std::vector<double> lLikelihoods );
 static void								createDirectory( char* dir );
-static std::vector<std::vector<size_t>>	generateFoldIndices( size_t N, size_t folds );
+
 // calculate the power for integer base
 static size_t							ipow( size_t base, size_t exp );
 
@@ -153,20 +153,6 @@ inline void createDirectory( char* dir ){
 			exit( -1 );
 		}
 	}
-}
-
-inline std::vector<std::vector<size_t>> generateFoldIndices( size_t N, size_t folds ){
-
-	std::vector<std::vector<size_t>> indices( folds );
-
-	for( size_t i = 0; i < N; i += folds ){
-		for( size_t j = 0; j < folds; j++ ){
-		    if( i+j < N ){
-				indices[j].push_back( i+j );
-		    }
-		}
-	}
-	return indices;
 }
 
 inline size_t ipow( size_t base, size_t exp ){

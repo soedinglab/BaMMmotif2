@@ -73,24 +73,25 @@ std::vector<float> ScoreSeqSet::getZoopsScores(){
 	return zoops_scores_;
 }
 
-void ScoreSeqSet::write( char* dir, size_t n, float cutoff ){
+void ScoreSeqSet::write( char* odir, std::string basename, size_t N,
+		float cutoff, bool ss ){
 	/**
 	 * save log odds scores in one flat file:
-	 * posSequenceBasename.logOdds
+	 * posSequenceBasename_motif_N.logOdds
 	 */
 
 	bool 	first_hit = true;
 	size_t 	end; 				// end of motif match
 
-	std::string opath = std::string( dir ) + "/motif_" +
-						std::to_string( n ) + ".occurrence";
+	std::string opath = std::string( odir )  + '/' + basename + "_motif_"
+						+ std::to_string( N ) + ".occurrence";
 
 	std::ofstream ofile( opath );
 
 	for( size_t n = 0; n < seqSet_.size(); n++ ){
 		first_hit = true;
 		size_t seqlen = seqSet_[n]->getL();
-		if( !Global::ss ){
+		if( ss ){
 			seqlen = seqlen / 2;
 		}
 		size_t LW1 = seqSet_[n]->getL() - motif_->getW() + 1;
@@ -99,8 +100,8 @@ void ScoreSeqSet::write( char* dir, size_t n, float cutoff ){
 			if( mops_scores_ [n][i] > cutoff ){
 				if( first_hit ){
 					// >header:sequence_length
-					ofile << '>' << seqSet_[n]->getHeader()
-						<<  ':' << seqlen << std::endl;
+					ofile << '>' << seqSet_[n]->getHeader() << ':' << seqlen
+							<< std::endl;
 					first_hit = false;
 				}
 				// start:end:score:strand:sequence_matching
