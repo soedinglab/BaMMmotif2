@@ -49,10 +49,6 @@ std::vector<Sequence*> SequenceSet::getSequences(){
 	return sequences_;
 }
 
-size_t SequenceSet::getN(){
-	return N_;
-}
-
 size_t SequenceSet::getMinL(){
 	return minL_;
 }
@@ -83,7 +79,6 @@ int SequenceSet::readFASTA( bool singleStrand ){
 	 * 4. calculate base frequencies
 	 */
 
-	size_t N = 0; // sequence counter
 	size_t maxL = 0;
 	size_t minL = std::numeric_limits<size_t>::max();
 	std::vector<size_t> baseCounts( Alphabet::getSize() );
@@ -101,8 +96,6 @@ int SequenceSet::readFASTA( bool singleStrand ){
 					if( !( header.empty() ) ){
 
 						if( !( sequence.empty() ) ){
-
-							N++; // increment sequence counter
 
 							size_t L = sequence.length();
 
@@ -147,7 +140,7 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 					if( line.length() == 1 ){ // corresponds to ">\n"
 						// set header to sequence counter
-						header = std::to_string( N+1 );
+						header = '>';
 					} else {
 						header = line.substr( 1 );// fetch header
 					}
@@ -175,8 +168,6 @@ int SequenceSet::readFASTA( bool singleStrand ){
 		if( !( header.empty() ) ){				// store the last sequence
 
 			if( !( sequence.empty() ) ){
-
-				N++; // increment sequence counter
 
 				size_t L = sequence.length();
 
@@ -227,7 +218,6 @@ int SequenceSet::readFASTA( bool singleStrand ){
 		exit( -1 );
 	}
 
-	N_ = N;
 	maxL_ = maxL;
 	minL_ = minL;
 

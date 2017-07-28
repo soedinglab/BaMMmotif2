@@ -209,11 +209,10 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset ){
 
 	// sampling z from each sequence of the sequence set based on the weights:
 	std::vector<Sequence*> posSet = posSeqset->getSequences();
-	size_t N = posSeqset->getN();
 	float q = posSeqset->getQ();
 	std::mt19937 rngx;
 
-	for( size_t n = 0; n < N; n++ ){
+	for( size_t n = 0; n < posSet.size(); n++ ){
 
 		size_t LW1 = posSet[n]->getL() - W_ + 1;
 

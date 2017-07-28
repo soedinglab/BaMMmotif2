@@ -25,7 +25,6 @@ public:
 	std::string				getSequenceFilepath();
 	std::string				getIntensityFilepath();
 	std::vector<Sequence*> 	getSequences();
-	size_t 					getN();
 	size_t 					getMinL();
 	size_t					getMaxL();
 	float					getQ();
@@ -39,7 +38,6 @@ private:
 	std::string				intensityFilepath_;	// path to intensity file
 
 	std::vector<Sequence*>	sequences_;			// sequences
-	size_t 					N_;					// number of sequences
 	size_t 					minL_;				// length of the shortest sequence
 	size_t 					maxL_;				// length of the longest sequence
 	float					q_;					// the presumed fraction of sequences

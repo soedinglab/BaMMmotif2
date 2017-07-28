@@ -28,6 +28,7 @@ BackgroundModelSet::BackgroundModelSet( char* indir, char* extension,
 										sequenceSet->getSequenceFilepath() );
 
 					backgroundModels_.push_back( bamm );
+					// todo: here the memory for sequenceSet and bamm is not freed
 				}
 			}
 		}

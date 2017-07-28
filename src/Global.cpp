@@ -328,7 +328,7 @@ void Global::printStat(){
 
 	// for positive sequence set
 	std::cout << "\nGiven positive sequence set is " << Global::posSequenceBasename
-			<< ".\n	"<< Global::posSequenceSet->getN() << " sequences, max.length: " <<
+			<< ".\n	"<< Global::posSequenceSet->getSequences().size() << " sequences, max.length: " <<
 			Global::posSequenceSet->getMaxL() << ", min.length: " <<
 			Global::posSequenceSet->getMinL() << "\n	base frequencies:";
 	for( size_t i = 0; i < Alphabet::getSize(); i++ ){
@@ -339,7 +339,7 @@ void Global::printStat(){
 	// for negative sequence set
 	if( Global::negSeqGiven ){
 		std::cout << "\nGiven negative sequence set is " << Global::negSequenceBasename
-				<< ".\n	"<< Global::negSequenceSet->getN() << " sequences, max.length: "
+				<< ".\n	"<< Global::negSequenceSet->getSequences().size() << " sequences, max.length: "
 				<< Global::negSequenceSet->getMaxL() << ", min.length: " <<
 				Global::negSequenceSet->getMinL() << "\n	base frequencies:";
 		for( size_t i = 0; i < Alphabet::getSize(); i++ )
@@ -351,52 +351,6 @@ void Global::printStat(){
 
 	if( Global::FDR ){
 		std::cout << "\nFolds for cross-validation (FDR estimation): " << Global::cvFold;
-	}
-}
-
-
-void Global::writeStat(){
-
-	std::string opath = std::string( Global::outputDirectory ) + '/'
-						+ Global::posSequenceBasename + ".stats";
-	std::ofstream ofile( opath.c_str() );
-
-	ofile << "Alphabet type is " << Alphabet::getAlphabet();
-	ofile << "\nGiven initial model is " << Global::initialModelBasename
-			<< ", BaMM order: " << Global::modelOrder
-			<< ", background model order: " << Global::bgModelOrder;
-	ofile << "\nBaMM is learned from ";
-	if( Global::ss ){
-		ofile << "single-stranded sequences.";
-	} else {
-		ofile << "double-stranded sequences.";
-	}
-
-	// for positive sequence set
-	ofile << "\nGiven positive sequence set is " << Global::posSequenceBasename
-			<< ".\n	"<< Global::posSequenceSet->getN() << " sequences, max.length: " <<
-			Global::posSequenceSet->getMaxL() << ", min.length: " <<
-			Global::posSequenceSet->getMinL() << "\n	base frequencies:";
-	for( size_t i = 0; i < Alphabet::getSize(); i++ ){
-		ofile << ' ' << Global::posSequenceSet->getBaseFrequencies()[i]
-		          << "(" << Alphabet::getAlphabet()[i] << ")";
-	}
-	ofile << "\n	" << Global::q * 100 << "% of the sequences contain the optimized motif.";
-	// for negative sequence set
-	if( Global::negSeqGiven ){
-		ofile << "\nGiven negative sequence set is " << Global::negSequenceBasename
-				<< ".\n	"<< Global::negSequenceSet->getN() << " sequences, max.length: "
-				<< Global::negSequenceSet->getMaxL() << ", min.length: " <<
-				Global::negSequenceSet->getMinL() << "\n	base frequencies:";
-		for( size_t i = 0; i < Alphabet::getSize(); i++ )
-			ofile << ' ' << Global::negSequenceSet->getBaseFrequencies()[i]
-					  << "(" << Alphabet::getAlphabet()[i] << ")";
-	} else {
-		ofile << "\nThe background model is generated based on cond.prob of " << Global::sOrder << "-mers.";
-	}
-
-	if( Global::FDR ){
-		ofile << "\nFolds for cross-validation (FDR estimation): " << Global::cvFold;
 	}
 }
 
