@@ -106,7 +106,7 @@ int main( int nargs, char* args[] ){
 		// write model parameters on the disc
 		if( Global::saveBaMMs ){
 			model.write( Global::outputDirectory,
-							Global::posSequenceBasename, n+1 );
+							Global::posSequenceBasename, n+1, Global::ss );
 		}
 
 		// write out the learned model

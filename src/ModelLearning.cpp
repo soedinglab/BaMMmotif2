@@ -1095,7 +1095,7 @@ void ModelLearning::print(){
 
 }
 
-void ModelLearning::write( char* odir, std::string basename, size_t N ){
+void ModelLearning::write( char* odir, std::string basename, size_t N, bool ss ){
 
 	/**
 	 * 	 * save BaMM (hyper-)parameters in four flat files:
@@ -1125,23 +1125,28 @@ void ModelLearning::write( char* odir, std::string basename, size_t N ){
 	std::string opath_pos = opath + ".positions";
 	std::ofstream ofile_pos( opath_pos.c_str() );
 
-	ofile_pos << "seq" << '\t' << "start:end" << '\t' << "pattern" << std::endl;
+	ofile_pos << "seq\t strand \t start:end\t motif" << std::endl;
 
 	if( EM_ ){
+
 		float cutoff = 0.3f;	// threshold for having a motif on the sequence
 								// in terms of responsibilities
 		for( size_t n = 0; n < seqs_.size(); n++ ){
 
 			ofile_pos << seqs_[n]->getHeader() << '\t';
 
+			size_t seqlen = seqs_[n]->getL();
+			if( !ss )	seqlen = ( seqlen - 1 ) / 2;
+
 			size_t LW1 = seqs_[n]->getL() - W_ + 1;
 
 			for( size_t i = LW1; i > 0; i-- ){
 				if( r_[n][i] >= cutoff ){
-					ofile_pos << LW1-i+1 << ':' << LW1-i+W_<< '\t';
+					ofile_pos << ( ( i < seqlen ) ? '-' : '+' ) << '\t'
+							<< LW1-i+1 << ':' << LW1-i+W_<< '\t';
 					for( size_t b = 0; b < W_; b++ ){
 						ofile_pos << Alphabet::getBase(
-								seqs_[n]->getSequence()[LW1-i+1+b] );
+								seqs_[n]->getSequence()[LW1-i+b] );
 					}
 					ofile_pos << '\t';
 				}
@@ -1152,11 +1157,15 @@ void ModelLearning::write( char* odir, std::string basename, size_t N ){
 	} else if( CGS_ ){
 		for( size_t n = 0; n < seqs_.size(); n++ ){
 			ofile_pos << seqs_[n]->getHeader() << '\t';
+			size_t seqlen = seqs_[n]->getL();
+			if( !ss )	seqlen = ( seqlen - 1 ) / 2;
+
 			if( z_[n] > 0 ){
-				ofile_pos << z_[n] << ':' << z_[n]+W_-1 << '\t';
+				ofile_pos << ( ( z_[n] < seqlen ) ? '+' : '-' ) << '\t'
+						<< z_[n] << ':' << z_[n]+W_-1 << '\t';
 				for( size_t b = 0; b < W_; b++ ){
 					ofile_pos << Alphabet::getBase(
-							seqs_[n]->getSequence()[z_[n]+b] );
+							seqs_[n]->getSequence()[z_[n]+b-1] );
 				}
 			}
 			ofile_pos << std::endl;

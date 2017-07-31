@@ -80,7 +80,7 @@ void ScoreSeqSet::write( char* odir, std::string basename, size_t N,
 		float cutoff, bool ss ){
 	/**
 	 * save log odds scores in one flat file:
-	 * posSequenceBasename_motif_N.logOdds
+	 * posSequenceBasename_motif_N.occurrence
 	 */
 
 	bool 	first_hit = true;
@@ -94,8 +94,8 @@ void ScoreSeqSet::write( char* odir, std::string basename, size_t N,
 	for( size_t n = 0; n < seqSet_.size(); n++ ){
 		first_hit = true;
 		size_t seqlen = seqSet_[n]->getL();
-		if( ss ){
-			seqlen = seqlen / 2;
+		if( !ss ){
+			seqlen = ( seqlen - 1 ) / 2;
 		}
 		size_t LW1 = seqSet_[n]->getL() - motif_->getW() + 1;
 		for( size_t i = 0; i < LW1; i++ ){

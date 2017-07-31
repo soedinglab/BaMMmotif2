@@ -27,7 +27,8 @@ public:
 	Motif*					getMotif();
 
 	void					print();
-	void					write( char* odir, std::string basename, size_t n );
+	void					write( char* odir, std::string basename,
+									size_t n, bool ss );
 
 
 private:

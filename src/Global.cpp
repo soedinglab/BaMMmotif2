@@ -318,7 +318,7 @@ void Global::printStat(){
 	std::cout << "Alphabet type is " << Alphabet::getAlphabet();
 	std::cout << "\nGiven initial model is " << Global::initialModelBasename
 			<< ", BaMM order: " << Global::modelOrder
-			<< ", background model order: " << Global::bgModelOrder;
+			<< ", bgmodel order: " << Global::bgModelOrder;
 	std::cout << "\nBaMM is learned from ";
 	if( Global::ss ){
 		std::cout << "single-stranded sequences.";
