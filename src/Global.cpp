@@ -201,7 +201,7 @@ int Global::readArguments( int nargs, char* args[] ){
 		if( modelOrder > 0 ){
 			for( size_t k = 1; k < modelOrder+1; k++ ){
 				// alpha = beta * gamma^k
-				modelAlpha[k] = modelBeta * powf( modelGamma, static_cast<float>( k ) );
+				modelAlpha[k] = modelBeta * powf( modelGamma, ( float )k );
 			}
 		}
 	}
@@ -327,56 +327,65 @@ void Global::printStat(){
 	}
 
 	// for positive sequence set
-	std::cout << "\nGiven positive sequence set is " << Global::posSequenceBasename
-			<< ".\n	"<< Global::posSequenceSet->getSequences().size() << " sequences, max.length: " <<
+	std::cout << "\nGiven positive sequence set is "
+			<< Global::posSequenceBasename << ".\n	"
+			<< Global::posSequenceSet->getSequences().size()
+			<< " sequences, max.length: " <<
 			Global::posSequenceSet->getMaxL() << ", min.length: " <<
 			Global::posSequenceSet->getMinL() << "\n	base frequencies:";
 	for( size_t i = 0; i < Alphabet::getSize(); i++ ){
 		std::cout << ' ' << Global::posSequenceSet->getBaseFrequencies()[i]
 		          << "(" << Alphabet::getAlphabet()[i] << ")";
 	}
-	std::cout << "\n	" << Global::q * 100 << "% of the sequences contain the optimized motif.";
+	std::cout << "\n	" << Global::q * 100 << "% of the sequences "
+			"contain the optimized motif.";
 	// for negative sequence set
 	if( Global::negSeqGiven ){
-		std::cout << "\nGiven negative sequence set is " << Global::negSequenceBasename
-				<< ".\n	"<< Global::negSequenceSet->getSequences().size() << " sequences, max.length: "
+		std::cout << "\nGiven negative sequence set is "
+				<< Global::negSequenceBasename << ".\n	"
+				<< Global::negSequenceSet->getSequences().size()
+				<< " sequences, max.length: "
 				<< Global::negSequenceSet->getMaxL() << ", min.length: " <<
 				Global::negSequenceSet->getMinL() << "\n	base frequencies:";
 		for( size_t i = 0; i < Alphabet::getSize(); i++ )
 			std::cout << ' ' << Global::negSequenceSet->getBaseFrequencies()[i]
 					  << "(" << Alphabet::getAlphabet()[i] << ")";
 	} else {
-		std::cout << "\nThe background model is generated based on cond.prob of " << Global::sOrder << "-mers.";
+		std::cout << "\nThe background model is generated based on cond.prob of "
+				<< Global::sOrder << "-mers.";
 	}
 
 	if( Global::FDR ){
-		std::cout << "\nFolds for cross-validation (FDR estimation): " << Global::cvFold;
+		std::cout << "\nFolds for cross-validation (FDR estimation): "
+				<< Global::cvFold;
 	}
 }
 
 void Global::printHelp(){
-	printf("\n============================================================================================\n");
+	printf("\n==================================================================\n");
 	printf("\n SYNOPSIS:	BaMMmotif OUTDIR SEQFILE [options] \n\n");
 	printf("\t DESCRIPTION \n");
-	printf("\t 		Learn Bayesian inhomogeneous Markov models (BaMM) from sequence Data.\n"
-			"		The default extension of sequence file is .fasta\n\n");
+	printf("		Learn Bayesian inhomogeneous Markov models(BaMMs) from\n"
+			"		high-throughput sequencing data.\n\n");
 	printf("\t OUTDIR:  output directory for all results. \n");
-	printf("\t SEQFILE: file with sequences from positive set in FASTA format. \n\n");
+	printf("\t SEQFILE: file with positive sequence set in FASTA format.\n\n");
 	printf("\n OPTIONS: \n");
 	printf("\n		Options for reading in sequence file: \n");
 	printf("\n			--alphabet <STRING> \n"
-			"				STANDARD.		For alphabet type ACGT, default setting; \n"
-			"				METHYLC. 		For alphabet type ACGTM; \n"
-			"				HYDROXYMETHYLC.	For alphabet type ACGTH; \n"
-			"				EXTENDED.		For alphabet type ACGTMH. \n\n");
+			"				STANDARD.		For alphabet type ACGT, by default;\n"
+			"				METHYLC. 		For alphabet type ACGTM;\n"
+			"				HYDROXYMETHYLC.	For alphabet type ACGTH;\n"
+			"				EXTENDED.		For alphabet type ACGTMH.\n\n");
 	printf("\n			--ss \n"
-			"				Search motif only on single strand strands (positive sequences). \n"
-			"				This option is not recommended for analyzing ChIP-seq data. \n"
-			"				By default, BaMM searches motifs on both strands. \n\n");
+			"				Search motif only on single-strand sequences.\n"
+			"				This option is not recommended for analyzing\n"
+			"				ChIP-seq data. \n"
+			"				By default, BaMM searches motifs on both strands.\n\n");
 	printf("\n			--negSeqFile \n"
-			"				FASTA file with negative/background sequences used to learn the\n"
-			"				(homogeneous) background BaMM. If not specified, the background BaMM\n"
-			"				is learned from the positive sequences. \n\n");
+			"				FASTA file with negative/background sequences used\n"
+			"				to learn the (homogeneous) background BaMM.\n"
+			"				If not specified, the background BaMM is learned\n"
+			"				from the positive sequences. \n\n");
 	printf("\n		Options for HT-SELEX data: \n");
 	printf("\n			--intensityFile	<STRING> \n"
 			"				Intensity file name. (Not implemented yet.) \n\n");
@@ -384,13 +393,14 @@ void Global::printHelp(){
 	printf("\n 			--BaMMpatternFile <STRING> \n"
 			"				File with IUPAC patterns.(Not implemented yet.) \n\n");
 	printf("\n 			--bindingSiteFile <STRING> \n"
-			"				File with binding sites of equal length (one per line).\n\n");
+			"				File with binding sites of equal length(one per line).\n\n");
 	printf("\n 			--PWMFile <STRING> \n"
-			"				File that contains position weight matrices (PWMs).\n");
+			"				File that contains position weight matrices(PWMs).\n");
 	printf("\n 			--BaMMFile <STRING> \n"
 			"				File that contains a model in bamm file format.\n\n");
 	printf("\n 			--num <INTEGER> \n"
-			"				Number of models to be learned by BaMM!motif, specific for PWMs. \n"
+			"				Number of models to be learned by BaMM!motif, \n"
+			"				specific for PWMs. \n"
 			"				By default, all the motifs will be optimized.\n\n");
 	printf("\n 			--mops \n"
 			"				Learn more-than-one-motif-per-sequence (MOPS) model.\n"
@@ -402,70 +412,85 @@ void Global::printHelp(){
 	printf("\n 			-k, --order <INTEGER> \n"
 			"				Model Order. The default is 2. \n\n");
 	printf("\n 			-a, --alpha <FLOAT> [<FLOAT>...] \n"
-			"				Order-specific prior strength. The default is 1.0 (for k = 0) and\n"
-			"				beta x gamma^k (for k > 0). The options -b and -r are ignored.\n\n");
+			"				Order-specific prior strength. The default is 1.0 \n"
+			"				(for k = 0) and beta x gamma^k (for k > 0). \n"
+			"				The options -b and -r are ignored.\n\n");
 	printf("\n 			-b, --beta <FLOAT> \n"
-			"				For calculating alphas: beta x gamma^k (for k > 0). \n"
+			"				For calculating alphas: beta x gamma^k (for k > 0).\n"
 			"				The default is 7.0 (for k > 0) \n");
 	printf("\n 			-r, --gamma <FLOAT> \n"
-			"				For calculating alphas: beta x gamma^k (for k > 0). \n"
+			"				For calculating alphas: beta x gamma^k (for k > 0).\n"
 			"				The default is 3.0 (for k > 0) \n");
 	printf("\n 			--extend <INTEGER>{1, 2} \n"
-			"				Extend BaMMs by adding uniformly initialized positions to the left\n"
-			"				and/or right of initial BaMMs. e.g. invoking with --extend 0 2 adds\n"
-			"				two positions to the right of initial BaMMs. Invoking with --extend 2\n"
-			"				adds two positions to both sides of initial BaMMs. By default, BaMMs\n"
-			"				are not being extended.\n\n");
+			"				Extend BaMMs by adding uniformly initialized positions\n"
+			"				to the left and/or right of initial BaMMs.\n "
+			"				e.g. invoking with --extend 0 2 adds two positions\n"
+			"				to the right of initial BaMMs.\n"
+			"				Invoking with --extend 2 adds two positions to both\n"
+			"				sides of initial BaMMs.\n"
+			"				By default, BaMMs are not being extended.\n\n");
 	printf("\n 		Options for the (homogeneous) background BaMM: \n");
 	printf("\n 			-K, --Order <INTEGER> \n"
 			"				Order. The default is 2.\n"
-			"				Order of background model should not exceed order of motif model.\n\n");
+			"				Order of background model should not exceed order of\n"
+			"				motif model.\n\n");
 	printf("\n 			-A, --Alpha <FLOAT> \n"
 			"				Prior strength. The default value is 10.0.\n\n");
 	printf("\n 			--bgModelFile <STRING> \n"
-			"				Read in background model from a bamm-formatted file. Defaults to NULL.\n\n");
+			"				Read in background model from a bamm-formatted file.\n"
+			"				Defaults to NULL.\n\n");
 	printf("\n 		Options for EM: \n");
 	printf("\n 			--EM  \n"
-			"				Triggers Expectation Maximization (EM) algorithm. Defaults to false.\n\n");
+			"				Triggers Expectation Maximization (EM) algorithm.\n "
+			"				Defaults to false.\n\n");
 	printf("\n 			-q <FLOAT> \n"
-			"				Prior probability for a positive sequence to contain a motif.\n"
-			"				The default value is 0.9.\n\n");
+			"				Prior probability for a positive sequence to contain\n"
+			"				a motif. The default value is 0.9.\n\n");
 	printf("\n 			-e, --epsilon <FLOAT> \n"
-			"				The EM algorithm is deemed to be converged when the sum over the\n"
-			"				absolute differences in BaMM probabilities from successive EM rounds\n"
-			"				is smaller than epsilon. The default is 0.001.\n\n");
+			"				The EM algorithm is deemed to be converged when the\n"
+			"				sum over the absolute differences in probabilities\n"
+			"				from successive EM rounds is smaller than epsilon.\n"
+			"				The default is 0.001.\n\n");
 	printf("\n 			--maxEMIterations <INTEGER> (*) \n"
 			"				Limit the number of EM iterations. *For developers.\n\n");
 	printf("\n 			--noAlphaOptimization (*) \n"
-			"				disable alpha optimization. Defaults to false. *For developers.\n\n");
+			"				disable alpha optimization.\n"
+			"				Defaults to false. *For developers.\n\n");
 	printf("\n 			--noQOptimization (*) \n"
-			"				disable q optimization. Defaults to false. *For developers.\n\n");
+			"				disable q optimization.\n"
+			"				Defaults to false. *For developers.\n\n");
 	printf("\n 		Options for CGS: \n");
 	printf("\n 			--CGS\n"
-			"				Triggers Collapsed Gibbs Sampling (CGS) algorithm. Defaults to false.\n\n");
+			"				Triggers Collapsed Gibbs Sampling (CGS) algorithm.\n"
+			"				Defaults to false.\n\n");
 	printf("\n 			--maxCGSIterations <INTEGER> (*) \n"
 			"				Limit the number of CGS iterations. \n"
 			"				It should be larger than 5 and defaults to 100.\n\n");
 	printf("\n 			--noAlphaSampling (*) \n"
-			"				disable alpha sampling. Defaults to false. *For developers.\n\n");
+			"				disable alpha sampling.\n"
+			"				Defaults to false. *For developers.\n\n");
 	printf("\n 			--noQSampling (*) \n"
-			"				disable q sampling. Defaults to false. *For developers.\n\n");
+			"				disable q sampling.\n"
+			"				Defaults to false. *For developers.\n\n");
 	printf("\n 		Options for FDR: \n");
 	printf("\n 			--FDR\n"
 			"				Triggers False-Discovery-Rate (FDR) estimation. \n\n");
 	printf("\n 			-m, --mFold <INTEGER>\n"
-			"				Number of negative sequences as multiple of positive sequences.\n"
-			"				The default is 10.\n\n");
+			"				Number of negative sequences as multiple of positive\n"
+			"				sequences. The default is 10.\n\n");
 	printf("\n 			-n, --cvFold <INTEGER>\n"
 			"				Fold number for cross-validation. \n"
-			"				The default is 5, which means the training set is 4-fold of the test set.\n\n"
+			"				The default is 5, which means the training set is\n"
+			"				4-fold of the test set.\n\n"
 			"			-s, --sOrder <INTERGER>\n"
-			"				The order of k-mer for sampling pseudo/negative set. The default is 2.\n\n");
+			"				The order of k-mer for sampling pseudo/negative set.\n"
+			"				The default is 2.\n\n");
 	printf("\n 		Options for scoring sequence set:\n");
 	printf("\n 			--scoreSeqset \n"
 			"				Score the sequence set. \n\n");
 	printf("\n 			--scoreCutoff \n"
-			"				Cutoff for scoring the sequence set, in order to find motif occurrences. \n\n");
+			"				Cutoff for scoring the sequence set, in order to \n"
+			"				find motif occurrences. \n\n");
 	printf("\n 		Options for output:	\n");
 	printf("\n 			--verbose \n"
 			"				Verbose printouts.\n\n");
@@ -474,21 +499,23 @@ void Global::printHelp(){
 	printf("\n 			--saveInitialBaMMs \n"
 			"				Save the initial BaMM model(s).\n\n");
 	printf("\n 			--savePRs\n"
-			"				Write true positives(TP), false positives(FP), FDR and recall values to disk.\n"
-			"				Defaults to true.\n\n");
+			"				Write true positives(TP), false positives(FP), \n"
+			"				FDR and recall values to disk. Defaults to true.\n\n");
 	printf("\n 			--savePvalues\n"
-			"				Write p-values for plotting area under the Sensitivity-FDR curve (AUSFC)\n"
-			"				to disk.\n\n");
+			"				Write p-values for plotting area under the \n"
+			"				Sensitivity-FDR curve (AUSFC) to disk.\n\n");
 	printf("\n 			--saveLogOdds\n"
-			"				Write log odds scores from positive and negative sets to disk.\n"
+			"				Write log odds scores from positive and negative \n"
+			"				sets to disk.\n"
 			"				The default for this log odds score is zero.\n\n");
 	printf("\n 			--saveBgModel\n"
 			"				Write background model to disk.\n\n");
 	printf("\n 			--scoreSeqset\n"
-			"				Find the motif occurrences on the sequences and write them out.\n\n");
+			"				Find the motif occurrences on the sequences due to\n"
+			"				log odds scores and write them out.\n\n");
 	printf("\n 			-h, --help\n"
 			"				Printout this help function.\n\n");
-	printf("\n============================================================================================\n");
+	printf("\n==================================================================\n");
 }
 
 void Global::destruct(){

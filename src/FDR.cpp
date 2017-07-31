@@ -7,18 +7,16 @@ FDR::FDR( std::vector<Sequence*> posSeqs,
 			float q,
 			Motif* motif,
 			BackgroundModel* bgModel,
-			size_t cvFold,
-			float mf ){
+			size_t cvFold ){
 
-	posSeqs_ = posSeqs;
-	negSeqs_ = negSeqs;
-	q_ = q;
-	motif_ = motif;
-	bgModel_ = bgModel;
-	cvFold_ = cvFold;
-	mFold_ = mf;
-	occ_frac_ = 0.0f;
-	occ_mult_ = 0.0f;
+	posSeqs_	= posSeqs;
+	negSeqs_	= negSeqs;
+	q_ 			= q;
+	motif_ 		= motif;
+	bgModel_	= bgModel;
+	cvFold_		= cvFold;
+	occ_frac_	= 0.0f;
+	occ_mult_	= 0.0f;
 
 }
 
@@ -29,8 +27,7 @@ FDR::~FDR(){
 void FDR::evaluateMotif(){
 
 	std::vector<std::vector<float>> mops_scores;
-	std::vector<float> zoops_scores;
-	std::vector<std::vector<float>> scores;
+	std::vector<float> 				zoops_scores;
 
 	/*
 	 * Cross Validation
@@ -44,7 +41,7 @@ void FDR::evaluateMotif(){
 		 */
 		std::vector<Sequence*> testSet;
 		std::vector<Sequence*> trainSet;
-		for( size_t n = 0; n < posSeqs_.size(); n+=cvFold_ ){
+		for( size_t n = 0; n < posSeqs_.size()-cvFold_; n+=cvFold_ ){
 			for( size_t f = 0; f < cvFold_; f++ ){
 				if( f != fold ){
 					trainSet.push_back( posSeqs_[n+f] );
@@ -55,10 +52,11 @@ void FDR::evaluateMotif(){
 		}
 
 		/*
-		 * Draw negative sequence set
+		 * Generate negative sequence set
 		 */
 		std::vector<Sequence*> negSet;
-		for( size_t n = 0; n < negSeqs_.size(); n+=cvFold_ ){
+		// draw from the given negative sequence set
+		for( size_t n = 0; n < negSeqs_.size()-cvFold_; n+=cvFold_ ){
 			negSet.push_back( negSeqs_[n+fold] );
 		}
 
@@ -77,7 +75,7 @@ void FDR::evaluateMotif(){
 		/*
 		 * Testing
 		 */
-		// score positive test sequences with the (learned) motif
+		// score positive test sequences with (learned) motif
 		ScoreSeqSet score_testset( motif, bgModel_, testSet );
 		score_testset.score();
 
@@ -144,7 +142,7 @@ void FDR::calculatePR(){
 
 	size_t posN = posSeqs_.size();
 	size_t negN = negSeqs_.size();
-
+	float mFold = ( float )negN / ( float )posN;
 	// for MOPS model:
 	if( mops_ ){
 		// Sort log odds scores in descending order
@@ -169,8 +167,8 @@ void FDR::calculatePR(){
 				idx_negAll++;
 			}
 
-			MOPS_TP_.push_back( ( float )idx_posAll - ( float )idx_negAll / mFold_ );
-			MOPS_FP_.push_back( ( float )idx_negAll / mFold_ );
+			MOPS_TP_.push_back( ( float )idx_posAll - ( float )idx_negAll / mFold );
+			MOPS_FP_.push_back( ( float )idx_negAll / mFold );
 
 			if( E_TP_MOPS == MOPS_TP_[i] ){
 				idx_max = i;
@@ -213,9 +211,9 @@ void FDR::calculatePR(){
 			}
 
 			ZOOPS_TP_.push_back( ( float )idx_posMax );
-			ZOOPS_FP_.push_back( ( float )idx_negMax / mFold_ );
+			ZOOPS_FP_.push_back( ( float )idx_negMax / mFold );
 			PN_Pvalue_.push_back( ( ( float )idx_negMax + 0.5f )
-					/ ( mFold_ * ( float )posScoreMax_.size() + 1.0f ) );
+					/ ( mFold * ( float )posScoreMax_.size() + 1.0f ) );
 
 			// take the faction of q sequences as real positives
 			if( idx_posMax == posN_est ){
@@ -240,7 +238,7 @@ void FDR::calculatePvalues(){
 	 *  calculate p-values for the log odds scores from positive sequence set
 	 * 	later used for ranking models using fdrtool R package
 	 */
-
+	float mFold = ( float )negSeqs_.size() / ( float )posSeqs_.size();
 	bool use_method_1 = true;
 	if( use_method_1 ){
 	// Method 1:
@@ -248,7 +246,7 @@ void FDR::calculatePvalues(){
 	if( mops_ ){
 		// Sort log odds scores in ascending order
 		std::sort( negScoreAll_.begin(), negScoreAll_.end(), std::less<float>() );
-		std::sort( posScoreAll_.begin(), posScoreAll_.end(), std::greater<float>() );
+		std::sort( posScoreAll_.begin(), posScoreAll_.end(), std::less<float>() );
 		for( size_t i = 0; i < posScoreAll_.size(); i++ ){
 			// Return iterator to lower/upper bound
 			int low, up;
@@ -273,7 +271,7 @@ void FDR::calculatePvalues(){
 	if( zoops_ ){
 		// Sort log odds scores in ascending order
 		std::sort( negScoreMax_.begin(), negScoreMax_.end(), std::less<float>() );
-		std::sort( posScoreMax_.begin(), posScoreMax_.end(), std::greater<float>() );
+		std::sort( posScoreMax_.begin(), posScoreMax_.end(), std::less<float>() );
 		for( size_t i = 0; i < posScoreMax_.size(); i++ ){
 			// Return iterator to lower/upper bound
 			int low, up;
@@ -335,7 +333,7 @@ void FDR::calculatePvalues(){
 				|| idx_posMax == 0  || idx_negMax == len_max - 1 ){
 				idx_posMax++;
 				ZOOPS_Pvalue_.push_back( ( ( float )idx_negMax + 0.5f )
-						/ ( ( mFold_ * ( float )posScoreMax_.size() ) + 1.0f ) );
+						/ ( ( mFold * ( float )posScoreMax_.size() ) + 1.0f ) );
 			} else {
 				idx_negMax++;
 			}
@@ -358,8 +356,10 @@ void FDR::write( char* odir, std::string basename, size_t n ){
 	if( savePRs_ ){
 		/**
 		 * save FDR results in two flat files for obtaining AUSFC:
-		 * (1) posSequenceBasename.zoops.stats: 	TP, FP, FDR, recall, p-values and mFold for ZOOPS model
-		 * (2) posSequenceBasename.mops.stats:		TP, FP, FDR, recall for MOPS model
+		 * (1) posSequenceBasename.zoops.stats:
+		 * TP, FP, FDR, recall, p-values and mFold for ZOOPS model
+		 * (2) posSequenceBasename.mops.stats:
+		 * TP, FP, FDR, recall for MOPS model
 		 */
 
 		// for ZOOPS model:
@@ -372,7 +372,8 @@ void FDR::write( char* odir, std::string basename, size_t n ){
 						<< "FDR" 	<< '\t'
 						<< "Recall"	<< '\t'
 						<< "p-value"<< '\t'
-						<< mFold_ 	<< std::endl;
+						<< ( float )negSeqs_.size() / ( float )posSeqs_.size()
+						<< std::endl;
 
 			for( size_t i = 0; i < ZOOPS_FDR_.size(); i++ ){
 				ofile_zoops << ZOOPS_TP_[i]  << '\t'
@@ -430,7 +431,8 @@ void FDR::write( char* odir, std::string basename, size_t n ){
 	if( saveLogOdds_ ){
 
 		/**
-		 * save log odds scores into two files for plotting the distribution of log odds scores:
+		 * save log odds scores into two files for
+		 * plotting the distribution of log odds scores:
 		 * (1) posSequenceBasename.zoops.logOdds
 		 * (2) posSequenceBasename.mops.logOdds
 		 */
@@ -442,8 +444,8 @@ void FDR::write( char* odir, std::string basename, size_t n ){
 			for( size_t i = 0; i < posScoreMax_.size(); i++ ){
 				ofile_zoops_logOdds	<< std::setprecision( 6 )
 									<< posScoreMax_[i] << '\t'
-									<< negScoreMax_[i*( size_t )mFold_] << std::endl;
-									// * this is not proper for the occasion where negative sequence is given
+									<< negScoreMax_[i*negSeqs_.size()/posSeqs_.size()]
+									<< std::endl;
 			}
 		}
 
@@ -455,8 +457,8 @@ void FDR::write( char* odir, std::string basename, size_t n ){
 			for( size_t i = 0; i < posScoreAll_.size(); i++ ){
 				ofile_mops_logOdds 	<< std::setprecision( 6 )
 									<< posScoreAll_[i] << '\t'
-									<< negScoreAll_[i*( size_t )mFold_] << std::endl;
-									// * this is not proper for the occasion where negative sequence is given
+									<< negScoreAll_[i*negSeqs_.size()/posSeqs_.size()]
+									<< std::endl;
 			}
 		}
 	}

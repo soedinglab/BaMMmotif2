@@ -49,6 +49,7 @@ CTestTestfile.cmake
 .metadata
 bin/
 tmp/
+Debug/
 *.tmp
 *.bak
 *.swp

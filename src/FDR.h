@@ -28,14 +28,13 @@ public:
 		float q = 0.9f,
 		Motif* motif = NULL,
 		BackgroundModel* bgModel = NULL,
-		size_t cvFold = 5,
-		float mf = 10.0f );
+		size_t cvFold = 5 );
 	~FDR();
 
 	void 	evaluateMotif();
 
-	float 	getPrec_middle_ZOOPS();			// get precision when recall = 0.5 for ZOOPS model
-	float 	getPrec_middle_MOPS();			// get precision when recall = 0.5 for MOPS model
+	float 	getPrec_middle_ZOOPS();		// get precision when recall = 0.5 for ZOOPS model
+	float 	getPrec_middle_MOPS();		// get precision when recall = 0.5 for MOPS model
 	void 	print();
 	void	write( char* odir, std::string basename, size_t n );
 
@@ -45,11 +44,10 @@ private:
 	std::vector<Sequence*> negSeqs_;
 	float q_;
 
-	Motif*				motif_;				// initial motif
-	BackgroundModel*	bgModel_;			// initial background model
-	size_t				cvFold_;			// for cross-validation, the train set is (cv-1)-fold of the testing set
-	float				mFold_;				// the count of negative sequences is m-fold of the count of positive sequences
-
+	Motif*				motif_;			// initial motif
+	BackgroundModel*	bgModel_;		// initial background model
+	size_t				cvFold_;		// fold for cross-validation, training
+										// set is (cv-1)-fold of the testing set
 	bool				mops_			= Global::mops;
 	bool				zoops_			= Global::zoops;
 	bool				EM_ 			= Global::EM;
@@ -58,28 +56,29 @@ private:
 	bool				savePvalues_	= Global::savePvalues;
 	bool				saveLogOdds_	= Global::saveLogOdds;
 
-	std::vector<float> 	posScoreAll_;		// store log odds scores over all positions on the sequences
-	std::vector<float> 	posScoreMax_;		// store maximal log odds score from each sequence
+	std::vector<float> 	posScoreAll_;	// store log odds scores over all positions on the sequences
+	std::vector<float> 	posScoreMax_;	// store maximal log odds score from each sequence
 	std::vector<float> 	negScoreAll_;
 	std::vector<float> 	negScoreMax_;
 
-	std::vector<float>	ZOOPS_FDR_;			// precision for ZOOPS model
-	std::vector<float>	ZOOPS_Rec_;			// recall for ZOOPS model
-	std::vector<float>  ZOOPS_TP_;			// true positives for ZOOPS model
-	std::vector<float>  ZOOPS_FP_;			// false positives for ZOOPS model
+	std::vector<float>	ZOOPS_FDR_;		// precision for ZOOPS model
+	std::vector<float>	ZOOPS_Rec_;		// recall for ZOOPS model
+	std::vector<float>  ZOOPS_TP_;		// true positives for ZOOPS model
+	std::vector<float>  ZOOPS_FP_;		// false positives for ZOOPS model
 
-	std::vector<float>	MOPS_FDR_;			// precision for MOPS model
-	std::vector<float>	MOPS_Rec_;			// recall for MOPS model
-	std::vector<float>  MOPS_TP_;			// true positives for MOPS model
-	std::vector<float>  MOPS_FP_;			// false positives for MOPS model
+	std::vector<float>	MOPS_FDR_;		// precision for MOPS model
+	std::vector<float>	MOPS_Rec_;		// recall for MOPS model
+	std::vector<float>  MOPS_TP_;		// true positives for MOPS model
+	std::vector<float>  MOPS_FP_;		// false positives for MOPS model
 
-	float				occ_frac_;			// the fraction of motif occurrence
-	float				occ_mult_;			// the number of motif occurrences per sequence
+	float				occ_frac_;		// fraction of motif occurrence
+	float				occ_mult_;		// number of motif occurrences per sequence
 
-	std::vector<float>	PN_Pvalue_;			// p-values for scores from both positive and negative set with ZOOPS model
-											// used for benchmarking
-	std::vector<float>	ZOOPS_Pvalue_;		// p-values for scores from positive set with ZOOPS model
-	std::vector<float>	MOPS_Pvalue_;		// p-values for scores from positive set with MOPS model
+	std::vector<float>	PN_Pvalue_;		// p-values for scores from both positive
+										// and negative set with ZOOPS model used
+										// for benchmarking
+	std::vector<float>	ZOOPS_Pvalue_;	// p-values for scores from positive set with ZOOPS model
+	std::vector<float>	MOPS_Pvalue_;	// p-values for scores from positive set with MOPS model
 
 			// calculate precision and recall for both ZOOPS and MOPS models
 	void 	calculatePR();

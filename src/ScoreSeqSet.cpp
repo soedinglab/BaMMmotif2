@@ -26,7 +26,10 @@ ScoreSeqSet::~ScoreSeqSet(){
 
 
 void ScoreSeqSet::score(){
-	// store the log odds scores at all positions of each sequence
+
+	/**
+	 * store the log odds scores at all positions of each sequence
+	 */
 
 	size_t K = motif_->getK();
 	size_t W = motif_->getW();

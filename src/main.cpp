@@ -18,7 +18,7 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "======================================\n" );
 	fprintf( stderr, "=      Welcome to use BaMMmotif      =\n" );
-	fprintf( stderr, "=                   Version 1.0      =\n" );
+	fprintf( stderr, "=                   Version 2.0      =\n" );
 	fprintf( stderr, "=              by Soeding Group      =\n" );
 	fprintf( stderr, "=  http://www.mpibpc.mpg.de/soeding  =\n" );
 	fprintf( stderr, "======================================\n" );
@@ -63,7 +63,8 @@ int main( int nargs, char* args[] ){
 					Global::addColumns.at(1),
 					Global::initialModelTag );
 
-	size_t motifNum = ( Global::num > motifs.getN() ) ? motifs.getN() : Global::num;
+	size_t motifNum = ( Global::num > motifs.getN() ) ?
+						motifs.getN() : Global::num;
 
 	if( Global::verbose ){
 		fprintf( stderr, "\n" );
@@ -154,10 +155,12 @@ int main( int nargs, char* args[] ){
 		std::vector<Sequence*> posSet = Global::posSequenceSet->getSequences();
 		std::vector<Sequence*> negSet;
 		if( !Global::negSeqGiven ){
-			// sample negative sequence set based on k-mer frequencies
+			// sample negative sequence set based on s-mer frequencies
 			// from positive sequence set
 			std::vector<std::unique_ptr<Sequence>> negSeqs;
 			SeqGenerator seqs( posSet );
+			// from given negative sequence set
+			//SeqGenerator seqs( Global::negSequenceSet->getSequences() );
 			negSeqs = seqs.generate_negative_seqset( Global::mFold );
 			// convert unique_ptr to regular pointer
 			for( size_t n = 0; n < negSeqs.size(); n++ ){
@@ -168,18 +171,14 @@ int main( int nargs, char* args[] ){
 			negSet = Global::negSequenceSet->getSequences();
 		}
 
-		float mf = ( !Global::negSeqGiven ) ? ( float )Global::mFold :
-				( float )negSet.size() / ( float )posSet.size();
-
 		for( size_t n = 0; n < motifNum; n++ ){
 			Motif* motif = new Motif( *motifs.getMotifs()[n] );
 			FDR fdr( posSet, negSet, Global::q,
-					motif, bgModel,
-					Global::cvFold, mf );
+					motif, bgModel, Global::cvFold );
 			fdr.evaluateMotif();
 			fdr.write( Global::outputDirectory,
 					Global::posSequenceBasename, n+1 );
-			delete motif;
+			if( motif ) delete motif;
 		}
 	}
 
@@ -190,7 +189,8 @@ int main( int nargs, char* args[] ){
 	Global::printStat();
 
 	fprintf( stdout, "\n-------------- Runtime: %.2f seconds (%0.2f minutes) --------------\n",
-			( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC, ( ( float )( clock() - t0 ) ) / ( CLOCKS_PER_SEC * 60.0f ) );
+			( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC,
+			( ( float )( clock() - t0 ) ) / ( CLOCKS_PER_SEC * 60.0f ) );
 
 	// free memory
 	if( bgModel ) delete bgModel;
