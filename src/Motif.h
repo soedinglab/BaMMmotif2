@@ -39,8 +39,8 @@ public:
 	void        		updateV( float*** n, float** alpha, size_t k );
 
 	void				calculateP();					// calculate probabilities p
-	void				calculateLogS( float** Vbg );	// calculate log odds scores for the highest order K at position j
-	void				calculateLinearS( float** Vbg );// calculate log odds scores for the highest order K at position j
+	void				calculateLogS( float** Vbg, size_t K_bg );
+	void				calculateLinearS( float** Vbg, size_t K_bg );
 														// in linear space for speeding up
 
 	void 				print();					// print v to console

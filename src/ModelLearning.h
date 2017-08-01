@@ -41,6 +41,8 @@ private:
 	size_t 					K_;					// the order of the motif model
 	size_t					W_;					// the width of the motif model
 	float** 				A_;	        		// pseudo-count hyper-parameter for order k and motif position j
+	size_t 					K_bg_;				// the order of the background model
+												// it should not the motif order
 
 	float** 				r_;		        	// responsibilities at position i in sequence n
 	float**					s_;					// log odds scores

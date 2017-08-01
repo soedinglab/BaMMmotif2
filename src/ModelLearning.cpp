@@ -34,6 +34,7 @@ ModelLearning::ModelLearning( Motif* motif,
 	Y_ = motif_->getY();
 	s_ = motif_->getS();
 	A_ = motif_->getA();
+	K_bg_ = ( bg_->getOrder() < K_ ) ?  bg_->getOrder() : K_;
 
 	// allocate memory for r_[n][i], pos_[n][i], z_[n]
 	r_ = ( float** )calloc( seqs_.size(), sizeof( float* ) );
@@ -169,7 +170,7 @@ void ModelLearning::EStep(){
 
 	llikelihood_ = 0.0f;
 
-	motif_->calculateLinearS( bg_->getV() );
+	motif_->calculateLinearS( bg_->getV(), K_bg_ );
 
 	// count sequences that do not contain a motif
 	N0_ = 0;
@@ -457,7 +458,7 @@ void ModelLearning::Collapsed_Gibbs_sample_z(){
 	float** v_bg = bg_->getV();
 
 	// compute log odd scores s[y][j], log likelihoods of the highest order K
-	motif_->calculateLinearS( v_bg );
+	motif_->calculateLinearS( v_bg, K_bg_ );
 
 	// sampling z:
 	bool run_slow = false;			// a flag to switch between slow and fast
@@ -535,7 +536,7 @@ void ModelLearning::Collapsed_Gibbs_sample_z(){
 			// updated model parameters v excluding the n'th sequence
 			motif_->updateV( n_, A_, K_ );
 			// compute log odd scores s[y][j] of the highest order K
-			motif_->calculateLinearS( bg_->getV() );
+			motif_->calculateLinearS( bg_->getV(), K_bg_ );
 
 		}
 
