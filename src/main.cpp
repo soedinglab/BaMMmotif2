@@ -58,13 +58,13 @@ int main( int nargs, char* args[] ){
 		fprintf( stderr, "**************************\n" );
 	}
 
-	MotifSet motifs( Global::initialModelFilename,
+	MotifSet motifset( Global::initialModelFilename,
 					Global::addColumns.at(0),
 					Global::addColumns.at(1),
 					Global::initialModelTag );
 
-	size_t motifNum = ( Global::num > motifs.getN() ) ?
-						motifs.getN() : Global::num;
+	size_t motifNum = ( Global::num > motifset.getN() ) ?
+						motifset.getN() : Global::num;
 
 	if( Global::verbose ){
 		fprintf( stderr, "\n" );
@@ -75,7 +75,7 @@ int main( int nargs, char* args[] ){
 
 	for( size_t n = 0; n < motifNum; n++ ){
 		// deep copy each motif in the motif set
-		Motif* motif = new Motif( *motifs.getMotifs()[n] );
+		Motif* motif = new Motif( *motifset.getMotifs()[n] );
 
 		// train the model with either EM or Gibbs sampling
 		ModelLearning model( motif,
@@ -154,6 +154,7 @@ int main( int nargs, char* args[] ){
 		// generate positive and negative sequence set for FDR
 		std::vector<Sequence*> posSet = Global::posSequenceSet->getSequences();
 		std::vector<Sequence*> negSet;
+		//if( Global::negSeqGiven ){
 		if( !Global::negSeqGiven ){
 			// sample negative sequence set based on s-mer frequencies
 			// from positive sequence set
@@ -172,7 +173,7 @@ int main( int nargs, char* args[] ){
 		}
 
 		for( size_t n = 0; n < motifNum; n++ ){
-			Motif* motif = new Motif( *motifs.getMotifs()[n] );
+			Motif* motif = new Motif( *motifset.getMotifs()[n] );
 			FDR fdr( posSet, negSet, Global::q,
 					motif, bgModel, Global::cvFold );
 			fdr.evaluateMotif();

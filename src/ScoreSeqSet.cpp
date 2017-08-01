@@ -110,7 +110,7 @@ void ScoreSeqSet::write( char* odir, std::string basename, size_t N,
 				// start:end:score:strand:sequence_matching
 				end = i + motif_->getW()-1;
 
-				ofile << i << ':' << end << ':' << std::setprecision( 3 )
+				ofile << i << ".." << end << ':' << std::setprecision( 3 )
 						<< mops_scores_[n][i] << ':' <<
 						( ( i < seqlen ) ? '+' : '-' ) << ':' ;
 				for( size_t m = i; m <= end; m++ ){

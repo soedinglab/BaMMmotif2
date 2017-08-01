@@ -29,14 +29,15 @@ void FDR::evaluateMotif(){
 	std::vector<std::vector<float>> mops_scores;
 	std::vector<float> 				zoops_scores;
 
-	/*
+	/**
 	 * Cross Validation
 	 */
 	for( size_t fold = 0; fold < cvFold_; fold++ ){
 
-		Motif* motif = new Motif( *motif_ );	// deep copy the initial motif
+		// deep copy the initial motif
+		Motif* motif = new Motif( *motif_ );
 
-		/*
+		/**
 		 * Draw sequences for each training and test set
 		 */
 		std::vector<Sequence*> testSet;
@@ -51,7 +52,7 @@ void FDR::evaluateMotif(){
 			}
 		}
 
-		/*
+		/**
 		 * Generate negative sequence set
 		 */
 		std::vector<Sequence*> negSet;
@@ -60,23 +61,29 @@ void FDR::evaluateMotif(){
 			negSet.push_back( negSeqs_[n+fold] );
 		}
 
-		/*
+		/**
 		 * Training
 		 */
+		BackgroundModel* bgModelForTraining = new BackgroundModel( negSet,
+				Global::bgModelOrder,
+				Global::bgModelAlpha );
 		// learn motif from each training set
 		if( EM_ ){
-			ModelLearning model( motif, bgModel_, trainSet, q_ );
+			ModelLearning model( motif, bgModelForTraining, trainSet, q_ );
 			model.EM();
 		} else if ( CGS_ ){
-			ModelLearning model( motif, bgModel_, trainSet, q_ );
+			ModelLearning model( motif, bgModelForTraining, trainSet, q_ );
 			model.GibbsSampling();
 		}
 
-		/*
+		/**
 		 * Testing
 		 */
 		// score positive test sequences with (learned) motif
-		ScoreSeqSet score_testset( motif, bgModel_, testSet );
+		BackgroundModel* bgModelForTesting = new BackgroundModel( negSet,
+				Global::bgModelOrder,
+				Global::bgModelAlpha );
+		ScoreSeqSet score_testset( motif, bgModelForTesting, testSet );
 		score_testset.score();
 
 		if( mops_ ){
@@ -96,7 +103,7 @@ void FDR::evaluateMotif(){
 		}
 
 		// score negative sequence set
-		ScoreSeqSet score_negset( motif, bgModel_, negSet );
+		ScoreSeqSet score_negset( motif, bgModelForTesting, negSet );
 		score_negset.score();
 		if( mops_ ){
 			mops_scores = score_negset.getMopsScores();

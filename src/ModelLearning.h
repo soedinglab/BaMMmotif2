@@ -55,13 +55,13 @@ private:
 	size_t					N0_ = 0;			// count of sequences that do not contain a motif
 
 	float 					llikelihood_ = 0.0f;// log likelihood for each iteration
-	float					epsilon_ = Global::epsilon;
-	size_t					maxEMIterations_ = Global::maxEMIterations;
-	size_t					maxCGSIterations_ = Global::maxCGSIterations;
+	float					epsilon_ = 0.001f;	// threshold for likelihood convergence parameter
+	size_t					maxEMIterations_ = std::numeric_limits<size_t>::max();
+	size_t					maxCGSIterations_ = 50;
 	float					modelBeta_ = Global::modelBeta;
 	float					modelGamma_ = Global::modelGamma;
 
-	float 					eta_ = Global::eta;	// learning rate for alpha learning
+	float 					eta_ = 0.2f;		// learning rate for alpha learning
 	double**				m1_t_;				// first moment for alpha optimizer (ADAM)
 	double**				m2_t_;				// second moment for alpha optimizer (ADAM)
 	std::mt19937			rngx_;
@@ -69,7 +69,7 @@ private:
 	std::vector<size_t>		Y_;
 
 	bool					EM_ 				= Global::EM;
-	bool					optimizeQ_ 			= !Global::noQOptimization;
+	bool					optimizeQ_ 			= false;
 
 	bool					CGS_ 				= Global::CGS;
 	bool					initializeZ_ 		= !Global::noInitialZ;

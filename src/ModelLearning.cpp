@@ -1126,7 +1126,7 @@ void ModelLearning::write( char* odir, std::string basename, size_t N, bool ss )
 	std::string opath_pos = opath + ".positions";
 	std::ofstream ofile_pos( opath_pos.c_str() );
 
-	ofile_pos << "seq\t strand \t start:end\t motif" << std::endl;
+	ofile_pos << "seq\t strand \t start..end\t motif" << std::endl;
 
 	if( EM_ ){
 
@@ -1144,7 +1144,7 @@ void ModelLearning::write( char* odir, std::string basename, size_t N, bool ss )
 			for( size_t i = LW1; i > 0; i-- ){
 				if( r_[n][i] >= cutoff ){
 					ofile_pos << ( ( i < seqlen ) ? '-' : '+' ) << '\t'
-							<< LW1-i+1 << ':' << LW1-i+W_<< '\t';
+							<< LW1-i+1 << ".." << LW1-i+W_<< '\t';
 					for( size_t b = 0; b < W_; b++ ){
 						ofile_pos << Alphabet::getBase(
 								seqs_[n]->getSequence()[LW1-i+b] );
@@ -1163,7 +1163,7 @@ void ModelLearning::write( char* odir, std::string basename, size_t N, bool ss )
 
 			if( z_[n] > 0 ){
 				ofile_pos << ( ( z_[n] < seqlen ) ? '+' : '-' ) << '\t'
-						<< z_[n] << ':' << z_[n]+W_-1 << '\t';
+						<< z_[n] << ".." << z_[n]+W_-1 << '\t';
 				for( size_t b = 0; b < W_; b++ ){
 					ofile_pos << Alphabet::getBase(
 							seqs_[n]->getSequence()[z_[n]+b-1] );

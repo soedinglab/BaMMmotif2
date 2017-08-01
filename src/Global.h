@@ -75,21 +75,16 @@ public:
 
 	// EM options
 	static bool			EM;						// flag to trigger EM learning
-	static size_t		maxEMIterations;		// maximum number of iterations for EM
-	static float		epsilon;				// threshold for likelihood convergence parameter
-	static bool			noQOptimization;		// disable q optimization
 	static float		q;						// prior probability for a positive sequence to contain a motif
 
 	// CGS (Collapsed Gibbs sampling) options
 	static bool			CGS;					// flag to trigger Collapsed Gibbs sampling
-	static size_t		maxCGSIterations;		// maximum number of iterations for CGS
 	static bool			noInitialZ;				// enable initializing z with one E-step
 	static bool			noAlphaOptimization;	// disable alpha optimization in CGS
 	static bool			GibbsMHalphas;			// enable alpha sampling in CGS using Gibbs Metropolis-Hastings
 	static bool			dissampleAlphas;		// enable alpha sampling in CGS using discretely sampling
 	static bool			noZSampling;			// disable sampling of z in CGS
 	static bool			noQSampling;			// disable sampling of q in CGS
-	static float		eta;					// learning rate for optimizing alphas, only for tuning
 	static bool			debugAlphas;
 
 	// FDR options

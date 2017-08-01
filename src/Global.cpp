@@ -47,21 +47,16 @@ std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.f );// background mod
 
 // EM options
 bool				Global::EM = false;						// flag to trigger EM learning
-size_t			 	Global::maxEMIterations = std::numeric_limits<size_t>::max();  // maximum number of iterations
-float               Global::epsilon = 0.001f;				// threshold for likelihood convergence parameter
-bool                Global::noQOptimization = false;		// disable q optimization
 float				Global::q = 0.9f;						// prior probability for a positive sequence to contain a motif
 
 // CGS (Collapsed Gibbs sampling) options
 bool				Global::CGS = false;					// flag to trigger Collapsed Gibbs sampling
-size_t 				Global::maxCGSIterations = 100;			// maximum number of iterations for CGS, it should be larger than 5
 bool				Global::noInitialZ = false;				// enable initializing z with one E-step
 bool				Global::noAlphaOptimization = false;	// disable alpha optimization in CGS
 bool				Global::GibbsMHalphas = false;			// enable alpha sampling in CGS using Gibbs Metropolis-Hastings
 bool				Global::dissampleAlphas = false;		// enable alpha sampling in CGS using discretely sampling
 bool				Global::noZSampling = false;			// disable q sampling in CGS
 bool				Global::noQSampling = false;			// disable q sampling in CGS
-float				Global::eta = 0.2f;						// learning rate for Gibbs sampling, only for tuning
 bool				Global::debugAlphas = false;
 
 // FDR options
@@ -260,22 +255,16 @@ int Global::readArguments( int nargs, char* args[] ){
 	}
 
 	// EM options
-	if( opt >> GetOpt::OptionPresent( "EM", EM ) ){
-		opt >> GetOpt::Option( "maxEMIterations", maxEMIterations );
-		opt >> GetOpt::Option( 'e', "epsilon", epsilon );
-		opt >> GetOpt::OptionPresent( "noQOptimization", noQOptimization );
-	}
+	opt >> GetOpt::OptionPresent( "EM", EM );
 
 	// CGS options
 	if( opt >> GetOpt::OptionPresent( "CGS", CGS ) ){
-		opt >> GetOpt::Option( "maxCGSIterations", maxCGSIterations );
 		opt >> GetOpt::OptionPresent( "noInitialZ", noInitialZ );
 		opt >> GetOpt::OptionPresent( "noAlphaOpti", noAlphaOptimization );
 		opt >> GetOpt::OptionPresent( "GibbsMH", GibbsMHalphas );
 		opt >> GetOpt::OptionPresent( "dissample", dissampleAlphas );
 		opt >> GetOpt::OptionPresent( "noZSampling", noZSampling );
 		opt >> GetOpt::OptionPresent( "noQSampling", noQSampling );
-		opt >> GetOpt::Option( "eta", eta );
 	}
 	opt >> GetOpt::OptionPresent( "debugAlphas", debugAlphas );
 	opt >> GetOpt::OptionPresent( "generatePseudoSet", generatePseudoSet );
