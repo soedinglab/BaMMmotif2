@@ -147,8 +147,11 @@ dirname <- dirname(input_path)
 # conditional probabilities (.ihbcp) and background frequencies (.hbp) optional
 basename <- basename(input_path)
 splits <- strsplit( basename, split = '\\.' )[[1]]
+length <- length(splits)
 filename <- splits[1]
-
+for( i in seq(2, length-1) ){
+  filename <- paste( filename, splits[i], sep='.')
+}
 # read in logo order (max. order: 5)
 order <- args$logo_order
 
