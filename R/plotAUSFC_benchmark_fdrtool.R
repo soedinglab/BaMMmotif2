@@ -334,7 +334,13 @@ args <- parser$parse_args()
 dir <- args$target_directory
 prefix <- args$prefix
 output <- args$output_file
-print_PRcurve = TRUE
+
+# flags for printing the curve plots
+print_PRcurve = FALSE
+print_FDRcurve = FALSE
+print_SFcurve = FALSE
+print_ROC5 = FALSE
+
 results = c()
 for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))) {
   motifNumber <- sub(paste(c(dir, "/", prefix, "_motif_"), collapse=""), "", f)
@@ -354,11 +360,15 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
   }
 
   # estimate False Discovery Rates for Diverse Test Statistics
-  eta0set = mfold/(1+mfold)
-  pdf( file = paste(dir, '/', prefix, "_motif_", motifNumber, '_FDRstat.pdf', sep = "" ) )
-  result = fdrtool( pvalues, statistic="pvalue",
-                    plot=TRUE, color.figure=TRUE, verbose=TRUE, eta0set=eta0set )
-  dev.off()
+  eta0set = mfold / (1+mfold)
+  if( print_FDRcurve ){
+    pdf( file = paste(dir, '/', prefix, "_motif_", motifNumber, '_FDRstat.pdf', sep = "" ) )
+    result = fdrtool( pvalues, statistic="pvalue",
+                      plot=TRUE, color.figure=TRUE, verbose=TRUE, eta0set=eta0set )
+    dev.off()
+  } else {
+    result = fdrtool( pvalues, statistic="pvalue", plot=FALSE, eta0set=eta0set )
+  }
 
   # get the global fdr values and estimate of the weight eta0 of
   # the null component
@@ -425,29 +435,31 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
 
   range <- seq(left, right)
 
-  # plot fdr vs. recall curve
   sum_area = log10(0.5) + 2
-  pdf( file = paste(dir, '/', prefix, "_motif_", motifNumber, '_SFCurve.pdf', sep = "" ) )
-  plot(fdr[range], recall[range], log="x",
-       main=paste(prefix, "_motif_", motifNumber, "\nSensitivity vs. FDR", sep=""),
-       xlab="FDR", ylab="Sensitivity", xlim=c(0.01,0.5), ylim=c(0,1),
-       type='l', lwd=2.5,
-       col="deepskyblue")
-  # fill the area under the FDR-recall curve 
-#  polygon(c(min(fdr), fdr, max(fdr)), c(min(recall),recall,1), col="gray", border="gray")
-#  polygon(c(min(fdr), range, 0.5), c(min(recall),recall,1), col="gray", border="gray")
-  
   # compute  the area under the sensitivity-FDR curve(AUSFC):
   if(right == left){
     ausfc = 0
   } else {
     ausfc = sum(diff(log10(fdr[range]))*rollmean(recall[range],2)) / sum_area
   }
-  # write the AUSFC on the plot with the precision of 4 digits:
-  text(0.35, 0.05, paste( "AUSFC: ", round(ausfc, digits=4) ))
-  dev.off()
+  
+  if( print_SFcurve ){
+    # plot fdr vs. recall curve
+    pdf( file = paste(dir, '/', prefix, "_motif_", motifNumber, '_SFCurve.pdf', sep = "" ) )
+    plot(fdr[range], recall[range], log="x",
+         main=paste(prefix, "_motif_", motifNumber, "\nSensitivity vs. FDR", sep=""),
+         xlab="FDR", ylab="Sensitivity", xlim=c(0.01,0.5), ylim=c(0,1),
+         type='l', lwd=2.5,
+         col="deepskyblue")
+    # fill the area under the FDR-recall curve 
+    #  polygon(c(min(fdr), fdr, max(fdr)), c(min(recall),recall,1), col="gray", border="gray")
+    #  polygon(c(min(fdr), range, 0.5), c(min(recall),recall,1), col="gray", border="gray")
+    # write the AUSFC on the plot with the precision of 4 digits:
+    text(0.35, 0.05, paste( "AUSFC: ", round(ausfc, digits=4) ))
+    dev.off()
+  }
 
-  # plot TPR vs FPR
+  # calculate AUC5 under the ROC curve
   TP <- stats$V1
   FP <- stats$V2
   TPR <- TP / TP[length(TP)]
@@ -458,18 +470,20 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
       break
     }
   }
-  pdf( file = paste(dir, '/', prefix, "_motif_", motifNumber, '_pROC.pdf', sep = "" ) )
-  plot(FPR[1:rbound], TPR[1:rbound],
-       main=paste(prefix, "_motif_", motifNumber, " FPR vs. TPR ", sep=""),
-       xlab="FPR", ylab="TPR", xlim=c(0,0.05), ylim=c(0,1),
-       type='l', lwd=2.5, col="deepskyblue")
   # compute the area under the partical TP-FP curve(AUC5):
   auc5 = sum(diff(FPR[1:rbound])*rollmean(TPR[1:rbound],2)) / 0.05
 
-  # write the AUC on the plot with the precision of 4 digits:
-  text(0.03, 0.1, paste( "pAUC: ", round(auc5, digits=4) ))
-  dev.off()
-
+  if( print_ROC5 ){
+    pdf( file = paste(dir, '/', prefix, "_motif_", motifNumber, '_pROC.pdf', sep = "" ) )
+  
+      plot(FPR[1:rbound], TPR[1:rbound],
+           main=paste(prefix, "_motif_", motifNumber, " FPR vs. TPR ", sep=""),
+           xlab="FPR", ylab="TPR", xlim=c(0,0.05), ylim=c(0,1),
+           type='l', lwd=2.5, col="deepskyblue")
+    # write the AUC on the plot with the precision of 4 digits:
+    text(0.03, 0.1, paste( "pAUC: ", round(auc5, digits=4) ))
+    dev.off()
+  }
   resultString = paste(c(prefix, motifNumber, ausfc, auc5), collapse="\t")
   print(resultString)
   results = c(results, resultString)
