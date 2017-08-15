@@ -38,18 +38,17 @@ int main( int nargs, char* args[] ){
 	}
 	BackgroundModel* bgModel;
 	if( !Global::bgModelGiven ){
-		bgModel = new BackgroundModel( Global::bgSequenceSet->getSequences(),
+		bgModel = new BackgroundModel( Global::negSequenceSet->getSequences(),
 										Global::bgModelOrder,
 										Global::bgModelAlpha,
 										Global::interpolateBG,
-										Global::bgSequenceSet->getSequenceFilepath());
+										Global::posSequenceBasename );
 	} else {
 		bgModel = new BackgroundModel( Global::bgModelFilename );
 	}
 
-	if( Global::saveBgModel ){
-		bgModel->write( Global::outputDirectory );
-	}
+	// always save background model
+	bgModel->write( Global::outputDirectory, Global::posSequenceBasename );
 
 	if( Global::verbose ){
 		fprintf( stderr, "\n" );
@@ -128,15 +127,15 @@ int main( int nargs, char* args[] ){
 			// optimize motifs by EM
 			model.EM();
 
-			// generate pseudo positive sequence set based on the learned motif
+			// generate artificial sequence set with the learned motif embedded
 			SeqGenerator seqset( Global::posSequenceSet->getSequences(),
-									model.getMotif(),
+									motif,
 									Global::sOrder );
 
-			seqset.generate_seqset_with_embedded_motif( Global::mFold );
-
-			seqset.write_seqset_with_embedded_motif( Global::outputDirectory,
-									Global::posSequenceBasename, n+1 );
+			seqset.write( Global::outputDirectory,
+							Global::posSequenceBasename,
+							n+1,
+							seqset.arti_posset_motif_embedded( Global::mFold ) );
 
 		}
 
@@ -151,36 +150,21 @@ int main( int nargs, char* args[] ){
 			fprintf( stderr, "*  BaMM validation  *\n" );
 			fprintf( stderr, "*********************\n" );
 		}
-		// generate positive and negative sequence set for FDR
-		std::vector<Sequence*> posSet = Global::posSequenceSet->getSequences();
-		std::vector<Sequence*> negSet;
-		//if( Global::negSeqGiven ){
-		if( !Global::negSeqGiven ){
-			// sample negative sequence set based on s-mer frequencies
-			// from positive sequence set
-			std::vector<std::unique_ptr<Sequence>> negSeqs;
-			SeqGenerator seqs( posSet );
-			// from given negative sequence set
-			//SeqGenerator seqs( Global::negSequenceSet->getSequences() );
-			negSeqs = seqs.generate_negative_seqset( Global::mFold );
-			// convert unique_ptr to regular pointer
-			for( size_t n = 0; n < negSeqs.size(); n++ ){
-				negSet.push_back( negSeqs[n].release() );
-			}
 
-		} else {
-			negSet = Global::negSequenceSet->getSequences();
-		}
-
+		// cross-validate the motif model
 		for( size_t n = 0; n < motifNum; n++ ){
 			Motif* motif = new Motif( *motifset.getMotifs()[n] );
-			FDR fdr( posSet, negSet, Global::q,
-					motif, bgModel, Global::cvFold );
+			FDR fdr( Global::posSequenceSet->getSequences(),
+					Global::negSequenceSet->getSequences(),
+					Global::q,
+					motif,
+					Global::cvFold );
 			fdr.evaluateMotif();
 			fdr.write( Global::outputDirectory,
 					Global::posSequenceBasename, n+1 );
-			if( motif ) delete motif;
+			if( motif )		delete motif;
 		}
+
 	}
 
 	fprintf( stderr, "\n" );
@@ -189,7 +173,7 @@ int main( int nargs, char* args[] ){
 	fprintf( stderr, "******************\n" );
 	Global::printStat();
 
-	fprintf( stdout, "\n-------------- Runtime: %.2f seconds (%0.2f minutes) --------------\n",
+	fprintf( stdout, "\n------ Runtime: %.2f seconds (%0.2f minutes) -------\n",
 			( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC,
 			( ( float )( clock() - t0 ) ) / ( CLOCKS_PER_SEC * 60.0f ) );
 

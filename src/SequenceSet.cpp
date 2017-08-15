@@ -115,8 +115,8 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 								if( encoding[i] == 0 ){
 
-									std::cerr << "Warning: The FASTA file contains an undefined base: " <<
-											sequence[i] << " at sequence " << header << std::endl;
+//									std::cerr << "Warning: The FASTA file contains an undefined base: " <<
+//											sequence[i] << " at sequence " << header << std::endl;
 
 									continue; // exclude undefined base from base counts
 
@@ -187,8 +187,8 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 					if( encoding[i] == 0 ){
 
-						std::cerr << "Warning: The FASTA file contains an undefined base: " <<
-								sequence[i] << " at sequence " << header << std::endl;
+//						std::cerr << "Warning: The FASTA file contains an undefined base: " <<
+//								sequence[i] << " at sequence " << header << std::endl;
 
 						continue; // exclude undefined base from base counts
 					}

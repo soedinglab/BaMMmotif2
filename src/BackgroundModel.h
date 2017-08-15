@@ -23,7 +23,7 @@ public:
 					size_t order,
 			        std::vector<float> alpha,
 			        bool interpolate = true,
-					std::string filePath = "" );
+					std::string basename = "" );
 
 	BackgroundModel( std::string filePath );
 
@@ -50,7 +50,7 @@ public:
 
 	void 	print();
     // afterwards v_ contains exp probabilities
-	void 	write( char* dir );
+	void 	write( char* dir, std::string basename );
 
 private:
 

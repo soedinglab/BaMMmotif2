@@ -15,7 +15,7 @@ public:
 	Motif( size_t length,
 			size_t order = Global::modelOrder,
 			std::vector<float> alpha = Global::modelAlpha,
-			float* f_bg = Global::bgSequenceSet->getBaseFrequencies() );
+			float* f_bg = Global::negSequenceSet->getBaseFrequencies() );
 
 	Motif( const Motif& other );					// copy constructor
 	~Motif();

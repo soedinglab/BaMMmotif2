@@ -41,7 +41,6 @@ char*				Global::bgModelFilename = NULL;			// path to the background model file
 bool				Global::bgModelGiven = false;			// flag to show if the background model is given or not
 char*				Global::bgSequenceFilename = NULL;		// path to the sequence file where the background model can be learned
 bool				Global::bgSeqGiven = false;				// flag to show if the background sequence set is given or not
-SequenceSet*		Global::bgSequenceSet = NULL;			// background sequence set
 size_t				Global::bgModelOrder = 2;				// background model order, defaults to 2
 std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.f );// background model alpha
 
@@ -90,7 +89,6 @@ void Global::init( int nargs, char* args[] ){
 	// read in positive, negative and background sequence set
 	posSequenceSet = new SequenceSet( posSequenceFilename, ss );
 	negSequenceSet = new SequenceSet( negSequenceFilename, ss );
-	bgSequenceSet  = new SequenceSet( bgSequenceFilename, ss );
 
 	// optional: read in sequence intensities (header and intensity columns?)
 	if( intensityFilename != 0 ){
@@ -512,7 +510,6 @@ void Global::destruct(){
     if( alphabetType ) 			delete[] alphabetType;
     if( posSequenceSet )	 	delete posSequenceSet;
     if( negSequenceSet ) 		delete negSequenceSet;
-    if( bgSequenceSet ) 		delete bgSequenceSet;
 }
 
 void Global::debug(){

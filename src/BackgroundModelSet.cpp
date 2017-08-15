@@ -22,10 +22,11 @@ BackgroundModelSet::BackgroundModelSet( char* indir, char* extension,
 				if( strcmp( ext+1, extension ) == 0 ){
 
 					SequenceSet* sequenceSet = new SequenceSet( filep );
+
 					BackgroundModel* bamm = new BackgroundModel(
 										sequenceSet->getSequences(),
 										order, alpha, interpolate,
-										sequenceSet->getSequenceFilepath() );
+										baseName( sequenceSet->getSequenceFilepath().c_str() ) );
 
 					backgroundModels_.push_back( bamm );
 					// todo: here the memory for sequenceSet and bamm is not freed
@@ -121,6 +122,6 @@ void BackgroundModelSet::print(){
 void BackgroundModelSet::write( char* odir ){
 
 	for( size_t i = 0; i < backgroundModels_.size(); i++ ){
-		backgroundModels_[i]->write( odir );
+		backgroundModels_[i]->write( odir, backgroundModels_[i]->getName() );
 	}
 }

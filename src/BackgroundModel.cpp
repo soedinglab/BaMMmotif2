@@ -4,9 +4,9 @@ BackgroundModel::BackgroundModel( std::vector<Sequence*> seqs,
 									size_t order,
 									std::vector<float> alpha,
 									bool interpolate,
-									std::string filePath ){
+									std::string basename ){
 
-	basename_ = baseName( filePath.c_str() );
+	basename_ = basename;
 	K_ = order;
 	A_ = alpha;
 	interpolate_ = interpolate;
@@ -293,13 +293,13 @@ void BackgroundModel::print(){
 	}
 }
 
-void BackgroundModel::write( char* odir ){
+void BackgroundModel::write( char* odir, std::string basename ){
 
     if( vIsLog_ ){
         expV();
     }
 
-	std::ofstream file( std::string( odir ) + '/' + basename_ +
+	std::ofstream file( std::string( odir ) + '/' + basename +
 			( interpolate_ ? ".hbcp" : ".hnbcp" ) );
 	if( file.is_open() ){
 
@@ -348,7 +348,7 @@ void BackgroundModel::write( char* odir ){
 	}
 
 	file.clear();
-	file.open( std::string( odir ) + '/' + basename_ +
+	file.open( std::string( odir ) + '/' + basename +
 			( interpolate_ ? ".hbp" : ".hnbp" ) );
 	if( file.is_open() ){
 

@@ -25,7 +25,10 @@ public:
 	void 					GibbsSampling();
 
 	Motif*					getMotif();
-
+	float**					getR();				// get responsibilities r
+												// for masking motifs from the
+												// sequence, in order to generate
+												// bgmodel without the motifs
 	void					print();
 	void					write( char* odir, std::string basename,
 									size_t n, bool ss );

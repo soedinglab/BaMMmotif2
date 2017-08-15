@@ -210,7 +210,7 @@ void ModelLearning::EStep(){
 
 		// calculate complete responsibilities and sum them up
 		for( size_t i = 0; i < LW2; i++ ){
-			r_[n][i] *= pos_[n][i];
+			r_[n][LW1-i] *= pos_[n][i];
 			normFactor += r_[n][i];
 		}
 
@@ -1078,6 +1078,10 @@ float ModelLearning::calc_llikelihood_alphas( float** A, size_t k ){
 
 Motif* ModelLearning::getMotif(){
 	return motif_;
+}
+
+float** ModelLearning::getR(){
+	return r_;
 }
 
 void ModelLearning::print(){
