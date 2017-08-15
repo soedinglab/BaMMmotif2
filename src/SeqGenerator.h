@@ -27,17 +27,24 @@ public:
 					size_t sOrder = 2 );
 	~SeqGenerator();
 
-	std::vector<std::unique_ptr<Sequence>> generate_negative_seqset( size_t fold );
-	void generate_seqset_with_embedded_motif( size_t fold );
+	std::vector<std::unique_ptr<Sequence>> arti_negset( size_t fold );
+	std::vector<std::unique_ptr<Sequence>> arti_posset_motif_embedded( size_t fold );
+	std::vector<std::unique_ptr<Sequence>> arti_negset_motif_masked( float** r );
 
-	void write_seqset_with_embedded_motif( char* odir, std::string basename,
-											size_t n );
+
+	void write( char* odir,
+				std::string basename,
+				size_t n,
+				std::vector<std::unique_ptr<Sequence>> seqset );
 
 private:
 
 	void						calculate_kmer_frequency();
-	std::unique_ptr<Sequence> 	sample_negative_sequence( size_t L );
-	std::unique_ptr<Sequence> 	sample_pseudo_sequence( size_t L );
+	std::unique_ptr<Sequence> 	negseq_dimer_freq( size_t L );
+	std::unique_ptr<Sequence> 	posseq_motif_embeded( size_t L );
+	std::unique_ptr<Sequence>	negseq_motif_masked( Sequence* posseq,
+													size_t W,
+													float* r );
 
 	std::vector<Sequence*> 		seqs_;			// positive sequence set
 	float**						freqs_;			// k-mer frequencies
@@ -46,8 +53,6 @@ private:
 	size_t						sOrder_;		// the order of k-mers for
 												// generating negative/pseudo
 												// sequence set
-	std::vector<std::unique_ptr<Sequence>> pseudo_posset_;
-
 	std::vector<size_t>			Y_;
 };
 

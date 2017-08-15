@@ -27,14 +27,10 @@ public:
 		std::vector<Sequence*> negSeqs,
 		float q = 0.9f,
 		Motif* motif = NULL,
-		BackgroundModel* bgModel = NULL,
 		size_t cvFold = 5 );
 	~FDR();
 
 	void 	evaluateMotif();
-
-	float 	getPrec_middle_ZOOPS();		// get precision when recall = 0.5 for ZOOPS model
-	float 	getPrec_middle_MOPS();		// get precision when recall = 0.5 for MOPS model
 	void 	print();
 	void	write( char* odir, std::string basename, size_t n );
 
@@ -45,7 +41,7 @@ private:
 	float q_;
 
 	Motif*				motif_;			// initial motif
-	BackgroundModel*	bgModel_;		// initial background model
+
 	size_t				cvFold_;		// fold for cross-validation, training
 										// set is (cv-1)-fold of the testing set
 	bool				mops_			= Global::mops;

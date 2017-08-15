@@ -71,8 +71,8 @@ void SeqGenerator::calculate_kmer_frequency(){
 }
 
 
-// generate negative sequences
-std::vector<std::unique_ptr<Sequence>> SeqGenerator::generate_negative_seqset(
+// generate negative sequences based on k-mer frequencies from positive set
+std::vector<std::unique_ptr<Sequence>> SeqGenerator::arti_negset(
 		size_t fold ){
 
 	std::vector<std::unique_ptr<Sequence>> negset;
@@ -82,17 +82,17 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::generate_negative_seqset(
 	for( size_t i = 0; i < seqs_.size(); i++ ){
 		size_t L = seqs_[i]->getL();
 		for( size_t n = 0; n < fold; n++ ){
-			negset.push_back( sample_negative_sequence( L ) );
+			negset.push_back( negseq_dimer_freq( L ) );
 		}
 	}
 	return negset;
 }
 
 // generate background sequence based on k-mer frequencies from positive set
-std::unique_ptr<Sequence> SeqGenerator::sample_negative_sequence( size_t L ){
+std::unique_ptr<Sequence> SeqGenerator::negseq_dimer_freq( size_t L ){
 
 	uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
-	std::string header = "> negative sequence";
+	std::string header = "negative sequence";
 
 	// sample the first nucleotide
 	double random = ( double )rand() / ( double )RAND_MAX;
@@ -160,24 +160,26 @@ std::unique_ptr<Sequence> SeqGenerator::sample_negative_sequence( size_t L ){
 }
 
 // generate pseudo-positive sequences based on each test set
-void SeqGenerator::generate_seqset_with_embedded_motif( size_t fold ){
+std::vector<std::unique_ptr<Sequence>> SeqGenerator::arti_posset_motif_embedded( size_t fold ){
+
+	std::vector<std::unique_ptr<Sequence>> embedposset;
 
 	calculate_kmer_frequency();
 
 	for( size_t i = 0; i < seqs_.size(); i++ ){
 		size_t L = seqs_[i]->getL();
 		for( size_t n = 0; n < fold; n++ ){
-			pseudo_posset_.push_back( sample_pseudo_sequence( L ) );
+			embedposset.push_back( posseq_motif_embeded( L ) );
 		}
 	}
-
+	return embedposset;
 }
 
 // generate pseudo-sequence based on k-mer frequencies from positive set
-std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( size_t L ){
+std::unique_ptr<Sequence> SeqGenerator::posseq_motif_embeded( size_t L ){
 
 	uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
-	std::string header = "> pseudo sequence with embedded motif in the middle";
+	std::string header = "pseudo sequence with embedded motif in the middle";
 
 	for( uint8_t i = 0; i < L; i++ ){
 		sequence[i] = 1;
@@ -297,9 +299,56 @@ std::unique_ptr<Sequence> SeqGenerator::sample_pseudo_sequence( size_t L ){
 
 }
 
-void SeqGenerator::write_seqset_with_embedded_motif( char* odir,
-		std::string basename, size_t n ){
+std::vector<std::unique_ptr<Sequence>> SeqGenerator::arti_negset_motif_masked(
+		float** r ){
 
+	std::vector<std::unique_ptr<Sequence>> seqset;
+	size_t W = motif_->getW();
+
+	for( size_t n = 0; n < seqs_.size(); n++ ){
+
+		seqset.push_back( negseq_motif_masked( seqs_[n], W, r[n] ) );
+	}
+
+	return seqset;
+}
+
+std::unique_ptr<Sequence> SeqGenerator::negseq_motif_masked(
+		Sequence* posseq, size_t W, float* r  ){
+
+	float cutoff = 0.3f;
+
+	std::vector<uint8_t> fake_seq;
+	// copy the original sequence from a C-array to a vector
+	// and mask patterns with a weight larger than certain cutoff
+	size_t i = 0;
+	while( i < posseq->getL() ){
+		size_t LW1 = posseq->getL() - W + 1;
+		if( r[LW1-i+1] < cutoff ){
+			fake_seq.push_back( posseq->getSequence()[i] );
+			i++;
+		} else {
+			i += W;
+		}
+	}
+
+	size_t L = fake_seq.size();
+	uint8_t* real_seq = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
+	for( size_t j = 0; j < L; j++ ){
+		real_seq[j] = fake_seq[j];
+	}
+	std::string header = "sequence with masked motif";
+	std::unique_ptr<Sequence> seq_mask_motif( new Sequence( real_seq, L, header, Y_, true ) );
+	free( real_seq );
+
+
+	return seq_mask_motif;
+}
+
+void SeqGenerator::write( char* odir,
+			std::string basename,
+			size_t n,
+			std::vector<std::unique_ptr<Sequence>> seqset ){
 	/**
 	 * save the generated sequence set in one file:
 	 * (1) posSequenceBasename_pseudo.fasta
@@ -310,12 +359,13 @@ void SeqGenerator::write_seqset_with_embedded_motif( char* odir,
 
 	std::ofstream ofile( opath );
 
-	for( size_t n = 0; n < pseudo_posset_.size(); n++ ){
-		ofile << "> " << pseudo_posset_[n]->getHeader() << std::endl;
-		for( size_t i = 0; i < pseudo_posset_[n]->getL(); i++ ){
-			ofile << Alphabet::getBase( pseudo_posset_[n]->getSequence()[i] );
+	for( size_t n = 0; n < seqset.size(); n++ ){
+		ofile << "> " << seqset[n]->getHeader() << std::endl;
+		for( size_t i = 0; i < seqset[n]->getL(); i++ ){
+			ofile << Alphabet::getBase( seqset[n]->getSequence()[i] );
 		}
 		ofile << std::endl;
 	}
 
 }
+
