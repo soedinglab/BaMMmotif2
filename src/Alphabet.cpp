@@ -73,41 +73,10 @@ void Alphabet::destruct(){
 	}
 }
 
-void Alphabet::debug(){
-    // exhaustive printout to check if Alphabet initialization works
-    fprintf( stdout, "Alphabet::size_                 = %d \n", ( int )size_);
-    fprintf( stdout, "Alphabet::alphabet_             = %s \n", alphabet_);
-    fprintf( stdout, "Alphabet::complementAlphabet_   = %s \n", complementAlphabet_);
-    fprintf( stdout, "Alphabet::codeToBase_           = ");
-    for( size_t i = 0; i < size_; i++ ){
-        fprintf( stdout, " %d ", codeToBase_[i+1]);
-    }
-    fprintf( stdout, "\n");
-    fprintf( stdout, "Alphabet::baseToCode_           = ");
-    for( size_t i = 0; i < size_; i++ ){
-        fprintf( stdout, " %d ", baseToCode_[( size_t )alphabet_[i]]);
-    }
-    fprintf( stdout, "\n");
-    fprintf( stdout, "Alphabet::codeToComplementCode_ = ");
-    for( size_t i = 0; i < size_; i++ ){
-        fprintf( stdout, " %d ", codeToComplementCode_[i+1]);
-    }
-    fprintf( stdout, "\n");
-}
-
-
 char* Alphabet::getAlphabet(){
 	return alphabet_;
 }
 
-char* Alphabet::getComplementAlphabet(){
-	return complementAlphabet_;
-}
-
 size_t Alphabet::getSize(){
 	return size_;
-}
-
-void Alphabet::setSize( size_t size ){
-	size_ = size;
 }

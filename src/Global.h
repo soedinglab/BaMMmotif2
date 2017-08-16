@@ -67,8 +67,6 @@ public:
 	// background model options
     static char*		bgModelFilename;		// path to the background model file
     static bool			bgModelGiven;			// flag to show if the background model is given or not
-    static char*		bgSequenceFilename;		// path to the sequence file where the background model can be learned
-    static bool			bgSeqGiven;				// flag to show if the background sequence set is given or not
 	static size_t		bgModelOrder;			// background model order, defaults to 2
 	static std::vector<float> bgModelAlpha;		// background model alpha
 

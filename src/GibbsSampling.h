@@ -1,37 +1,25 @@
-/*
- * ModelLearning.h
- *
- *  Created on: Dec 2, 2016
- *      Author: wanwan
- */
+//
+// Created by wanwan on 16.08.17.
+//
 
-#ifndef MODELLEARNING_H_
-#define MODELLEARNING_H_
+#ifndef GIBBSSAMPLING_H
+#define GIBBSSAMPLING_H
 
 #include "BackgroundModel.h"
 #include "MotifSet.h"
+#include "EM.h"
 
-class ModelLearning {
+class GibbsSampling {
 
 public:
 
-	ModelLearning( Motif* motif,
-					BackgroundModel* bg,
-					std::vector<Sequence*> seqs,
-					float q );
-	~ModelLearning();
+    GibbsSampling( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqs, float q );
+	~GibbsSampling();
 
-	int						EM();
-	void 					GibbsSampling();
+	void 					optimize();
 
-	Motif*					getMotif();
-	float**					getR();				// get responsibilities r
-												// for masking motifs from the
-												// sequence, in order to generate
-												// bgmodel without the motifs
 	void					print();
-	void					write( char* odir, std::string basename,
-									size_t n, bool ss );
+	void					write( char* odir, std::string basename, size_t n, bool ss );
 
 
 private:
@@ -40,10 +28,9 @@ private:
 	BackgroundModel*		bg_;				// background model
 
 	size_t 					K_;					// the order of the motif model
-	size_t					W_;					// the width of the motif model
+	size_t					W_;					// the width of the motif pattern
 	float** 				A_;	        		// pseudo-count hyper-parameter for order k and motif position j
 	size_t 					K_bg_;				// the order of the background model
-												// it should not the motif order
 
 	float** 				r_;		        	// responsibilities at position i in sequence n
 	float**					s_;					// log odds scores
@@ -56,11 +43,9 @@ private:
 	size_t					N0_ = 0;			// count of sequences that do not contain a motif
 
 	float 					llikelihood_ = 0.0f;// log likelihood for each iteration
-	float					epsilon_ = 0.001f;	// threshold for likelihood convergence parameter
-	size_t					maxEMIterations_ = std::numeric_limits<size_t>::max();
 	size_t					maxCGSIterations_ = 50;
-	float					modelBeta_ = Global::modelBeta;
-	float					modelGamma_ = Global::modelGamma;
+	float					beta_ = Global::modelBeta;
+	float					gamma_ = Global::modelGamma;
 
 	float 					eta_ = 0.2f;		// learning rate for alpha learning
 	double**				m1_t_;				// first moment for alpha optimizer (ADAM)
@@ -69,10 +54,6 @@ private:
 
 	std::vector<size_t>		Y_;
 
-	bool					EM_ 				= Global::EM;
-	bool					optimizeQ_ 			= false;
-
-	bool					CGS_ 				= Global::CGS;
 	bool					initializeZ_ 		= !Global::noInitialZ;
 	bool					samplingZ_ 			= !Global::noZSampling;
 	bool					samplingQ_ 			= !Global::noQSampling;
@@ -81,18 +62,14 @@ private:
 	bool					dissampleAlphas_ 	= Global::dissampleAlphas;
 	bool					verbose_ 			= Global::verbose;
 
-	void 					EStep();			// E-step
-	void 					MStep();			// M-step
-	void 					Optimize_q();		// optimize hyper-parameter q
-
 							// sample motif position z by collapsed Gibbs sampling
-	void					Collapsed_Gibbs_sample_z();
+	void					Collapsed_Gibbs_sampling_z();
 
 							// sample sequence fraction q for motif by regular Gibbs sampling
 	void					Gibbs_sample_q();
 
 							// update alphas for all the orders up to K by stochastic gradient descent
-	void					Optimize_alphas_by_SGD( size_t order, size_t width, float learningrate, size_t t );
+	void					Optimize_alphas_by_SGD_ADAM(size_t order, size_t width, float learning_rate, size_t t);
 
 							// Gibbs sampling alphas with Metropolis-Hastings algorithm
 	void					GibbsMH_sample_alphas( size_t iteration );
@@ -117,5 +94,4 @@ private:
 
 };
 
-
-#endif /* MODELLEARNING_H_ */
+#endif //GIBBSSAMPLING_H

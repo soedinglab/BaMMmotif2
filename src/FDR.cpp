@@ -28,11 +28,9 @@ void FDR::evaluateMotif(){
 	// generate sequences from positive sequences with masked motif
 	// deep copy the initial motif
 	Motif* motif_opti = new Motif( *motif_ );
-	BackgroundModel* bgModel_opti = new BackgroundModel( posSeqs_,
-									Global::bgModelOrder,
-									Global::bgModelAlpha );
-	ModelLearning model_opti( motif_opti, bgModel_opti, posSeqs_, q_ );
-	model_opti.EM();
+	BackgroundModel* bgModel_opti = new BackgroundModel( posSeqs_, Global::bgModelOrder, Global::bgModelAlpha );
+	EM model_opti( motif_opti, bgModel_opti, posSeqs_, q_ );
+	model_opti.optimize();
 	float** r = model_opti.getR();
 	SeqGenerator artificalset( posSeqs_, motif_opti );
 	std::vector<std::unique_ptr<Sequence>> B1SeqSetPrime;
@@ -67,7 +65,6 @@ void FDR::evaluateMotif(){
 		 * Generate negative sequence set
 		 * for generating bg model and scoring
 		 */
-
 		std::vector<Sequence*> B1set;
 		std::vector<Sequence*> B2set;
 		std::vector<Sequence*> B3set;
@@ -111,10 +108,8 @@ void FDR::evaluateMotif(){
 			// get the given bg model
 			bgModel = new BackgroundModel( Global::bgModelFilename );
 		} else {
-			// generate K-th background model from 20% of negative sequences
-			bgModel = new BackgroundModel( B1set,
-											Global::bgModelOrder,
-											Global::bgModelAlpha );
+			// generate 2nd-order background model from 20% of negative sequences
+			bgModel = new BackgroundModel( B1set, Global::bgModelOrder, Global::bgModelAlpha );
 		}
 
 		/**
@@ -122,11 +117,11 @@ void FDR::evaluateMotif(){
 		 */
 		// learn motif from each training set
 		if( EM_ ){
-			ModelLearning model( motif, bgModel, trainSet, q_ );
-			model.EM();
+			EM model( motif, bgModel, trainSet, q_ );
+			model.optimize();
 		} else if ( CGS_ ){
-			ModelLearning model( motif, bgModel, trainSet, q_ );
-			model.GibbsSampling();
+			GibbsSampling model( motif, bgModel, trainSet, q_ );
+			model.optimize();
 		}
 
 		/**

@@ -37,8 +37,6 @@ bool                Global::interpolateBG = true;			// calculate prior probabili
 // background model options
 char*				Global::bgModelFilename = NULL;			// path to the background model file
 bool				Global::bgModelGiven = false;			// flag to show if the background model is given or not
-char*				Global::bgSequenceFilename = NULL;		// path to the sequence file where the background model can be learned
-bool				Global::bgSeqGiven = false;				// flag to show if the background sequence set is given or not
 size_t				Global::bgModelOrder = 2;				// background model order, defaults to 2
 std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.f );// background model alpha
 
@@ -214,13 +212,6 @@ int Global::readArguments( int nargs, char* args[] ){
 	// background model options
 	if( opt >> GetOpt::Option( "bgModelFile", bgModelFilename ) ){
 		bgModelGiven = true;
-	}
-	// read in background sequence file
-	if( opt >> GetOpt::OptionPresent( "bgSeqFile" ) ){
-		bgSeqGiven = true;
-		opt >> GetOpt::Option( "bgSeqFile", bgSequenceFilename );
-	} else {
-	    bgSequenceFilename = posSequenceFilename;
 	}
 
 	opt >> GetOpt::Option( 'K', "Order", bgModelOrder );

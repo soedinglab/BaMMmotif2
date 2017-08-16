@@ -4,7 +4,8 @@
 #include "BackgroundModel.h"
 #include "utils.h"
 #include "Motif.h"
-#include "ModelLearning.h"
+#include "EM.h"
+#include "GibbsSampling.h"
 #include "SeqGenerator.h"
 #include "ScoreSeqSet.h"
 
@@ -18,7 +19,7 @@ class FDR {
 	 * 3. calculate true positives(TP), false positives(FP), false
 	 *    discovery rate(FDR) and recall values;
 	 * 4. calculate p-values due to log odds scores, in order to use
-	 *    fdrtool R package for further estimation.
+	 *    fdrtool R package for further evaluation.
 	 */
 
 public:

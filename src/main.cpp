@@ -3,7 +3,8 @@
 #include "Global.h"
 #include "BackgroundModel.h"
 #include "MotifSet.h"
-#include "ModelLearning.h"
+#include "EM.h"
+#include "GibbsSampling.h"
 #include "ScoreSeqSet.h"
 #include "SeqGenerator.h"
 #include "FDR.h"
@@ -54,13 +55,10 @@ int main( int nargs, char* args[] ){
 		fprintf( stderr, "**************************\n" );
 	}
 
-	MotifSet motif_set( Global::initialModelFilename,
-					Global::addColumns.at(0),
-					Global::addColumns.at(1),
+	MotifSet motif_set( Global::initialModelFilename, Global::addColumns.at(0), Global::addColumns.at(1),
 					Global::initialModelTag );
 
-	size_t motifNum = ( Global::num > motif_set.getN() ) ?
-						motif_set.getN() : Global::num;
+	size_t motifNum = ( Global::num > motif_set.getN() ) ? motif_set.getN() : Global::num;
 
 	if( Global::verbose ){
 		fprintf( stderr, "\n" );
@@ -73,25 +71,29 @@ int main( int nargs, char* args[] ){
 		// deep copy each motif in the motif set
 		Motif* motif = new Motif( *motif_set.getMotifs()[n] );
 
-		// train the model with either EM or Gibbs sampling
-		ModelLearning model( motif,
-							bgModel,
-							Global::posSequenceSet->getSequences(),
-							Global::q );
-
 		if( Global::saveInitialBaMMs ){
 			// optional: save initial model
-			motif->write( Global::outputDirectory,
-							Global::posSequenceBasename, 0 );
+			motif->write( Global::outputDirectory, Global::posSequenceBasename, 0 );
 		}
 
+		// train the model with either EM or Gibbs sampling
 		if( Global::EM ){
+			EM model( motif, bgModel, Global::posSequenceSet->getSequences(), Global::q );
 			// learn motifs by EM
-			model.EM();
+			model.optimize();
+			// write model parameters on the disc
+			if( Global::saveBaMMs ){
+				model.write( Global::outputDirectory, Global::posSequenceBasename, n+1, Global::ss );
+			}
 
 		} else if ( Global::CGS ){
+			GibbsSampling model( motif, bgModel,  Global::posSequenceSet->getSequences(), Global::q );
 			// learn motifs by collapsed Gibbs sampling
-			model.GibbsSampling();
+			model.optimize();
+			// write model parameters on the disc
+			if( Global::saveBaMMs ){
+				model.write( Global::outputDirectory, Global::posSequenceBasename, n+1, Global::ss );
+			}
 
 		} else {
 
@@ -99,40 +101,27 @@ int main( int nargs, char* args[] ){
 
 		}
 
-		// write model parameters on the disc
-		if( Global::saveBaMMs ){
-			model.write( Global::outputDirectory,
-							Global::posSequenceBasename, n+1, Global::ss );
-		}
-
 		// write out the learned model
-		// motif->write( n+1 );
-		model.getMotif()->write( Global::outputDirectory,
-									Global::posSequenceBasename, n+1 );
+		motif->write( Global::outputDirectory, Global::posSequenceBasename, n+1 );
 
 		if( Global::scoreSeqset ){
 			// score the model on sequence set
-			ScoreSeqSet seq_set( motif, bgModel,
-								Global::posSequenceSet->getSequences() );
+			ScoreSeqSet seq_set( motif, bgModel, Global::posSequenceSet->getSequences() );
 			seq_set.score();
-			seq_set.write( Global::outputDirectory, Global::posSequenceBasename,
-					n+1, Global::scoreCutoff, Global::ss );
+			seq_set.write( Global::outputDirectory, Global::posSequenceBasename, n+1, Global::scoreCutoff, Global::ss );
 		}
 
 		if( Global::generatePseudoSet ){
 
 			// optimize motifs by EM
-			model.EM();
+			EM model( motif, bgModel, Global::posSequenceSet->getSequences(), Global::q );
+			model.optimize();
 
 			// generate artificial sequence set with the learned motif embedded
-			SeqGenerator seq_set( Global::posSequenceSet->getSequences(),
-									motif,
-									Global::sOrder );
+			SeqGenerator artificial_seq_set( Global::posSequenceSet->getSequences(), motif, Global::sOrder );
 
-			seq_set.write( Global::outputDirectory,
-							Global::posSequenceBasename,
-							n+1,
-							seq_set.arti_posset_motif_embedded( Global::mFold ) );
+			artificial_seq_set.write( Global::outputDirectory, Global::posSequenceBasename, n+1,
+							artificial_seq_set.arti_posset_motif_embedded( Global::mFold ) );
 
 		}
 
@@ -151,14 +140,10 @@ int main( int nargs, char* args[] ){
 		// cross-validate the motif model
 		for( size_t n = 0; n < motifNum; n++ ){
 			Motif* motif = new Motif( *motif_set.getMotifs()[n] );
-			FDR fdr( Global::posSequenceSet->getSequences(),
-					Global::negSequenceSet->getSequences(),
-					Global::q,
-					motif,
-					Global::cvFold );
+			FDR fdr( Global::posSequenceSet->getSequences(), Global::negSequenceSet->getSequences(),
+					Global::q, motif, Global::cvFold );
 			fdr.evaluateMotif();
-			fdr.write( Global::outputDirectory,
-					Global::posSequenceBasename, n+1 );
+			fdr.write( Global::outputDirectory, Global::posSequenceBasename, n+1 );
 			if( motif )		delete motif;
 		}
 

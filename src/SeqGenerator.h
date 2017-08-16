@@ -5,7 +5,6 @@
 #include "BackgroundModel.h"
 #include "utils.h"
 #include "Motif.h"
-#include "ModelLearning.h"
 #include "Global.h"
 
 class SeqGenerator {
@@ -15,6 +14,7 @@ class SeqGenerator {
 	 * 1. negative sequence set, by using k-mer frequencies;
 	 * 2. simulated positive sequence set by inserting motif
 	 *    into the negative sequence set
+	 * 3. negative sequence set with motif patterns masked from the postive sequences
 	 * Prerequisite:
 	 * 1. sequences set for calculating k-mer frequencies
 	 * 2. the order of k-mer for sampling

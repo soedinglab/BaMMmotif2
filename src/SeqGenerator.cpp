@@ -345,10 +345,7 @@ std::unique_ptr<Sequence> SeqGenerator::negseq_motif_masked(
 	return seq_mask_motif;
 }
 
-void SeqGenerator::write( char* odir,
-			std::string basename,
-			size_t n,
-			std::vector<std::unique_ptr<Sequence>> seqset ){
+void SeqGenerator::write( char* odir, std::string basename, size_t n, std::vector<std::unique_ptr<Sequence>> seqset ){
 	/**
 	 * save the generated sequence set in one file:
 	 * (1) posSequenceBasename_pseudo.fasta

@@ -15,16 +15,12 @@ public:
 
 	static void		init( char* alphabetType );
 	static void		destruct();
-	static void     debug();
 
 	static size_t	getSize();
 	static char* 	getAlphabet();
-	static char* 	getComplementAlphabet();
 	static uint8_t	getCode( char base );				// get encoding for base
 	static char		getBase( uint8_t code );			// get base from encoding
 	static uint8_t	getComplementCode( uint8_t code );	// get complement encoding from encoding
-
-	static void 	setSize( size_t size );
 
 private:
 

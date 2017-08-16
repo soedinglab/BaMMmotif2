@@ -66,8 +66,8 @@ static void								createDirectory( char* dir );
 // calculate the power for integer base
 static size_t							ipow( size_t base, size_t exp );
 
-template <typename T>
-std::vector<size_t> sortIndices( const std::vector<T> &v ); // returns a permutation which rearranges v into ascending order
+// returns a permutation which rearranges v into ascending order
+template <typename T> std::vector<size_t> sortIndices( const std::vector<T> &v );
 
 inline std::string baseName( const char* filePath ){
 
@@ -140,7 +140,7 @@ inline void createDirectory( char* dir ){
 		std::cout << "Status: Output directory does not exist. "
 				"New directory is created automatically.\n";
 		if( system( ( "mkdir " + std::string( dir ) ).c_str() ) != 0 ){
-			std::cerr << "Error: Directory " << dir << " could not be created" << std::endl;
+			std::cerr << "Error: Directory " << dir << " could not be created." << std::endl;
 			exit( -1 );
 		}
 	}
@@ -160,8 +160,7 @@ inline size_t ipow( size_t base, size_t exp ){
     return res;
 }
 
-template <typename T>
-inline std::vector<size_t> sortIndices( const std::vector<T>& v ){
+template <typename T> inline std::vector<size_t> sortIndices( const std::vector<T>& v ){
 
   // initialize with original indices
   std::vector<size_t> idx( v.size() );
@@ -175,115 +174,6 @@ inline std::vector<size_t> sortIndices( const std::vector<T>& v ){
       );
 
   return idx;
-}
-
-inline float sign( float a, float b ){
-    // return value of a with sign of b
-    if( ( a < 0.0 && b < 0.0 ) || (a > 0.0 && b > 0.0 ) ){
-        return a;
-    } else {
-        return -a;
-    }
-}
-
-
-template <class T> inline float zbrent(T &obj, float ( T::*func )( float , int ), const float x1, const float x2, const float tol, int k){
-        // Using Brents method, return the root of a function of function func known to lie between x1 and x2. The root will be refined until its accuracy it tol.
-
-        // Maximum allowed number of iterations.
-        const int ITMAX=std::numeric_limits<int>::max();
-        //Machine floating-point precision.
-        const float EPS = std::numeric_limits<float>::epsilon();
-        float a=x1 , b=x2, c=x2, d=b-a, e=b-a, fa=CALL_EM_FN( obj, func )( a ,k ), fb=CALL_EM_FN( obj, func )( b ,k ), fc, p, q, r, s, tol1, xm;
-
-        if( fa < fb ){
-            printf("\n Root defines a minimum -> do not optimize.\n ");
-            // root defines a minimum -> do not optimize
-            return -1;
-        }
-        if(( fa > 0.0 && fb > 0.0 ) || ( fa < 0.0 && fb < 0.0 )){
-            printf("\n Root must be bracketed for order %d ", k);
-            printf("\n fa = %f ; fb = %f ", fa,fb);
-            // find out which border ( min = x1 or max = x2 ) results in a higher likelihood.
-            // do this in EM an here just return a flag
-//            if( fabsf(fa) < fabsf(fb)){
-//                printf(" --> choose %f ", a);
-//                return a;
-//            }else{
-//                printf(" --> choose %f ", b);
-//                return b;
-//            }
-            return -1;
-        }
-
-        fc = fb;
-        for( int iter = 0; iter < ITMAX; iter++){
-            if(( fb > 0.0 && fc > 0.0 ) || ( fb < 0.0 && fc < 0.0 )){
-                // Rename a, b, c and adjust bounding interval
-                c = a;
-                fc = fa;
-                e = d = b-a;
-            }
-            if( fabsf(fc) < fabsf(fb) ){
-                a = b;
-                b = c;
-                c = a;
-                fa = fb;
-                fb = fc;
-                fc = fa;
-            }
-            // Convergence check.
-            tol1 = 2.0f * EPS * fabsf(b) + 0.5f * tol;
-            xm = 0.5f * ( c-b );
-            if( fabsf(xm) <= tol1 || fb == 0.0 ){
-                return b;
-            }
-            if( fabsf(e) >= tol1 && fabsf(fa) > fabsf(fb) ){
-                // Attempt inverse quadratic interpolation
-                s = fb / fa;
-                if( a == c ){
-                    p = 2.0f * xm * s;
-                    q = 1.0f -s;
-                } else {
-                    q = fa / fc;
-                    r = fb / fc;
-                    p = s * (2.0f * xm * q * ( q - r ) - ( b - a ) * ( r - 1.0f ));
-                    q = ( q - 1.0f ) * ( r - 1.0f ) * ( s * 1.0f );
-                }
-                if( p > 0.0 ){
-                    q = -q;
-                }
-                p = fabsf(p);
-                float min1 = 3.0f * xm * q - fabsf( tol1 * q );
-                float min2 = fabsf(e * q);
-                if(2.0 * p < ( min1 < min2 ? min1 : min2 )){
-                    // Accept interpolation.
-                    e = d;
-                    d = p/q;
-                } else{
-                    // Interpolation failed, use bisection
-                    d = xm;
-                    e = d;
-                }
-            } else {
-                // Bounds decreasing to slowly, use bisection
-                d = xm;
-                e = d;
-            }
-            // move last best guess to a
-            a = b;
-            fa = fb;
-            if( fabsf(d) > tol1 ){
-                // Evaluate new trial root
-                b += d;
-                fb = CALL_EM_FN( obj, func )( b , k ); // THIS WAS ADDED BY ME!
-            } else{
-                b += sign( tol1, xm );
-                fb = CALL_EM_FN( obj, func )( b , k);
-            }
-        }
-        printf( "Maximum number of iterations exceeded in zbrent ");
-        exit(0);
 }
 
 /** The digamma function in long double precision.
