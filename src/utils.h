@@ -58,15 +58,6 @@
 #define CALL_EM_FN( object, ptrToFunc )( ( object ).*( ptrToFunc ) )
 #endif
 
-#ifndef make_unique
-// note: this implementation does not disable this overload for array types
-template<typename T, typename... Args>
-std::unique_ptr<T> make_unique(Args&&... args)
-{
-    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-}
-#endif
-
 static std::string						baseName( const char* filePath );
 // calculate posterior probabilities from log likelihoods
 std::vector<double>						calculatePosteriorProbabilities( std::vector<double> lLikelihoods );

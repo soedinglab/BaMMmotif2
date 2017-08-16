@@ -1,8 +1,5 @@
 #include "MotifSet.h"
 
-#include <fstream>		// std::fstream
-#include <string>		// compare
-
 MotifSet::MotifSet( char* indir, size_t l_flank, size_t r_flank,
 		std::string tag ){
 

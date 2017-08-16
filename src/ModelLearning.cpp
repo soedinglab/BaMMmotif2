@@ -13,8 +13,7 @@
 
 #include <stdlib.h>
 
-#include <boost/math/special_functions.hpp>			/* gamma function */
-#include <boost/math/special_functions/digamma.hpp> /* digamma function */
+#include <boost/math/special_functions.hpp>			/* gamma and digamma function */
 #include <boost/math/distributions/beta.hpp>		/* beta distribution */
 #include <boost/random.hpp>
 
@@ -742,7 +741,7 @@ void ModelLearning::Discrete_sample_alphas( size_t iter ){
 			std::discrete_distribution<> posterior_dist( condProb.begin(),
 					condProb.end() );
 
-			A_[k][j] = expf( posterior_dist( rngx_ ) / 10.0f );
+			A_[k][j] = expf( ( float )posterior_dist( rngx_ ) / 10.0f );
 		}
 	}
 }

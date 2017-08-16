@@ -1,7 +1,5 @@
 #include "Global.h"
 
-#include <sys/stat.h>   			// get file status
-
 char*               Global::outputDirectory = NULL;			// output directory
 
 char*               Global::posSequenceFilename = NULL;		// filename of positive sequence FASTA file

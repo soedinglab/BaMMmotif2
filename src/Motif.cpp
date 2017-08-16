@@ -346,16 +346,8 @@ void Motif::initFromBaMM( char* indir, size_t l_flank, size_t r_flank ){
 
 }
 
-size_t Motif::getC(){
-	return C_;
-}
-
 float** Motif::getS(){
 	return s_;
-}
-
-float*** Motif::getP(){
-	return p_;
 }
 
 void Motif::calculateV( float*** n ){

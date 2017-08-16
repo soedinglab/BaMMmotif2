@@ -1,10 +1,7 @@
 #include <iomanip>
-#include <time.h>		// time(), clock_t, clock, CLOCKS_PER_SEC
-#include <stdio.h>
 
 #include "Global.h"
 #include "BackgroundModel.h"
-#include "utils.h"
 #include "MotifSet.h"
 #include "ModelLearning.h"
 #include "ScoreSeqSet.h"
@@ -17,7 +14,7 @@ int main( int nargs, char* args[] ){
 
 	fprintf( stderr, "\n" );
 	fprintf( stderr, "======================================\n" );
-	fprintf( stderr, "=      Welcome to use BaMMmotif      =\n" );
+	fprintf( stderr, "=      Welcome to use BaMM!motif     =\n" );
 	fprintf( stderr, "=                   Version 2.0      =\n" );
 	fprintf( stderr, "=              by Soeding Group      =\n" );
 	fprintf( stderr, "=  http://www.mpibpc.mpg.de/soeding  =\n" );
@@ -57,13 +54,13 @@ int main( int nargs, char* args[] ){
 		fprintf( stderr, "**************************\n" );
 	}
 
-	MotifSet motifset( Global::initialModelFilename,
+	MotifSet motif_set( Global::initialModelFilename,
 					Global::addColumns.at(0),
 					Global::addColumns.at(1),
 					Global::initialModelTag );
 
-	size_t motifNum = ( Global::num > motifset.getN() ) ?
-						motifset.getN() : Global::num;
+	size_t motifNum = ( Global::num > motif_set.getN() ) ?
+						motif_set.getN() : Global::num;
 
 	if( Global::verbose ){
 		fprintf( stderr, "\n" );
@@ -74,7 +71,7 @@ int main( int nargs, char* args[] ){
 
 	for( size_t n = 0; n < motifNum; n++ ){
 		// deep copy each motif in the motif set
-		Motif* motif = new Motif( *motifset.getMotifs()[n] );
+		Motif* motif = new Motif( *motif_set.getMotifs()[n] );
 
 		// train the model with either EM or Gibbs sampling
 		ModelLearning model( motif,
@@ -115,10 +112,10 @@ int main( int nargs, char* args[] ){
 
 		if( Global::scoreSeqset ){
 			// score the model on sequence set
-			ScoreSeqSet seqset( motif, bgModel,
+			ScoreSeqSet seq_set( motif, bgModel,
 								Global::posSequenceSet->getSequences() );
-			seqset.score();
-			seqset.write( Global::outputDirectory, Global::posSequenceBasename,
+			seq_set.score();
+			seq_set.write( Global::outputDirectory, Global::posSequenceBasename,
 					n+1, Global::scoreCutoff, Global::ss );
 		}
 
@@ -128,14 +125,14 @@ int main( int nargs, char* args[] ){
 			model.EM();
 
 			// generate artificial sequence set with the learned motif embedded
-			SeqGenerator seqset( Global::posSequenceSet->getSequences(),
+			SeqGenerator seq_set( Global::posSequenceSet->getSequences(),
 									motif,
 									Global::sOrder );
 
-			seqset.write( Global::outputDirectory,
+			seq_set.write( Global::outputDirectory,
 							Global::posSequenceBasename,
 							n+1,
-							seqset.arti_posset_motif_embedded( Global::mFold ) );
+							seq_set.arti_posset_motif_embedded( Global::mFold ) );
 
 		}
 
@@ -153,7 +150,7 @@ int main( int nargs, char* args[] ){
 
 		// cross-validate the motif model
 		for( size_t n = 0; n < motifNum; n++ ){
-			Motif* motif = new Motif( *motifset.getMotifs()[n] );
+			Motif* motif = new Motif( *motif_set.getMotifs()[n] );
 			FDR fdr( Global::posSequenceSet->getSequences(),
 					Global::negSequenceSet->getSequences(),
 					Global::q,

@@ -39,8 +39,6 @@ private:
 	Motif* 					motif_;				// motif to optimize within the EM
 	BackgroundModel*		bg_;				// background model
 
-	std::vector<size_t>		folds_;				// folds to iterate over, for cross-validation
-
 	size_t 					K_;					// the order of the motif model
 	size_t					W_;					// the width of the motif model
 	float** 				A_;	        		// pseudo-count hyper-parameter for order k and motif position j

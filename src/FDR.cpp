@@ -1,7 +1,5 @@
 #include "FDR.h"
 
-#include <float.h>		// -FLT_MAX
-
 FDR::FDR( std::vector<Sequence*> posSeqs,
 			std::vector<Sequence*> negSeqs,
 			float q,

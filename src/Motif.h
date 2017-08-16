@@ -27,12 +27,10 @@ public:
 
 	void initFromBaMM( char* indir, size_t l_flank, size_t r_flank );
 
-	size_t				getC();						// get counts for binding sites
 	size_t				getW(); 					// get motif length w
 	size_t				getK();						// get motif model order k
 	float**				getA();						// get motif hyperparameter alpha
 	float***    		getV();						// get conditional probabilities v
-	float***			getP();						// get probabilities p
 	float**				getS();						// get log odds scores for the highest order K at position j
 	std::vector<size_t> getY();
 
