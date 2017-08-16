@@ -63,6 +63,12 @@ local.properties
 # Eclipse Core
 .project
 
+# CLion
+.idea/
+cmake-build-debug/
+.idea/misc.xml
+.idea/vcs.xml
+
 # External tool builders
 .externalToolBuilders/
 
