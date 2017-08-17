@@ -161,7 +161,7 @@ void GibbsSampling::optimize(){
         iteration++;
 
         // Collapsed Gibbs sampling position z
-        if( samplingZ_ ) Collapsed_Gibbs_sampling_z();
+        if( samplingZ_ )    Collapsed_Gibbs_sampling_z();
 
         // Gibbs sampling fraction q
         if( samplingQ_ )	Gibbs_sample_q();
@@ -247,13 +247,13 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
     motif_->calculateLinearS( v_bg, K_bg_ );
 
     // sampling z:
-    bool run_slow = false;			// a flag to switch between slow and fast
+    bool remove_kmer_slowly = false;	// a flag to switch between slow and fast versions
     // versions of counting k-mers
     // loop over all sequences and drop one sequence each time and update r
     for( size_t n = 0; n < N; n++ ){
 
-        size_t L = seqs_[n]->getL();
-        size_t LW1 = L - W_ + 1;
+        size_t  L = seqs_[n]->getL();
+        size_t  LW1 = L - W_ + 1;
         size_t* kmer = seqs_[n]->getKmer();
 
         // count k-mers at position z_i+j except the n'th sequence
@@ -267,7 +267,7 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
             sumN += n_[0][a][0];
         }
 
-        if( !run_slow && z_[n] > 0 ){
+        if( !remove_kmer_slowly && z_[n] > 0 ){
 
             for( size_t j = 0; j < W_; j++ ){
 
@@ -275,8 +275,7 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
                 size_t y = kmer[z_[n]-1+j] % Y_[1];
                 n_[0][y][j]--;
 
-                v[0][y][j]= ( n_[0][y][j] + A_[0][j] * v_bg[0][y] )
-                            / ( sumN + A_[0][j] );
+                v[0][y][j]= ( n_[0][y][j] + A_[0][j] * v_bg[0][y] ) / ( sumN + A_[0][j] );
                 size_t y_bg = y % Y_[K_bg_+1];
                 s_[y][j] = v[K_][y][j] / v_bg[K_bg_][y_bg];
 
@@ -307,7 +306,7 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
         /*
          * -------------- slower version of removing k-mer ------------------
          */
-        if( run_slow ){
+        if( remove_kmer_slowly ){
 
             // remove the k-mer counts from the sequence with the current z
             if( z_[n] > 0 ){
@@ -334,12 +333,12 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
         // over all LW1 positions on n'th sequence:
         float normFactor = 0.0f;
         pos_[n][0] = 1.0f - q_;
-        r_[n][0] = pos_[n][0];
-        normFactor += r_[n][0];
+        r_[n][LW1] = pos_[n][0];
+        normFactor += r_[n][LW1];
         float pos_i = q_ / static_cast<float>( LW1 );
         for( size_t i = 1; i <= LW1; i++ ){
             pos_[n][i] = pos_i;
-            r_[n][i] = 1.0f;
+            r_[n][LW1-i] = 1.0f;
         }
 
         // todo: could be parallelized by extracting 8 sequences at once
@@ -355,8 +354,8 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
                 r_[n][LW1-ij+j] *= s_[y][j];
             }
         }
-        for( size_t i = 1; i <= LW1; i++ ){
-            r_[n][LW1+1-i] *= pos_[n][i];
+        for( size_t i = 0; i <= LW1; i++ ){
+            r_[n][LW1-i] *= pos_[n][i];
             normFactor += r_[n][i];
         }
 
@@ -365,12 +364,10 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
 
         // normalize responsibilities and append them to an array
         std::vector<float> posteriors;
-        r_[n][0] /= normFactor;
-        posteriors.push_back( r_[n][0] );
 
-        for( size_t i = LW1; i >= 1; i-- ){
-            r_[n][i] /= normFactor;
-            posteriors.push_back( r_[n][i] );
+        for( size_t i = 0; i <= LW1; i++ ){
+            r_[n][LW1-i] /= normFactor;
+            posteriors.push_back( r_[n][LW1-i] );
         }
 
         // draw a new position z from the discrete distribution of posterior
@@ -406,7 +403,7 @@ void GibbsSampling::Optimize_alphas_by_SGD_ADAM( size_t K, size_t W_, float eta,
     // (DP Kingma & JL Ba 2015)
 
     double beta1 = 0.9;		// exponential decay rate for the moment estimates
-    double beta2 = 0.99;	// exponential decay rate for the moment estimates
+    double beta2 = 0.999;	// exponential decay rate for the moment estimates
     double epsilon = 1e-8;	// cutoff
     double gradient;		// gradient of log posterior of alpha
     double m1;				// first moment vector (the mean)
@@ -428,8 +425,7 @@ void GibbsSampling::Optimize_alphas_by_SGD_ADAM( size_t K, size_t W_, float eta,
             m1_t_[k][j] = beta1 * m1_t_[k][j] + ( 1 - beta1 ) * gradient;
 
             // update biased second raw moment estimate
-            m2_t_[k][j] = beta2 * m2_t_[k][j] + ( 1 - beta2 ) *
-                                                gradient * gradient;
+            m2_t_[k][j] = beta2 * m2_t_[k][j] + ( 1 - beta2 ) * gradient * gradient;
 
             // compute bias-corrected first moment estimate
             m1 = m1_t_[k][j] / ( 1 - pow( beta1, t ) );

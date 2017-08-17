@@ -59,10 +59,11 @@ public:
 	static float		modelBeta;				// alpha_k = beta x gamma^k for k > 0
 	static float		modelGamma;
 	static std::vector<size_t>	addColumns;		// add columns to the left and right of models used to initialize Markov models
-    static bool        interpolate;				// calculate prior probabilities from lower-order probabilities
+    static bool			interpolate;				// calculate prior probabilities from lower-order probabilities
     											// instead of background frequencies of mono-nucleotides
-    static bool        interpolateBG;			// calculate prior probabilities from lower-order probabilities
+    static bool			interpolateBG;			// calculate prior probabilities from lower-order probabilities
     											// instead of background frequencies of mono-nucleotides
+	static float		q;						// prior probability for a positive sequence to contain a motif
 
 	// background model options
     static char*		bgModelFilename;		// path to the background model file
@@ -72,9 +73,8 @@ public:
 
 	// EM options
 	static bool			EM;						// flag to trigger EM learning
-	static float		q;						// prior probability for a positive sequence to contain a motif
 
-	// CGS (Collapsed Gibbs sampling) options
+	// Gibbs sampling options
 	static bool			CGS;					// flag to trigger Collapsed Gibbs sampling
 	static bool			noInitialZ;				// enable initializing z with one E-step
 	static bool			noAlphaOptimization;	// disable alpha optimization in CGS

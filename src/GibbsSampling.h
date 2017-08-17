@@ -16,11 +16,12 @@ public:
     GibbsSampling( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqs, float q );
 	~GibbsSampling();
 
-	void 					optimize();
+	void 					optimize();			// optimize BaMM model with Gibbs sampling
 
-	void					print();
+	void					print();			// print out optimized model v
+
 	void					write( char* odir, std::string basename, size_t n, bool ss );
-
+												// write out the optimized (hyper-)parameters
 
 private:
 
@@ -39,7 +40,7 @@ private:
 	float**					pos_;				// positional prior, pos[i][0] indicates the prior for no motif present on sequence i
 
 	float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif
-	std::vector<Sequence*>	seqs_;				// copy positive sequences due to folds
+	std::vector<Sequence*>	seqs_;				// copy positive sequences
 	size_t					N0_ = 0;			// count of sequences that do not contain a motif
 
 	float 					llikelihood_ = 0.0f;// log likelihood for each iteration
@@ -60,7 +61,6 @@ private:
 	bool					optimizeA_ 			= !Global::noAlphaOptimization;
 	bool					GibbsMHalphas_ 		= Global::GibbsMHalphas;
 	bool					dissampleAlphas_ 	= Global::dissampleAlphas;
-	bool					verbose_ 			= Global::verbose;
 
 							// sample motif position z by collapsed Gibbs sampling
 	void					Collapsed_Gibbs_sampling_z();

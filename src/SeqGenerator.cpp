@@ -1,8 +1,6 @@
 #include "SeqGenerator.h"
 
-SeqGenerator::SeqGenerator( std::vector<Sequence*> seqs,
-							Motif* motif,
-							size_t sOrder ){
+SeqGenerator::SeqGenerator( std::vector<Sequence*> seqs, Motif* motif, size_t sOrder ){
 
 	seqs_ = seqs;
 	motif_= motif;
@@ -162,24 +160,25 @@ std::unique_ptr<Sequence> SeqGenerator::negseq_dimer_freq( size_t L ){
 // generate pseudo-positive sequences based on each test set
 std::vector<std::unique_ptr<Sequence>> SeqGenerator::arti_posset_motif_embedded( size_t fold ){
 
-	std::vector<std::unique_ptr<Sequence>> embedposset;
+	std::vector<std::unique_ptr<Sequence>> posset_with_motif_embedded;
 
 	calculate_kmer_frequency();
 
 	for( size_t i = 0; i < seqs_.size(); i++ ){
 		size_t L = seqs_[i]->getL();
 		for( size_t n = 0; n < fold; n++ ){
-			embedposset.push_back( posseq_motif_embeded( L ) );
+			posset_with_motif_embedded.push_back(posseq_motif_embedded(L) );
 		}
 	}
-	return embedposset;
+	return posset_with_motif_embedded;
 }
 
 // generate pseudo-sequence based on k-mer frequencies from positive set
-std::unique_ptr<Sequence> SeqGenerator::posseq_motif_embeded( size_t L ){
+std::unique_ptr<Sequence> SeqGenerator::posseq_motif_embedded(size_t L){
 
 	uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
-	std::string header = "pseudo sequence with embedded motif in the middle";
+
+	std::string header = "artificial sequence with motif embedded in the middle";
 
 	for( uint8_t i = 0; i < L; i++ ){
 		sequence[i] = 1;
@@ -299,8 +298,7 @@ std::unique_ptr<Sequence> SeqGenerator::posseq_motif_embeded( size_t L ){
 
 }
 
-std::vector<std::unique_ptr<Sequence>> SeqGenerator::arti_negset_motif_masked(
-		float** r ){
+std::vector<std::unique_ptr<Sequence>> SeqGenerator::arti_negset_motif_masked( float** r ){
 
 	std::vector<std::unique_ptr<Sequence>> seqset;
 	size_t W = motif_->getW();
@@ -313,8 +311,7 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::arti_negset_motif_masked(
 	return seqset;
 }
 
-std::unique_ptr<Sequence> SeqGenerator::negseq_motif_masked(
-		Sequence* posseq, size_t W, float* r  ){
+std::unique_ptr<Sequence> SeqGenerator::negseq_motif_masked( Sequence* posseq, size_t W, float* r  ){
 
 	float cutoff = 0.3f;
 
@@ -340,14 +337,12 @@ std::unique_ptr<Sequence> SeqGenerator::negseq_motif_masked(
 	std::string header = "sequence with masked motif";
 	std::unique_ptr<Sequence> seq_mask_motif( new Sequence( real_seq, L, header, Y_, true ) );
 	free( real_seq );
-
-
 	return seq_mask_motif;
 }
 
 void SeqGenerator::write( char* odir, std::string basename, size_t n, std::vector<std::unique_ptr<Sequence>> seqset ){
 	/**
-	 * save the generated sequence set in one file:
+	 * save the generated sequence set in fasta file:
 	 * (1) posSequenceBasename_pseudo.fasta
 	 */
 

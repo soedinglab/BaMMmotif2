@@ -2,6 +2,7 @@
 // Created by wanwan on 16.08.17.
 //
 #include "EM.h"
+
 EM::EM( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqs, float q ){
 
     motif_ = motif;
@@ -99,9 +100,7 @@ int EM::optimize(){
 
         if( v_diff < epsilon_ )							iterate = false;
         if( llikelihood_diff < 0 && EMIterations > 1 )	iterate = false;
-
     }
-
 
     // calculate probabilities
     motif_->calculateP();
@@ -117,10 +116,7 @@ void EM::EStep(){
 
     motif_->calculateLinearS( bg_->getV(), K_bg_ );
 
-    // count sequences that do not contain a motif
-    N0_ = 0;
-
-    // parallel the code
+    // todo: parallel the code
 //	#pragma omp parallel for
 
     // calculate responsibilities r_[n][i] at position i in sequence n
@@ -163,8 +159,6 @@ void EM::EStep(){
         for( size_t i = 0; i < LW2; i++ ){
             r_[n][i] /= normFactor;
         }
-
-        if( r_[n][0] > 0.7f ) N0_++;
 
         // calculate log likelihood over all sequences
         llikelihood_ += logf( normFactor );
@@ -234,8 +228,7 @@ void EM::print(){
     for( size_t j = 0; j < W_; j++ ){
         for( size_t k = 0; k < K_+1; k++ ){
             for( size_t y = 0; y < Y_[k+1]; y++ ){
-                std::cout << std::setprecision(5) <<
-                          motif_->getV()[k][y][j] << '\t';
+                std::cout << std::setprecision( 5 ) << motif_->getV()[k][y][j] << '\t';
             }
             std::cout << std::endl;
         }
@@ -291,8 +284,7 @@ void EM::write( char* odir, std::string basename, size_t N, bool ss ){
                 ofile_pos << ( ( i < seq_length ) ? '-' : '+' ) << '\t'
                         << LW1-i+1 << ".." << LW1-i+W_<< '\t';
                 for( size_t b = 0; b < W_; b++ ){
-                    ofile_pos << Alphabet::getBase(
-                            seqs_[n]->getSequence()[LW1-i+b] );
+                    ofile_pos << Alphabet::getBase( seqs_[n]->getSequence()[LW1-i+b] );
                 }
                 ofile_pos << '\t';
             }

@@ -24,11 +24,8 @@ class FDR {
 
 public:
 
-	FDR( std::vector<Sequence*> posSeqs,
-		std::vector<Sequence*> negSeqs,
-		float q = 0.9f,
-		Motif* motif = NULL,
-		size_t cvFold = 5 );
+	FDR( std::vector<Sequence*> posSeqs, std::vector<Sequence*> negSeqs, float q = 0.9f,
+         Motif* motif = NULL, BackgroundModel* bgmodel = NULL, size_t cvFold = 5 );
 	~FDR();
 
 	void 	evaluateMotif();
@@ -42,6 +39,7 @@ private:
 	float q_;
 
 	Motif*				motif_;			// initial motif
+    BackgroundModel*    bgModel_;       // background model
 
 	size_t				cvFold_;		// fold for cross-validation, training
 										// set is (cv-1)-fold of the testing set

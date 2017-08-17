@@ -28,8 +28,7 @@ public:
     void 					EStep();			// E-step
     void 					MStep();			// M-step
 
-    float**                 getR();             // get the reponsibility parameter r
-
+    float**                 getR();             // get the responsibility parameter r
 
 private:
 
@@ -48,7 +47,6 @@ private:
 
     float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif
     std::vector<Sequence*>	seqs_;				// copy positive sequences
-    size_t					N0_ = 0;			// count of sequences that do not contain a motif
 
     float 					llikelihood_ = 0.0f;// log likelihood for each iteration
     float					epsilon_ = 0.001f;	// threshold for likelihood convergence

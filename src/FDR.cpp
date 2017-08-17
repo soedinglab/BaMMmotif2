@@ -1,15 +1,13 @@
 #include "FDR.h"
 
-FDR::FDR( std::vector<Sequence*> posSeqs,
-			std::vector<Sequence*> negSeqs,
-			float q,
-			Motif* motif,
-			size_t cvFold ){
+FDR::FDR( std::vector<Sequence*> posSeqs, std::vector<Sequence*> negSeqs, float q,
+          Motif* motif, BackgroundModel* bgModel, size_t cvFold ){
 
 	posSeqs_	= posSeqs;
 	negSeqs_	= negSeqs;
 	q_ 			= q;
 	motif_ 		= motif;
+    bgModel_    = bgModel;
 	cvFold_		= cvFold;
 	occ_frac_	= 0.0f;
 	occ_mult_	= 0.0f;
@@ -25,21 +23,8 @@ void FDR::evaluateMotif(){
 	std::vector<std::vector<float>> mops_scores;
 	std::vector<float> 				zoops_scores;
 
-	// generate sequences from positive sequences with masked motif
-	// deep copy the initial motif
-	Motif* motif_opti = new Motif( *motif_ );
-	BackgroundModel* bgModel_opti = new BackgroundModel( posSeqs_, Global::bgModelOrder, Global::bgModelAlpha );
-	EM model_opti( motif_opti, bgModel_opti, posSeqs_, q_ );
-	model_opti.optimize();
-	float** r = model_opti.getR();
-	SeqGenerator artificalset( posSeqs_, motif_opti );
-	std::vector<std::unique_ptr<Sequence>> B1SeqSetPrime;
-	B1SeqSetPrime = artificalset.arti_negset_motif_masked( r );
-	delete motif_opti;
-	delete bgModel_opti;
-
 	/**
-	 * Cross Validation
+	 * Cross validation
 	 */
 	for( size_t fold = 0; fold < cvFold_; fold++ ){
 
@@ -47,69 +32,20 @@ void FDR::evaluateMotif(){
 		Motif* motif = new Motif( *motif_ );
 
 		/**
-		 * Draw sequences for each training and test set
+		 * Draw sequences for each training, test and negative sets
 		 */
 		std::vector<Sequence*> testSet;
 		std::vector<Sequence*> trainSet;
+        std::vector<Sequence*> negSet;
 		for( size_t n = 0; n < posSeqs_.size()-cvFold_; n+=cvFold_ ){
 			for( size_t f = 0; f < cvFold_; f++ ){
 				if( f != fold ){
 					trainSet.push_back( posSeqs_[n+f] );
 				} else {
 					testSet.push_back( posSeqs_[n+f] );
+                    negSet.push_back( negSeqs_[n+f] );
 				}
 			}
-		}
-
-		/**
-		 * Generate negative sequence set
-		 * for generating bg model and scoring
-		 */
-		std::vector<Sequence*> B1set;
-		std::vector<Sequence*> B2set;
-		std::vector<Sequence*> B3set;
-		std::vector<Sequence*> B1setPrime;
-		// draw B3set from the given negative sequence set
-		for( size_t n = 0; n < negSeqs_.size()-cvFold_; n+=cvFold_ ){
-			B3set.push_back( negSeqs_[n+fold] );
-		}
-
-		// sample negative sequence set B1set based on s-mer frequencies
-		// from positive training sequence set
-		std::vector<std::unique_ptr<Sequence>> B1Seqs;
-		SeqGenerator b1seqs( trainSet );
-		B1Seqs = b1seqs.arti_negset( Global::mFold );
-		// convert unique_ptr to regular pointer
-		for( size_t n = 0; n < B1Seqs.size(); n++ ){
-			B1set.push_back( B1Seqs[n].release() );
-		}
-
-		// sample negative sequence set B2set based on s-mer frequencies
-		// from the given sampled negative sequence set
-		std::vector<std::unique_ptr<Sequence>> B2Seqs;
-		SeqGenerator b2seqs( B3set );
-		B2Seqs = b2seqs.arti_negset( 1 );
-		// convert unique_ptr to regular pointer
-		for( size_t n = 0; n < B2Seqs.size(); n++ ){
-			B2set.push_back( B2Seqs[n].release() );
-		}
-
-		// draw B1setPrime from the positive sequence set with masked motifs
-		for( size_t n = 0; n < B1SeqSetPrime.size()-cvFold_; n+=cvFold_ ){
-			B1setPrime.push_back( B1SeqSetPrime[n+fold].release() );
-		}
-
-		/**
-		 * Generate background model from negative set
-		 */
-		BackgroundModel* bgModel;
-
-		if( Global::bgModelGiven ){
-			// get the given bg model
-			bgModel = new BackgroundModel( Global::bgModelFilename );
-		} else {
-			// generate 2nd-order background model from 20% of negative sequences
-			bgModel = new BackgroundModel( B1set, Global::bgModelOrder, Global::bgModelAlpha );
 		}
 
 		/**
@@ -117,10 +53,10 @@ void FDR::evaluateMotif(){
 		 */
 		// learn motif from each training set
 		if( EM_ ){
-			EM model( motif, bgModel, trainSet, q_ );
+			EM model( motif, bgModel_, trainSet, q_ );
 			model.optimize();
 		} else if ( CGS_ ){
-			GibbsSampling model( motif, bgModel, trainSet, q_ );
+			GibbsSampling model( motif, bgModel_, trainSet, q_ );
 			model.optimize();
 		}
 
@@ -128,7 +64,7 @@ void FDR::evaluateMotif(){
 		 * Testing
 		 */
 		// score positive test sequences with (learned) motif
-		ScoreSeqSet score_testset( motif, bgModel, testSet );
+		ScoreSeqSet score_testset( motif, bgModel_, testSet );
 		score_testset.score();
 
 		if( mops_ ){
@@ -148,11 +84,11 @@ void FDR::evaluateMotif(){
 		}
 
 		// score negative sequence set
-		ScoreSeqSet score_negset( motif, bgModel, B3set );
+		ScoreSeqSet score_negset( motif, bgModel_, negSet );
 		score_negset.score();
 		if( mops_ ){
 			mops_scores = score_negset.getMopsScores();
-			for( size_t n = 0; n < B3set.size(); n++ ){
+			for( size_t n = 0; n < negSet.size(); n++ ){
 				negScoreAll_.insert( std::end( negScoreAll_ ),
 						std::begin( mops_scores[n] ),
 						std::end( mops_scores[n] ) );
@@ -166,22 +102,13 @@ void FDR::evaluateMotif(){
 		}
 
 		if( motif ) 				delete motif;
-		if( bgModel )				delete bgModel;
-
 
 	}
 
-	if( savePRs_ ){
+    // calculate precision and recall
+    calculatePR();
 
-		fprintf(stderr, " __________________________________\n"
-						"|                                  |\n"
-						"|  calculate precision and recall  |\n"
-						"|__________________________________|\n\n" );
-
-		calculatePR();
-	}
-
-	if( savePvalues_ ){
+    if( savePvalues_ ){
 
 		fprintf(stderr, " ______________________\n"
 						"|                      |\n"
