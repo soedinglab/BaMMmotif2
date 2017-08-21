@@ -293,8 +293,8 @@ void Global::printStat(){
 
 	std::cout << "Alphabet type is " << Alphabet::getAlphabet();
 	std::cout << "\nGiven initial model is " << Global::initialModelBasename
-			<< ", BaMM order: " << Global::modelOrder
-			<< ", bgmodel order: " << Global::bgModelOrder;
+              << ", BaMM order: " << Global::modelOrder
+              << ", bgmodel order: " << Global::bgModelOrder;
 	std::cout << "\nBaMM is learned from ";
 	if( Global::ss ){
 		std::cout << "single-stranded sequences.";
@@ -304,36 +304,35 @@ void Global::printStat(){
 
 	// for positive sequence set
 	std::cout << "\nGiven positive sequence set is "
-			<< Global::posSequenceBasename << ".\n	"
-			<< Global::posSequenceSet->getSequences().size()
-			<< " sequences, max.length: " <<
-			Global::posSequenceSet->getMaxL() << ", min.length: " <<
-			Global::posSequenceSet->getMinL() << "\n	base frequencies:";
+              << Global::posSequenceBasename << ".\n	"
+              << Global::posSequenceSet->getSequences().size()
+              << " sequences, max.length: " << Global::posSequenceSet->getMaxL()
+              << ", min.length: " << Global::posSequenceSet->getMinL()
+              << "\n	base frequencies:";
 	for( size_t i = 0; i < Alphabet::getSize(); i++ ){
 		std::cout << ' ' << Global::posSequenceSet->getBaseFrequencies()[i]
 		          << "(" << Alphabet::getAlphabet()[i] << ")";
 	}
 	std::cout << "\n	" << Global::q * 100 << "% of the sequences "
-			"contain the optimized motif.";
+              << "contain the optimized motif.";
 	// for negative sequence set
 	if( Global::negSeqGiven ){
-		std::cout << "\nGiven negative sequence set is "
-				<< Global::negSequenceBasename << ".\n	"
-				<< Global::negSequenceSet->getSequences().size()
-				<< " sequences, max.length: "
-				<< Global::negSequenceSet->getMaxL() << ", min.length: " <<
-				Global::negSequenceSet->getMinL() << "\n	base frequencies:";
+		std::cout << "\nGiven negative sequence set is " << Global::negSequenceBasename
+                  << ".\n	" << Global::negSequenceSet->getSequences().size()
+                  << " sequences, max.length: " << Global::negSequenceSet->getMaxL()
+                  << ", min.length: " << Global::negSequenceSet->getMinL()
+                  << "\n	base frequencies:";
 		for( size_t i = 0; i < Alphabet::getSize(); i++ )
 			std::cout << ' ' << Global::negSequenceSet->getBaseFrequencies()[i]
 					  << "(" << Alphabet::getAlphabet()[i] << ")";
 	} else {
 		std::cout << "\nThe background model is generated based on cond.prob of "
-				<< Global::sOrder << "-mers.";
+                  << Global::sOrder << "-mers.";
 	}
 
 	if( Global::FDR ){
 		std::cout << "\nFolds for cross-validation (FDR estimation): "
-				<< Global::cvFold;
+                  << Global::cvFold;
 	}
 }
 

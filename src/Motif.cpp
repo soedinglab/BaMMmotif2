@@ -390,7 +390,7 @@ void Motif::calculateP(){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
 			size_t y2 = y % Y_[k];				// cut off first nucleotide in (k+1)-mer
 			size_t yk = y / Y_[1];				// cut off last nucleotide in (k+1)-mer
-			// todo: this is not properly calculated
+			// todoL:
 			for( size_t j = 0; j < k; j++ ){
 				p_[k][y][j] = p_[k-1][y2][j];	// i.e. p(ACG) = p(CG)
 			}

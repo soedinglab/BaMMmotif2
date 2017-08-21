@@ -9,7 +9,7 @@
 # and ZOOPS models by taking p-values of log odds scores froom
 # positive sequences and using "fdrtool" library
 # plot FDR vs. recall(sensitivity) curve
-# caluclate the area under the sensitivity-FDR curve (AUSFC)
+# calculate the area under the sensitivity-FDR curve (AUSFC)
 # and plot the true-positive-rate(TPR) vs. false-positive-rate(FPR)
 # curve and calculate the partial AUC from this curve;
 # results are saved in a .bmscore file.
@@ -67,7 +67,7 @@ library("fdrtool")
 fdrtool = function(x,
   statistic=c("normal", "correlation", "pvalue"),
   #statistic=c("normal", "correlation", "pvalue", "studentt"),
-  plot=TRUE, color.figure=TRUE, verbose=TRUE,
+  plot=TRUE, color.figure=TRUE, verbose=FALSE,
   cutoff.method=c("fndr", "pct0", "locfdr"),
   pct0=0.75,
   eta0set=0.9091)

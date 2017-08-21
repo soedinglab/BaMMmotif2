@@ -13,13 +13,13 @@ int main( int nargs, char* args[] ){
 
 	clock_t t0 = clock();
 
-	fprintf( stderr, "\n" );
-	fprintf( stderr, "======================================\n" );
-	fprintf( stderr, "=      Welcome to use BaMM!motif     =\n" );
-	fprintf( stderr, "=                   Version 2.0      =\n" );
-	fprintf( stderr, "=              by Soeding Group      =\n" );
-	fprintf( stderr, "=  http://www.mpibpc.mpg.de/soeding  =\n" );
-	fprintf( stderr, "======================================\n" );
+	std::cout << std::endl
+              << "======================================" << std::endl
+              << "=      Welcome to use BaMM!motif     =" << std::endl
+              << "=                   Version 2.0      =" << std::endl
+              << "=              by Soeding Group      =" << std::endl
+              << "=  http://www.mpibpc.mpg.de/soeding  =" << std::endl
+              << "======================================" << std::endl;
 
 	// seed random number
 	srand( 42 );
@@ -29,14 +29,14 @@ int main( int nargs, char* args[] ){
 	Global::init( nargs, args );
 
 	if( Global::verbose ){
-		fprintf( stderr, "\n" );
-		fprintf( stderr, "************************\n" );
-		fprintf( stderr, "*   Background Model   *\n" );
-		fprintf( stderr, "************************\n" );
+		std::cout << std::endl
+                  << "************************" << std::endl
+                  << "*   Background Model   *" << std::endl
+                  << "************************" << std::endl;
 	}
 	BackgroundModel* bgModel;
 	if( !Global::bgModelGiven ){
-		bgModel = new BackgroundModel( Global::negSequenceSet->getSequences(),
+		bgModel = new BackgroundModel( Global::posSequenceSet->getSequences(),
 										Global::bgModelOrder,
 										Global::bgModelAlpha,
 										Global::interpolateBG,
@@ -49,10 +49,10 @@ int main( int nargs, char* args[] ){
 	bgModel->write( Global::outputDirectory, Global::posSequenceBasename );
 
 	if( Global::verbose ){
-		fprintf( stderr, "\n" );
-		fprintf( stderr, "**************************\n" );
-		fprintf( stderr, "*   Initial Motif Model  *\n" );
-		fprintf( stderr, "**************************\n" );
+        std::cout << std::endl
+                  << "***************************" << std::endl
+                  << "*   Initial Motif Model   *" << std::endl
+                  << "***************************" << std::endl;
 	}
 
 	MotifSet motif_set( Global::initialModelFilename, Global::addColumns.at(0), Global::addColumns.at(1),
@@ -61,10 +61,10 @@ int main( int nargs, char* args[] ){
 	size_t motifNum = ( Global::num > motif_set.getN() ) ? motif_set.getN() : Global::num;
 
 	if( Global::verbose ){
-		fprintf( stderr, "\n" );
-		fprintf( stderr, "********************\n" );
-		fprintf( stderr, "*   BaMM training  *\n" );
-		fprintf( stderr, "********************\n" );
+        std::cout << std::endl
+                  << "*********************" << std::endl
+                  << "*   BaMM training   *" << std::endl
+                  << "*********************" << std::endl;
 	}
 
     for( size_t n = 0; n < motifNum; n++ ){
@@ -85,6 +85,8 @@ int main( int nargs, char* args[] ){
 			if( Global::saveBaMMs ){
 				model.write( Global::outputDirectory, Global::posSequenceBasename, n+1, Global::ss );
 			}
+            // write out the learned model
+            motif->write( Global::outputDirectory, Global::posSequenceBasename, n+1 );
 
 		} else if ( Global::CGS ){
 			GibbsSampling model( motif, bgModel,  Global::posSequenceSet->getSequences(), Global::q );
@@ -94,15 +96,14 @@ int main( int nargs, char* args[] ){
 			if( Global::saveBaMMs ){
 				model.write( Global::outputDirectory, Global::posSequenceBasename, n+1, Global::ss );
 			}
+            // write out the learned model
+            motif->write( Global::outputDirectory, Global::posSequenceBasename, n+1 );
 
 		} else {
 
 			std::cout << "Note: the model is not optimized!\n";
-
+ //           motif->write( Global::outputDirectory, Global::posSequenceBasename, n+1 );
 		}
-
-		// write out the learned model
-		motif->write( Global::outputDirectory, Global::posSequenceBasename, n+1 );
 
 		if( Global::scoreSeqset ){
 			// score the model on sequence set
@@ -131,10 +132,10 @@ int main( int nargs, char* args[] ){
 	// evaluate motifs
 	if( Global::FDR ){
 		if( Global::verbose ){
-			fprintf( stderr, "\n" );
-			fprintf( stderr, "*********************\n" );
-			fprintf( stderr, "*  BaMM validation  *\n" );
-			fprintf( stderr, "*********************\n" );
+            std::cout << std::endl
+                      << "***********************" << std::endl
+                      << "*   BaMM validation   *" << std::endl
+                      << "***********************" << std::endl;
 		}
         std::vector<Sequence*> posseqs = Global::posSequenceSet->getSequences();
         std::vector<Sequence*> negseqs = Global::negSequenceSet->getSequences();
@@ -192,10 +193,10 @@ int main( int nargs, char* args[] ){
 
 	}
 
-	fprintf( stderr, "\n" );
-	fprintf( stderr, "******************\n" );
-	fprintf( stderr, "*   Statistics   *\n" );
-	fprintf( stderr, "******************\n" );
+    std::cout << std::endl
+              << "******************" << std::endl
+              << "*   Statistics   *" << std::endl
+              << "******************" << std::endl;
 	Global::printStat();
 
 	fprintf( stdout, "\n------ Runtime: %.2f seconds (%0.2f minutes) -------\n",
