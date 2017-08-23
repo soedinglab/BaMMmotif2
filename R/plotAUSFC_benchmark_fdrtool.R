@@ -476,7 +476,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
   if( print_ROC5 ){
     pdf( file = paste(dir, '/', prefix, "_motif_", motifNumber, '_pROC.pdf', sep = "" ) )
   
-      plot(FPR[1:rbound], TPR[1:rbound],
+    plot(FPR[1:rbound], TPR[1:rbound],
            main=paste(prefix, "_motif_", motifNumber, " FPR vs. TPR ", sep=""),
            xlab="FPR", ylab="TPR", xlim=c(0,0.05), ylim=c(0,1),
            type='l', lwd=2.5, col="deepskyblue")
@@ -485,7 +485,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     dev.off()
   }
   resultString = paste(c(prefix, motifNumber, ausfc, auc5), collapse="\t")
-  print(resultString)
+  #print(resultString)
   results = c(results, resultString)
 }
 

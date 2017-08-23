@@ -66,8 +66,7 @@ local.properties
 # CLion
 .idea/
 cmake-build-debug/
-.idea/misc.xml
-.idea/vcs.xml
+.idea/*.xml
 
 # External tool builders
 .externalToolBuilders/

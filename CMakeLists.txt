@@ -16,11 +16,9 @@ set (BAMMMOTIF_PATCH_VERSION 1)
 
 set (BAMMMOTIF_VERSION ${BAMMMOTIF_MAJOR_VERSION}.${BAMMMOTIF_MINOR_VERSION}.${BAMMMOTIF_PATCH_VERSION})
 
-set (CMAKE_C_FLAGS "-D__GXX_EXPERIMENTAL_CXX0X__ -O3 -pedantic -pedantic-errors -Wall -fmessage-length=0 -Wconversion")
-
 set (CMAKE_CXX_FLAGS "-D__cplusplus=201103L -D__GXX_EXPERIMENTAL_CXX0X__ -DLOG_MAX_LEVEL=0 -fmessage-length=0 -fno-strict-aliasing -g3 -O3 -pedantic -pedantic-errors -std=c++11 -Wall -Wconversion -static-libstdc++")
 
 file(GLOB SOURCES "src/*.h" "src/*.cpp" "src/getopt_pp/*.h" "src/getopt_pp/*.cpp")
 
-add_executable (BaMMmotif ${SOURCES} src/EM.h src/EM.cpp src/GibbsSampling.h src/GibbsSampling.cpp)
+add_executable(BaMMmotif ${SOURCES})
 
