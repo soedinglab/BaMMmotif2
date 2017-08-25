@@ -88,7 +88,7 @@ void GibbsSampling::optimize(){
         // E-step: calculate posterior
         model.EStep();
 
-        // extract initial z from the indices of the largest responsibilities
+        // extract initial z from the indices of the biggest responsibilities
         for( size_t n = 0; n < seqs_.size(); n++ ){
             size_t LW1 = seqs_[n]->getL() - W_ + 1;
             float maxR = model.getR()[n][0];
@@ -140,13 +140,16 @@ void GibbsSampling::optimize(){
             }
         }
     }
+/*
 
     // Gibbs sampling position z using empirical alphas
     for( size_t iter = 0; iter < 10; iter++ ){
         Collapsed_Gibbs_sampling_z();
     }
 
-    // vector to store the last a few alphas for sampling methods
+*/
+
+    // vector to store the last a few alphas for certain sampling methods
     std::vector<std::vector<float>> alpha_avg( K_+1 );
     for( size_t k = 0; k < K_+1; k++ ){
         alpha_avg[k].resize( W_ );
@@ -169,7 +172,7 @@ void GibbsSampling::optimize(){
         // update alphas by stochastic optimization
         if( optimizeA_ ){
 
-            Optimize_alphas_by_SGD_ADAM(K_, W_, eta_, iteration);
+            Optimize_alphas_by_SGD_ADAM( K_, W_, eta_, iteration );
 
         } else if( GibbsMHalphas_ ){
 
@@ -194,8 +197,16 @@ void GibbsSampling::optimize(){
                     }
                 }
             }
+        } else {
+            std::cout << "Alphas are not optimized." << std::endl;
         }
 
+        bool make_movie = true;
+        if( make_movie ) {
+            // calculate probabilities
+            motif_->calculateP();
+            motif_->write(Global::outputDirectory, Global::posSequenceBasename, iteration + 1);
+        }
     }
 
     // obtaining a motif model:
@@ -214,6 +225,7 @@ void GibbsSampling::optimize(){
     // run five steps of EM to optimize the final model with
     // the optimum model parameters v's and the fixed alphas
     EM model( motif_, bg_, seqs_, q_ );
+
     for( size_t step = 0; step < 5; step++ ){
 
         // E-step: calculate posterior
@@ -232,7 +244,6 @@ void GibbsSampling::optimize(){
 
 void GibbsSampling::Collapsed_Gibbs_sampling_z(){
 
-    size_t N = seqs_.size();
     N0_ = 0;		// reset N0
 
     llikelihood_ = 0.0f;
@@ -247,10 +258,10 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
     motif_->calculateLinearS( v_bg, K_bg_ );
 
     // sampling z:
-    bool remove_kmer_slowly = false;	// a flag to switch between slow and fast versions
-    // versions of counting k-mers
+    bool remove_kmer_slowly = false;	// a flag to switch between slow and fast versions for counting k-mers
+
     // loop over all sequences and drop one sequence each time and update r
-    for( size_t n = 0; n < N; n++ ){
+    for( size_t n = 0; n < seqs_.size(); n++ ){
 
         size_t  L = seqs_[n]->getL();
         size_t  LW1 = L - W_ + 1;
@@ -263,7 +274,7 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
          * -------------- faster version of removing k-mer ------------------
          */
         float sumN = 0.0f;
-        for( size_t a = 0 ; a < Y_[1]; a++ ){
+        for( size_t a = 0; a < Y_[1]; a++ ){
             sumN += n_[0][a][0];
         }
 
@@ -273,26 +284,24 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
 
                 // for k = 0:
                 size_t y = kmer[z_[n]-1+j] % Y_[1];
+                size_t y_bg = y % Y_[K_bg_+1];
                 n_[0][y][j]--;
 
                 v[0][y][j]= ( n_[0][y][j] + A_[0][j] * v_bg[0][y] ) / ( sumN + A_[0][j] );
-                size_t y_bg = y % Y_[K_bg_+1];
+
                 s_[y][j] = v[K_][y][j] / v_bg[K_bg_][y_bg];
 
                 // for 1 <= k <= K_:
-                for( size_t k = 1; k < K_+1; k++){
+                for( size_t k = 1; k < K_+1; k++ ){
                     y = kmer[z_[n]-1+j] % Y_[k+1];
-                    n_[k][y][j]--;
                     size_t y2 = y % Y_[k];
                     size_t yk = y / Y_[1];
                     y_bg = y % Y_[K_bg_+1];
+                    n_[k][y][j]--;
 
                     if( j == 0 ){
-
                         v[k][y][j] = v[k-1][y2][j];
-
                     } else {
-
                         v[k][y][j] = ( n_[k][y][j] + A_[k][j] * v[k-1][y2][j] )
                                      / ( n_[k-1][yk][j-1] + A_[k][j] );
                     }
@@ -332,14 +341,12 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
         // calculate responsibilities and positional priors
         // over all LW1 positions on n'th sequence:
         float normFactor = 0.0f;
-        pos_[n][0] = 1.0f - q_;
-        r_[n][LW1] = pos_[n][0];
-        normFactor += r_[n][LW1];
         float pos_i = q_ / static_cast<float>( LW1 );
-        for( size_t i = 1; i <= LW1; i++ ){
+        for( size_t i = 0; i <= LW1; i++ ){
             pos_[n][i] = pos_i;
-            r_[n][LW1-i] = 1.0f;
+            r_[n][i] = 1.0f;
         }
+        pos_[n][0] = 1.0f - q_;
 
         // todo: could be parallelized by extracting 8 sequences at once
         // ij = i+j runs over all positions in sequence
@@ -354,20 +361,25 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
                 r_[n][LW1-ij+j] *= s_[y][j];
             }
         }
-        for( size_t i = 0; i <= LW1; i++ ){
-            r_[n][LW1-i] *= pos_[n][i];
+
+        // calculate responsibilities and normalize them
+        r_[n][0] = pos_[n][0];
+        normFactor += r_[n][0];
+        for( size_t i = 1; i <= LW1; i++ ){
+            r_[n][i] *= pos_[n][LW1+1-i];
             normFactor += r_[n][i];
         }
 
         // calculate log likelihood of sequences
         llikelihood_ += logf( normFactor );
 
-        // normalize responsibilities and append them to an array
+        // normalize responsibilities and append them to a vector of posteriors
         std::vector<float> posteriors;
-
-        for( size_t i = 0; i <= LW1; i++ ){
-            r_[n][LW1-i] /= normFactor;
-            posteriors.push_back( r_[n][LW1-i] );
+        r_[n][0] /= normFactor;
+        posteriors.push_back( r_[n][0] );
+        for( size_t i = LW1; i > 0; i-- ){
+            r_[n][i] /= normFactor;
+            posteriors.push_back( r_[n][i] );
         }
 
         // draw a new position z from the discrete distribution of posterior
@@ -388,6 +400,7 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
             }
         }
     }
+    std::cout << "N0=" << N0_ << std::endl;
 }
 
 void GibbsSampling::Gibbs_sample_q(){
@@ -510,8 +523,7 @@ void GibbsSampling::Discrete_sample_alphas( size_t iter ){
 
             for( size_t it = 0; it < 100; it++ ){
 
-                condProb_new = expf( calc_logCondProb_a( iter,
-                                                         ( float )it / 10.0f, k, j ) - base );
+                condProb_new = expf( calc_logCondProb_a( iter, ( float )it / 10.0f, k, j ) - base );
 
                 condProb.push_back( condProb_new );
 
@@ -539,8 +551,7 @@ float GibbsSampling::calc_gradient_alphas( float** A, size_t k, size_t j ){
     gradient -= 2.0f / A[k][j];
 
     // the second term of equation 47
-    gradient += beta_ * powf( gamma_, ( float )k )
-                / powf( A[k][j], 2.0f );
+    gradient += beta_ * powf( gamma_, ( float )k ) / powf( A[k][j], 2.0f );
 
     // the third term of equation 47
     gradient += static_cast<float>( Y_[k] ) * boost::math::digamma( A[k][j] );
@@ -550,8 +561,7 @@ float GibbsSampling::calc_gradient_alphas( float** A, size_t k, size_t j ){
 
         if( k == 0 ){
             // the first part
-            gradient += v_bg[k][y] * boost::math::digamma( n_[k][y][j] +
-                                                           A[k][j] * v_bg[k][y] );
+            gradient += v_bg[k][y] * boost::math::digamma( n_[k][y][j] + A[k][j] * v_bg[k][y] );
 
             // the second part
             gradient -= v_bg[k][y] * boost::math::digamma( A[k][j] * v_bg[k][y] );
@@ -561,12 +571,10 @@ float GibbsSampling::calc_gradient_alphas( float** A, size_t k, size_t j ){
             size_t y2 = y % Y_[k];
 
             // the first part
-            gradient += v[k-1][y2][j] * boost::math::digamma( n_[k][y][j] +
-                                                              A[k][j] * v[k-1][y2][j] );
+            gradient += v[k-1][y2][j] * boost::math::digamma( n_[k][y][j] + A[k][j] * v[k-1][y2][j] );
 
             // the second part
-            gradient -= v[k-1][y2][j] * boost::math::digamma( A[k][j]
-                                                              * v[k-1][y2][j] );
+            gradient -= v[k-1][y2][j] * boost::math::digamma( A[k][j] * v[k-1][y2][j] );
 
         }
 
@@ -651,8 +659,7 @@ float GibbsSampling::calc_logCondProb_a( size_t iteration, float a, size_t k, si
                 if( n_[k][ya][j] > 0.0f ){
 
                     // the first part of the forth term
-                    logCondProbA += boost::math::lgamma( n_[k][ya][j] +
-                                                         alpha * v[k-1][y2][j] );
+                    logCondProbA += boost::math::lgamma( n_[k][ya][j] + alpha * v[k-1][y2][j] );
 
                     // the second part of the forth term
                     logCondProbA -= boost::math::lgamma( alpha * v[k-1][y2][j] );
@@ -668,8 +675,7 @@ float GibbsSampling::calc_logCondProb_a( size_t iteration, float a, size_t k, si
             // or one k-mer is present
             if( n_[k-1][y][j-1] - 1.0f <= 0.0000001f ){
 
-                logCondProbA = -a - beta_ * powf( gamma_, ( float )k )
-                                    / alpha;
+                logCondProbA = -a - beta_ * powf( gamma_, ( float )k ) / alpha;
 
             }
 

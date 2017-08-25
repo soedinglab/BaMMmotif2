@@ -40,7 +40,11 @@ private:
     float** 				A_;	        		// pseudo-count hyper-parameter for order k and motif position j
     size_t 					K_bg_;				// the order of the background model
 
-    float** 				r_;		        	// responsibilities at position i in sequence n
+    float** 				r_;		        	// responsibilities at all the positions in sequence n
+                                                // Note: here the r_[n][0] indicates the responsibility of not having
+                                                //      a motif on the sequence;
+                                                //      r_[n][i] (for i > 0) indicates the responsibility of having a motif
+                                                //      on position L-W+2-i
     float**					s_;					// log odds scores
     float*** 				n_;	            	// fractional counts n for (k+1)-mers y at motif position j
     float**					pos_;				// positional prior, pos[i][0] indicates the prior for no motif present on sequence i

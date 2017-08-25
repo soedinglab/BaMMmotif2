@@ -365,7 +365,7 @@ void Motif::calculateV( float*** n ){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
 			size_t y2 = y % Y_[k];				// cut off first nucleotide in (k+1)-mer y
 			size_t yk = y / Y_[1];				// cut off last nucleotide in (k+1)-mer y
-			for( size_t j = 0; j < k; j++ ){	// when j < k, i.e. p(A|CG) = p(A|C)
+			for( size_t j = 0; j < k; j++ ){	// when j < k, i.e. p_j(A|CG) = p_j(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
 			}
 			for( size_t j = 0; j < W_; j++ ){
@@ -377,7 +377,7 @@ void Motif::calculateV( float*** n ){
 }
 
 void Motif::calculateP(){
-	// calculate probabilities, i.e. p(ACG) = p(G|AC) * p(AC)
+	// calculate probabilities, i.e. p_j(ACG) = p_j(G|AC) * p_j-1(AC)
 
 	// when k = 0:
 	for( size_t j = 0; j < W_; j++ ){
@@ -390,9 +390,9 @@ void Motif::calculateP(){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
 			size_t y2 = y % Y_[k];				// cut off first nucleotide in (k+1)-mer
 			size_t yk = y / Y_[1];				// cut off last nucleotide in (k+1)-mer
-			// todoL:
+			// todo: the calculation for j < k is not correct.
 			for( size_t j = 0; j < k; j++ ){
-				p_[k][y][j] = p_[k-1][y2][j];	// i.e. p(ACG) = p(CG)
+				p_[k][y][j] = p_[k-1][y2][j];	// i.e. p_j(ACG) = p_j(CG)
 			}
 			for( size_t j = k; j < W_; j++ ){
 				p_[k][y][j] =  v_[k][y][j] * p_[k-1][yk][j-1];

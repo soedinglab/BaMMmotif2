@@ -195,7 +195,7 @@ void FDR::calculatePR(){
 			ZOOPS_TP_.push_back( ( float )idx_posMax );
 			ZOOPS_FP_.push_back( ( float )idx_negMax / mFold );
 			PN_Pvalue_.push_back( ( ( float )idx_negMax + 0.5f )
-					/ ( mFold * ( float )posScoreMax_.size() + 1.0f ) );
+                                  / ( mFold * ( float )posScoreMax_.size() + 1.0f ) );
 
 			// take the faction of q sequences as real positives
 			if( idx_posMax == posN_est ){
@@ -233,13 +233,13 @@ void FDR::calculatePvalues(){
 			// Return iterator to lower/upper bound
 			int low, up;
 			low = static_cast<int>( std::distance( negScoreAll_.begin(),
-										std::lower_bound( negScoreAll_.begin(),
-												negScoreAll_.end(),
-												posScoreAll_[i] ) ) );
+                                                   std::lower_bound( negScoreAll_.begin(),
+                                                                     negScoreAll_.end(),
+                                                                     posScoreAll_[i] ) ) );
 			up =  static_cast<int>( std::distance( negScoreAll_.begin(),
-										std::upper_bound( negScoreAll_.begin(),
-												negScoreAll_.end(),
-												posScoreAll_[i] ) ) );
+                                                   std::upper_bound( negScoreAll_.begin(),
+                                                                     negScoreAll_.end(),
+                                                                     posScoreAll_[i] ) ) );
 			float p = 1.0f - ( float )( up + low ) /
 					( 2.0f * ( float ) negScoreAll_.size() );
 			// avoid the rounding errors, such as p-value = 0 or p-value > 1
@@ -258,15 +258,14 @@ void FDR::calculatePvalues(){
 			// Return iterator to lower/upper bound
 			int low, up;
 			low = static_cast<int>( std::distance( negScoreMax_.begin(),
-										std::lower_bound( negScoreMax_.begin(),
-												negScoreMax_.end(),
-												posScoreMax_[i] ) ) );
+                                                   std::lower_bound( negScoreMax_.begin(),
+                                                                     negScoreMax_.end(),
+                                                                     posScoreMax_[i] ) ) );
 			up =  static_cast<int>( std::distance( negScoreMax_.begin(),
-										std::upper_bound( negScoreMax_.begin(),
-												negScoreMax_.end(),
-												posScoreMax_[i] ) ) );
-			float p = 1.0f - ( float )( up + low )
-					/ ( 2.0f * ( float )negScoreMax_.size() );
+                                                   std::upper_bound( negScoreMax_.begin(),
+                                                                     negScoreMax_.end(),
+                                                                     posScoreMax_[i] ) ) );
+			float p = 1.0f - ( float )( up + low ) / ( 2.0f * ( float )negScoreMax_.size() );
 			// avoid the rounding errors, such as p-value = 0 or p-value > 1
 			if( p < 1e-6 ) p = 0.000001f;
 			if( p > 1.0f ) p = 1.0f;

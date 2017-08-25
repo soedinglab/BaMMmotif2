@@ -36,10 +36,9 @@ public:
 
 	void        		updateV( float*** n, float** alpha, size_t k );
 
-	void				calculateP();					// calculate probabilities p
+	void				calculateP();				// calculate probabilities p
 	void				calculateLogS( float** Vbg, size_t K_bg );
-	void				calculateLinearS( float** Vbg, size_t K_bg );
-														// in linear space for speeding up
+	void				calculateLinearS( float** Vbg, size_t K_bg ); // calculate S in linear space for speeding up
 
 	void 				print();					// print v to console
 	void 				write( char* odir, std::string basename, size_t N );
@@ -112,12 +111,11 @@ inline void Motif::updateV( float*** n, float** alpha, size_t K ){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
 			size_t y2 = y % Y_[k];				// cut off the first nucleotide
 			size_t yk = y / Y_[1];				// cut off the last nucleotide
-			//todo: Merge first loop into second one
-			// (by allowing contexts to extend left of the motif)
+			// todo: Merge first loop into second one (by allowing contexts to extend left of the motif)
 			for( size_t j = 0; j < k; j++ ){	// when j < k, p(A|CG) = p(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
 			}
-			//todo: Vectorize in AVX2 / SSE2
+			// todo: Vectorize in AVX2 / SSE2
 			for( size_t j = k; j < W_; j++ ){
 				v_[k][y][j] = ( n[k][y][j] + alpha[k][j]* v_[k-1][y2][j] )
 							/ ( n[k-1][yk][j-1] + alpha[k][j] );

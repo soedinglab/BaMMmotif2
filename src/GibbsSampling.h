@@ -33,7 +33,12 @@ private:
 	float** 				A_;	        		// pseudo-count hyper-parameter for order k and motif position j
 	size_t 					K_bg_;				// the order of the background model
 
-	float** 				r_;		        	// responsibilities at position i in sequence n
+	float** 				r_;		        	// responsibilities at all the positions in sequence n
+                                                // Note: here the r_[n][0] indicates the responsibility of not having
+                                                //      a motif on the sequence;
+                                                //      r_[n][i] (for i > 0) indicates the responsibility of having a motif
+                                                //      on position L-W+2-i
+
 	float**					s_;					// log odds scores
 	float*** 				n_;	            	// fractional counts n for (k+1)-mers y at motif position j
 	size_t*					z_;					// observed position of motif in each sequence
@@ -44,7 +49,7 @@ private:
 	size_t					N0_ = 0;			// count of sequences that do not contain a motif
 
 	float 					llikelihood_ = 0.0f;// log likelihood for each iteration
-	size_t					maxCGSIterations_ = 50;
+	size_t					maxCGSIterations_ = 100;
 	float					beta_ = Global::modelBeta;
 	float					gamma_ = Global::modelGamma;
 
@@ -69,7 +74,7 @@ private:
 	void					Gibbs_sample_q();
 
 							// update alphas for all the orders up to K by stochastic gradient descent
-	void					Optimize_alphas_by_SGD_ADAM(size_t order, size_t width, float learning_rate, size_t t);
+	void					Optimize_alphas_by_SGD_ADAM( size_t order, size_t width, float learning_rate, size_t t );
 
 							// Gibbs sampling alphas with Metropolis-Hastings algorithm
 	void					GibbsMH_sample_alphas( size_t iteration );

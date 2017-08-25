@@ -61,17 +61,19 @@ int EM::optimize(){
     bool 	iterate = true;
 
     float 	v_diff, llikelihood_prev, llikelihood_diff;
+
     std::vector<std::vector<float>> v_before;
     v_before.resize( Y_[K_+1] );
     for( size_t y = 0; y < Y_[K_+1]; y++ ){
         v_before[y].resize( W_ );
     }
 
-    size_t EMIterations = 0;
-    // iterate over
-    while( iterate && ( EMIterations < maxEMIterations_ ) ){
+    size_t iterations = 0;
 
-        EMIterations++;
+    // iterate over
+    while( iterate && ( iterations < maxEMIterations_ ) ){
+
+        iterations++;
 
         // get parameter variables with highest order before EM
         llikelihood_prev = llikelihood_;
@@ -99,7 +101,15 @@ int EM::optimize(){
         llikelihood_diff = llikelihood_ - llikelihood_prev;
 
         if( v_diff < epsilon_ )							iterate = false;
-        if( llikelihood_diff < 0 && EMIterations > 1 )	iterate = false;
+        if( llikelihood_diff < 0 && iterations > 1 )	iterate = false;
+
+        bool make_movie = false;
+        if( make_movie ) {
+            // calculate probabilities
+            motif_->calculateP();
+            // write out the learned model
+            motif_->write(Global::outputDirectory, Global::posSequenceBasename, iterations + 1);
+        }
     }
 
     // calculate probabilities
@@ -119,25 +129,25 @@ void EM::EStep(){
     // todo: parallel the code
 //	#pragma omp parallel for
 
-    // calculate responsibilities r_[n][i] at position i in sequence n
+    // calculate responsibilities r at all LW1 positions on sequence n
     // n runs over all sequences
     for( size_t n = 0; n < seqs_.size(); n++ ){
 
         size_t 	L = seqs_[n]->getL();
         size_t 	LW1 = L - W_ + 1;
-        size_t 	LW2 = L - W_ + 2;
         size_t*	kmer = seqs_[n]->getKmer();
         float 	normFactor = 0.0f;
 
-        // reset r_[n][i] and pos_[n][i]
-        for( size_t i = 0; i < LW2; i++ ){
+        // initialize r_[n][i] and pos_[n][i]
+        float pos_i = q_ / static_cast<float>( LW1 );
+        for( size_t i = 1; i <= LW1; i++ ){
             r_[n][i] = 1.0f;
-            pos_[n][i] = q_ / static_cast<float>( LW1 );
+            pos_[n][i] = pos_i;
         }
-        pos_[n][0] = 1 - q_;
+        pos_[n][0] = 1.0f - q_;
+        r_[n][0] = pos_[n][0];
 
-        // when p(z_n > 0)
-        // ij = i+j runs over all positions in sequence
+        // when p(z_n > 0), ij = i+j runs over all positions in sequence
         for( size_t ij = 0; ij < L; ij++ ){
 
             // extract (K+1)-mer y from positions (i-k,...,i)
@@ -149,14 +159,15 @@ void EM::EStep(){
             }
         }
 
-        // calculate complete responsibilities and sum them up
-        for( size_t i = 0; i < LW2; i++ ){
-            r_[n][LW1-i] *= pos_[n][i];
+        // calculate the responsibilities and sum them up
+        normFactor += r_[n][0];
+        for( size_t i = 1; i <= LW1; i++ ){
+            r_[n][i] *= pos_[n][LW1+1-i];
             normFactor += r_[n][i];
         }
 
         // normalize responsibilities
-        for( size_t i = 0; i < LW2; i++ ){
+        for( size_t i = 0; i <= LW1; i++ ){
             r_[n][i] /= normFactor;
         }
 
@@ -274,14 +285,15 @@ void EM::write( char* odir, std::string basename, size_t N, bool ss ){
 
         ofile_pos << seqs_[n]->getHeader() << '\t';
 
-        size_t seq_length = seqs_[n]->getL();
-        if( !ss )	seq_length = ( seq_length - 1 ) / 2;
+        size_t L = seqs_[n]->getL();
 
-        size_t LW1 = seqs_[n]->getL() - W_ + 1;
+        if( !ss )	L = ( L - 1 ) / 2;
+
+        size_t LW1 = L - W_ + 1;
 
         for( size_t i = LW1; i > 0; i-- ){
             if( r_[n][i] >= cutoff ){
-                ofile_pos << ( ( i < seq_length ) ? '-' : '+' ) << '\t'
+                ofile_pos << ( ( i < L ) ? '-' : '+' ) << '\t'
                         << LW1-i+1 << ".." << LW1-i+W_<< '\t';
                 for( size_t b = 0; b < W_; b++ ){
                     ofile_pos << Alphabet::getBase( seqs_[n]->getSequence()[LW1-i+b] );
