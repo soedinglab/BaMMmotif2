@@ -73,7 +73,8 @@ int main( int nargs, char* args[] ){
 
 		if( Global::saveInitialBaMMs ){
 			// optional: save initial model
-			motif->write( Global::outputDirectory, Global::posSequenceBasename + "_init_motif_" + std::to_string( n+1 ) );
+			motif->write( Global::outputDirectory,
+                          Global::posSequenceBasename + "_init_motif_" + std::to_string( n+1 ) );
 		}
 
 		// optimize the model with either EM or Gibbs sampling
@@ -83,10 +84,13 @@ int main( int nargs, char* args[] ){
 			model.optimize();
 			// write model parameters on the disc
 			if( Global::saveBaMMs ){
-				model.write( Global::outputDirectory, Global::posSequenceBasename + "_motif_ " + std::to_string( n+1 ), Global::ss );
+				model.write( Global::outputDirectory,
+                             Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ),
+                             Global::ss );
 			}
             // write out the learned model
-            motif->write( Global::outputDirectory, Global::posSequenceBasename + "_motif_ " + std::to_string( n+1 ) );
+            motif->write( Global::outputDirectory,
+                          Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ) );
 
 		} else if ( Global::CGS ){
 			GibbsSampling model( motif, bgModel, Global::posSequenceSet->getSequences(), Global::q );
@@ -94,10 +98,13 @@ int main( int nargs, char* args[] ){
 			model.optimize();
 			// write model parameters on the disc
 			if( Global::saveBaMMs ){
-				model.write( Global::outputDirectory, Global::posSequenceBasename + "_motif_ " + std::to_string( n+1 ), Global::ss );
+				model.write( Global::outputDirectory,
+                             Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ),
+                             Global::ss );
 			}
             // write out the learned model
-            motif->write( Global::outputDirectory, Global::posSequenceBasename + "_motif_ " + std::to_string( n+1 ) );
+            motif->write( Global::outputDirectory,
+                          Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ) );
 
 		} else {
 
@@ -110,8 +117,9 @@ int main( int nargs, char* args[] ){
 			ScoreSeqSet seq_set( motif, bgModel, Global::posSequenceSet->getSequences() );
 			seq_set.score();
 			seq_set.write( Global::outputDirectory,
-						   Global::posSequenceBasename + "_motif_ " + std::to_string( n+1 ),
-						   Global::scoreCutoff, Global::ss );
+						   Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ),
+						   Global::scoreCutoff,
+                           Global::ss );
 		}
 
 		if( Global::generatePseudoSet ){
@@ -124,7 +132,7 @@ int main( int nargs, char* args[] ){
 			SeqGenerator artificial_seq_set( Global::posSequenceSet->getSequences(), motif, Global::sOrder );
 
 			artificial_seq_set.write( Global::outputDirectory,
-									  Global::posSequenceBasename + "_embed_motif_ " + std::to_string( n+1 ),
+									  Global::posSequenceBasename + "_embed_motif_" + std::to_string( n+1 ),
 									  artificial_seq_set.arti_posset_motif_embedded( Global::mFold ) );
 
 		}
@@ -138,7 +146,7 @@ int main( int nargs, char* args[] ){
             // generate sequences from positive sequences with masked motif after optimization
             SeqGenerator artificial_set( Global::posSequenceSet->getSequences(), motif, Global::sOrder );
             artificial_set.write( Global::outputDirectory,
-								  Global::posSequenceBasename + "_masked_motif_ " + std::to_string( n+1 ),
+								  Global::posSequenceBasename + "_masked_motif_" + std::to_string( n+1 ),
                                   artificial_set.arti_negset_motif_masked( model_opti.getR() ) );
         }
 
@@ -218,7 +226,8 @@ int main( int nargs, char* args[] ){
 			FDR fdr( Global::posSequenceSet->getSequences(), negset,
 					Global::q, motif, bgModel, Global::cvFold );
 			fdr.evaluateMotif();
-			fdr.write( Global::outputDirectory, Global::posSequenceBasename + "_motif_ " + std::to_string( n+1 ) );
+			fdr.write( Global::outputDirectory,
+                       Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ) );
 			if( motif )		delete motif;
 		}
 
