@@ -34,7 +34,6 @@ public:
 
 	void write( char* odir,
 				std::string basename,
-				size_t n,
 				std::vector<std::unique_ptr<Sequence>> seqset );
 
 private:

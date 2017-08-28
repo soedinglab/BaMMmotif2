@@ -32,6 +32,7 @@ public:
 	static char*		posSequenceFilename;	// filename of positive sequence FASTA file
 	static std::string	posSequenceBasename;	// basename of positive sequence FASTA file
 	static SequenceSet*	posSequenceSet;			// positive sequence set
+	static bool 		maskPosSequenceSet;		// mask motif patterns from positive sequence set
 
 	static char*		negSequenceFilename;	// filename of negative sequence FASTA file
 	static std::string	negSequenceBasename;	// basename of negative sequence FASTA file
@@ -105,9 +106,12 @@ public:
 	static bool 		saveBgModel;			// write out background model to disk
 	static bool			generatePseudoSet;		// test for alpha learning
 
+	// flags for developers
+	static bool			makeMovie;				// print out bamms in each iteration while optimizing
+	static void         debug();
+
 	static void         init( int nargs, char* args[] );
 	static void         destruct();
-	static void         debug();
 	static void			printStat();
 	static char* 		String( const char *s );// convert const char* to string, for GetOpt library
 

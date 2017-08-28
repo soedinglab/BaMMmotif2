@@ -33,8 +33,7 @@ public:
 	std::vector<std::vector<float>> getMopsScores();
 	std::vector<float> 				getZoopsScores();
 
-	void write( char* odir, std::string basename, size_t N,
-			float cutoff, bool ss );
+	void write( char* odir, std::string basename, float cutoff, bool ss );
 
 
 private:

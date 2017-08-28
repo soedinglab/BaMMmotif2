@@ -16,7 +16,7 @@ EM::EM( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqs, float q 
 	Y_ = motif_->getY();
 	s_ = motif_->getS();
 	A_ = motif_->getA();
-	K_bg_ = ( bg_->getOrder() < K_ ) ?  bg_->getOrder() : K_;
+	K_bg_ = ( bg_->getOrder() < K_ ) ? bg_->getOrder() : K_;
 
 	// allocate memory for r_[n][i], pos_[n][i], z_[n]
 	r_ = ( float** )calloc( seqs_.size(), sizeof( float* ) );
@@ -103,12 +103,11 @@ int EM::optimize(){
         if( v_diff < epsilon_ )							iterate = false;
         if( llikelihood_diff < 0 && iterations > 1 )	iterate = false;
 
-        bool make_movie = false;
-        if( make_movie ) {
+        if( Global::makeMovie ) {
             // calculate probabilities
             motif_->calculateP();
             // write out the learned model
-            motif_->write(Global::outputDirectory, Global::posSequenceBasename, iterations + 1);
+            motif_->write(Global::outputDirectory, Global::posSequenceBasename + "_iter_ " + std::to_string( iterations+1 ) );
         }
     }
 
@@ -126,7 +125,7 @@ void EM::EStep(){
 
     motif_->calculateLinearS( bg_->getV(), K_bg_ );
 
-    // todo: parallel the code
+    // todo: parallelize the code
 //	#pragma omp parallel for
 
     // calculate responsibilities r at all LW1 positions on sequence n
@@ -248,7 +247,7 @@ void EM::print(){
 
 }
 
-void EM::write( char* odir, std::string basename, size_t N, bool ss ){
+void EM::write( char* odir, std::string basename, bool ss ){
 
 	/**
 	 * 	 * save BaMM (hyper-)parameters in flat files:
@@ -257,8 +256,7 @@ void EM::write( char* odir, std::string basename, size_t N, bool ss ){
 	 * (3) posSequenceBasename.positions:   position of motif(s) on each sequence
 	 */
 
-	std::string opath = std::string( odir ) + '/' + basename
-						+ "_motif_" + std::to_string( N );
+	std::string opath = std::string( odir ) + '/' + basename;
 
 	// output (k+1)-mer counts n[k][y][j]
 	std::string opath_n = opath + ".counts";

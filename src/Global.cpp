@@ -5,6 +5,7 @@ char*               Global::outputDirectory = NULL;			// output directory
 char*               Global::posSequenceFilename = NULL;		// filename of positive sequence FASTA file
 std::string			Global::posSequenceBasename;			// basename of positive sequence FASTA file
 SequenceSet*        Global::posSequenceSet = NULL;			// positive sequence set
+bool 		        Global::maskPosSequenceSet = false;		// mask motif patterns from positive sequence set
 
 char*               Global::negSequenceFilename = NULL;		// filename of negative sequence FASTA file
 std::string			Global::negSequenceBasename;			// basename of negative sequence FASTA file
@@ -76,6 +77,9 @@ bool				Global::saveBgModel = false;			// write out the background model to disk
 bool				Global::generatePseudoSet = false;		// test for alpha learning
 std::mt19937		Global::rngx;
 
+// flags for developers
+bool			    Global::makeMovie = false;              // print out bamms in each iteration while optimizing
+
 void Global::init( int nargs, char* args[] ){
 
 	readArguments( nargs, args );
@@ -120,6 +124,9 @@ int Global::readArguments( int nargs, char* args[] ){
 		printHelp();
 		exit( -1 );
 	}
+
+    // mask motif patterns from the positive sequence set
+    opt >> GetOpt::OptionPresent( "maskPosSequenceSet", maskPosSequenceSet );
 
 	// read in negative sequence file
 	if( opt >> GetOpt::OptionPresent( "negSeqFile" ) ){
@@ -279,6 +286,8 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "saveLogOdds", saveLogOdds );
 	opt >> GetOpt::OptionPresent( "saveBgModel", saveBgModel );
 
+    // flags for developers
+    opt >> GetOpt::OptionPresent( "makeMovie", makeMovie );
 	// for remaining unknown options
 	if( opt.options_remain() ){
 		printHelp();

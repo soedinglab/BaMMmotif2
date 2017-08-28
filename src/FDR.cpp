@@ -328,10 +328,9 @@ void FDR::print(){
 
 }
 
-void FDR::write( char* odir, std::string basename, size_t n ){
+void FDR::write( char* odir, std::string basename ){
 
-	std::string opath = std::string( odir ) + '/' + basename +
-						"_motif_" + std::to_string( n );
+	std::string opath = std::string( odir ) + '/' + basename;
 
 	if( savePRs_ ){
 		/**

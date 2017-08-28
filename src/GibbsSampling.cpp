@@ -201,11 +201,10 @@ void GibbsSampling::optimize(){
             std::cout << "Alphas are not optimized." << std::endl;
         }
 
-        bool make_movie = true;
-        if( make_movie ) {
+        if( Global::makeMovie ) {
             // calculate probabilities
             motif_->calculateP();
-            motif_->write(Global::outputDirectory, Global::posSequenceBasename, iteration + 1);
+            motif_->write(Global::outputDirectory, Global::posSequenceBasename + "_iter_ " + std::to_string( iteration+1 ) );
         }
     }
 
@@ -868,7 +867,7 @@ void GibbsSampling::print(){
 
 }
 
-void GibbsSampling::write( char* odir, std::string basename, size_t N, bool ss ){
+void GibbsSampling::write( char* odir, std::string basename, bool ss ){
 
     /**
      * 	 * save BaMM (hyper-)parameters in flat files:
@@ -878,8 +877,7 @@ void GibbsSampling::write( char* odir, std::string basename, size_t N, bool ss )
      * (4) posSequenceBasename.positions:   position of motif pattern on each sequence
      */
 
-    std::string opath = std::string( odir ) + '/' + basename
-                        + "_motif_" + std::to_string( N );
+    std::string opath = std::string( odir ) + '/' + basename;
 
     // output (k+1)-mer counts: n[k][y][j]
     std::string opath_n = opath + ".counts";

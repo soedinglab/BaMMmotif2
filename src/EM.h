@@ -22,7 +22,7 @@ public:
 
     int                     optimize();         // run EM optimization
     void                    print();            // print out optimized model v
-    void					write( char* odir, std::string basename, size_t n, bool ss );
+    void					write( char* odir, std::string basename, bool ss );
                                                 // write out the EM parameters such as n, pos, r
 
     void 					EStep();			// E-step

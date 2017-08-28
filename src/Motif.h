@@ -41,7 +41,7 @@ public:
 	void				calculateLinearS( float** Vbg, size_t K_bg ); // calculate S in linear space for speeding up
 
 	void 				print();					// print v to console
-	void 				write( char* odir, std::string basename, size_t N );
+	void 				write( char* odir, std::string basename );
 
 private:
 

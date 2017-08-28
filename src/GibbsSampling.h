@@ -20,7 +20,7 @@ public:
 
 	void					print();			// print out optimized model v
 
-	void					write( char* odir, std::string basename, size_t n, bool ss );
+	void					write( char* odir, std::string basename, bool ss );
 												// write out the optimized (hyper-)parameters
 
 private:

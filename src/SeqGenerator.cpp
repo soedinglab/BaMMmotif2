@@ -340,14 +340,13 @@ std::unique_ptr<Sequence> SeqGenerator::negseq_motif_masked( Sequence* posseq, s
 	return seq_mask_motif;
 }
 
-void SeqGenerator::write( char* odir, std::string basename, size_t n, std::vector<std::unique_ptr<Sequence>> seqset ){
+void SeqGenerator::write( char* odir, std::string basename, std::vector<std::unique_ptr<Sequence>> seqset ){
 	/**
 	 * save the generated sequence set in fasta file:
 	 * (1) posSequenceBasename_pseudo.fasta
 	 */
 
-	std::string opath = std::string( odir ) + '/' + basename +
-			"_pseudoset_embed_motif_" + std::to_string( n ) +".fasta";
+	std::string opath = std::string( odir ) + '/' + basename + ".fasta";
 
 	std::ofstream ofile( opath );
 

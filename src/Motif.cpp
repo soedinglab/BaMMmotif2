@@ -209,6 +209,7 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset ){
 
 	// sampling z from each sequence of the sequence set based on the weights:
 	std::vector<Sequence*> posSet = posSeqset->getSequences();
+	// todo: better to get the q (enrichment of the PWM pattern) from PEnG!motif
 	float q = posSeqset->getQ();
 	std::mt19937 rngx;
 
@@ -253,8 +254,7 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset ){
 			posteriors.push_back( r[i] );
 		}
 		// draw a new position z from discrete posterior distribution
-		std::discrete_distribution<size_t> posterior_dist( posteriors.begin(),
-															posteriors.end() );
+		std::discrete_distribution<size_t> posterior_dist( posteriors.begin(), posteriors.end() );
 
 		// draw a sample z randomly
 		z = posterior_dist( rngx );
@@ -438,7 +438,7 @@ void Motif::print(){
 	}
 }
 
-void Motif::write( char* odir, std::string basename, size_t N ){
+void Motif::write( char* odir, std::string basename ){
 
 	/**
 	 * save motif learned by BaMM in two flat files:
@@ -446,8 +446,7 @@ void Motif::write( char* odir, std::string basename, size_t N ){
 	 * (2) posSequenceBasename.ihbp: 		probabilities of PWM after EM
 	 */
 
-	std::string opath = std::string( odir )  + '/'
-			+ basename + "_motif_" + std::to_string( N );
+	std::string opath = std::string( odir )  + '/' + basename;
 
 	// output conditional probabilities v[k][y][j] and probabilities p[k][y][j]
 	std::string opath_v = opath + ".ihbcp"; 	// ihbcp: inhomogeneous bamm
