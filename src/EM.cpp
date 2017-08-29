@@ -107,7 +107,8 @@ int EM::optimize(){
             // calculate probabilities
             motif_->calculateP();
             // write out the learned model
-            motif_->write(Global::outputDirectory, Global::posSequenceBasename + "_iter_ " + std::to_string( iterations+1 ) );
+            motif_->write( Global::outputDirectory,
+                           Global::posSequenceBasename + "_iter_ " + std::to_string( iterations+1 ) );
         }
     }
 
@@ -287,12 +288,12 @@ void EM::write( char* odir, std::string basename, bool ss ){
 
         if( !ss )	L = ( L - 1 ) / 2;
 
-        size_t LW1 = L - W_ + 1;
+        size_t LW1 = seqs_[n]->getL() - W_ + 1;
 
         for( size_t i = LW1; i > 0; i-- ){
             if( r_[n][i] >= cutoff ){
-                ofile_pos << ( ( i < L ) ? '-' : '+' ) << '\t'
-                        << LW1-i+1 << ".." << LW1-i+W_<< '\t';
+                ofile_pos << ( ( i < L ) ? '+' : '-' ) << '\t'
+                          << LW1-i+1 << ".." << LW1-i+W_<< '\t';
                 for( size_t b = 0; b < W_; b++ ){
                     ofile_pos << Alphabet::getBase( seqs_[n]->getSequence()[LW1-i+b] );
                 }

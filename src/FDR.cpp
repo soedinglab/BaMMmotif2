@@ -392,8 +392,7 @@ void FDR::write( char* odir, std::string basename ){
 			std::string opath_zoops = opath + ".zoops.pvalues";
 			std::ofstream ofile_zoops( opath_zoops );
 			for( size_t i = 0; i < ZOOPS_Pvalue_.size(); i++ ){
-				ofile_zoops << std::setprecision( 3 )
-							<< ZOOPS_Pvalue_[i] << std::endl;
+				ofile_zoops << std::setprecision( 3 ) << ZOOPS_Pvalue_[i] << std::endl;
 			}
 		}
 
@@ -401,8 +400,7 @@ void FDR::write( char* odir, std::string basename ){
 			std::string opath_mops = opath + ".mops.pvalues";
 			std::ofstream ofile_mops( opath_mops );
 			for( size_t i = 0; i < MOPS_Pvalue_.size(); i++ ){
-				ofile_mops  << std::setprecision( 3 )
-							<< MOPS_Pvalue_[i] << std::endl;
+				ofile_mops  << std::setprecision( 3 ) << MOPS_Pvalue_[i] << std::endl;
 			}
 		}
 	}

@@ -27,6 +27,8 @@ int main( int nargs, char* args[] ){
 
 	// initialization
 	Global::init( nargs, args );
+    std::vector<Sequence*> posseqs = Global::posSequenceSet->getSequences();
+    std::vector<Sequence*> negseqs = Global::negSequenceSet->getSequences();
 
 	if( Global::verbose ){
 		std::cout << std::endl
@@ -36,7 +38,7 @@ int main( int nargs, char* args[] ){
 	}
 	BackgroundModel* bgModel;
 	if( !Global::bgModelGiven ){
-		bgModel = new BackgroundModel( Global::negSequenceSet->getSequences(),
+		bgModel = new BackgroundModel( negseqs,
 										Global::bgModelOrder,
 										Global::bgModelAlpha,
 										Global::interpolateBG,
@@ -79,7 +81,7 @@ int main( int nargs, char* args[] ){
 
 		// optimize the model with either EM or Gibbs sampling
 		if( Global::EM ){
-			EM model( motif, bgModel, Global::posSequenceSet->getSequences(), Global::q );
+			EM model( motif, bgModel, posseqs, Global::q );
 			// learn motifs by EM
 			model.optimize();
 			// write model parameters on the disc
@@ -93,7 +95,7 @@ int main( int nargs, char* args[] ){
                           Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ) );
 
 		} else if ( Global::CGS ){
-			GibbsSampling model( motif, bgModel, Global::posSequenceSet->getSequences(), Global::q );
+			GibbsSampling model( motif, bgModel, posseqs, Global::q );
 			// learn motifs by collapsed Gibbs sampling
 			model.optimize();
 			// write model parameters on the disc
@@ -114,7 +116,7 @@ int main( int nargs, char* args[] ){
 
 		if( Global::scoreSeqset ){
 			// score the model on sequence set
-			ScoreSeqSet seq_set( motif, bgModel, Global::posSequenceSet->getSequences() );
+			ScoreSeqSet seq_set( motif, bgModel, posseqs );
 			seq_set.score();
 			seq_set.write( Global::outputDirectory,
 						   Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ),
@@ -125,11 +127,11 @@ int main( int nargs, char* args[] ){
 		if( Global::generatePseudoSet ){
 
 			// optimize motifs by EM
-			EM model( motif, bgModel, Global::posSequenceSet->getSequences(), Global::q );
+			EM model( motif, bgModel, posseqs, Global::q );
 			model.optimize();
 
 			// generate artificial sequence set with the learned motif embedded
-			SeqGenerator artificial_seq_set( Global::posSequenceSet->getSequences(), motif, Global::sOrder );
+			SeqGenerator artificial_seq_set( posseqs, motif, Global::sOrder );
 
 			artificial_seq_set.write( Global::outputDirectory,
 									  Global::posSequenceBasename + "_embed_motif_" + std::to_string( n+1 ),
@@ -140,11 +142,11 @@ int main( int nargs, char* args[] ){
         if( Global::maskPosSequenceSet ){
 
             // learn motifs by EM
-            EM model_opti( motif, bgModel, Global::posSequenceSet->getSequences(), Global::q );
+            EM model_opti( motif, bgModel, posseqs, Global::q );
             model_opti.optimize();
 
             // generate sequences from positive sequences with masked motif after optimization
-            SeqGenerator artificial_set( Global::posSequenceSet->getSequences(), motif, Global::sOrder );
+            SeqGenerator artificial_set( posseqs, motif, Global::sOrder );
             artificial_set.write( Global::outputDirectory,
 								  Global::posSequenceBasename + "_masked_motif_" + std::to_string( n+1 ),
                                   artificial_set.arti_negset_motif_masked( model_opti.getR() ) );
@@ -162,8 +164,7 @@ int main( int nargs, char* args[] ){
                       << "*   BaMM validation   *" << std::endl
                       << "***********************" << std::endl;
 		}
-        std::vector<Sequence*> posseqs = Global::posSequenceSet->getSequences();
-        std::vector<Sequence*> negseqs = Global::negSequenceSet->getSequences();
+
         /**
          * Generate negative sequence set for cross-validation
          */
@@ -223,7 +224,7 @@ int main( int nargs, char* args[] ){
 		// cross-validate the motif model
 		for( size_t n = 0; n < motifNum; n++ ){
 			Motif* motif = new Motif( *motif_set.getMotifs()[n] );
-			FDR fdr( Global::posSequenceSet->getSequences(), negset,
+			FDR fdr( posseqs, negset,
 					Global::q, motif, bgModel, Global::cvFold );
 			fdr.evaluateMotif();
 			fdr.write( Global::outputDirectory,
