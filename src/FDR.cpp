@@ -48,6 +48,14 @@ void FDR::evaluateMotif(){
 			}
 		}
 
+
+		for( size_t n = 0; n < negSeqs_.size()-cvFold_; n+=cvFold_ ){
+			for( size_t f = 0; f < cvFold_; f++ ){
+				if( f == fold ){
+                    negSet.push_back( negSeqs_[n+f] );
+				}
+			}
+		}
 		/**
 		 * Training
 		 */

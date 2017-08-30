@@ -351,9 +351,9 @@ mfold       <- as.numeric(first_row[6])
 
 # avoid the rounding errors when p-value = 0 or p-value > 1
 for(i in seq(1, length(pvalues))){
-if( pvalues[i] > 1 ){
-  pvalues[i] = 1
-}
+    if( pvalues[i] > 1 ){
+        pvalues[i] = 1
+    }
 }
 
 # estimate False Discovery Rates for Diverse Test Statistics
@@ -371,6 +371,8 @@ if( print_FDRcurve ){
 # the null component
 fdr_m	<- result$qval
 eta0 	<- result$param[3]
+
+#calculate FDR
 fdr 	<- 1 / ( 1 + mfold * ( 1 / fdr_m - 1 ) )
 
 # calculate recall
@@ -395,10 +397,11 @@ fdr     <- append(fdr, 0.5)
 range   <- seq(1, len+1)
 
 # limit the frame of the curve to FDR(0.01-0.5)
-left = 1
-right = len+1
-l_range = 0.001	    # left range for FDR
+left    = 1         # index for the FDR value on the left border
+right   = len+1     # index for the FDR value on the right border
+l_range = 0.01	    # left range for FDR
 r_range = 0.5		# right range for FDR
+
 for(i in range){
     if( fdr[i] >= l_range ){
         left = i
