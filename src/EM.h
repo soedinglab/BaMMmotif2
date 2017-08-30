@@ -27,6 +27,7 @@ public:
 
     void 					EStep();			// E-step
     void 					MStep();			// M-step
+    void                    optimize_q();       // optimize the hyperparameter q
 
     float**                 getR();             // get the responsibility parameter r
 
@@ -52,9 +53,10 @@ private:
     float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif
     std::vector<Sequence*>	seqs_;				// copy positive sequences
 
-    float 					llikelihood_ = 0.0f;// log likelihood for each iteration
-    float					epsilon_ = 0.001f;	// threshold for likelihood convergence
-    size_t					maxEMIterations_ = std::numeric_limits<size_t>::max();
+    float 					llikelihood_        = 0.0f;     // log likelihood for each iteration
+    float					epsilon_            = 0.01f;	// threshold for parameter v convergence
+    size_t					maxEMIterations_    = std::numeric_limits<size_t>::max();
+    bool                    optimizeQ_          = Global::optimizeQ;
 
     std::vector<size_t>		Y_;
 

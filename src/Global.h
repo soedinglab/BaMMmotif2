@@ -108,6 +108,7 @@ public:
 
 	// flags for developers
 	static bool			makeMovie;				// print out bamms in each iteration while optimizing
+	static bool 		optimizeQ;				// optimize hyperparameter q in EM algorithm
 	static void         debug();
 
 	static void         init( int nargs, char* args[] );

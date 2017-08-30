@@ -142,7 +142,7 @@ int SequenceSet::readFASTA( bool singleStrand ){
 						// set header to sequence counter
 						header = '>';
 					} else {
-						header = line.substr( 1 );// fetch header
+						header = line.substr( 1 );  // fetch header
 					}
 
 				} else if( !( header.empty() ) ){

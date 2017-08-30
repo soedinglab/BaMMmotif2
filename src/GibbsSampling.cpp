@@ -204,7 +204,8 @@ void GibbsSampling::optimize(){
         if( Global::makeMovie ) {
             // calculate probabilities
             motif_->calculateP();
-            motif_->write(Global::outputDirectory, Global::posSequenceBasename + "_iter_ " + std::to_string( iteration+1 ) );
+            motif_->write( Global::outputDirectory,
+                           Global::posSequenceBasename + "_iter_" + std::to_string( iteration ) );
         }
     }
 
@@ -233,6 +234,9 @@ void GibbsSampling::optimize(){
         // M-step: update model parameters
         model.MStep();
     }
+
+    // reset Global::q to q_
+    Global::q = q_;
 
     // calculate probabilities
     motif_->calculateP();

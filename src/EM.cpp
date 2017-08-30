@@ -68,12 +68,12 @@ int EM::optimize(){
         v_before[y].resize( W_ );
     }
 
-    size_t iterations = 0;
+    size_t iteration = 0;
 
     // iterate over
-    while( iterate && ( iterations < maxEMIterations_ ) ){
+    while( iterate && ( iteration < maxEMIterations_ ) ){
 
-        iterations++;
+        iteration++;
 
         // get parameter variables with highest order before EM
         llikelihood_prev = llikelihood_;
@@ -89,6 +89,9 @@ int EM::optimize(){
         // M-step: update model parameters
         MStep();
 
+        // optimize hyperparameter q
+        if( optimizeQ_ )    optimize_q();
+
         // check parameter difference for convergence
         v_diff = 0.0f;
         for( size_t y = 0; y < Y_[K_+1]; y++ ){
@@ -99,21 +102,26 @@ int EM::optimize(){
 
         // check the change of likelihood for convergence
         llikelihood_diff = llikelihood_ - llikelihood_prev;
+        if( Global::verbose)    std::cout << iteration << ": delta_log_likelihood="
+                                          << llikelihood_diff  << "; v_diff=" << v_diff << std::endl;
 
         if( v_diff < epsilon_ )							iterate = false;
-        if( llikelihood_diff < 0 && iterations > 1 )	iterate = false;
+        if( llikelihood_diff < 0 and iteration > 10 )	iterate = false;
 
         if( Global::makeMovie ) {
             // calculate probabilities
             motif_->calculateP();
             // write out the learned model
             motif_->write( Global::outputDirectory,
-                           Global::posSequenceBasename + "_iter_ " + std::to_string( iterations+1 ) );
+                           Global::posSequenceBasename + "_iter_" + std::to_string( iteration ) );
         }
     }
 
     // calculate probabilities
     motif_->calculateP();
+
+    // reset Global::q to q
+    Global::q = q_;
 
     fprintf( stdout, "\n--- Runtime for EM: %.4f seconds ---\n",
              ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );
@@ -229,6 +237,18 @@ void EM::MStep(){
     motif_->updateV( n_, A_, K_ );
 }
 
+void EM::optimize_q(){
+
+    float N0 = 0;                   // expectation value of the count of sequences without a query motif
+
+    for( size_t n = 0; n < seqs_.size(); n++ ){
+        N0 += r_[n][0];
+    }
+
+    q_ = ( N0 + 1.f ) / ( ( float )seqs_.size() + 2.f );
+
+//    std::cout << "N0 = " << N0 << ", q = " << ( N0 + 1.f ) / ( ( float )seqs_.size() + 2.f ) << std::endl;
+}
 float** EM::getR(){
     return r_;
 }
@@ -282,8 +302,6 @@ void EM::write( char* odir, std::string basename, bool ss ){
                             // in terms of responsibilities
     for( size_t n = 0; n < seqs_.size(); n++ ){
 
-        ofile_pos << seqs_[n]->getHeader() << '\t';
-
         size_t L = seqs_[n]->getL();
 
         if( !ss )	L = ( L - 1 ) / 2;
@@ -292,16 +310,15 @@ void EM::write( char* odir, std::string basename, bool ss ){
 
         for( size_t i = LW1; i > 0; i-- ){
             if( r_[n][i] >= cutoff ){
-                ofile_pos << ( ( i < L ) ? '+' : '-' ) << '\t'
+                ofile_pos << '>' << seqs_[n]->getHeader() << '\t'
+                          << ( ( i < L ) ? '+' : '-' ) << '\t'
                           << LW1-i+1 << ".." << LW1-i+W_<< '\t';
                 for( size_t b = 0; b < W_; b++ ){
                     ofile_pos << Alphabet::getBase( seqs_[n]->getSequence()[LW1-i+b] );
                 }
-                ofile_pos << '\t';
+                ofile_pos << std::endl;
             }
         }
-
-        ofile_pos << std::endl;
     }
 
 	// output responsibilities r[n][i]

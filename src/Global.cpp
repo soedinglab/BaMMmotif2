@@ -57,7 +57,7 @@ bool				Global::debugAlphas = false;
 
 // FDR options
 bool				Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
-size_t				Global::mFold = 100;					// number of negative sequences as multiple of positive sequences
+size_t				Global::mFold = 10;						// number of negative sequences as multiple of positive sequences
 size_t				Global::cvFold = 5;						// size of cross-validation folds
 size_t				Global::sOrder = 2;						// the k-mer order for sampling negative sequence set
 
@@ -79,7 +79,7 @@ std::mt19937		Global::rngx;
 
 // flags for developers
 bool			    Global::makeMovie = false;              // print out bamms in each iteration while optimizing
-
+bool 				Global::optimizeQ = false;				// optimize hyperparameter q in EM algorithm
 void Global::init( int nargs, char* args[] ){
 
 	readArguments( nargs, args );
@@ -288,6 +288,7 @@ int Global::readArguments( int nargs, char* args[] ){
 
     // flags for developers
     opt >> GetOpt::OptionPresent( "makeMovie", makeMovie );
+	opt >> GetOpt::OptionPresent( "optimizeQ", optimizeQ );
 	// for remaining unknown options
 	if( opt.options_remain() ){
 		printHelp();
