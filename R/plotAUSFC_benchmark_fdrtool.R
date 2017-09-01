@@ -15,8 +15,8 @@
 # results are saved in a .bmscore file.
 
 # examples for running this script:
-# ./plotAUSFC_benchmark_fdrtool.R PATH_TO_zoops.stats_FILE BASENAME_OF_THE_FILE OUTPUT_FILE
-# ./plotAUSFC_benchmark_fdrtool.R /home/bamm_result/ JunD_motif_1 ausfc.txt
+# ./plotAUSFC_benchmark_fdrtool.R PATH_TO_zoops.stats_FILE
+# ./plotAUSFC_benchmark_fdrtool.R /home/bamm_result/ JunD_motif_1
 
 #-----------------------------
 #
@@ -334,17 +334,18 @@ dir 	<- args$target_directory
 prefix 	<- args$prefix
 
 # flags for printing the curve plots
-print_PRcurve 	= TRUE
-print_FDRcurve	= TRUE
-print_SFcurve 	= TRUE
-print_ROC5      = TRUE
+print_PRcurve 	= FALSE
+print_FDRcurve	= FALSE
+print_SFcurve 	= FALSE
+print_ROC5      = FALSE
 
 results = c()
 
-f = paste( dir, "/", prefix, ".zoops.stats", sep = "")
+#f = paste( dir, "/", prefix, ".zoops.stats", sep = "")
+for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))) {
 
 # read in p-values from file
-first_row   <- read.table(f, nrows =1)
+first_row   <- read.table(f, nrows =1 )
 stats       <- read.table(f, skip=1 )
 pvalues     <- stats$V5
 mfold       <- as.numeric(first_row[6])
@@ -440,7 +441,7 @@ if( print_SFcurve ){
     #  polygon(c(min(fdr), fdr, max(fdr)), c(min(recall),recall,1), col="gray", border="gray")
     #  polygon(c(min(fdr), range, 0.5), c(min(recall),recall,1), col="gray", border="gray")
     # write the AUSFC on the plot with the precision of 4 digits:
-    text(0.25, 0.5, paste( "AUSFC: ", round(ausfc, digits=4) ))
+    text( 0.25, 0.5, paste( "AUSFC: ", round(ausfc, digits=4) ) )
     dev.off()
 }
 
@@ -492,7 +493,7 @@ if( print_PRcurve ){
 resultString = paste(c(prefix, ausfc, auc5), collapse="\t")
 print( resultString )
 results = c(results, resultString)
-
+}
 outConn <- file(paste(dir, '/', prefix, ".ausfc", sep = "" ))
 writeLines(results, outConn)
 close(outConn)

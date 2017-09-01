@@ -39,10 +39,10 @@ int main( int nargs, char* args[] ){
 	BackgroundModel* bgModel;
 	if( !Global::bgModelGiven ){
 		bgModel = new BackgroundModel( negseqs,
-										Global::bgModelOrder,
-										Global::bgModelAlpha,
-										Global::interpolateBG,
-										Global::posSequenceBasename );
+                                       Global::bgModelOrder,
+                                       Global::bgModelAlpha,
+                                       Global::interpolateBG,
+                                       Global::posSequenceBasename );
 	} else {
 		bgModel = new BackgroundModel( Global::bgModelFilename );
 	}
@@ -57,8 +57,10 @@ int main( int nargs, char* args[] ){
                   << "***************************" << std::endl;
 	}
 
-	MotifSet motif_set( Global::initialModelFilename, Global::addColumns.at(0), Global::addColumns.at(1),
-					Global::initialModelTag );
+	MotifSet motif_set( Global::initialModelFilename,
+                        Global::addColumns.at(0),
+                        Global::addColumns.at(1),
+                        Global::initialModelTag );
 
 	size_t motifNum = ( Global::num > motif_set.getN() ) ? motif_set.getN() : Global::num;
 
@@ -177,10 +179,10 @@ int main( int nargs, char* args[] ){
         bool B3prime = false;
 
         if( B1 ) {
-        // sample negative sequence set B1set based on s-mer frequencies
-        // from positive training sequence set
+            // sample negative sequence set B1set based on s-mer frequencies
+            // from positive training sequence set
             std::vector<std::unique_ptr<Sequence>> B1Seqs;
-            SeqGenerator b1seqs( posseqs );
+            SeqGenerator b1seqs( posseqs, NULL ,Global::sOrder );
             B1Seqs = b1seqs.arti_negset( Global::mFold );
             // convert unique_ptr to regular pointer
             for( size_t n = 0; n < B1Seqs.size(); n++ ) {
@@ -192,7 +194,7 @@ int main( int nargs, char* args[] ){
             // sample negative sequence set B2set based on s-mer frequencies
             // from the given sampled negative sequence set
             std::vector<std::unique_ptr<Sequence>> B2Seqs;
-            SeqGenerator b2seqs( negseqs );
+            SeqGenerator b2seqs( negseqs, NULL ,Global::sOrder );
             B2Seqs = b2seqs.arti_negset( 1 );
             // convert unique_ptr to regular pointer
             for( size_t n = 0; n < B2Seqs.size(); n++ ) {
@@ -208,7 +210,7 @@ int main( int nargs, char* args[] ){
         if( B3prime ) {
             // generate sequences from positive sequences with masked motif
             Motif *motif_opti = new Motif( *motif_set.getMotifs()[0] );
-            SeqGenerator artificial_set( negseqs, motif_opti );
+            SeqGenerator artificial_set( negseqs, motif_opti, Global::sOrder );
             EM model_opti( motif_opti, bgModel, posseqs, Global::q );
             // learn motifs by EM
             model_opti.optimize();
@@ -224,8 +226,7 @@ int main( int nargs, char* args[] ){
 		// cross-validate the motif model
 		for( size_t n = 0; n < motifNum; n++ ){
 			Motif* motif = new Motif( *motif_set.getMotifs()[n] );
-			FDR fdr( posseqs, negset,
-					Global::q, motif, bgModel, Global::cvFold );
+			FDR fdr( posseqs, negset, Global::q, motif, bgModel, Global::cvFold );
 			fdr.evaluateMotif();
 			fdr.write( Global::outputDirectory,
                        Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ) );

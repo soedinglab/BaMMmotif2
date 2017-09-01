@@ -65,7 +65,6 @@ void SeqGenerator::calculate_kmer_frequency(){
 			freqs_[k][y] = ( float )count_[k][y] / ( float )count_[k-1][yk];
 		}
 	}
-
 }
 
 

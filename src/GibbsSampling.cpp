@@ -235,8 +235,8 @@ void GibbsSampling::optimize(){
         model.MStep();
     }
 
-    // reset Global::q to q_
-    Global::q = q_;
+    // print out the optimized q
+    if( /*Global::verbose and */ samplingQ_ )   std::cout << "The sampled q=" << q_ << std::endl;
 
     // calculate probabilities
     motif_->calculateP();

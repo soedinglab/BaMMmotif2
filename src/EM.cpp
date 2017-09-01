@@ -102,8 +102,8 @@ int EM::optimize(){
 
         // check the change of likelihood for convergence
         llikelihood_diff = llikelihood_ - llikelihood_prev;
-        if( Global::verbose)    std::cout << iteration << ": delta_log_likelihood="
-                                          << llikelihood_diff  << "; v_diff=" << v_diff << std::endl;
+        if( Global::verbose )    std::cout << iteration << ": delta_log_likelihood="
+                                           << llikelihood_diff  << "; v_diff=" << v_diff << std::endl;
 
         if( v_diff < epsilon_ )							iterate = false;
         if( llikelihood_diff < 0 and iteration > 10 )	iterate = false;
@@ -120,8 +120,8 @@ int EM::optimize(){
     // calculate probabilities
     motif_->calculateP();
 
-    // reset Global::q to q
-    Global::q = q_;
+    // print out the optimized q
+    if( /*Global::verbose and */optimizeQ_ )   std::cout << "The optimized q=" << q_ << std::endl;
 
     fprintf( stdout, "\n--- Runtime for EM: %.4f seconds ---\n",
              ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );

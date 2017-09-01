@@ -10,21 +10,18 @@
 class SeqGenerator {
 
 	/*
-	 * This class generates artificial sequences set for:
-	 * 1. negative sequence set, by using k-mer frequencies;
-	 * 2. simulated positive sequence set by inserting motif
-	 *    into the negative sequence set
-	 * 3. negative sequence set with motif patterns masked from the postive sequences
+	 * This class generates artificial sequences sets as listed:
+	 * 1. negative sequence set, by using s-mer frequencies;
+	 * 2. simulated positive sequence set, by inserting motif into the negative sequence set;
+	 * 3. negative sequence set with motif patterns masked from the positive sequences.
 	 * Prerequisite:
-	 * 1. sequences set for calculating k-mer frequencies
-	 * 2. the order of k-mer for sampling
-	 * 3. (optional) the motif model for generating pseudo-sequence set
+	 * 1. sequences set for calculating s-mer frequencies;
+	 * 2. the order of s-mer for sampling, s = 2 by default;
+	 * 3. (optional) the motif model for embedding or masking.
 	 */
 
 public:
-	SeqGenerator( std::vector<Sequence*> seqs,
-					Motif* motif = NULL,
-					size_t sOrder = 2 );
+	SeqGenerator( std::vector<Sequence*> seqs, Motif* motif = NULL, size_t sOrder = 2 );
 	~SeqGenerator();
 
 	std::vector<std::unique_ptr<Sequence>> arti_negset( size_t fold );
