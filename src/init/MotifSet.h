@@ -2,7 +2,7 @@
 #define MOTIFSET_H_
 
 #include "Motif.h"
-#include "utils.h"
+#include "../refinement/utils.h"
 
 class MotifSet {
 

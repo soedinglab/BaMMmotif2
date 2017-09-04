@@ -1,86 +1,87 @@
-#include "Global.h"
+#include "GBaMM.h"
 
-char*               Global::outputDirectory = NULL;			// output directory
+char*               GBaMM::outputDirectory = NULL;			// output directory
 
-char*               Global::posSequenceFilename = NULL;		// filename of positive sequence FASTA file
-std::string			Global::posSequenceBasename;			// basename of positive sequence FASTA file
-SequenceSet*        Global::posSequenceSet = NULL;			// positive sequence set
-bool 		        Global::maskPosSequenceSet = false;		// mask motif patterns from positive sequence set
+char*               GBaMM::posSequenceFilename = NULL;		// filename of positive sequence FASTA file
+std::string			GBaMM::posSequenceBasename;			// basename of positive sequence FASTA file
+SequenceSet*        GBaMM::posSequenceSet = NULL;			// positive sequence set
+bool 		        GBaMM::maskPosSequenceSet = false;		// mask motif patterns from positive sequence set
 
-char*               Global::negSequenceFilename = NULL;		// filename of negative sequence FASTA file
-std::string			Global::negSequenceBasename;			// basename of negative sequence FASTA file
-SequenceSet*        Global::negSequenceSet = NULL;			// negative sequence set
-bool				Global::negSeqGiven = false;			// a flag for the negative sequence given by users
+char*               GBaMM::negSequenceFilename = NULL;		// filename of negative sequence FASTA file
+std::string			GBaMM::negSequenceBasename;			// basename of negative sequence FASTA file
+SequenceSet*        GBaMM::negSequenceSet = NULL;			// negative sequence set
+bool				GBaMM::negSeqGiven = false;			// a flag for the negative sequence given by users
 // weighting options
-char*               Global::intensityFilename = NULL;		// filename of intensity file (i.e. for HT-SELEX data)
+char*               GBaMM::intensityFilename = NULL;		// filename of intensity file (i.e. for HT-SELEX data)
 
-char*				Global::alphabetType = NULL;			// alphabet type is defaulted to standard which is ACGT
-bool                Global::ss = false;						// only search on single strand sequences
+char*				GBaMM::alphabetType = NULL;			// alphabet type is defaulted to standard which is ACGT
+bool                GBaMM::ss = false;						// only search on single strand sequences
 
 // initial model(s) options
-char*				Global::initialModelFilename = NULL; 	// filename of initial model
-std::string			Global::initialModelBasename;			// basename of initial model
-std::string			Global::initialModelTag;				// tag for initializing the model
-size_t				Global::num = std::numeric_limits<size_t>::max(); // number of models that are to be optimized
-bool				Global::mops = false;					// learn MOPS model
-bool				Global::zoops = true;					// learn ZOOPS model
+char*				GBaMM::initialModelFilename = NULL; 	// filename of initial model
+std::string			GBaMM::initialModelBasename;			// basename of initial model
+std::string			GBaMM::initialModelTag;				// tag for initializing the model
+size_t				GBaMM::num = std::numeric_limits<size_t>::max(); // number of init that are to be optimized
+bool				GBaMM::mops = false;					// learn MOPS model
+bool				GBaMM::zoops = true;					// learn ZOOPS model
 
 // model options
-size_t     			Global::modelOrder = 2;					// model order
-std::vector<float> 	Global::modelAlpha( modelOrder+1, 1.f );// initial alphas
-float				Global::modelBeta = 7.0f;				// alpha_k = beta x gamma^k for k > 0
-float				Global::modelGamma = 3.0f;
-std::vector<size_t>	Global::addColumns( 2 );				// add columns to the left and right of initial model
-bool                Global::interpolate = true;             // calculate prior probabilities from lower-order probabilities
+size_t     			GBaMM::modelOrder = 2;					// model order
+std::vector<float> 	GBaMM::modelAlpha( modelOrder+1, 1.f );// initial alphas
+float				GBaMM::modelBeta = 7.0f;				// alpha_k = beta x gamma^k for k > 0
+float				GBaMM::modelGamma = 3.0f;
+std::vector<size_t>	GBaMM::addColumns( 2 );				// add columns to the left and right of initial model
+bool                GBaMM::interpolate = true;             // calculate prior probabilities from lower-order probabilities
                                                             // instead of background frequencies of mononucleotides
-bool                Global::interpolateBG = true;			// calculate prior probabilities from lower-order probabilities
+bool                GBaMM::interpolateBG = true;			// calculate prior probabilities from lower-order probabilities
                                                             // instead of background frequencies of mononucleotides
 // background model options
-char*				Global::bgModelFilename = NULL;			// path to the background model file
-bool				Global::bgModelGiven = false;			// flag to show if the background model is given or not
-size_t				Global::bgModelOrder = 2;				// background model order, defaults to 2
-std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.f );// background model alpha
+char*				GBaMM::bgModelFilename = NULL;			// path to the background model file
+bool				GBaMM::bgModelGiven = false;			// flag to show if the background model is given or not
+size_t				GBaMM::bgModelOrder = 2;				// background model order, defaults to 2
+std::vector<float>	GBaMM::bgModelAlpha( bgModelOrder+1, 1.f );// background model alpha
 
 // EM options
-bool				Global::EM = false;						// flag to trigger EM learning
-float				Global::q = 0.9f;						// prior probability for a positive sequence to contain a motif
+bool				GBaMM::EM = false;						// flag to trigger EM learning
+float				GBaMM::q = 0.9f;						// prior probability for a positive sequence to contain a motif
+bool 				GBaMM::optimizeQ = false;				// optimize hyperparameter q in EM algorithm
 
 // CGS (Collapsed Gibbs sampling) options
-bool				Global::CGS = false;					// flag to trigger Collapsed Gibbs sampling
-bool				Global::noInitialZ = false;				// enable initializing z with one E-step
-bool				Global::noAlphaOptimization = false;	// disable alpha optimization in CGS
-bool				Global::GibbsMHalphas = false;			// enable alpha sampling in CGS using Gibbs Metropolis-Hastings
-bool				Global::dissampleAlphas = false;		// enable alpha sampling in CGS using discretely sampling
-bool				Global::noZSampling = false;			// disable q sampling in CGS
-bool				Global::noQSampling = false;			// disable q sampling in CGS
-bool				Global::debugAlphas = false;
+bool				GBaMM::CGS = false;					// flag to trigger Collapsed Gibbs sampling
+bool				GBaMM::noInitialZ = false;				// enable initializing z with one E-step
+bool				GBaMM::noAlphaOptimization = false;	// disable alpha optimization in CGS
+bool				GBaMM::GibbsMHalphas = false;			// enable alpha sampling in CGS using Gibbs Metropolis-Hastings
+bool				GBaMM::dissampleAlphas = false;		// enable alpha sampling in CGS using discretely sampling
+bool				GBaMM::noZSampling = false;			// disable q sampling in CGS
+bool				GBaMM::noQSampling = false;			// disable q sampling in CGS
+bool				GBaMM::debugAlphas = false;
 
 // FDR options
-bool				Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
-size_t				Global::mFold = 10;						// number of negative sequences as multiple of positive sequences
-size_t				Global::cvFold = 5;						// size of cross-validation folds
-size_t				Global::sOrder = 2;						// the k-mer order for sampling negative sequence set
+bool				GBaMM::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
+size_t				GBaMM::mFold = 10;						// number of negative sequences as multiple of positive sequences
+size_t				GBaMM::cvFold = 5;						// size of cross-validation folds
+size_t				GBaMM::sOrder = 2;						// the k-mer order for sampling negative sequence set
 
 // motif occurrence options
-bool                Global::scoreSeqset = false;            // write logOdds Scores of positive sequence set to disk
-float 				Global::scoreCutoff = 0.0f;				// score cutoff for printing log odds scores as motif hit
+bool                GBaMM::scoreSeqset = false;            // write logOdds Scores of positive sequence set to disk
+float 				GBaMM::scoreCutoff = 0.0f;				// score cutoff for printing log odds scores as motif hit
 
 // printout options
-bool                Global::verbose = false;
-bool                Global::debugMode = false;              // debug-mode: prints out everything.
-bool				Global::saveBaMMs = true;
-bool				Global::savePRs = true;					// write the precision, recall, TP and FP
-bool				Global::savePvalues = false;			// write p-values for each log odds score from sequence set
-bool				Global::saveLogOdds = false;			// write the log odds of positive and negative sets to disk
-bool				Global::saveInitialBaMMs = false;		// write out the initial model to disk
-bool				Global::saveBgModel = false;			// write out the background model to disk
-bool				Global::generatePseudoSet = false;		// test for alpha learning
-std::mt19937		Global::rngx;
+bool                GBaMM::verbose = false;
+bool                GBaMM::debugMode = false;              // debug-mode: prints out everything.
+bool				GBaMM::saveBaMMs = true;
+bool				GBaMM::savePRs = true;					// write the precision, recall, TP and FP
+bool				GBaMM::savePvalues = false;			// write p-values for each log odds score from sequence set
+bool				GBaMM::saveLogOdds = false;			// write the log odds of positive and negative sets to disk
+bool				GBaMM::saveInitialBaMMs = false;		// write out the initial model to disk
+bool				GBaMM::saveBgModel = false;			// write out the background model to disk
+bool				GBaMM::generatePseudoSet = false;		// test for alpha learning
+std::mt19937		GBaMM::rngx;
 
 // flags for developers
-bool			    Global::makeMovie = false;              // print out bamms in each iteration while optimizing
-bool 				Global::optimizeQ = false;				// optimize hyperparameter q in EM algorithm
-void Global::init( int nargs, char* args[] ){
+bool			    GBaMM::makeMovie = false;              // print out bamms in each iteration while optimizing
+
+void GBaMM::init( int nargs, char* args[] ){
 
 	readArguments( nargs, args );
 
@@ -96,7 +97,7 @@ void Global::init( int nargs, char* args[] ){
 	}
 }
 
-int Global::readArguments( int nargs, char* args[] ){
+int GBaMM::readArguments( int nargs, char* args[] ){
 
 	/**
 	 * read command line to get options
@@ -299,14 +300,14 @@ int Global::readArguments( int nargs, char* args[] ){
 	return 0;
 }
 
-void Global::printStat(){
+void GBaMM::printStat(){
 
 	std::cout << "Alphabet type is " << Alphabet::getAlphabet();
-	std::cout << "\nGiven initial model is " << Global::initialModelBasename
-              << ", BaMM order: " << Global::modelOrder
-              << ", bgmodel order: " << Global::bgModelOrder;
+	std::cout << "\nGiven initial model is " << GBaMM::initialModelBasename
+              << ", BaMM order: " << GBaMM::modelOrder
+              << ", bgmodel order: " << GBaMM::bgModelOrder;
 	std::cout << "\nBaMM is learned from ";
-	if( Global::ss ){
+	if( GBaMM::ss ){
 		std::cout << "single-stranded sequences.";
 	} else {
 		std::cout << "double-stranded sequences.";
@@ -314,43 +315,43 @@ void Global::printStat(){
 
 	// for positive sequence set
 	std::cout << "\nGiven positive sequence set is "
-              << Global::posSequenceBasename << ".\n	"
-              << Global::posSequenceSet->getSequences().size()
-              << " sequences, max.length: " << Global::posSequenceSet->getMaxL()
-              << ", min.length: " << Global::posSequenceSet->getMinL()
+              << GBaMM::posSequenceBasename << ".\n	"
+              << GBaMM::posSequenceSet->getSequences().size()
+              << " sequences, max.length: " << GBaMM::posSequenceSet->getMaxL()
+              << ", min.length: " << GBaMM::posSequenceSet->getMinL()
               << "\n	base frequencies:";
 	for( size_t i = 0; i < Alphabet::getSize(); i++ ){
-		std::cout << ' ' << Global::posSequenceSet->getBaseFrequencies()[i]
+		std::cout << ' ' << GBaMM::posSequenceSet->getBaseFrequencies()[i]
 		          << "(" << Alphabet::getAlphabet()[i] << ")";
 	}
-	std::cout << "\n	" << Global::q * 100 << "% of the sequences "
+	std::cout << "\n	" << GBaMM::q * 100 << "% of the sequences "
               << "contain the optimized motif.";
 	// for negative sequence set
-	if( Global::negSeqGiven ){
-		std::cout << "\nGiven negative sequence set is " << Global::negSequenceBasename
-                  << ".\n	" << Global::negSequenceSet->getSequences().size()
-                  << " sequences, max.length: " << Global::negSequenceSet->getMaxL()
-                  << ", min.length: " << Global::negSequenceSet->getMinL()
+	if( GBaMM::negSeqGiven ){
+		std::cout << "\nGiven negative sequence set is " << GBaMM::negSequenceBasename
+                  << ".\n	" << GBaMM::negSequenceSet->getSequences().size()
+                  << " sequences, max.length: " << GBaMM::negSequenceSet->getMaxL()
+                  << ", min.length: " << GBaMM::negSequenceSet->getMinL()
                   << "\n	base frequencies:";
 		for( size_t i = 0; i < Alphabet::getSize(); i++ )
-			std::cout << ' ' << Global::negSequenceSet->getBaseFrequencies()[i]
+			std::cout << ' ' << GBaMM::negSequenceSet->getBaseFrequencies()[i]
 					  << "(" << Alphabet::getAlphabet()[i] << ")";
 	} else {
 		std::cout << "\nThe background model is generated based on cond.prob of "
-                  << Global::sOrder << "-mers.";
+                  << GBaMM::sOrder << "-mers.";
 	}
 
-	if( Global::FDR ){
+	if( GBaMM::FDR ){
 		std::cout << "\nFolds for cross-validation (FDR estimation): "
-                  << Global::cvFold;
+                  << GBaMM::cvFold;
 	}
 }
 
-void Global::printHelp(){
+void GBaMM::printHelp(){
 	printf("\n==================================================================\n");
 	printf("\n SYNOPSIS:	BaMMmotif OUTDIR SEQFILE [options] \n\n");
 	printf("\t DESCRIPTION \n");
-	printf("		Learn Bayesian inhomogeneous Markov models(BaMMs) from\n"
+	printf("		Learn Bayesian inhomogeneous Markov init(BaMMs) from\n"
 			"		high-throughput sequencing data.\n\n");
 	printf("\t OUTDIR:  output directory for all results. \n");
 	printf("\t SEQFILE: file with positive sequence set in FASTA format.\n\n");
@@ -384,7 +385,7 @@ void Global::printHelp(){
 	printf("\n 			--BaMMFile <STRING> \n"
 			"				File that contains a model in bamm file format.\n\n");
 	printf("\n 			--num <INTEGER> \n"
-			"				Number of models to be learned by BaMM!motif, \n"
+			"				Number of init to be learned by BaMM!motif, \n"
 			"				specific for PWMs. \n"
 			"				By default, all the motifs will be optimized.\n\n");
 	printf("\n 			--mops \n"
@@ -503,13 +504,13 @@ void Global::printHelp(){
 	printf("\n==================================================================\n");
 }
 
-void Global::destruct(){
+void GBaMM::destruct(){
     Alphabet::destruct();
     if( alphabetType ) 			delete[] alphabetType;
     if( posSequenceSet )	 	delete posSequenceSet;
     if( negSequenceSet ) 		delete negSequenceSet;
 }
 
-void Global::debug(){
+void GBaMM::debug(){
 
 }

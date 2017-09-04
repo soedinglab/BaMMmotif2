@@ -6,7 +6,7 @@
 #-----------------------------------------------------------------
 
 # calculate FDR, precision, recall and occurrences for both MOPS
-# and ZOOPS models by taking p-values of log odds scores froom
+# and ZOOPS init by taking p-values of log odds scores froom
 # positive sequences and using "fdrtool" library
 # plot FDR vs. recall(sensitivity) curve
 # calculate the area under the sensitivity-FDR curve (AUSFC)

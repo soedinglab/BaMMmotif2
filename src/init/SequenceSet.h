@@ -10,7 +10,7 @@
 
 #include "Alphabet.h"
 #include "Sequence.h"
-#include "utils.h"
+#include "../refinement/utils.h"
 
 class SequenceSet{
 

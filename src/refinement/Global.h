@@ -1,5 +1,5 @@
-#ifndef GLOBAL_H_
-#define GLOBAL_H_
+#ifndef GBaMM_H_
+#define GBaMM_H_
 
 #include <iostream>								// std::cout, std::endl
 #include <vector>
@@ -19,11 +19,11 @@
 #include <math.h>
 
 
-#include "SequenceSet.h"
-#include "Alphabet.h"
-#include "./getopt_pp/getopt_pp.h"				// GetOpt function
+#include "../init/SequenceSet.h"
+#include "../init/Alphabet.h"
+#include "../getopt_pp/getopt_pp.h"                          // GetOpt function
 
-class Global{
+class GBaMM{
 
 public:
 
@@ -50,7 +50,7 @@ public:
 	static char*		initialModelFilename;	// filename of initial model
 	static std::string	initialModelBasename;	// basename of initial model
 	static std::string	initialModelTag;		// tag for initializing the model
-	static size_t		num;					// number of models that are to be optimized
+	static size_t		num;					// number of init that are to be optimized
 	static bool			mops;					// learn MOPS model
 	static bool			zoops;					// learn ZOOPS model
 
@@ -59,7 +59,7 @@ public:
 	static std::vector<float> modelAlpha;		// initial alphas
 	static float		modelBeta;				// alpha_k = beta x gamma^k for k > 0
 	static float		modelGamma;
-	static std::vector<size_t>	addColumns;		// add columns to the left and right of models used to initialize Markov models
+	static std::vector<size_t>	addColumns;		// add columns to the left and right of init used to initialize Markov init
     static bool			interpolate;				// calculate prior probabilities from lower-order probabilities
     											// instead of background frequencies of mono-nucleotides
     static bool			interpolateBG;			// calculate prior probabilities from lower-order probabilities
@@ -125,7 +125,7 @@ private:
 };
 
 // format cast for GetOpt function
-inline char* Global::String( const char *s ){
+inline char* GBaMM::String( const char *s ){
 	return strdup( s );
 }
 
@@ -133,11 +133,11 @@ namespace GetOpt{
 	template <> inline _Option::Result convert<char*>( const std::string& s,
 			char*& d, std::ios::fmtflags ){
 		_Option::Result ret = _Option::BadType;
-		d = Global::String( s.c_str() );
+		d = GBaMM::String( s.c_str() );
 		ret = _Option::OK;
 		return ret;
 	}
 }
 
 
-#endif /* GLOBAL_H_ */
+#endif /* GBaMM_H_ */

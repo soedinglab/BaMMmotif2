@@ -1,13 +1,13 @@
 #include <iomanip>
 
 #include "Global.h"
-#include "BackgroundModel.h"
-#include "MotifSet.h"
-#include "EM.h"
-#include "GibbsSampling.h"
-#include "ScoreSeqSet.h"
-#include "SeqGenerator.h"
-#include "FDR.h"
+#include "models/BackgroundModel.h"
+#include "models/MotifSet.h"
+#include "refinement/EM.h"
+#include "refinement/GibbsSampling.h"
+#include "seq_scoring/ScoreSeqSet.h"
+#include "seq_generator/SeqGenerator.h"
+#include "evaluation/FDR.h"
 
 int main( int nargs, char* args[] ){
 

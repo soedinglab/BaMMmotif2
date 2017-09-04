@@ -9,8 +9,8 @@
 #include <sys/stat.h>
 
 #include "BackgroundModel.h"
-#include "SequenceSet.h"
-#include "utils.h"
+#include "../sequences/SequenceSet.h"
+#include "../refinement/utils.h"
 
 class BackgroundModelSet{
 

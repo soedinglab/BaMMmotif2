@@ -4,16 +4,16 @@
 #include <assert.h>
 #include <math.h>	// e.g. logf
 
-#include "Global.h"
+#include "../refinement/GBaMM.h"
 #include "BackgroundModel.h"
-#include "utils.h"
+#include "../refinement/utils.h"
 
 class Motif {
 
 public:
 
 	Motif( size_t length,
-			size_t order = Global::modelOrder,
+			size_t order = 2,
 			std::vector<float> alpha = Global::modelAlpha,
 			float* f_bg = Global::negSequenceSet->getBaseFrequencies() );
 
@@ -22,8 +22,7 @@ public:
 
 	void initFromBindingSites( char* indir, size_t l_flank, size_t r_flank );
 
-	void initFromPWM( float** PWM, size_t asize,
-						SequenceSet* posSeqset = Global::posSequenceSet );
+	void initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset = NULL );
 
 	void initFromBaMM( char* indir, size_t l_flank, size_t r_flank );
 
