@@ -23,9 +23,7 @@ class ScoreSeqSet{
 
 public:
 
-	ScoreSeqSet( Motif* motif,
-					BackgroundModel* bg,
-					std::vector<Sequence*> seqSet );
+	ScoreSeqSet( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqSet );
 	~ScoreSeqSet();
 
 	void score();

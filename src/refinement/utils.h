@@ -127,8 +127,7 @@ inline void createDirectory( char* dir ){
 	struct stat fileStatus;
 
 	if( stat( dir, &fileStatus ) != 0 ){
-		std::cout << "Status: Output directory does not exist. "
-				"New directory is created automatically.\n";
+		std::cout << "New output directory is created automatically.\n";
 		if( system( ( "mkdir " + std::string( dir ) ).c_str() ) != 0 ){
 			std::cerr << "Error: Directory " << dir << " could not be created." << std::endl;
 			exit( -1 );

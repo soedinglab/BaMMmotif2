@@ -9,9 +9,7 @@
 
 #include <float.h>		// -FLT_MAX
 
-ScoreSeqSet::ScoreSeqSet( Motif* motif,
-							BackgroundModel* bg,
-							std::vector<Sequence*> seqSet ){
+ScoreSeqSet::ScoreSeqSet( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqSet ){
 
 	motif_	= motif;
 	bg_ 	= bg;
@@ -101,8 +99,7 @@ void ScoreSeqSet::write( char* odir, std::string basename, float cutoff, bool ss
 			if( mops_scores_ [n][i] > cutoff ){
 				if( first_hit ){
 					// >header:sequence_length
-					ofile << '>' << seqSet_[n]->getHeader() << ':' << seqlen
-							<< std::endl;
+					ofile << '>' << seqSet_[n]->getHeader() << ':' << seqlen << std::endl;
 					first_hit = false;
 				}
 				// start:end:score:strand:sequence_matching

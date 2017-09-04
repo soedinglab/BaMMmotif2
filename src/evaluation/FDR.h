@@ -8,7 +8,6 @@
 #include "../refinement/GibbsSampling.h"
 #include "../seq_generator/SeqGenerator.h"
 #include "../seq_scoring/ScoreSeqSet.h"
-#include "GFdr.h"
 
 class FDR {
 

@@ -4,7 +4,6 @@
 #include <assert.h>
 #include <math.h>	// e.g. logf
 
-#include "../refinement/Global.h"
 #include "BackgroundModel.h"
 #include "../refinement/utils.h"
 

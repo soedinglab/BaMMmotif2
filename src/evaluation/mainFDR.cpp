@@ -2,6 +2,8 @@
 // Created by wanwan on 03.09.17.
 //
 
+
+#include "GFdr.h"
 #include "FDR.h"
 
 int main( int nargs, char* args[] ){
