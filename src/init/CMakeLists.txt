@@ -1,4 +1,4 @@
 file(GLOB SOURCES *.cpp *.h)
-add_library (sequences ${SOURCES})
+add_library (init ${SOURCES})
 
-target_include_directories (sequences PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories (init PUBLIC ../sequences)

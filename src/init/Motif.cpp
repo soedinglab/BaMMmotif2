@@ -7,6 +7,12 @@ Motif::Motif( size_t length, size_t K, std::vector<float> alpha, float* f_bg ){
 	W_ = length;
 	K_ = K;
 	C_ = 0;
+	float freqs[4] = {0.25, 0.25, 0.25, 0.25};
+	if( f_bg != NULL ){
+		f_bg_ = f_bg;
+	} else {
+		f_bg_ = freqs;
+	}
 
 	for( size_t k = 0; k < K_+5; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
@@ -35,8 +41,6 @@ Motif::Motif( size_t length, size_t K, std::vector<float> alpha, float* f_bg ){
 	for( size_t y = 0; y < Y_[K_+1]; y++ ){
 		s_[y] = ( float* )calloc( W_, sizeof( float ) );
 	}
-
-	f_bg_ = f_bg;
 
 }
 
@@ -82,7 +86,6 @@ Motif::Motif( const Motif& other ){ 		// copy constructor
 	}
 
 	f_bg_ = other.f_bg_;
-
 	isInitialized_ = true;
 }
 

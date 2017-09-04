@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <math.h>	// e.g. logf
 
-#include "../refinement/GBaMM.h"
+#include "../refinement/Global.h"
 #include "BackgroundModel.h"
 #include "../refinement/utils.h"
 
@@ -13,16 +13,16 @@ class Motif {
 public:
 
 	Motif( size_t length,
-			size_t order = 2,
-			std::vector<float> alpha = Global::modelAlpha,
-			float* f_bg = Global::negSequenceSet->getBaseFrequencies() );
+			size_t order,
+			std::vector<float> alpha,
+			float* f_bg );
 
 	Motif( const Motif& other );					// copy constructor
 	~Motif();
 
 	void initFromBindingSites( char* indir, size_t l_flank, size_t r_flank );
 
-	void initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset = NULL );
+	void initFromPWM( float** PWM, size_t asize, SequenceSet* posSet );
 
 	void initFromBaMM( char* indir, size_t l_flank, size_t r_flank );
 
@@ -50,11 +50,8 @@ private:
 	size_t 				W_;
 	size_t				K_;
 	float**			 	A_;							// hyperparameter alphas
-	float***    		v_;				        	// conditional probabilities
-													// for (k+1)-mers y at motif
-													// position j
-	float*				f_bg_;						// monomer frequencies from
-													// background model
+	float***    		v_;				        	// conditional probabilities for (k+1)-mers y at motif position j
+    float*	            f_bg_;			            // monomer frequencies from background model
 	float***			p_;							// probabilities for (k+1)-mers y at motif position j
 	float**				s_;							// log odds scores for (K+1)-mers y at motif position j
 	float***			n_;							// fractional counts of (k+1)-mer for all y at motif position j

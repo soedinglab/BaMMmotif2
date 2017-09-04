@@ -8,8 +8,8 @@
 #ifndef SCORESEQSET_H_
 #define SCORESEQSET_H_
 
-#include "Motif.h"
-#include "BackgroundModel.h"
+#include "../init/Motif.h"
+#include "../init/BackgroundModel.h"
 
 class ScoreSeqSet{
 	/*

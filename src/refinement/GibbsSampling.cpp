@@ -7,12 +7,23 @@
 #include <boost/math/special_functions.hpp>			/* gamma and digamma function */
 #include <boost/math/distributions/beta.hpp>		/* beta distribution */
 
-GibbsSampling::GibbsSampling( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqs, float q ){
+GibbsSampling::GibbsSampling( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqs, float q,
+                              float beta, float gamma,
+                              bool initializeZ, bool samplingZ, bool samplingQ,
+                              bool optimizeA, bool GibbsMHalphas, bool dissampleAlphas ){
 
-    motif_ = motif;
-    bg_ = bg;
-    q_ = q;
-    seqs_ = seqs;
+    motif_              = motif;
+    bg_                 = bg;
+    q_                  = q;
+    seqs_               = seqs;
+    beta_               = beta;
+    gamma_              = gamma;
+    initializeZ_        = initializeZ;
+    samplingZ_          = samplingZ;
+    samplingQ_          = samplingQ;
+    optimizeA_          = optimizeA;
+    GibbsMHalphas_      = GibbsMHalphas;
+    dissampleAlphas_    = dissampleAlphas;
 
     // get motif (hyper-)parameters from motif class
     K_ = motif_->getK();
@@ -201,12 +212,13 @@ void GibbsSampling::optimize(){
             std::cout << "Alphas are not optimized." << std::endl;
         }
 
-        if( Global::makeMovie ) {
-            // calculate probabilities
-            motif_->calculateP();
-            motif_->write( Global::outputDirectory,
-                           Global::posSequenceBasename + "_iter_" + std::to_string( iteration ) );
-        }
+
+//        // for making a movie out of all iterations
+//        // calculate probabilities
+//        motif_->calculateP();
+//        motif_->write( Global::outputDirectory,
+//                       Global::posSequenceBasename + "_iter_" + std::to_string( iteration ) );
+//
     }
 
     // obtaining a motif model:

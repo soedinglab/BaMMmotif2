@@ -1,7 +1,9 @@
 #include "FDR.h"
 
 FDR::FDR( std::vector<Sequence*> posSeqs, std::vector<Sequence*> negSeqs, float q,
-          Motif* motif, BackgroundModel* bgModel, size_t cvFold ){
+          Motif* motif, BackgroundModel* bgModel, size_t cvFold,
+          bool mops, bool zoops,bool EM , bool CGS, bool savePRs,
+          bool savePvalues, bool saveLogOdds){
 
 	posSeqs_	= posSeqs;
 	negSeqs_	= negSeqs;
@@ -9,6 +11,13 @@ FDR::FDR( std::vector<Sequence*> posSeqs, std::vector<Sequence*> negSeqs, float 
 	motif_ 		= motif;
     bgModel_    = bgModel;
 	cvFold_		= cvFold;
+    mops_       = mops;
+    zoops_      = zoops;
+    EM_         = EM;
+    CGS_        = CGS;
+    savePRs_    = savePRs;
+    savePvalues_= savePvalues;
+    saveLogOdds_= saveLogOdds;
 	occ_frac_	= 0.0f;
 	occ_mult_	= 0.0f;
 
@@ -43,19 +52,13 @@ void FDR::evaluateMotif(){
 					trainSet.push_back( posSeqs_[n+f] );
 				} else {
 					testSet.push_back( posSeqs_[n+f] );
-                    negSet.push_back( negSeqs_[n+f] );
 				}
 			}
 		}
-
-
-		for( size_t n = 0; n < negSeqs_.size()-cvFold_; n+=cvFold_ ){
-			for( size_t f = 0; f < cvFold_; f++ ){
-				if( f == fold ){
-                    negSet.push_back( negSeqs_[n+f] );
-				}
-			}
+		for( size_t n = fold; n < negSeqs_.size()-cvFold_; n+=cvFold_ ){
+            negSet.push_back( negSeqs_[n] );
 		}
+
 		/**
 		 * Training
 		 */

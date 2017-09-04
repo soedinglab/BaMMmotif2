@@ -1,13 +1,14 @@
 #ifndef FDR_H_
 #define FDR_H_
 
-#include "BackgroundModel.h"
-#include "utils.h"
-#include "Motif.h"
-#include "EM.h"
-#include "GibbsSampling.h"
-#include "SeqGenerator.h"
-#include "ScoreSeqSet.h"
+#include "../init/BackgroundModel.h"
+#include "../init/Motif.h"
+#include "../refinement/utils.h"
+#include "../refinement/EM.h"
+#include "../refinement/GibbsSampling.h"
+#include "../seq_generator/SeqGenerator.h"
+#include "../seq_scoring/ScoreSeqSet.h"
+#include "GFdr.h"
 
 class FDR {
 
@@ -25,7 +26,11 @@ class FDR {
 public:
 
 	FDR( std::vector<Sequence*> posSeqs, std::vector<Sequence*> negSeqs, float q = 0.9f,
-         Motif* motif = NULL, BackgroundModel* bgmodel = NULL, size_t cvFold = 5 );
+         Motif* motif = NULL, BackgroundModel* bgmodel = NULL,
+         size_t cvFold = 5, bool mops = false, bool zoops = true,
+         bool EM = false, bool CGS = false, bool savePRs = true,
+         bool savePvalues = false, bool saveLogOdds = false
+        );
 	~FDR();
 
 	void 	evaluateMotif();
@@ -43,13 +48,13 @@ private:
 
 	size_t				cvFold_;		// fold for cross-validation, training
 										// set is (cv-1)-fold of the testing set
-	bool				mops_			= Global::mops;
-	bool				zoops_			= Global::zoops;
-	bool				EM_ 			= Global::EM;
-	bool				CGS_ 			= Global::CGS;
-	bool				savePRs_ 		= Global::savePRs;
-	bool				savePvalues_	= Global::savePvalues;
-	bool				saveLogOdds_	= Global::saveLogOdds;
+	bool				mops_;
+	bool				zoops_;
+	bool				EM_;
+	bool				CGS_;
+	bool				savePRs_;
+	bool				savePvalues_;
+	bool				saveLogOdds_;
 
 	std::vector<float> 	posScoreAll_;	// store log odds scores over all positions on the sequences
 	std::vector<float> 	posScoreMax_;	// store maximal log odds score from each sequence
@@ -75,7 +80,7 @@ private:
 	std::vector<float>	ZOOPS_Pvalue_;	// p-values for scores from positive set with ZOOPS model
 	std::vector<float>	MOPS_Pvalue_;	// p-values for scores from positive set with MOPS model
 
-			// calculate precision and recall for both ZOOPS and MOPS models
+			// calculate precision and recall for both ZOOPS and MOPS init
 	void 	calculatePR();
 
 			// calculate P-values for log odds scores of positive sequences

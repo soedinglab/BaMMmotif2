@@ -1,11 +1,9 @@
 #ifndef SEQGENERATOR_H_
 #define SEQGENERATOR_H_
 
-#include "Alphabet.h"
-#include "BackgroundModel.h"
-#include "utils.h"
-#include "Motif.h"
-#include "Global.h"
+#include "../init/Alphabet.h"
+#include "../init/BackgroundModel.h"
+#include "../init/Motif.h"
 
 class SeqGenerator {
 
@@ -38,9 +36,7 @@ private:
 	void						calculate_kmer_frequency();
 	std::unique_ptr<Sequence> 	negseq_dimer_freq( size_t L );
 	std::unique_ptr<Sequence> 	posseq_motif_embedded(size_t L);
-	std::unique_ptr<Sequence>	negseq_motif_masked( Sequence* posseq,
-													size_t W,
-													float* r );
+	std::unique_ptr<Sequence>	negseq_motif_masked( Sequence* posseq,size_t W, float* r );
 
 	std::vector<Sequence*> 		seqs_;			// positive sequence set
 	float**						freqs_;			// k-mer frequencies

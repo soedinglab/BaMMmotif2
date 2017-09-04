@@ -3,20 +3,20 @@
 //
 #include "EM.h"
 
-EM::EM( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqs, float q ){
+EM::EM( Motif* motif, BackgroundModel* bgModel, std::vector<Sequence*> seqs, float q, bool optimizeQ ){
 
-    motif_ = motif;
-	bg_ = bg;
-	q_ = q;
-	seqs_ = seqs;
-
+    motif_      = motif;
+	bgModel_    = bgModel;
+	q_          = q;
+	seqs_       = seqs;
+    optimizeQ_ = optimizeQ;
 	// get motif (hyper-)parameters from motif class
 	K_ = motif_->getK();
 	W_ = motif_->getW();
 	Y_ = motif_->getY();
 	s_ = motif_->getS();
 	A_ = motif_->getA();
-	K_bg_ = ( bg_->getOrder() < K_ ) ? bg_->getOrder() : K_;
+	K_bg_ = ( bgModel_->getOrder() < K_ ) ? bgModel_->getOrder() : K_;
 
 	// allocate memory for r_[n][i], pos_[n][i], z_[n]
 	r_ = ( float** )calloc( seqs_.size(), sizeof( float* ) );
@@ -102,26 +102,23 @@ int EM::optimize(){
 
         // check the change of likelihood for convergence
         llikelihood_diff = llikelihood_ - llikelihood_prev;
-        if( Global::verbose )    std::cout << iteration << ": delta_log_likelihood="
-                                           << llikelihood_diff  << "; v_diff=" << v_diff << std::endl;
 
         if( v_diff < epsilon_ )							iterate = false;
         if( llikelihood_diff < 0 and iteration > 10 )	iterate = false;
 
-        if( Global::makeMovie ) {
-            // calculate probabilities
-            motif_->calculateP();
-            // write out the learned model
-            motif_->write( Global::outputDirectory,
-                           Global::posSequenceBasename + "_iter_" + std::to_string( iteration ) );
-        }
+//        // for making a movie out of all iterations
+//        // calculate probabilities
+//        motif_->calculateP();
+//        // write out the learned model
+//        motif_->write( Global::outputDirectory,
+//                       Global::posSequenceBasename + "_iter_" + std::to_string( iteration ) );
     }
 
     // calculate probabilities
     motif_->calculateP();
 
     // print out the optimized q
-    if( /*Global::verbose and */optimizeQ_ )   std::cout << "The optimized q=" << q_ << std::endl;
+    if( optimizeQ_ )   std::cout << "The optimized q=" << q_ << std::endl;
 
     fprintf( stdout, "\n--- Runtime for EM: %.4f seconds ---\n",
              ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );
@@ -132,7 +129,7 @@ void EM::EStep(){
 
     llikelihood_ = 0.0f;
 
-    motif_->calculateLinearS( bg_->getV(), K_bg_ );
+    motif_->calculateLinearS( bgModel_->getV(), K_bg_ );
 
     // todo: parallelize the code
 //	#pragma omp parallel for

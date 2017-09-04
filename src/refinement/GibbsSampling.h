@@ -2,18 +2,21 @@
 // Created by wanwan on 16.08.17.
 //
 
-#ifndef GIBBSSAMPLING_H
-#define GIBBSSAMPLING_H
+#ifndef GIBBSSAMPLING_H_
+#define GIBBSSAMPLING_H_
 
-#include "BackgroundModel.h"
-#include "MotifSet.h"
+#include "../init/BackgroundModel.h"
+#include "../init/MotifSet.h"
 #include "EM.h"
 
 class GibbsSampling {
 
 public:
 
-    GibbsSampling( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqs, float q );
+    GibbsSampling( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqs, float q,
+				   float beta = 7.0f, float gamma = 3.0f,
+				   bool initializeZ = true, bool samplingZ = true, bool samplingQ = true,
+				   bool optimizeA = true, bool GibbsMHalphas = false, bool dissampleAlphas = false );
 	~GibbsSampling();
 
 	void 					optimize();			// optimize BaMM model with Gibbs sampling
@@ -50,8 +53,8 @@ private:
 
 	float 					llikelihood_ = 0.0f;// log likelihood for each iteration
 	size_t					maxCGSIterations_ = 100;
-	float					beta_ = Global::modelBeta;
-	float					gamma_ = Global::modelGamma;
+	float					beta_;
+	float					gamma_;
 
 	float 					eta_ = 0.2f;		// learning rate for alpha learning
 	double**				m1_t_;				// first moment for alpha optimizer (ADAM)
@@ -60,12 +63,12 @@ private:
 
 	std::vector<size_t>		Y_;
 
-	bool					initializeZ_ 		= !Global::noInitialZ;
-	bool					samplingZ_ 			= !Global::noZSampling;
-	bool					samplingQ_ 			= !Global::noQSampling;
-	bool					optimizeA_ 			= !Global::noAlphaOptimization;
-	bool					GibbsMHalphas_ 		= Global::GibbsMHalphas;
-	bool					dissampleAlphas_ 	= Global::dissampleAlphas;
+	bool					initializeZ_;
+	bool					samplingZ_;
+	bool					samplingQ_;
+	bool					optimizeA_;
+	bool					GibbsMHalphas_;
+	bool					dissampleAlphas_;
 
 							// sample motif position z by collapsed Gibbs sampling
 	void					Collapsed_Gibbs_sampling_z();
@@ -99,4 +102,4 @@ private:
 
 };
 
-#endif //GIBBSSAMPLING_H
+#endif //GIBBSSAMPLING_H_

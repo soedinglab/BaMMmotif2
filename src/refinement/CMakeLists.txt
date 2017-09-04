@@ -1,5 +1,10 @@
 file(GLOB SOURCES *.cpp *.h)
-add_library (shared ${SOURCES})
+add_executable (BaMMmotif ${SOURCES})
 
-target_include_directories (shared PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries (BaMMmotif LINK_PUBLIC getopt_pp)
+target_link_libraries (BaMMmotif LINK_PUBLIC init)
+target_link_libraries (BaMMmotif LINK_PUBLIC fdr)
+target_link_libraries (BaMMmotif LINK_PUBLIC seq_scoring)
+target_link_libraries (BaMMmotif LINK_PUBLIC seq_generator)
 
+add_library (bamm ${SOURCES})

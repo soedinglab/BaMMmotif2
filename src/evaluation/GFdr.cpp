@@ -3,6 +3,7 @@
 //
 
 #include "GFdr.h"
+
 char*               GFdr::outputDirectory = NULL;		// output directory
 
 char*               GFdr::posSequenceFilename = NULL;	// filename of positive sequence FASTA file
@@ -29,7 +30,7 @@ size_t              GFdr::modelOrder = 2;				// model order
 std::vector<float>  GFdr::modelAlpha( modelOrder+1, 1.f );// initial alphas
 float               GFdr::modelBeta = 7.0f;				// alpha_k = beta x gamma^k for k > 0
 float               GFdr::modelGamma = 3.0f;
-std::vector<size_t> GFdr::addColumns( 2 );				// add columns to the left and right of initial model
+std::vector<size_t> GFdr::addColumns = {0,0};			// add columns to the left and right of initial model
 
 bool                GFdr::interpolateBG = true;			// calculate prior probabilities from lower-order probabilities
                                                         // instead of background frequencies of mononucleotides
@@ -45,8 +46,8 @@ bool			    GFdr::CGS = false;					// flag to trigger Collapsed Gibbs sampling
 size_t		        GFdr::mFold = 10;					// number of negative sequences as multiple of positive sequences
 size_t		        GFdr::cvFold = 5;					// number of cross-validation (cv) folds
 size_t		        GFdr::sOrder = 2;					// k-mer order for sampling negative sequence set
+
 // printout options
-bool			    GFdr::savePRs = true;				// write the precision, recall, TP and FP
 bool			    GFdr::savePvalues = false;			// write p-values for each log odds score from sequence set
 bool			    GFdr::saveLogOdds = false;			// write the log odds of positive and negative sets to disk
 
@@ -65,12 +66,11 @@ void GFdr::init( int nargs, char* args[] ){
 int GFdr::readArguments( int nargs, char* args[] ){
 
     /**
-     * read command line to get options
-     * process flags from user
+     * read in command line to get options process flags from user
      */
 
     if( nargs < 3 ) {
-        std::cerr << "Error: Arguments are missing! \n" << std::endl;
+        std::cerr << "Error: Arguments are missing!" << std::endl;
         printHelp();
         exit( -1 );
     }
@@ -84,142 +84,166 @@ int GFdr::readArguments( int nargs, char* args[] ){
     posSequenceBasename = baseName( posSequenceFilename );
 
     // read in options from the third argument on
-    GetOpt::GetOpt_pp opt( nargs-2, args+2 );
-
-    if( opt >> GetOpt::OptionPresent( 'h', "help" ) ){
-        printHelp();
-        exit( -1 );
+    for( int i = 3; i < nargs; i++ ){
+        if( !strcmp( args[i], "-h" ) or !strcmp( args[i], "--help" ) ){
+            printHelp();
+            exit( 1 );
+        } else if( !strcmp( args[i], "-q" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following -q" << std::endl;
+                exit( 2 );
+            }
+            q = std::stof( args[i] );
+        } else if( !strcmp( args[i], "--ss" ) ){
+            ss = true;
+        } else if( !strcmp( args[i], "--negSeqFile" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following --negSeqFile" << std::endl;
+                exit( 2 );
+            }
+            negSequenceFilename = args[i];
+        } else if( !strcmp( args[i], "--alphabet" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following --alphabet" << std::endl;
+                exit( 2 );
+            }
+            alphabetType = args[i];
+        } else if( !strcmp( args[i], "--bindingSiteFile" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following --bindingSiteFile" << std::endl;
+                exit( 2 );
+            }
+            initialModelFilename = args[i];
+            initialModelTag = "bindingsites";
+        } else if( !strcmp( args[i], "--PWMFile" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following --PWMFile" << std::endl;
+                exit( 2 );
+            }
+            initialModelFilename = args[i];
+            initialModelTag = "PWM";
+        } else if( !strcmp( args[i], "--BaMMFile" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following --BaMMFile" << std::endl;
+                exit( 2 );
+            }
+            initialModelFilename = args[i];
+            initialModelTag = "BaMM";
+        } else if( !strcmp( args[i], "--num" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following --num" << std::endl;
+                exit( 2 );
+            }
+            num = std::stoi( args[i] );
+        } else if( !strcmp( args[i], "--mops" ) ){
+            mops = true;
+        } else if( !strcmp( args[i], "-k" ) or !strcmp( args[i], "--order" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following -k/--order" << std::endl;
+                exit( 2 );
+            }
+            modelOrder = std::stoi( args[i] );
+        } else if( !strcmp( args[i], "-b" ) or !strcmp( args[i], "--beta" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following -b/--beta" << std::endl;
+                exit( 2 );
+            }
+            modelBeta = std::stof( args[i] );
+        } else if( !strcmp( args[i], "-r" ) or !strcmp( args[i], "--gamma" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following -r/--gamma" << std::endl;
+                exit( 2 );
+            }
+            modelGamma = std::stof( args[i] );
+        } else if( !strcmp( args[i], "-K" ) or !strcmp( args[i], "-Order" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following -K/--Order" << std::endl;
+                exit( 2 );
+            }
+            bgModelOrder = std::stoi( args[i] );
+        } else if( !strcmp( args[i], "--extend" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following --extend" << std::endl;
+                exit( 2 );
+            }
+            addColumns.at(0) = std::stoi( args[i] );
+            addColumns.at(1) = std::stoi( args[i] );
+            if( ++i < nargs ){
+                addColumns.at(1) = std::stoi( args[i] );
+            }
+        } else if( !strcmp( args[i], "--EM" ) ){
+            EM = true;
+        } else if( !strcmp( args[i], "--CGS" ) ){
+            CGS = true;
+        } else if( !strcmp( args[i], "-m" ) or !strcmp( args[i], "--mFold" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following -m/--mFold" << std::endl;
+                exit( 2 );
+            }
+            mFold = std::stoi( args[i] );
+        } else if( !strcmp( args[i], "--cvFold" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following --cvFold" << std::endl;
+                exit( 2 );
+            }
+            cvFold = std::stoi( args[i] );
+        } else if( !strcmp( args[i], "-s" ) or !strcmp( args[i], "--sOrder" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following -s/--sOrder" << std::endl;
+                exit( 2 );
+            }
+            sOrder = std::stoi( args[i] );
+        } else if( !strcmp( args[i], "--savePvalues" ) ){
+            savePvalues = true;
+        } else if( !strcmp( args[i], "--saveLogOdds" ) ){
+            saveLogOdds = true;
+        } else {
+            std::cerr << "Ignoring unknown option " << args[i] << std::endl;
+        }
     }
-    // saturation options
-    opt >> GetOpt::Option( 'q', q );
-    opt >> GetOpt::OptionPresent( "ss", ss );
 
-    // read in negative sequence file
-    if( opt >> GetOpt::OptionPresent( "negSeqFile" ) ){
-        opt >> GetOpt::Option( "negSeqFile", negSequenceFilename );
-    } else {
+    if( negSequenceFilename == NULL ){
         negSequenceFilename = posSequenceFilename;
     }
 
-    // Alphabet Type
-    if( opt >> GetOpt::OptionPresent( "alphabet" ) ){
-        opt >> GetOpt::Option( "alphabet", alphabetType );
-    } else {
+    if( alphabetType == NULL ){
         alphabetType = new char[9];
         strcpy( alphabetType, "STANDARD" );
     }
 
-    // get initial model files
-    std::string tag;
-    if ( opt >> GetOpt::OptionPresent( "bindingSiteFile" ) ){
-        opt >> GetOpt::Option( "bindingSiteFile", initialModelFilename );
-        initialModelTag = "bindingsites";
-    } else if ( opt >> GetOpt::OptionPresent( "PWMFile" ) ){
-        opt >> GetOpt::Option( "PWMFile", initialModelFilename );
-        initialModelTag = "PWM";
-    } else if( opt >> GetOpt::OptionPresent( "BaMMFile" ) ){
-        opt >> GetOpt::Option( "BaMMFile", initialModelFilename );
-        initialModelTag = "BaMM";
-    } else {
-        fprintf( stderr, "Error: No initial model is provided.\n" );
+    if( initialModelFilename == NULL ){
+        std::cerr << "Error: No initial model is provided." << std::endl;
         exit( -1 );
     }
 
-    opt >> GetOpt::Option( "num", num );
-    opt >> GetOpt::OptionPresent( "mops", mops );
-    opt >> GetOpt::Option( "zoops", zoops );
-
-    // model options
-    opt >> GetOpt::Option( 'k', "order", modelOrder );
-
-    if( opt >> GetOpt::OptionPresent( 'a', "alpha" ) ){
-        modelAlpha.clear();
-        opt >> GetOpt::Option( 'a', "alpha", modelAlpha );
-        if( modelAlpha.size() != modelOrder+1 ){
-            if( modelAlpha.size()  > modelOrder+1 ){
-                modelAlpha.resize( modelOrder+1 );
-            } else {
-                modelAlpha.resize( modelOrder+1, modelAlpha.back() );
-            }
-        }
-    } else {
-        if( modelAlpha.size() != modelOrder+1 ){
-            if( modelAlpha.size() > modelOrder+1 ){
-                modelAlpha.resize( modelOrder+1 );
-            } else {
-                modelAlpha.resize( modelOrder+1, modelAlpha.back() );
-            }
-        }
-        opt >> GetOpt::Option( 'b', "beta", modelBeta );
-        opt >> GetOpt::Option( 'r', "gamma", modelGamma );
-        if( modelOrder > 0 ){
-            for( size_t k = 1; k < modelOrder+1; k++ ){
-                // alpha = beta * gamma^k
-                modelAlpha[k] = modelBeta * powf( modelGamma, ( float )k );
-            }
+    modelAlpha.resize( modelOrder+1 );
+    if( modelOrder > 0 ){
+        for( size_t k = 1; k < modelOrder+1; k++ ){
+            // alpha = beta * gamma^k
+            modelAlpha[k] = modelBeta * powf( modelGamma, ( float )k );
         }
     }
 
-    if( opt >> GetOpt::OptionPresent( "extend" ) ){
-        addColumns.clear();
-        opt >> GetOpt::Option( "extend", addColumns );
-        if( addColumns.size() < 1 || addColumns.size() > 2 ){
-            fprintf( stderr, "--extend format error.\n" );
-            exit( -1 );
+    bgModelAlpha.resize( bgModelOrder+1 );
+    if( bgModelOrder > 0 ){
+        for( size_t k = 1; k < bgModelOrder+1; k++ ){
+            bgModelAlpha[k] = 10.0f;
         }
-        if( addColumns.size() == 1 )
-            addColumns.resize( 2, addColumns.back() );
-    } else {
-        addColumns.at(0) = 0;
-        addColumns.at(1) = 0;
-    }
-
-    opt >> GetOpt::Option( 'K', "Order", bgModelOrder );
-
-    if( opt >> GetOpt::OptionPresent( 'A', "Alpha" ) ){
-        bgModelAlpha.clear();
-        opt >> GetOpt::Option( 'A', "Alpha", bgModelAlpha );
-        if( bgModelAlpha.size() != bgModelOrder+1 ){
-            if( bgModelAlpha.size() > bgModelOrder+1 ){
-                bgModelAlpha.resize( bgModelOrder+1 );
-            } else {
-                bgModelAlpha.resize( bgModelOrder+1, bgModelAlpha.back() );
-            }
-        }
-    } else {
-        if( bgModelAlpha.size() != bgModelOrder+1 ){
-            if( bgModelAlpha.size() > bgModelOrder+1 ){
-                bgModelAlpha.resize( bgModelOrder+1 );
-            } else {
-                bgModelAlpha.resize( bgModelOrder+1, bgModelAlpha.back() );
-            }
-        }
-        if( bgModelOrder > 0 ){
-            for( size_t k = 1; k < bgModelOrder+1; k++ ){
-                bgModelAlpha[k] = 10.0f;
-            }
-        }
-    }
-
-    // refinement options
-    opt >> GetOpt::OptionPresent( "EM", EM );
-    opt >> GetOpt::OptionPresent( "CGS", CGS );
-
-    // fdr options
-    opt >> GetOpt::Option( 'm', "mFold", mFold );
-    opt >> GetOpt::Option( 'n', "cvFold", cvFold );
-    opt >> GetOpt::Option( 's', "sOrder", sOrder );
-
-    // printout options
-    opt >> GetOpt::Option( "savePRs", savePRs );
-    opt >> GetOpt::OptionPresent( "savePvalues", savePvalues );
-    opt >> GetOpt::OptionPresent( "saveLogOdds", saveLogOdds );
-
-    // for remaining unknown options
-    if( opt.options_remain() ){
-        printHelp();
-        std::cerr << "Oops! Unknown option(s) remaining... \n\n";
-        exit( -1 );
     }
 
     return 0;
@@ -272,10 +296,6 @@ void GFdr::printHelp(){
     printf("\n 		Options for the (inhomogeneous) motif BaMM: \n");
     printf("\n 			-k, --order <INTEGER> \n"
                    "				Model Order. The default is 2. \n\n");
-    printf("\n 			-a, --alpha <FLOAT> [<FLOAT>...] \n"
-                   "				Order-specific prior strength. The default is 1.0 \n"
-                   "				(for k = 0) and beta x gamma^k (for k > 0). \n"
-                   "				The options -b and -r are ignored.\n\n");
     printf("\n 			-b, --beta <FLOAT> \n"
                    "				For calculating alphas: beta x gamma^k (for k > 0).\n"
                    "				The default is 7.0 (for k > 0) \n");
@@ -295,8 +315,6 @@ void GFdr::printHelp(){
                    "				Order. The default is 2.\n"
                    "				Order of background model should not exceed order of\n"
                    "				motif model.\n\n");
-    printf("\n 			-A, --Alpha <FLOAT> \n"
-                   "				Prior strength. The default value is 10.0.\n\n");
     printf("\n 		Options for optimization: \n");
     printf("\n 			--EM  \n"
                    "				Triggers Expectation Maximization (EM) algorithm.\n "

@@ -2,11 +2,11 @@
 // Created by wanwan on 16.08.17.
 //
 
-#ifndef EM_H
-#define EM_H
+#ifndef EM_H_
+#define EM_H_
 
-#include "BackgroundModel.h"
-#include "MotifSet.h"
+#include "../init/BackgroundModel.h"
+#include "../init/MotifSet.h"
 
 class EM {
     /**
@@ -17,7 +17,7 @@ class EM {
 
 public:
 
-    EM( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqs, float q );
+    EM( Motif* motif, BackgroundModel* bgModel, std::vector<Sequence*> seqs, float q, bool optimizeQ = true );
     ~EM();
 
     int                     optimize();         // run EM optimization
@@ -34,7 +34,7 @@ public:
 private:
 
     Motif* 					motif_;				// motif to optimize within the EM
-    BackgroundModel*		bg_;				// background model
+    BackgroundModel*		bgModel_;				// background model
 
     size_t 					K_;					// the order of the motif model
     size_t					W_;					// the width of the motif pattern
@@ -56,9 +56,10 @@ private:
     float 					llikelihood_        = 0.0f;     // log likelihood for each iteration
     float					epsilon_            = 0.01f;	// threshold for parameter v convergence
     size_t					maxEMIterations_    = std::numeric_limits<size_t>::max();
-    bool                    optimizeQ_          = Global::optimizeQ;
+    bool                    optimizeQ_;
 
     std::vector<size_t>		Y_;
 
 };
-#endif //EM_H
+
+#endif //EM_H_

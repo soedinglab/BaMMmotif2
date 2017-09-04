@@ -6,7 +6,7 @@
 #include <dirent.h>		// e.g. opendir
 
 #include "BackgroundModelSet.h"
-#include "../sequences/SequenceSet.h"
+#include "SequenceSet.h"
 #include "../refinement/utils.h"
 
 class BackgroundModelSetScore{
@@ -30,7 +30,7 @@ private:
 													// posterior probabilities
 
 	BackgroundModelSet* 		bamms_;
-	std::vector<std::string> 	bammNames_;			// names of M bg models
+	std::vector<std::string> 	bammNames_;			// names of M bg init
 	std::vector<std::string> 	sequenceSetNames_;	// basenames of N sequence
 													// set files
 
@@ -38,10 +38,10 @@ private:
 													// probabilities
 
 	// aggregate statistics
-	std::vector<size_t> bestBammIndices_;			// indices of background models
+	std::vector<size_t> bestBammIndices_;			// indices of background init
 													// with highest posterior per sequence set
 	std::vector<double> bestBammPosteriors_;		// highest posterior per sequence set
-	std::vector<size_t> secondBestBammIndices_;		// indices of background models with
+	std::vector<size_t> secondBestBammIndices_;		// indices of background init with
 													// second highest posterior per sequence set
 	std::vector<double> secondBestBammPosteriors_;	// second highest posterior per sequence set
 };

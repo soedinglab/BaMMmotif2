@@ -9,17 +9,17 @@
 #include <sys/stat.h>
 
 #include "BackgroundModel.h"
-#include "../sequences/SequenceSet.h"
+#include "SequenceSet.h"
 #include "../refinement/utils.h"
 
 class BackgroundModelSet{
 
 public:
 
-	// learn background models from sequences
+	// learn background init from sequences
 	BackgroundModelSet( char* indir, char* extension, size_t order,
 						std::vector<float> alpha, bool interpolate );
-	// read in background models from files
+	// read in background init from files
 	BackgroundModelSet( char* indir, char* extension );
 
 	~BackgroundModelSet();
@@ -28,7 +28,7 @@ public:
 	size_t getN();
 
 	// calculate log likelihoods for the sequence set
-	// afterwards the background models contain log probabilities in v_
+	// afterwards the background init contain log probabilities in v_
 	std::vector<double> calculateLogLikelihoods( std::vector<Sequence*> seqs );
 
 	// calculate posterior probabilities for the sequence set

@@ -9,7 +9,6 @@
 
 #include "../init/Alphabet.h"
 #include "../init/SequenceSet.h"
-#include "../getopt_pp/getopt_pp.h"             // GetOpt function
 
 class GFdr{
 
@@ -55,30 +54,20 @@ public:
     static size_t		mFold;					// number of negative sequences as multiple of positive sequences
 	static size_t		cvFold;					// number of cross-validation (cv) folds
 	static size_t		sOrder;					// k-mer order for sampling negative sequence set
+
     // other options
-    static bool			savePRs;				// write the precision, recall, TP and FP
     static bool			savePvalues;			// write p-values for each log odds score from sequence set
     static bool			saveLogOdds;			// write the log odds of positive and negative sets to disk
 
     static void         init( int nargs, char* args[] );
     static void         destruct();
 
-    static char*        String( const char *s ); // GetOpt library
 private:
 
     static int	        readArguments( int nargs, char* args[] );
     static void	        printHelp();
 };
 
-inline char* GFdr::String( const char *s ){
-	return strdup( s );
-}
-namespace GetOpt{
-	template <> inline _Option::Result convert<char*>( const std::string& s, char*& d, std::ios::fmtflags ){
-		_Option::Result ret = _Option::BadType;
-		d = GFdr::String( s.c_str() );
-		ret = _Option::OK;
-		return ret;
-	}
-}
+
+
 #endif //GFDR_H_

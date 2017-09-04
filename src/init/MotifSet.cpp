@@ -1,35 +1,31 @@
 #include "MotifSet.h"
 
 MotifSet::MotifSet( char* indir, size_t l_flank, size_t r_flank,
-		std::string tag ){
-
-	indir_ = indir;
-	l_flank_ = l_flank;
-	r_flank_ = r_flank;
-	tag_ = tag;
+                    std::string tag, SequenceSet* posSet,
+                    float* f_bg, size_t K, std::vector<float> alphas ){
 	N_ = 0;
 
-	if( tag_.compare( "bindingsites" ) == 0 ){
+	if( tag.compare( "bindingsites" ) == 0 ){
 
 		std::ifstream file;
-		file.open( indir_, std::ifstream::in );
+		file.open( indir, std::ifstream::in );
 		std::string bindingSite;
 		size_t length;
 
 		if( !file.good() ){
 			std::cout << "Error: Cannot open binding sites file: "
-					<< indir_ << std::endl;
+					<< indir << std::endl;
 			exit( -1 );
 		} else {
 			getline( file, bindingSite );	// get length of the first sequence
 			length = bindingSite.length();
 		}
 
-		length += l_flank_ + r_flank_;
+		length += l_flank + r_flank;
 
-		Motif* motif = new Motif( length );
+		Motif* motif = new Motif( length, K, alphas, f_bg );
 
-		motif->initFromBindingSites( indir_, l_flank_, r_flank_ );
+		motif->initFromBindingSites( indir, l_flank, r_flank );
 
 		motifs_.push_back( motif );
 
@@ -38,15 +34,15 @@ MotifSet::MotifSet( char* indir, size_t l_flank, size_t r_flank,
 		// todo: here to delete motif
 		// delete motif;  // Error
 
-	} else if( tag_.compare( "PWM" ) == 0 ){
+	} else if( tag.compare( "PWM" ) == 0 ){
 
 		// read file to calculate motif length
 		std::ifstream file;
-		file.open( indir_, std::ifstream::in );
+		file.open( indir, std::ifstream::in );
 
 		if( !file.good() ){
 
-			std::cout << "Error: Cannot open PWM file: " << indir_ << std::endl;
+			std::cout << "Error: Cannot open PWM file: " << indir << std::endl;
 
 			exit( -1 );
 
@@ -71,10 +67,10 @@ MotifSet::MotifSet( char* indir, size_t l_flank, size_t r_flank,
 					W >> length;
 
 					// extend the length due to addColumns option
-					length += l_flank_ + r_flank_;
+					length += l_flank + r_flank;
 
 					// construct an initial motif
-					Motif* motif = new Motif( length );
+					Motif* motif = new Motif( length, K, alphas, f_bg );
 
 					// parse PWM for each motif
 					float** PWM = new float*[asize];
@@ -83,17 +79,17 @@ MotifSet::MotifSet( char* indir, size_t l_flank, size_t r_flank,
 
 						PWM[y] = new float[length];
 
-						for( size_t j = 0; j < l_flank_; j++ ){
+						for( size_t j = 0; j < l_flank; j++ ){
 							PWM[y][j] = 1.0f / ( float )asize;
 						}
-						for( size_t j = length - r_flank_; j < length; j++ ){
+						for( size_t j = length - r_flank; j < length; j++ ){
 							PWM[y][j] = 1.0f / ( float )asize;
 						}
 
 					}
 
 					// get the following W lines
-					for( size_t j = l_flank_; j < length - r_flank_ ; j++ ){
+					for( size_t j = l_flank; j < length - r_flank ; j++ ){
 
 						getline( file, row );
 
@@ -106,7 +102,7 @@ MotifSet::MotifSet( char* indir, size_t l_flank, size_t r_flank,
 					}
 
 					// initialize each motif with a PWM
-					motif->initFromPWM( PWM, asize );
+					motif->initFromPWM( PWM, asize, posSet );
 
 					motifs_.push_back( motif );
 
@@ -127,11 +123,11 @@ MotifSet::MotifSet( char* indir, size_t l_flank, size_t r_flank,
 		// each BaMM file contains one optimized motif model
 		// read file to calculate motif length
 		std::ifstream file;
-		file.open( indir_, std::ifstream::in );
+		file.open( indir, std::ifstream::in );
 
 		if( !file.good() ){
 
-			std::cout << "Error: Cannot open file: " << indir_ << std::endl;
+			std::cout << "Error: Cannot open file: " << indir << std::endl;
 			exit( -1 );
 
 		} else {
@@ -155,16 +151,15 @@ MotifSet::MotifSet( char* indir, size_t l_flank, size_t r_flank,
 			}
 
 			// extend the core region of the model due to the added columns
-			model_length += l_flank_ + r_flank_;
-
+			model_length += l_flank + r_flank;
 			// adjust model order, extra 1
 			model_order -= 1;
 
 			// construct an initial motif
-			Motif* motif = new Motif( model_length );
+			Motif* motif = new Motif( model_length, K, alphas, f_bg );
 
 			// initialize motif from file
-			motif->initFromBaMM( indir_, l_flank_, r_flank_ );
+			motif->initFromBaMM( indir, l_flank, r_flank );
 
 			motifs_.push_back( motif );
 

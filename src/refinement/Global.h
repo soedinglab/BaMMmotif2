@@ -21,9 +21,9 @@
 
 #include "../init/SequenceSet.h"
 #include "../init/Alphabet.h"
-#include "../getopt_pp/getopt_pp.h"                          // GetOpt function
+#include "../getopt_pp/getopt_pp.h"             // GetOpt function
 
-class GBaMM{
+class Global{
 
 public:
 
@@ -125,19 +125,17 @@ private:
 };
 
 // format cast for GetOpt function
-inline char* GBaMM::String( const char *s ){
+inline char* Global::String( const char *s ){
 	return strdup( s );
 }
 
 namespace GetOpt{
-	template <> inline _Option::Result convert<char*>( const std::string& s,
-			char*& d, std::ios::fmtflags ){
-		_Option::Result ret = _Option::BadType;
-		d = GBaMM::String( s.c_str() );
-		ret = _Option::OK;
-		return ret;
-	}
+    template <> inline _Option::Result convert<char*>( const std::string& s,
+                                                       char*& d, std::ios::fmtflags ){
+        _Option::Result ret = _Option::BadType;
+        d = Global::String( s.c_str() );
+        ret = _Option::OK;
+        return ret;
+    }
 }
-
-
 #endif /* GBaMM_H_ */
