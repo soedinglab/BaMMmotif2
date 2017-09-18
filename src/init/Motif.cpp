@@ -7,15 +7,18 @@ Motif::Motif( size_t length, size_t K, std::vector<float> alpha, float* f_bg ){
 	W_ = length;
 	K_ = K;
 	C_ = 0;
-	float freqs[4] = {0.25, 0.25, 0.25, 0.25};
-	if( f_bg != NULL ){
-		f_bg_ = f_bg;
-	} else {
-		f_bg_ = freqs;
-	}
 
 	for( size_t k = 0; k < K_+5; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
+	}
+
+	if( f_bg != NULL ){
+		f_bg_ = f_bg;
+	} else {
+		f_bg_ = ( float* )calloc( Y_[1], sizeof( float ) );
+		for( size_t i = 0; i < Y_[1]; i++ ){
+			f_bg_[i] = 1.f / ( float )Y_[1];
+		}
 	}
 
 	v_ = ( float*** )calloc( K_+1, sizeof( float** ) );
@@ -141,7 +144,7 @@ void Motif::initFromBindingSites( char* indir, size_t l_flank, size_t r_flank ){
 
 		if( bindingSiteWidth != W_ ){	// all binding sites have the same length
 			fprintf( stderr, "Error: Length of binding site on line %d differs.\n"
-					"Binding sites should have the same length.\n", (int)C_ );
+					"Binding sites should have the same length.\n", ( int )C_ );
 			exit( -1 );
 		}
 		if( bindingSiteWidth < K_+1 ){	// binding sites should be longer than the order of model
@@ -323,10 +326,9 @@ void Motif::initFromBaMM( char* indir, size_t l_flank, size_t r_flank ){
 
 			std::stringstream number( line );
 
-			size_t y = 0;
-			while( number >> v_[k][y][j] ){
-				y++;
-			}
+            for( size_t y = 0; y < Y_[k+1]; y++ ){
+                number >> v_[k][y][j];
+            }
 		}
 		// read 'empty' line
 		getline( file, line );
@@ -354,8 +356,9 @@ float** Motif::getS(){
 }
 
 void Motif::calculateV( float*** n ){
+	// Note: This function is written for reading in bindingsite files.
 
-	// for k = 0, v_ = freqs:
+    // for k = 0, v_ = freqs:
 	for( size_t y = 0; y < Y_[1]; y++ ){
 		for( size_t j = 0; j < W_; j++ ){
 			v_[0][y][j] = ( n[0][y][j] + A_[0][j] * f_bg_[y] )

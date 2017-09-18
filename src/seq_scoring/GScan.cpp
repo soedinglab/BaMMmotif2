@@ -223,7 +223,7 @@ void GScan::printHelp(){
               << "\t\t--negSeqFile" << std::endl
               << "\t\t\tFASTA file with negative/background sequences used to " << std::endl
               << "\t\t\tlearn the (homogeneous) background BaMM. " << std::endl
-              << "\t\t\tIf not specified, background BaMM is learned from positive sequences." << std::endl
+              << "\t\t\tIf not specified, background model is learned from positive sequences." << std::endl
               << "\tOptions for query motifs:" << std::endl
               << "\t\t--bindingSiteFile <STRING>" << std::endl
               << "\t\t\tFile with binding sites of equal length(one per line)." << std::endl

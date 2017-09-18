@@ -110,6 +110,9 @@ public:
 	static bool			makeMovie;				// print out bamms in each iteration while optimizing
 	static bool 		optimizeQ;				// optimize hyperparameter q in EM algorithm
 	static void         debug();
+    static bool         B2;
+    static bool         B3;
+    static bool         B3prime;
 
 	static void         init( int nargs, char* args[] );
 	static void         destruct();

@@ -17,7 +17,7 @@ class EM {
 
 public:
 
-    EM( Motif* motif, BackgroundModel* bgModel, std::vector<Sequence*> seqs, float q, bool optimizeQ = true );
+    EM( Motif* motif, BackgroundModel* bgModel, std::vector<Sequence*> seqs, float q, bool optimizeQ = false );
     ~EM();
 
     int                     optimize();         // run EM optimization
@@ -30,6 +30,7 @@ public:
     void                    optimize_q();       // optimize the hyperparameter q
 
     float**                 getR();             // get the responsibility parameter r
+    float                   getQ();             // get the optimized positional prior q
 
 private:
 

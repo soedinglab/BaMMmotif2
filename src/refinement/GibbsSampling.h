@@ -21,6 +21,8 @@ public:
 
 	void 					optimize();			// optimize BaMM model with Gibbs sampling
 
+    float                   getQ();             // get sampled positional prior q
+
 	void					print();			// print out optimized model v
 
 	void					write( char* odir, std::string basename, bool ss );

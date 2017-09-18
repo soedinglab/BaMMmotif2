@@ -80,6 +80,9 @@ std::mt19937		Global::rngx;
 
 // flags for developers
 bool			    Global::makeMovie = false;              // print out bamms in each iteration while optimizing
+bool 				Global::B2 = false;
+bool 				Global::B3 = false;
+bool 				Global::B3prime = false;
 
 void Global::init( int nargs, char* args[] ){
 
@@ -290,6 +293,9 @@ int Global::readArguments( int nargs, char* args[] ){
     // flags for developers
     opt >> GetOpt::OptionPresent( "makeMovie", makeMovie );
 	opt >> GetOpt::OptionPresent( "optimizeQ", optimizeQ );
+	opt >> GetOpt::OptionPresent( "B2", B2 );
+	opt >> GetOpt::OptionPresent( "B3", B3 );
+	opt >> GetOpt::OptionPresent( "B3prime", B3prime );
 	// for remaining unknown options
 	if( opt.options_remain() ){
 		printHelp();

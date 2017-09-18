@@ -31,7 +31,7 @@ void FDR::evaluateMotif(){
 
 	std::vector<std::vector<float>> mops_scores;
 	std::vector<float> 				zoops_scores;
-
+    float updatedQ = q_;  // obtain the updated q
 	/**
 	 * Cross validation
 	 */
@@ -66,9 +66,11 @@ void FDR::evaluateMotif(){
 		if( EM_ ){
 			EM model( motif, bgModel_, trainSet, q_ );
 			model.optimize();
+            updatedQ = model.getQ();
 		} else if ( CGS_ ){
 			GibbsSampling model( motif, bgModel_, trainSet, q_ );
 			model.optimize();
+            updatedQ = model.getQ();
 		}
 
 		/**
@@ -82,16 +84,16 @@ void FDR::evaluateMotif(){
 			mops_scores = score_testset.getMopsScores();
 			for( size_t n = 0; n < testSet.size(); n++ ){
 				posScoreAll_.insert( std::end( posScoreAll_ ),
-						std::begin( mops_scores[n] ),
-						std::end( mops_scores[n] ) );
+                                     std::begin( mops_scores[n] ),
+                                     std::end( mops_scores[n] ) );
 			}
 		}
 
 		if( zoops_ ){
 			zoops_scores = score_testset.getZoopsScores();
 			posScoreMax_.insert( std::end( posScoreMax_ ),
-					std::begin( zoops_scores ),
-					std::end( zoops_scores ) );
+                                 std::begin( zoops_scores ),
+                                 std::end( zoops_scores ) );
 		}
 
 		// score negative sequence set
@@ -101,20 +103,23 @@ void FDR::evaluateMotif(){
 			mops_scores = score_negset.getMopsScores();
 			for( size_t n = 0; n < negSet.size(); n++ ){
 				negScoreAll_.insert( std::end( negScoreAll_ ),
-						std::begin( mops_scores[n] ),
-						std::end( mops_scores[n] ) );
+                                     std::begin( mops_scores[n] ),
+                                     std::end( mops_scores[n] ) );
 			}
 		}
 		if( zoops_ ){
 			zoops_scores = score_negset.getZoopsScores();
 			negScoreMax_.insert( std::end( negScoreMax_ ),
-					std::begin( zoops_scores ),
-					std::end( zoops_scores ) );
+                                 std::begin( zoops_scores ),
+                                 std::end( zoops_scores ) );
 		}
 
 		if( motif ) 				delete motif;
 
 	}
+
+    // update Q
+    q_ = updatedQ;
 
     // calculate precision and recall
     calculatePR();
@@ -185,6 +190,7 @@ void FDR::calculatePR(){
 	// for ZOOPS model:
 	if( zoops_ ){
 		PN_Pvalue_.clear();
+
 		// Sort log odds scores in descending order
 		std::sort( posScoreMax_.begin(), posScoreMax_.end(), std::greater<float>() );
 		std::sort( negScoreMax_.begin(), negScoreMax_.end(), std::greater<float>() );
@@ -205,8 +211,7 @@ void FDR::calculatePR(){
 
 			ZOOPS_TP_.push_back( ( float )idx_posMax );
 			ZOOPS_FP_.push_back( ( float )idx_negMax / mFold );
-			PN_Pvalue_.push_back( ( ( float )idx_negMax + 0.5f )
-                                  / ( mFold * ( float )posScoreMax_.size() + 1.0f ) );
+			PN_Pvalue_.push_back( ( ( float )idx_negMax + 0.5f ) / ( ( float )negN + 1.0f ) );
 
 			// take the faction of q sequences as real positives
 			if( idx_posMax == posN_est ){
@@ -214,8 +219,6 @@ void FDR::calculatePR(){
 			}
 
 			ZOOPS_FDR_.push_back( ZOOPS_FP_[i] / ( ZOOPS_TP_[i] + ZOOPS_FP_[i] ) );
-			// ZOOPS_FDR_.push_back( 1.0f - ( float )idx_posMax / ( float )(i+1) );
-			// ZOOPS_FDR_.push_back( ZOOPS_FP_[i] / ( float )idx_posMax );
 			ZOOPS_Rec_.push_back( ZOOPS_TP_[i] / ( float )posN );
 
 		}
@@ -251,8 +254,7 @@ void FDR::calculatePvalues(){
                                                    std::upper_bound( negScoreAll_.begin(),
                                                                      negScoreAll_.end(),
                                                                      posScoreAll_[i] ) ) );
-			float p = 1.0f - ( float )( up + low ) /
-					( 2.0f * ( float ) negScoreAll_.size() );
+			float p = 1.0f - ( float )( up + low ) / ( 2.0f * ( float ) negScoreAll_.size() );
 			// avoid the rounding errors, such as p-value = 0 or p-value > 1
 			if( p < 1e-6 ) p = 0.000001f;
 			if( p > 1.0f ) p = 1.0f;

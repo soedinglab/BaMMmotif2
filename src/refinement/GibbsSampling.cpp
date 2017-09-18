@@ -415,7 +415,7 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
             }
         }
     }
-    std::cout << "N0=" << N0_ << std::endl;
+//    std::cout << "N0=" << N0_ << std::endl;
 }
 
 void GibbsSampling::Gibbs_sample_q(){
@@ -866,7 +866,9 @@ float GibbsSampling::calc_llikelihood_alphas( float** A, size_t k ){
     return logLikelihood;
 }
 
-
+float GibbsSampling::getQ(){
+    return q_;
+}
 void GibbsSampling::print(){
 
     // print out motif parameter v

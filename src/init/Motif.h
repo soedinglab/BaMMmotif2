@@ -45,9 +45,9 @@ private:
 
 	bool				isInitialized_ = false;		// assert in all public methods
 
-	size_t				C_;
-	size_t 				W_;
-	size_t				K_;
+	size_t				C_;							// count of the sequences
+	size_t 				W_;							// motif length
+	size_t				K_;							// motif model order
 	float**			 	A_;							// hyperparameter alphas
 	float***    		v_;				        	// conditional probabilities for (k+1)-mers y at motif position j
     float*	            f_bg_;			            // monomer frequencies from background model

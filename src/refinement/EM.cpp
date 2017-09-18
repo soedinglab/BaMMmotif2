@@ -106,19 +106,15 @@ int EM::optimize(){
         if( v_diff < epsilon_ )							iterate = false;
         if( llikelihood_diff < 0 and iteration > 10 )	iterate = false;
 
-//        // for making a movie out of all iterations
-//        // calculate probabilities
-//        motif_->calculateP();
-//        // write out the learned model
-//        motif_->write( Global::outputDirectory,
-//                       Global::posSequenceBasename + "_iter_" + std::to_string( iteration ) );
+/*        // for making a movie out of all iterations
+        // calculate probabilities
+        motif_->calculateP();
+        // write out the learned model
+        motif_->write( odir, "ChIP_GATA3_iter_" + std::to_string( iteration ) );*/
     }
 
     // calculate probabilities
     motif_->calculateP();
-
-    // print out the optimized q
-    if( optimizeQ_ )   std::cout << "The optimized q=" << q_ << std::endl;
 
     fprintf( stdout, "\n--- Runtime for EM: %.4f seconds ---\n",
              ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );
@@ -244,12 +240,14 @@ void EM::optimize_q(){
 
     q_ = ( N0 + 1.f ) / ( ( float )seqs_.size() + 2.f );
 
-//    std::cout << "N0 = " << N0 << ", q = " << ( N0 + 1.f ) / ( ( float )seqs_.size() + 2.f ) << std::endl;
 }
 float** EM::getR(){
     return r_;
 }
 
+float EM::getQ(){
+    return q_;
+}
 void EM::print(){
 
     // print out motif parameter v
@@ -299,6 +297,8 @@ void EM::write( char* odir, std::string basename, bool ss ){
                             // in terms of responsibilities
     for( size_t n = 0; n < seqs_.size(); n++ ){
 
+        ofile_pos << '>' << seqs_[n]->getHeader() << '\t';
+
         size_t L = seqs_[n]->getL();
 
         if( !ss )	L = ( L - 1 ) / 2;
@@ -307,15 +307,14 @@ void EM::write( char* odir, std::string basename, bool ss ){
 
         for( size_t i = LW1; i > 0; i-- ){
             if( r_[n][i] >= cutoff ){
-                ofile_pos << '>' << seqs_[n]->getHeader() << '\t'
-                          << ( ( i < L ) ? '+' : '-' ) << '\t'
+                ofile_pos << ( ( i < L ) ? '-' : '+' ) << '\t'
                           << LW1-i+1 << ".." << LW1-i+W_<< '\t';
                 for( size_t b = 0; b < W_; b++ ){
                     ofile_pos << Alphabet::getBase( seqs_[n]->getSequence()[LW1-i+b] );
                 }
-                ofile_pos << std::endl;
             }
         }
+        ofile_pos << std::endl;
     }
 
 	// output responsibilities r[n][i]
