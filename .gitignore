@@ -111,3 +111,10 @@ nbbuild/
 dist/
 nbdist/
 .nb-gradle/
+
+# CLion
+#############
+.idea/
+cmake-build-debug/
+
+
