@@ -19,8 +19,10 @@ make install
 
 rm -rf ~/opt/BaMM
 mkdir -p ~/opt/BaMM
-cp BaMMmotif/BaMMmotif ~/opt/BaMM
-cp ../R/plotAUSFC_benchmark_fdrtool.R ../R/plotAUSFC_rank.R ~/opt/BaMM
+
+cp BaMMmotif ~/opt/BaMM
+
+cp ../R/plotAUSFC_benchmark_fdrtool.R  ~/opt/BaMM
 
 cd ..
 

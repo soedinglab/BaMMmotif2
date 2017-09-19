@@ -49,6 +49,10 @@ CTestTestfile.cmake
 .metadata
 bin/
 tmp/
+<<<<<<< HEAD
+=======
+Debug/
+>>>>>>> restruc_bamm/master
 *.tmp
 *.bak
 *.swp
@@ -62,6 +66,14 @@ local.properties
 # Eclipse Core
 .project
 
+<<<<<<< HEAD
+=======
+# CLion
+.idea/
+cmake-build-debug/
+.idea/*.xml
+
+>>>>>>> restruc_bamm/master
 # External tool builders
 .externalToolBuilders/
 
@@ -111,6 +123,7 @@ nbbuild/
 dist/
 nbdist/
 .nb-gradle/
+<<<<<<< HEAD
 
 # CLion
 #############
@@ -118,3 +131,5 @@ nbdist/
 cmake-build-debug/
 
 
+=======
+>>>>>>> restruc_bamm/master
