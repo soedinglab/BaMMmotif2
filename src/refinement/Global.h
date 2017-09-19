@@ -60,7 +60,7 @@ public:
 	static float		modelBeta;				// alpha_k = beta x gamma^k for k > 0
 	static float		modelGamma;
 	static std::vector<size_t>	addColumns;		// add columns to the left and right of init used to initialize Markov init
-    static bool			interpolate;				// calculate prior probabilities from lower-order probabilities
+    static bool			interpolate;			// calculate prior probabilities from lower-order probabilities
     											// instead of background frequencies of mono-nucleotides
     static bool			interpolateBG;			// calculate prior probabilities from lower-order probabilities
     											// instead of background frequencies of mono-nucleotides

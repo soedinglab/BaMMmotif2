@@ -1,10 +1,11 @@
 #include "SeqGenerator.h"
 
-SeqGenerator::SeqGenerator( std::vector<Sequence*> seqs, Motif* motif, size_t sOrder ){
+SeqGenerator::SeqGenerator( std::vector<Sequence*> seqs, Motif* motif, size_t sOrder, float q ){
 
 	seqs_ = seqs;
-	motif_= motif;
 	sOrder_ = sOrder;
+    motif_ = motif;
+    q_ = q;
 
 	for( size_t k = 0; k < sOrder_ + 8; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
@@ -57,8 +58,7 @@ void SeqGenerator::calculate_kmer_frequency(){
 	// calculate frequencies
 	size_t normFactor = 0;
 	for( size_t y = 0; y < Y_[1]; y++ )	normFactor += count_[0][y];
-	for( size_t y = 0; y < Y_[1]; y++ )	freqs_[0][y] = ( float )count_[0][y]
-													/ ( float )normFactor;
+	for( size_t y = 0; y < Y_[1]; y++ )	freqs_[0][y] = ( float )count_[0][y] / ( float )normFactor;
 	for( size_t k = 1; k < sOrder_+1; k++ ){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
 			size_t yk = y / Y_[1];

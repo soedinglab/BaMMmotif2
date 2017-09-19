@@ -217,7 +217,7 @@ void GibbsSampling::optimize(){
 //        // calculate probabilities
 //        motif_->calculateP();
 //        motif_->write( Global::outputDirectory,
-//                       Global::posSequenceBasename + "_iter_" + std::to_string( iteration ) );
+//                       Global::sequenceBasename + "_iter_" + std::to_string( iteration ) );
 //
     }
 
@@ -285,7 +285,7 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
         // count k-mers at position z_i+j except the n'th sequence
         // remove the k-mer counts from the sequence with the current z
         // and re-calculate the log odds scores in linear space
-        /*
+        /**
          * -------------- faster version of removing k-mer ------------------
          */
         float sumN = 0.0f;
@@ -327,7 +327,7 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
             }
         }
 
-        /*
+        /**
          * -------------- slower version of removing k-mer ------------------
          */
         if( remove_kmer_slowly ){
@@ -349,7 +349,7 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
 
         }
 
-        /*
+        /**
          * ------- sampling equation -------
          */
 

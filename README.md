@@ -27,8 +27,11 @@ To plot BaMM logos you need
 #### Linux
       mkdir build
       cd build
-      cmake ..
+      cmake -DCMAKE_INSTALL_PREFIX=${HOME}/opt/BaMM ..
       make
+      make install
+      
+Adjust `${HOME}/opt/BaMM` if you want to change the directory for installation
 
 #### OS X
 OS X ships clang instead of gcc. We recommend using [Homebrew](http://brew.sh/) to install gcc.

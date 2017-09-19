@@ -19,7 +19,9 @@ class SeqGenerator {
 	 */
 
 public:
-	SeqGenerator( std::vector<Sequence*> seqs, Motif* motif = NULL, size_t sOrder = 2 );
+	SeqGenerator( std::vector<Sequence*> seqs, Motif* motif = NULL, size_t sOrder = 2, float q = 1.f );
+
+
 	~SeqGenerator();
 
 	std::vector<std::unique_ptr<Sequence>> arti_negset( size_t fold );
@@ -42,9 +44,10 @@ private:
 	float**						freqs_;			// k-mer frequencies
 	size_t** 					count_;			// k-mer counts
 	Motif* 						motif_;			// the optimized motif
-	size_t						sOrder_;		// the order of k-mers for
+	size_t						sOrder_;	    // the order of k-mers for
 												// generating negative/pseudo
 												// sequence set
+    float                       q_;             // portion of sequences in the set that are masked/embeded with the motif
 	std::vector<size_t>			Y_;
 };
 

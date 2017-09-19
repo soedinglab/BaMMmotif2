@@ -1,4 +1,7 @@
-file(GLOB SOURCES *.cpp *.h)
-add_library (seq_generator ${SOURCES})
+file(GLOB SOURCES *.cpp *.h ../refinement/EM.* )
 
-#target_include_directories (seq_generator PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_executable (BaMMSimu ${SOURCES})
+
+target_link_libraries (BaMMSimu LINK_PUBLIC init)
+
+add_library (seq_generator ${SOURCES})

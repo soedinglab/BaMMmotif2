@@ -7,7 +7,7 @@ SequenceSet::SequenceSet( std::string sequenceFilepath,
 
 	if( Alphabet::getSize() == 0 ){
 		std::cerr << "Error: Initialize Alphabet before "
-				"constructing a SequenceSet" << std::endl;
+				"constructing a sequenceSet" << std::endl;
 		exit( -1 );
 	}
 
@@ -238,7 +238,7 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 int SequenceSet::readIntensities(){
 
-	std::cerr << "Error: SequenceSet::readIntensities() "
+	std::cerr << "Error: sequenceSet::readIntensities() "
 			"is not implemented so far." << std::endl;
 	exit( -1 );
 }
