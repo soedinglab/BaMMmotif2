@@ -123,13 +123,9 @@ nbbuild/
 dist/
 nbdist/
 .nb-gradle/
-<<<<<<< HEAD
 
 # CLion
 #############
 .idea/
 cmake-build-debug/
 
-
-=======
->>>>>>> restruc_bamm/master
