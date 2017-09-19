@@ -11,13 +11,20 @@ include_directories (${Boost_INCLUDEDIR})
 link_libraries (${Boost_LIBRARIES})
 
 # set the version of BaMM!motif
-set (BAMMMOTIF_MAJOR_VERSION 0)
-set (BAMMMOTIF_MINOR_VERSION 1)
-set (BAMMMOTIF_PATCH_VERSION 1)
+set (BAMMMOTIF_MAJOR_VERSION 2)
+set (BAMMMOTIF_MINOR_VERSION 0)
+set (BAMMMOTIF_PATCH_VERSION 0)
 set (BAMMMOTIF_VERSION ${BAMMMOTIF_MAJOR_VERSION}.${BAMMMOTIF_MINOR_VERSION}.${BAMMMOTIF_PATCH_VERSION})
 
-set (CMAKE_CXX_FLAGS
-        "-D__cplusplus=201103L -D__GXX_EXPERIMENTAL_CXX0X__ -DLOG_MAX_LEVEL=0 -fmessage-length=0 -fno-strict-aliasing -g3 -O3 -pedantic -pedantic-errors -std=c++11 -Wall -Wconversion")
+set (CMAKE_CXX_FLAGS "-std=c++11 -Wall")
+
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+install (DIRECTORY R/ ${CMAKE_BINARY_DIR}/bin/
+        DESTINATION bin
+        PATTERN *
+        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
+        )
 
 add_subdirectory (src/getopt_pp getopt_pp)
 add_subdirectory (src/init init)
