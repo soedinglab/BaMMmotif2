@@ -6,28 +6,18 @@
 #-----------------------------------------------------------------
 
 # calculate FDR, precision, recall and occurrences for both MOPS
-<<<<<<< HEAD
-# and ZOOPS models by taking p-values of log odds scores froom
-# positive sequences and using "fdrtool" library
-# plot FDR vs. recall(sensitivity) curve
-# caluclate the area under the sensitivity-FDR curve (AUSFC)
-=======
 # and ZOOPS init by taking p-values of log odds scores froom
 # positive sequences and using "fdrtool" library
 # plot FDR vs. recall(sensitivity) curve
 # calculate the area under the sensitivity-FDR curve (AUSFC)
->>>>>>> restruc_bamm/master
 # and plot the true-positive-rate(TPR) vs. false-positive-rate(FPR)
 # curve and calculate the partial AUC from this curve;
 # results are saved in a .bmscore file.
 
 # examples for running this script:
-<<<<<<< HEAD
-# ./plotAUSFC_benchmark_fdrtool.R PATH_TO_zoops.stats_FILE BASENAME_OF_THE_FILE
-=======
-# ./plotAUSFC_benchmark_fdrtool.R PATH_TO_zoops.stats_FILE
->>>>>>> restruc_bamm/master
-# ./plotAUSFC_benchmark_fdrtool.R /home/bamm_result/ JunD_motif_1
+# ./calcAUSFC.R PATH_TO_zoops.stats_FILE
+
+# ./calcAUSFC.R /home/bamm_result/ JunD_motif_1
 
 #-----------------------------
 #
