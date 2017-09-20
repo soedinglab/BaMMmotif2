@@ -43,7 +43,8 @@ void GSimu::init( int nargs, char* args[] ){
 
     Alphabet::init( alphabetType );
 
-    // read in positive, negative and background sequence set
+    // read in the given sequence set
+    // only the given single stand
     sequenceSet = new SequenceSet( sequenceFilename, true );
 
 }

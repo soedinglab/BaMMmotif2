@@ -1,7 +1,6 @@
 //
 // Created by wanwan on 16.08.17.
 //
-
 #include "GibbsSampling.h"
 
 #include <boost/math/special_functions.hpp>			/* gamma and digamma function */

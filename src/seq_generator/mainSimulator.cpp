@@ -26,10 +26,9 @@ int main( int nargs, char* args[] ){
         SeqGenerator negseq( GSimu::sequenceSet->getSequences(), NULL, GSimu::sOrder );
         negseq.write( GSimu::outputDirectory,
                       GSimu::sequenceBasename + "_sampledNegset",
-                      negseq.arti_negset( GSimu::mFold ) );
-    }
-
-    if( GSimu::maskSeqset or GSimu::embedSeqset ){
+                      negseq.arti_bgseqset(GSimu::mFold) );
+        std::cout << "L = "<< GSimu::sequenceSet->getSequences()[1]->getL() << std::endl;
+    } else {
         /**
          * Build up the background model
          */
@@ -48,38 +47,38 @@ int main( int nargs, char* args[] ){
                             GSimu::modelOrder,
                             GSimu::modelAlpha );
 
-        for( size_t n = 0; n < motif_set.getN(); n++ ) {
+            for( size_t n = 0; n < motif_set.getN(); n++ ) {
 
-            Motif* motif = new Motif( *motif_set.getMotifs()[n] );
-            /**
-             * optimize motif using EM
-             */
-            EM model( motif, bgModel, GSimu::sequenceSet->getSequences(), GSimu::q );
-			model.optimize();
-
-            if( GSimu::maskSeqset ){
-
+                Motif* motif = new Motif( *motif_set.getMotifs()[n] );
                 /**
-                 * Mask the given motif from the input sequence set
+                 * optimize motif using EM
                  */
-                SeqGenerator seqset( GSimu::sequenceSet->getSequences(), motif, GSimu::modelOrder, GSimu::q );
-                seqset.write( GSimu::outputDirectory,
-                              GSimu::sequenceBasename + "_maskedPosset",
-                              seqset.arti_negset_motif_masked( model.getR() ) );
+                EM model( motif, bgModel, GSimu::sequenceSet->getSequences(), GSimu::q );
+                model.optimize();
+                SeqGenerator seq_generator( GSimu::sequenceSet->getSequences(),
+                                     motif,
+                                     GSimu::modelOrder,
+                                     GSimu::q );
+                if( GSimu::maskSeqset ) {
+                    /**
+                     * Mask the given motif from the input sequence set
+                     */
+                    seq_generator.write(GSimu::outputDirectory,
+                                        GSimu::sequenceBasename + "_motif_" + std::to_string(n + 1) + "_masked",
+                                        seq_generator.seqset_with_motif_masked(model.getR()));
+                } else if( GSimu::embedSeqset ) {
+                    /**
+                     * embed the given motifs into the input sequence set
+                     */
+                    seq_generator.write(GSimu::outputDirectory,
+                                        GSimu::sequenceBasename + "_motif_" + std::to_string(n + 1) + "_embedded",
+                                        seq_generator.arti_posset_motif_embedded());
+                } else{
+                    std::cout << "No artificial sequence set is generated. Please check your input options." << std::endl;
+                }
+                if( motif ) delete motif;
             }
 
-            if( GSimu::embedSeqset ){
-
-                /**
-                 * embed the given motif into the input sequence set
-                 */
-                SeqGenerator seqset( GSimu::sequenceSet->getSequences(), motif, GSimu::modelOrder, GSimu::q );
-                seqset.write( GSimu::outputDirectory,
-                              GSimu::sequenceBasename + "_embededSeqset",
-                              seqset.arti_posset_motif_embedded( GSimu::mFold ) );
-            }
-            if( motif ) delete motif;
-        }
         if( bgModel )   delete bgModel;
     }
 

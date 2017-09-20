@@ -1,5 +1,5 @@
 #include <fstream>		// std::fstream
-
+#include <random>       // std::mt19937, std::discrete_distribution
 #include "Motif.h"
 
 Motif::Motif( size_t length, size_t K, std::vector<float> alpha, float* f_bg ){

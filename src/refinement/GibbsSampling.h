@@ -5,6 +5,7 @@
 #ifndef GIBBSSAMPLING_H_
 #define GIBBSSAMPLING_H_
 
+#include <random>       // std::mt19937, std::discrete_distribution
 #include "../init/BackgroundModel.h"
 #include "../init/MotifSet.h"
 #include "EM.h"
