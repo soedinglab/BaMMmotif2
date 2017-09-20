@@ -47,7 +47,7 @@ int main( int nargs, char* args[] ){
     // from positive training sequence set
     std::vector<std::unique_ptr<Sequence>> negSeqs;
     SeqGenerator negseq( GFdr::posSequenceSet->getSequences(), NULL, GFdr::sOrder );
-    negSeqs = negseq.arti_negset( GFdr::mFold );
+    negSeqs = negseq.arti_bgseqset(GFdr::mFold);
     // convert unique_ptr to regular pointer
     for( size_t n = 0; n < negSeqs.size(); n++ ) {
         negset.push_back( negSeqs[n].release() );

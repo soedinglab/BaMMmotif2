@@ -84,7 +84,8 @@ int main( int nargs, char* args[] ){
 		if( Global::EM ){
 			EM model( motif, bgModel, Global::posSequenceSet->getSequences(), Global::q );
 			// learn motifs by EM
-			model.optimize();
+			//model.optimize();
+            model.advance();
 			// write model parameters on the disc
 			if( Global::saveBaMMs ){
 				model.write( Global::outputDirectory,
@@ -142,7 +143,7 @@ int main( int nargs, char* args[] ){
             // from the given sampled negative sequence set
             std::vector<std::unique_ptr<Sequence>> B2Seqs;
             SeqGenerator b2seqs( Global::negSequenceSet->getSequences() );
-            B2Seqs = b2seqs.arti_negset( 1 );
+            B2Seqs = b2seqs.arti_bgseqset(1);
             // convert unique_ptr to regular pointer
             for( size_t n = 0; n < B2Seqs.size(); n++ ) {
                 negset.push_back( B2Seqs[n].release() );
@@ -158,7 +159,7 @@ int main( int nargs, char* args[] ){
             // learn motifs by EM
             model_opti.optimize();
             std::vector<std::unique_ptr<Sequence>> B1SeqSetPrime;
-            B1SeqSetPrime = artificial_set.arti_negset_motif_masked( model_opti.getR() );
+            B1SeqSetPrime = artificial_set.seqset_with_motif_masked(model_opti.getR());
             if ( motif_opti ) delete motif_opti;
             // draw B1setPrime from the positive sequence set with masked motifs
             for( size_t n = 0; n < B1SeqSetPrime.size(); n++ ) {
@@ -169,7 +170,7 @@ int main( int nargs, char* args[] ){
             // from positive training sequence set
             std::vector<std::unique_ptr<Sequence>> B1Seqs;
             SeqGenerator b1seqs( Global::posSequenceSet->getSequences() );
-            B1Seqs = b1seqs.arti_negset( Global::mFold );
+            B1Seqs = b1seqs.arti_bgseqset(Global::mFold);
             // convert unique_ptr to regular pointer
             for( size_t n = 0; n < B1Seqs.size(); n++ ) {
                 negset.push_back( B1Seqs[n].release() );

@@ -21,6 +21,7 @@ public:
     ~EM();
 
     int                     optimize();         // run EM optimization
+    int                     advance();          // improve the EM optimization
     void                    print();            // print out optimized model v
     void					write( char* odir, std::string basename, bool ss );
                                                 // write out the EM parameters such as n, pos, r
