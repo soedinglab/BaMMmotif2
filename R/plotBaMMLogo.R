@@ -18,7 +18,7 @@
 
 ### Result
 # * Higher-order sequence logo
-# e.g. basename.pdf
+# e.g. basename-logo-order-0.pdf (for 0th-order)
 
 ### command line
 # plotBaMMlogo.R path_to_input_bamm_file logo_order

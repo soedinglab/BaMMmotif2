@@ -4,20 +4,20 @@
 # Documentation
 #
 #-----------------------------------------------------------------
+# based on the output of BaMM FDR function:
+# 1. calculate false discovery rate(FDR), and sensitivity
+#    using the p-values for log odds ratios of positive sequences
+#    and Grenander fitting in the "fdrtool" library;
+# 2. calculate area-under-FDR-sensitivity-curve (AUSFC);
+# 3. plot FDR-sensitivity curve using fitted FDR and sensitivity scores;
+# 4. plot partial ROC using raw TPs and FPs;
+# 5. plot precision-recall curve using raw FDR and recall scores;
+# 6. ausfc score, pAUC score and auprc score are saved in .bmscore file.
 
-# calculate FDR, precision, recall and occurrences for both MOPS
-# and ZOOPS init by taking p-values of log odds scores froom
-# positive sequences and using "fdrtool" library
-# plot FDR vs. recall(sensitivity) curve
-# calculate the area under the sensitivity-FDR curve (AUSFC)
-# and plot the true-positive-rate(TPR) vs. false-positive-rate(FPR)
-# curve and calculate the partial AUC from this curve;
-# results are saved in a .bmscore file.
+# command for executing this script:
+# ./evaluateBaMM.R INPUT_DIR FILE_PREFIX [options]
 
-# examples for running this script:
-# ./calcAUSFC.R PATH_TO_zoops.stats_FILE
-
-# ./calcAUSFC.R /home/bamm_result/ JunD_motif_1
+# ./evaluateBaMM.R /home/bamm_result/ JunD_motif_1 [--SFC 1 ...]
 
 #-----------------------------
 #
@@ -25,12 +25,40 @@
 #
 #-----------------------------
 
-# load "zoo" library for calculating AUPRC
+# load "zoo" library for calculating area-under-the-curve
 library( zoo )
 # load "argparse" library for parsing arguments
 library( argparse )
 # load "fdrtool" library for calculating FDR 
 library( fdrtool )
+# load "LSD" library for plotting the curves
+library( LSD )
+
+#-----------------------------
+#
+# Parameter setting
+#
+#-----------------------------
+parser <- ArgumentParser(description="evaluate motifs optimized by BaMM")
+# positional arguments
+parser$add_argument('target_directory', help="directory that contains the target file")
+parser$add_argument('prefix', help="prefix of the target file")
+# optional arguments
+parser$add_argument("--fdrtool", type="logical", default=FALSE, help="flag for print out analysis fromfdrtool" )
+parser$add_argument("--SFC", type="logical", default=FALSE, help="flag for print out sensitivity-fdr curve" )
+parser$add_argument("--ROC5", type="logical", default=FALSE, help="flag for print out partial ROC curve" )
+parser$add_argument("--PRC", type="logical", default=FALSE, help="flag for print out precision-recall curve" )
+
+args <- parser$parse_args()
+
+# get the directory of the p-value files
+dir 	<- args$target_directory
+prefix 	<- args$prefix
+# flags for printing the curve plots
+print_FDRtool	= args$fdrtool
+print_SFcurve 	= args$SFC
+print_ROC5      = args$ROC5
+print_PRcurve 	= args$PRC
 
 ###########################
 ## For this script we need a slightly modified version of the fdrtool function.
@@ -78,7 +106,6 @@ fdrtool = function(x,
 
   if ( is.vector(x) == FALSE )
   	stop("input test statistics must be given as a vector!")
-
   if ( length(x) < 200 ) warning("There may be too few input test statistics for reliable FDR calculations!")
   if (statistic=="pvalue")
   {
@@ -317,185 +344,208 @@ pvt.plotlabels <- function(statistic, scale.param, eta0)
 }
 ## EOF fdrtool.R
 
-#-----------------------------
+
+#-----------------
 #
-# Parameter setting
+# main functions
 #
-#-----------------------------
-parser <- ArgumentParser(description='benchmark motif finder')
-parser$add_argument('target_directory', help='directory that contains the target file')
-parser$add_argument('prefix', help='prefix of the target file')
-args <- parser$parse_args()
-
-# default args for ArgumentParser()$parse_args are commandArgs(TRUE)
-# which is what you'd want for an Rscript but not for interactive use
-
-# get the directory of the p-value files
-dir 	<- args$target_directory
-prefix 	<- args$prefix
-
-# flags for printing the curve plots
-print_PRcurve 	= FALSE
-print_FDRcurve	= FALSE
-print_SFcurve 	= FALSE
-print_ROC5      = FALSE
-
+#-----------------
 results = c()
+#resultTitle = paste0(c("motif_name", "ausfc_score", "auc5_score", "auprc_score"), collapse="\t")
+#results = c(results, resultTitle)
 
-#f = paste( dir, "/", prefix, ".zoops.stats", sep = "")
 for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))) {
 
-# read in p-values from file
-first_row   <- read.table(f, nrows =1 )
-stats       <- read.table(f, skip=1 )
-pvalues     <- stats$V5
-mfold       <- as.numeric(first_row[6])
+    # read in p-values from file
+    first_row   <- read.table(f, nrows =1 )
+    stats       <- read.table(f, skip=1 )
+    pvalues     <- stats$V5
+    mfold       <- as.numeric(first_row[6])
 
-# avoid the rounding errors when p-value = 0 or p-value > 1
-for(i in seq(1, length(pvalues))){
-    if( pvalues[i] > 1 ){
-        pvalues[i] = 1
-    }
-}
-
-# estimate False Discovery Rates for Diverse Test Statistics
-eta0set = mfold / ( 1+mfold )
-if( print_FDRcurve ){
-    pdf( file = paste(dir, prefix, '_FDRstat.pdf', sep = "" ) )
-    result = fdrtool( pvalues, statistic="pvalue",
-                      plot=TRUE, color.figure=TRUE, verbose=TRUE, eta0set=eta0set )
-    dev.off()
-} else {
-    result = fdrtool( pvalues, statistic="pvalue", plot=FALSE, eta0set=eta0set )
-}
-
-# get the global fdr values and estimate of the weight eta0 of
-# the null component
-fdr_m	<- result$qval
-eta0 	<- result$param[3]
-
-#calculate FDR
-fdr 	<- 1 / ( 1 + mfold * ( 1 / fdr_m - 1 ) )
-
-# calculate recall
-len 	= length(fdr)
-list 	<- seq(1, len)
-recall  <- ( 1 - fdr ) * list / ( 1 - eta0 ) / len
-
-# modify the SF curve:
-# reset recall to 1 when it is larger than 1
-for(i in list){
-    if( recall[i] > 1 ){
-        for(rest in i:len){
-            recall[rest] = 1
+    # avoid the rounding errors when p-value = 0 or p-value > 1
+    for(i in seq(1, length(pvalues))){
+        if( pvalues[i] > 1 ){
+            pvalues[i] = 1
         }
-        break
     }
-}
 
-# extend the SF curve till FDR reaches 0.5
-recall  <- append(recall, 1)
-fdr     <- append(fdr, 0.5)
-range   <- seq(1, len+1)
-
-# limit the frame of the curve to FDR(0.01-0.5)
-left    = 1         # index for the FDR value on the left border
-right   = len+1     # index for the FDR value on the right border
-l_range = 0.01	    # left range for FDR
-r_range = 0.5		# right range for FDR
-
-for(i in range){
-    if( fdr[i] >= l_range ){
-        left = i
-        recall[i] = 0
-        break
+    # estimate False Discovery Rates for Diverse Test Statistics
+    eta0set = mfold / ( 1+mfold )
+    if( print_FDRtool ){
+        pdf( file = paste(dir, prefix, '_FDRstat.pdf', sep = "" ) )
+        result = fdrtool( pvalues, statistic="pvalue",
+                          plot=TRUE, color.figure=TRUE, verbose=TRUE, eta0set=eta0set )
+        dev.off()
+    } else {
+        result = fdrtool( pvalues, statistic="pvalue", plot=FALSE, eta0set=eta0set )
     }
-}
 
-for(i in range){
-    if( fdr[i] > r_range ){
-        right = i
-        break
+    # get the global fdr values and estimate of the weight eta0 of
+    # the null component
+    fdr_m	<- result$qval
+    eta0 	<- result$param[3]
+
+    #calculate FDR
+    fdr 	<- 1 / ( 1 + mfold * ( 1 / fdr_m - 1 ) )
+
+    # calculate recall
+    len 	= length(fdr)
+    list 	<- seq(1, len)
+    recall  <- ( 1 - fdr ) * list / ( 1 - eta0 ) / len
+
+    # modify the SF curve:
+    # reset recall to 1 when it is larger than 1
+    for(i in list){
+        if( recall[i] > 1 ){
+            for(rest in i:len){
+                recall[rest] = 1
+            }
+            break
+        }
     }
-}
 
-range <- seq(left, right)
+    # extend the SF curve till FDR reaches 0.5
+    recall  <- append(recall, 1)
+    fdr     <- append(fdr, 0.5)
+    range   <- seq(1, len+1)
 
-sum_area = log10(r_range)-log10(l_range)
+    # limit the frame of the curve to FDR(0.01-0.5)
+    left    = 1         # index for the FDR value on the left border
+    right   = len+1     # index for the FDR value on the right border
+    l_range = 0.01	    # left range for FDR
+    r_range = 0.5		# right range for FDR
 
-# compute the area under the sensitivity-FDR curve (AUSFC):
-if(right == left){
-    ausfc = 0
-} else {
-    ausfc = sum(diff(log10(fdr[range]))*rollmean(recall[range],2)) / sum_area
-}
-
-if( print_SFcurve ){
-    # plot fdr vs. recall curve
-    pdf( file = paste(dir, '/', prefix, '_SFCurve.pdf', sep = "" ) )
-    plot(fdr[range], recall[range], log="x",
-         main=paste(prefix, "\nSensitivity vs. FDR", sep=""),
-         xlab="FDR", ylab="Sensitivity", xlim=c(l_range,r_range), ylim=c(0,1),
-         type='l', lwd=2.5,
-         col="deepskyblue")
-    # fill the area under the FDR-recall curve
-    #  polygon(c(min(fdr), fdr, max(fdr)), c(min(recall),recall,1), col="gray", border="gray")
-    #  polygon(c(min(fdr), range, 0.5), c(min(recall),recall,1), col="gray", border="gray")
-    # write the AUSFC on the plot with the precision of 4 digits:
-    text( 0.25, 0.5, paste( "AUSFC: ", round(ausfc, digits=4) ) )
-    dev.off()
-}
-
-# calculate AUC5 under the ROC curve with FDR~(0,0.05)
-TP  <- stats$V1
-FP  <- stats$V2
-TPR <- TP / TP[length(TP)]
-FPR <- FP / FP[length(FP)]
-for(i in seq(1,length(FP))){
-    if( FPR[i] >= 0.05 ){
-      rbound = i
-      break
+    for(i in range){
+        if( fdr[i] >= l_range ){
+            left = i
+            recall[i] = 0
+            break
+        }
     }
+
+    for(i in range){
+        if( fdr[i] > r_range ){
+            right = i
+            break
+        }
+    }
+
+    range <- seq(left, right)
+
+    sum_area = log10(r_range)-log10(l_range)
+
+    # compute the area under the sensitivity-FDR curve (AUSFC):
+    if(right == left){
+        ausfc = 0
+    } else {
+        ausfc = sum(diff(log10(fdr[range]))*rollmean(recall[range],2)) / sum_area
+    }
+
+    #####################################################################
+    #
+    # plot the Sensitivity-FDR curve, with FDR in the range of (0.01~0.5)
+    #
+    ######################################################################
+    if( print_SFcurve ){
+        # plot fdr vs. recall curve. Note that x-axis is in log scale
+        picname <- paste0( dir, '/', prefix, '_SFC.jpeg' )
+        jpeg( filename = picname, width = 800, height = 800, quality = 100 )
+        par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
+        plot(fdr[range], recall[range],
+            log="x",
+            main="Motif Performance",
+            xlim=c(l_range,r_range), ylim=c(0,1),
+            xlab="", ylab="",
+            type="l", lwd=7.5,
+            col="orange",
+            axes = FALSE, cex.main=3.0
+        )
+        mtext("False discovery rate", side=1, line=4.5, cex = 3.5)
+        mtext("Sensitivity", side=2, line=4, cex = 3.5)
+        axis(1, at=c(0,0.05,0.5),labels = c(0,0.05,0.5),tick = FALSE, cex.axis=3.0, line=1)
+        axis(2, at=c(0,0.5,1),labels = c(0,0.5,1),tick = FALSE, cex.axis=3.0)
+        polygon(c(l_range,fdr[range],r_range), c(0, recall[range],0), col = convertcolor("orange",30), border = NA)
+        text(x = 0.1,y = 0.1,labels = paste0("AUSFC = ", round(ausfc,digits=3)), cex = 3.5)
+        box(lwd=2.5)
+        invisible(dev.off())
+    }
+
+    ########################################################
+    #
+    #   calculate AUC5 under the ROC curve with FDR~(0,0.05)
+    #
+    ########################################################
+    TP  <- stats$V1
+    FP  <- stats$V2
+    TPR <- TP / TP[length(TP)]
+    FPR <- FP / FP[length(FP)]
+    for(i in seq(1,length(FP))){
+        if( FPR[i] >= 0.05 ){
+          rbound = i
+          break
+        }
+    }
+    # compute the area under the partical TP-FP curve(AUC5):
+    auc5 = sum(diff(FPR[1:rbound])*rollmean(TPR[1:rbound],2)) / 0.05
+
+    if( print_ROC5 ){
+        picname <- paste0( dir, '/', prefix, '_pROC.jpeg' )
+        jpeg( filename = picname, width = 800, height = 800, quality = 100 )
+        par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
+        plot(FPR[1:rbound], TPR[1:rbound],
+            main="Partial ROC",
+            xlim=range(0,0.05), ylim=range(0,1),
+            xlab="", ylab="",
+            type="l", lwd=7.5,
+            col="darkgreen",
+            axes = FALSE, cex.main=3.0
+        )
+        mtext("False positive rate", side=1, line=4.5, cex = 3.5)
+        mtext("True positive rate", side=2, line=4, cex = 3.5)
+        axis(1, at=c(0,0.025,0.05),labels = c(0,0.025,0.05),tick = FALSE, cex.axis=3.0, line=1)
+        axis(2, at=c(0,0.5,1),labels = c(0,0.5,1),tick = FALSE, cex.axis=3.0)
+        polygon(c(0,FPR[1:rbound],0.05), c(0,TPR[1:rbound],0), col = convertcolor("darkgreen",30), border = NA)
+        text(x = 0.025,y = 0.1,labels = paste0("pAUC = ", round(auc5,digits=3)), cex = 3.5)
+        box(lwd=2.5)
+        invisible(dev.off())
+    }
+
+    ###################################################################
+    #
+    # plot the Precision-recall curve based on the raw values from BaMM
+    #
+    ###################################################################
+    raw_fdr         <- stats$V3
+    raw_recall      <- stats$V4
+    raw_precision   = 1 - raw_fdr
+    auprc           = 1 + sum(diff(raw_precision)*rollmean(raw_recall,2))
+    # plot the raw precision-recall curve
+    if( print_PRcurve ){
+        picname <- paste0( dir, '/', prefix, '_PRC.jpeg' )
+        jpeg( filename = picname, width = 800, height = 800, quality = 100 )
+        par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
+        plot(raw_recall, raw_precision,
+            main="Motif Performance",
+            xlim=range(0,1), ylim=range(0,1),
+            xlab="", ylab="",
+            type="l", lwd=7.5,
+            col="darkblue",
+            axes = FALSE, cex.main=3.0
+        )
+        mtext("Recall", side=1, line=4.5, cex = 3.5)
+        mtext("Precision", side=2, line=4, cex = 3.5)
+        axis(1, at=c(0,0.5,1),labels = c(0,0.5,1),tick = FALSE, cex.axis=3.0, line=1)
+        axis(2, at=c(0,0.5,1),labels = c(0,0.5,1),tick = FALSE, cex.axis=3.0)
+        polygon(c(0,raw_recall,1), c(0,raw_precision,0), col = convertcolor("darkblue",30), border = NA)
+        text(x = 0.5,y = 0.3,labels = paste0("AUC = ", round(auprc,digits=3)), cex = 3.5)
+        box(lwd=2.5)
+        invisible(dev.off())
+    }
+
+    resultString = paste0(c(prefix, ausfc, auc5, auprc), collapse="\t")
+    #print( resultString )
+    results = c(results, resultString)
 }
-
-# compute the area under the partical TP-FP curve(AUC5):
-auc5 = sum(diff(FPR[1:rbound])*rollmean(TPR[1:rbound],2)) / 0.05
-
-if( print_ROC5 ){
-    pdf( file = paste(dir, '/', prefix, '_pROC.pdf', sep = "" ) )
-
-    plot(FPR[1:rbound], TPR[1:rbound],
-           main=paste(prefix, " FPR vs. TPR ", sep=""),
-           xlab="FPR", ylab="TPR", xlim=c(0,0.05), ylim=c(0,1),
-           type='l', lwd=2.5, col="deepskyblue")
-    # write the AUC on the plot with the precision of 4 digits:
-    text(0.03, 0.1, paste( "pAUC: ", round(auc5, digits=4) ))
-    dev.off()
-}
-
-# plot the raw precision-recall curve
-raw_fdr         <- stats$V3
-raw_recall      <- stats$V4
-raw_precision   = 1 - raw_fdr
-
-if( print_PRcurve ){
-    pdf( file = paste( dir, '/', prefix, '_PRcurve.pdf', sep = "" ) )
-    plot(raw_recall, raw_precision,
-     main=paste(prefix, "\n Precision-Recall curve", sep = ""),
-     xlab="Recall", ylab="Precision", xlim=c(0,1), ylim=c(0,1),
-     type='l', lwd=2.5, col="green")
-    # compute the area under the partial TP-FP curve(AUC5):
-    auprc = 1 + sum(diff(raw_precision)*rollmean(raw_recall,2))
-
-    # write the AUC on the plot with the precision of 4 digits:
-    text(0.1, 0.9, paste( "AUPRC: ", round(auprc, digits=4) ))
-    dev.off()
-}
-
-resultString = paste(c(prefix, ausfc, auc5), collapse="\t")
-print( resultString )
-results = c(results, resultString)
-}
-outConn <- file(paste(dir, '/', prefix, ".ausfc", sep = "" ))
+outConn <- file(paste(dir, '/', prefix, ".bmscore", sep = "" ))
 writeLines(results, outConn)
 close(outConn)

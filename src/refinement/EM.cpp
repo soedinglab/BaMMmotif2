@@ -103,6 +103,8 @@ int EM::optimize(){
         // check the change of likelihood for convergence
         llikelihood_diff = llikelihood_ - llikelihood_prev;
 
+        std::cout << iteration << "th iteration, delta_llikelihood=" << llikelihood_diff << std::endl;
+
         if( v_diff < epsilon_ )							iterate = false;
         if( llikelihood_diff < 0 and iteration > 10 )	iterate = false;
 
@@ -353,7 +355,26 @@ int EM::advance() {
     }
     // Sort log odds scores in descending order
     std::sort( r_all.begin(), r_all.end(), std::greater<float>() );
-    float r_cutoff = r_all[pos_count/10];
+    float r_cutoff = r_all[pos_count / 10];
+    std::vector<std::vector<size_t>> ri;
+    ri.resize( seqs_.size() );
+
+    std::cout <<  "r_cutoff = " << r_cutoff << std::endl;
+    std::string opath_r = "/home/wanwan/benchmark/foo/advEM/tmp.weights";
+    std::ofstream ofile_r( opath_r.c_str() );
+
+    for( size_t n = 0; n < seqs_.size(); n++ ){
+        size_t LW1 = seqs_[n]->getL() - W_ + 1;
+        for( size_t i = 1; i <= LW1; i++ ){
+            if( r_[n][i] >= r_cutoff ){
+
+                ri[n].push_back( i );
+
+                ofile_r << std::setprecision( 2 ) << LW1-i+1 << '\t' << r_[n][i] << '\t';
+            }
+        }
+        ofile_r << std::endl;
+    }
 
     /**
      * optimize the model from the top 10% global occurrences with higher orders till convergence
@@ -384,7 +405,7 @@ int EM::advance() {
         }
 
         /**
-         * E-step for 10 % motif occurrences
+         * E-step for 10% motif occurrences
          */
         llikelihood_ = 0.0f;
 
@@ -399,45 +420,44 @@ int EM::advance() {
 
             size_t 	L = seqs_[n]->getL();
             size_t 	LW1 = L - W_ + 1;
+            size_t  LW2 = L - W_ + 2;
             size_t*	kmer = seqs_[n]->getKmer();
             float 	normFactor = 0.0f;
 
             // initialize r_[n][i] and pos_[n][i]
             float pos_i = q_ / static_cast<float>( LW1 );
-            for( size_t i = 1; i <= LW1; i++ ){
-                r_[n][i] = 1.0f;
-                pos_[n][i] = pos_i;
+            for( size_t idx = 0; idx < ri[n].size(); idx++ ){
+                r_[n][ri[n][idx]] = 1.0f;
+                pos_[n][ri[n][idx]] = pos_i;
             }
             pos_[n][0] = 1.0f - q_;
             r_[n][0] = pos_[n][0];
 
-            // when p(z_n > 0), ij = i+j runs over all positions in sequence
-            for( size_t ij = 0; ij < L; ij++ ){
 
-                // extract (K+1)-mer y from positions (i-k,...,i)
-                size_t y = kmer[ij] % Y_[K_+1];
-                // j runs over all motif positions
-                size_t padding = ( static_cast<int>( ij-L+W_ ) > 0 ) * ( ij-L+W_ );
-                for( size_t j = padding; j < ( W_ < (ij+1) ? W_ : ij+1 ); j++ ){
-                    r_[n][LW1-ij+j] *= s_[y][j];
+            for( size_t idx = 0; idx < ri[n].size(); idx++ ){
+                for( size_t j = 0; j < W_; j++ ){
+                    size_t y = kmer[LW2-ri[n][idx]+j] % Y_[K_+1];
+                    r_[n][ri[n][idx]] *= s_[y][j];
                 }
             }
 
             // calculate the responsibilities and sum them up
             normFactor += r_[n][0];
-            for( size_t i = 1; i <= LW1; i++ ){
-                r_[n][i] *= pos_[n][LW1+1-i];
-                normFactor += r_[n][i];
-            }
 
+            for( size_t idx = 0; idx < ri[n].size(); idx++ ){
+                r_[n][ri[n][idx]] *= pos_[n][LW2-ri[n][idx]];
+                normFactor += r_[n][ri[n][idx]];
+            }
             // normalize responsibilities
-            for( size_t i = 0; i <= LW1; i++ ){
-                r_[n][i] /= normFactor;
+            r_[n][0] /= normFactor;
+            for( size_t idx = 0; idx < ri[n].size(); idx++ ){
+                r_[n][ri[n][idx]] /= normFactor;
             }
 
             // calculate log likelihood over all sequences
             llikelihood_ += logf( normFactor );
         }
+
         /**
          * M-step for 10% motif occurrences
          */
@@ -453,22 +473,14 @@ int EM::advance() {
         // compute fractional occurrence counts for the highest order K
         // n runs over all sequences
         for( size_t n = 0; n < seqs_.size(); n++ ){
-            size_t L = seqs_[n]->getL();
+            size_t  L = seqs_[n]->getL();
+            size_t  LW2 = L - W_ + 2;
             size_t* kmer = seqs_[n]->getKmer();
 
-            // ij = i+j runs over all positions i on sequence n
-            for( size_t ij = 0; ij < L; ij++ ){
-
-                size_t y = kmer[ij] % Y_[K_+1];
-
-                size_t padding = ( static_cast<int>( ij-L+W_ ) > 0 ) * ( ij-L+W_ );
-
-                for( size_t j = padding; j < ( W_ < (ij+1) ? W_ : ij+1 ); j++ ){
-
-                    if( r_[n][L-W_+1-ij+j] >= r_cutoff ){
-                        n_[K_][y][j] += r_[n][L-W_+1-ij+j];
-                    }
-
+            for( size_t idx = 0; idx < ri[n].size(); idx++ ){
+                for( size_t j = 0; j < W_; j++ ){
+                    size_t y = kmer[LW2-ri[n][idx]+j] % Y_[K_+1];
+                    n_[K_][y][j] += r_[n][ri[n][idx]];
                 }
             }
         }
@@ -476,15 +488,10 @@ int EM::advance() {
         // compute fractional occurrence counts from higher to lower order
         // k runs over all orders
         for( size_t k = K_; k > 0; k-- ){
-
             for( size_t y = 0; y < Y_[k+1]; y++ ){
-
                 size_t y2 = y % Y_[k];
-
                 for( size_t j = 0; j < W_; j++ ){
-
                     n_[k-1][y2][j] += n_[k][y][j];
-
                 }
             }
         }
@@ -580,7 +587,7 @@ void EM::write( char* odir, std::string basename, bool ss ){
 	std::string opath_pos = opath + ".positions";
 	std::ofstream ofile_pos( opath_pos.c_str() );
 
-	ofile_pos << "seq\tstrand\tstart..end\tpattern" << std::endl;
+	ofile_pos << "seq\tlength\tstrand\tstart..end\tpattern" << std::endl;
 
     float cutoff = 0.3f;	// threshold for having a motif on the sequence
                             // in terms of responsibilities
@@ -592,6 +599,7 @@ void EM::write( char* odir, std::string basename, bool ss ){
         size_t LW1 = seqs_[n]->getL() - W_ + 1;
 
         if( ss ){
+            ofile_pos << L << '\t';
             for( size_t i = LW1; i > 0; i-- ){
                 if( r_[n][i] >= cutoff ){
                     ofile_pos << '+' << '\t'
@@ -604,6 +612,7 @@ void EM::write( char* odir, std::string basename, bool ss ){
             ofile_pos << std::endl;
         } else {
             L = ( L - 1 ) / 2;
+            ofile_pos << L << '\t';
             for( size_t i = LW1; i > 0; i-- ){
                 if( r_[n][i] >= cutoff ){
                     ofile_pos << ( ( i < L ) ? '-' : '+' ) << '\t'
