@@ -82,11 +82,15 @@ int main( int nargs, char* args[] ){
 
 		// optimize the model with either EM or Gibbs sampling
 		if( Global::EM ){
-			EM model( motif, bgModel, Global::posSequenceSet->getSequences(), Global::q );
+			EM model( motif, bgModel, Global::posSequenceSet->getSequences(), Global::q, Global::optimizeQ );
 			// learn motifs by EM
-			//model.optimize();
-            model.advance();
-			// write model parameters on the disc
+			if( !Global::advanceEM ) {
+                model.optimize();
+            } else {
+                model.advance();
+            }
+
+            // write model parameters on the disc
 			if( Global::saveBaMMs ){
 				model.write( Global::outputDirectory,
                              Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ),
@@ -100,7 +104,7 @@ int main( int nargs, char* args[] ){
             std::cout << "optimized q = " << model.getQ() << std::endl;
 
 		} else if ( Global::CGS ){
-			GibbsSampling model( motif, bgModel, Global::posSequenceSet->getSequences(), Global::q );
+			GibbsSampling model( motif, bgModel, Global::posSequenceSet->getSequences(), Global::q, Global::noQSampling );
 			// learn motifs by collapsed Gibbs sampling
 			model.optimize();
 			// write model parameters on the disc

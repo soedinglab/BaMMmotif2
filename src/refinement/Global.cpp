@@ -83,6 +83,7 @@ bool			    Global::makeMovie = false;              // print out bamms in each it
 bool 				Global::B2 = false;
 bool 				Global::B3 = false;
 bool 				Global::B3prime = false;
+bool                Global::advanceEM = false;
 
 void Global::init( int nargs, char* args[] ){
 
@@ -296,6 +297,8 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "B2", B2 );
 	opt >> GetOpt::OptionPresent( "B3", B3 );
 	opt >> GetOpt::OptionPresent( "B3prime", B3prime );
+    opt >> GetOpt::OptionPresent( "advanceEM", advanceEM );
+
 	// for remaining unknown options
 	if( opt.options_remain() ){
 		printHelp();

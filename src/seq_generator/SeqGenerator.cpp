@@ -89,7 +89,7 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::arti_bgseqset(
 std::unique_ptr<Sequence> SeqGenerator::bg_sequence(size_t L){
 
 	uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
-	std::string header = "negative sequence";
+	std::string header = "bg_seq";
 
 	// sample the first nucleotide
 	double random = ( double )rand() / ( double )RAND_MAX;
@@ -156,7 +156,7 @@ std::unique_ptr<Sequence> SeqGenerator::bg_sequence(size_t L){
 
 }
 
-// generate pseudo-positive sequences based on each test set
+// generate sequences with given motif emebedded into the given sequences
 std::vector<std::unique_ptr<Sequence>> SeqGenerator::arti_posset_motif_embedded(){
 
 	std::vector<std::unique_ptr<Sequence>> posset_with_motif_embedded;
@@ -164,25 +164,83 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::arti_posset_motif_embedded(
 	calculate_kmer_frequency();
 
     size_t seq_size = static_cast<size_t>( (float)seqs_.size() * q_ );
-    // generative sequence with motif embeded for the q portion
+
+    // generative sequence with motif embedded for the q portion
 	for( size_t i = 0; i < seq_size; i++ ){
-        posset_with_motif_embedded.push_back(posseq_motif_embedded( seqs_[i]->getL()) );
+        posset_with_motif_embedded.push_back(posseq_motif_embedded( seqs_[i] ) );
 	}
     // generative background sequences for the rest 1-q portion
     for( size_t i = seq_size; i < seqs_.size(); i++ ){
         posset_with_motif_embedded.push_back( bg_sequence( seqs_[i]->getL() ) );
     }
-	return posset_with_motif_embedded;
+
+    // randomly shuffle the sequence set after implantation
+    std::random_shuffle( posset_with_motif_embedded.begin(), posset_with_motif_embedded.end() );
+
+    return posset_with_motif_embedded;
 }
 
-// generate pseudo-sequence based on k-mer frequencies from positive set
-std::unique_ptr<Sequence> SeqGenerator::posseq_motif_embedded(size_t seqlen){
+// generate sequences with given motif embedded into the given sequences
+std::unique_ptr<Sequence> SeqGenerator::posseq_motif_embedded( Sequence* seq ){
+
+    size_t W = motif_->getW();
+    size_t L = seq->getL() + W;
+    uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
+    std::string header = seq->getHeader() + "+motif";
+    // sample nucleotides till the position for motif implantation
+    // due to k-mer frequencies
+    std::uniform_int_distribution<> range( sOrder_, L-W+1 );
+    size_t mid = range( rngx_ );
+
+    // copy the left part of the given sequence
+    for( size_t i = 0; i < mid; i++ ){
+        sequence[i] = seq->getSequence()[i];
+    }
+
+    // insert motif in the middle
+    // sample W-nt based on conditional probabilities of the motif
+    for( size_t j = 0; j < W; j++ ){
+        // extract y from K-mer
+        size_t yk = 0;
+        for( size_t k = sOrder_; k > 0; k-- ){
+            yk += ( sequence[j+mid-k] - 1 ) * Y_[k];
+        }
+        // sample a nucleotide based on k-mer frequency
+        float random = ( float )rand() / ( float )RAND_MAX;
+        float f = 0.0f;
+        for( uint8_t a = 1; a <= Y_[1]; a++ ){
+            f += motif_->getV()[sOrder_][yk+a-1][j];
+            if( random <= f ){
+                sequence[j+mid] = a;
+                break;
+            }
+            // Trick: this solves the numerical problem
+            if( sequence[j+mid] == 0 )	sequence[j+mid] = a;
+        }
+
+    }
+
+    // copy the right part of the given sequence
+    for( size_t i = mid+W; i < L; i++ ){
+        sequence[i] = seq->getSequence()[i-W];
+    }
+
+    std::unique_ptr<Sequence> seq_with_motif( new Sequence( sequence, L, header, Y_, true ) );
+
+    free( sequence );
+
+    return seq_with_motif;
+
+}
+
+// generate pseudo-sequence based on k-mer frequencies from positive set and implant the given motif
+std::unique_ptr<Sequence> SeqGenerator::artiseq_motif_embedded(size_t seqlen){
 
     size_t W = motif_->getW();
     size_t L = seqlen + W;
 	uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
 
-    std::string header = "artificial sequence with motif embedded";
+    std::string header = "arti_seq+motif";
 
 	for( uint8_t i = 0; i < L; i++ ){
 		sequence[i] = 1;
@@ -228,7 +286,8 @@ std::unique_ptr<Sequence> SeqGenerator::posseq_motif_embedded(size_t seqlen){
     std::uniform_int_distribution<> range( sOrder_, L-W+1 );
     size_t mid = range( rngx_ );
 
-	for( size_t i = sOrder_; i < mid; i++ ){
+    mid = 95;
+    for( size_t i = sOrder_; i < mid; i++ ){
 
 		// extract y from K-mer
 		size_t yk = 0;
@@ -339,7 +398,7 @@ std::unique_ptr<Sequence> SeqGenerator::sequence_with_motif_masked(Sequence *pos
 	for( size_t j = 0; j < L; j++ ){
 		real_seq[j] = fake_seq[j];
 	}
-	std::string header = "sequence with masked motif";
+	std::string header = "-motif";
 	std::unique_ptr<Sequence> seq_mask_motif( new Sequence( real_seq, L, header, Y_, true ) );
 	free( real_seq );
 	return seq_mask_motif;

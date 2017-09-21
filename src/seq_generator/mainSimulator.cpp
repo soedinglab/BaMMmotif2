@@ -25,9 +25,8 @@ int main( int nargs, char* args[] ){
          */
         SeqGenerator negseq( GSimu::sequenceSet->getSequences(), NULL, GSimu::sOrder );
         negseq.write( GSimu::outputDirectory,
-                      GSimu::sequenceBasename + "_sampledNegset",
+                      GSimu::sequenceBasename + "_bgset",
                       negseq.arti_bgseqset(GSimu::mFold) );
-        std::cout << "L = "<< GSimu::sequenceSet->getSequences()[1]->getL() << std::endl;
     } else {
         /**
          * Build up the background model
@@ -47,38 +46,44 @@ int main( int nargs, char* args[] ){
                             GSimu::modelOrder,
                             GSimu::modelAlpha );
 
-            for( size_t n = 0; n < motif_set.getN(); n++ ) {
+        for( size_t n = 0; n < motif_set.getN(); n++ ) {
 
-                Motif* motif = new Motif( *motif_set.getMotifs()[n] );
+            Motif *motif = new Motif(*motif_set.getMotifs()[n]);
+
+            if (GSimu::maskSeqset) {
                 /**
                  * optimize motif using EM
                  */
-                EM model( motif, bgModel, GSimu::sequenceSet->getSequences(), GSimu::q );
+                EM model(motif, bgModel, GSimu::sequenceSet->getSequences(), GSimu::q);
                 model.optimize();
-                SeqGenerator seq_generator( GSimu::sequenceSet->getSequences(),
-                                     motif,
-                                     GSimu::modelOrder,
-                                     GSimu::q );
-                if( GSimu::maskSeqset ) {
-                    /**
-                     * Mask the given motif from the input sequence set
-                     */
-                    seq_generator.write(GSimu::outputDirectory,
-                                        GSimu::sequenceBasename + "_motif_" + std::to_string(n + 1) + "_masked",
-                                        seq_generator.seqset_with_motif_masked(model.getR()));
-                } else if( GSimu::embedSeqset ) {
-                    /**
-                     * embed the given motifs into the input sequence set
-                     */
-                    seq_generator.write(GSimu::outputDirectory,
-                                        GSimu::sequenceBasename + "_motif_" + std::to_string(n + 1) + "_embedded",
-                                        seq_generator.arti_posset_motif_embedded());
-                } else{
-                    std::cout << "No artificial sequence set is generated. Please check your input options." << std::endl;
-                }
-                if( motif ) delete motif;
+                /**
+                 * Mask the given motif from the input sequence set
+                 */
+                SeqGenerator seq_generator(GSimu::sequenceSet->getSequences(),
+                                           motif,
+                                           GSimu::modelOrder,
+                                           GSimu::q);
+                seq_generator.write(GSimu::outputDirectory,
+                                    GSimu::sequenceBasename + "_motif_" + std::to_string(n + 1) + "_masked",
+                                    seq_generator.seqset_with_motif_masked(model.getR()));
+            } else if (GSimu::embedSeqset) {
+                /**
+                 * embed the given motifs into the input sequence set
+                 */
+                SeqGenerator seq_generator(GSimu::sequenceSet->getSequences(),
+                                           motif,
+                                           GSimu::modelOrder,
+                                           GSimu::q);
+                seq_generator.write(GSimu::outputDirectory,
+                                    GSimu::sequenceBasename + "_motif_" + std::to_string(n + 1) + "_embedded",
+                                    seq_generator.arti_posset_motif_embedded());
+            } else {
+                std::cout << "No artificial sequence set is generated. Please check your input options."
+                          << std::endl;
             }
+            if (motif) delete motif;
 
+        }
         if( bgModel )   delete bgModel;
     }
 

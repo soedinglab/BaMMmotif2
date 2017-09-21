@@ -113,6 +113,7 @@ public:
     static bool         B2;
     static bool         B3;
     static bool         B3prime;
+    static bool         advanceEM;
 
 	static void         init( int nargs, char* args[] );
 	static void         destruct();

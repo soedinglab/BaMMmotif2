@@ -38,7 +38,8 @@ private:
 
 	void						calculate_kmer_frequency();
 	std::unique_ptr<Sequence> 	bg_sequence(size_t L);
-	std::unique_ptr<Sequence> 	posseq_motif_embedded(size_t L);
+	std::unique_ptr<Sequence> 	posseq_motif_embedded( Sequence* seq );
+    std::unique_ptr<Sequence> 	artiseq_motif_embedded(size_t L);
 	std::unique_ptr<Sequence>	sequence_with_motif_masked(Sequence *posseq, size_t W, float *r);
 
 	std::vector<Sequence*> 		seqs_;			// positive sequence set
