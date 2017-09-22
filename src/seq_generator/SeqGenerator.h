@@ -26,7 +26,7 @@ public:
 	~SeqGenerator();
 
 	std::vector<std::unique_ptr<Sequence>> arti_bgseqset(size_t fold);
-	std::vector<std::unique_ptr<Sequence>> arti_posset_motif_embedded();
+	std::vector<std::unique_ptr<Sequence>> arti_posset_motif_embedded(size_t at);
 	std::vector<std::unique_ptr<Sequence>> seqset_with_motif_masked(float **r);
 
 
@@ -38,7 +38,7 @@ private:
 
 	void						calculate_kmer_frequency();
 	std::unique_ptr<Sequence> 	bg_sequence(size_t L);
-	std::unique_ptr<Sequence> 	posseq_motif_embedded( Sequence* seq );
+	std::unique_ptr<Sequence> 	posseq_motif_embedded( Sequence* seq, size_t at );
     std::unique_ptr<Sequence> 	artiseq_motif_embedded(size_t L);
 	std::unique_ptr<Sequence>	sequence_with_motif_masked(Sequence *posseq, size_t W, float *r);
 

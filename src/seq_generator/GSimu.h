@@ -43,6 +43,7 @@ public:
     static bool         sampleBgset;
     static bool         maskSeqset;
     static bool         embedSeqset;
+    static size_t       at;                     // position for embedding the motif
 
     static void         init( int nargs, char* args[] );
     static void         destruct();

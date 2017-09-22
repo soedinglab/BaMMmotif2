@@ -359,9 +359,11 @@ int EM::advance() {
     std::vector<std::vector<size_t>> ri;
     ri.resize( seqs_.size() );
 
+/*
     std::cout <<  "r_cutoff = " << r_cutoff << std::endl;
     std::string opath_r = "/home/wanwan/benchmark/foo/advEM/tmp.weights";
     std::ofstream ofile_r( opath_r.c_str() );
+*/
 
     for( size_t n = 0; n < seqs_.size(); n++ ){
         size_t LW1 = seqs_[n]->getL() - W_ + 1;
@@ -370,10 +372,10 @@ int EM::advance() {
 
                 ri[n].push_back( i );
 
-                ofile_r << std::setprecision( 2 ) << LW1-i+1 << '\t' << r_[n][i] << '\t';
+//                ofile_r << std::setprecision( 2 ) << LW1-i+1 << '\t' << r_[n][i] << '\t';
             }
         }
-        ofile_r << std::endl;
+//        ofile_r << std::endl;
     }
 
     /**

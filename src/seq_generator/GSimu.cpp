@@ -36,6 +36,8 @@ size_t		        GSimu::sOrder = 2;					// k-mer order for sampling negative sequ
 bool                GSimu::sampleBgset = false;
 bool                GSimu::maskSeqset = false;
 bool                GSimu::embedSeqset = false;
+size_t              GSimu::at = 0;                      // default embedding position as 0, later it will be randomized
+                                                        // if not chosen by users
 
 void GSimu::init( int nargs, char* args[] ){
 
@@ -171,6 +173,13 @@ int GSimu::readArguments( int nargs, char* args[] ){
             maskSeqset = true;
         } else if( !strcmp( args[i], "--embedSeqset" ) ){
             embedSeqset = true;
+        } else if( !strcmp( args[i], "--at" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following --at" << std::endl;
+                exit( 2 );
+            }
+            at = std::stoi( args[i] );
         } else {
             std::cerr << "Ignoring unknown option " << args[i] << std::endl;
         }
@@ -203,7 +212,7 @@ void GSimu::printHelp(){
     printf("\n==================================================================\n");
     printf("\n SYNOPSIS:	BaMMSimu OUTDIR SEQFILE [options] \n\n");
     printf("\t DESCRIPTION \n");
-    printf("		Simulate different sequence set .\n\n");
+    printf("		Simulate different sequence set.\n\n");
     printf("\t OUTDIR:  output directory for all results. \n");
     printf("\t SEQFILE: file with positive sequence set in FASTA format.\n\n");
     printf("\n OPTIONS: \n");
@@ -217,7 +226,7 @@ void GSimu::printHelp(){
                    "				Prior probability for a positive sequence to contain\n"
                    "				a motif. The default value is 0.9.\n\n");
     printf("\n 		Options for simulation: \n");
-    printf("\n 			--sampleBgset  \n"
+    printf("\n 			--sampleBgset\n"
                    "				Sample background sequence set based on s-mer frequencies \n"
                    "                from the input sequence set. Defaults to false.\n\n");
     printf("\n 			--maskSeqset\n"
@@ -226,6 +235,9 @@ void GSimu::printHelp(){
     printf("\n 			--embedSeqset\n"
                    "				Embed the given motif into the input sequence set.\n"
                    "				Defaults to false.\n\n");
+    printf("\n 			--at <INTEGER>\n"
+                   "				Fix the position for embedding the given motif.\n"
+                   "				Defaults to random positions.\n\n");
     printf("\n		Options for initialize BaMM(s) from file: \n");
     printf("\n 			--bindingSiteFile <STRING> \n"
                    "				File with binding sites of equal length(one per line).\n\n");
