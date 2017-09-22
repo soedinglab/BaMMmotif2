@@ -42,12 +42,15 @@ revComp <- !args$ss
 #-----------------------------
 positions <- read.table( paste0( maindir, '/', basename, ".positions" ),
                         fileEncoding="latin1", as.is=TRUE, na.strings = "NA",
-                        fill = TRUE, strip.white = TRUE, skip=1)
+                        fill = TRUE, strip.white = TRUE, skip=1, sep = '\t')
 all_positions = c()
 pattern_range = c()
 pattern_range = c( pattern_range, positions$V4 )
 #pattern_range = c( pattern_range, positions$V7 )
+
+##### Note that this script works only for the sequence set where all sequences have the same length
 seq.length = as.numeric( positions$V2[1] )
+
 for( i in seq(1, length(pattern_range)) ){
     x <- unlist( regmatches(pattern_range[i], gregexpr('\\(?[0-9,]+', pattern_range[i])))
     x <- as.numeric(gsub('\\(', '-', gsub(',', '', x)))

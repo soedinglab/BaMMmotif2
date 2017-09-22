@@ -462,7 +462,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
         )
         mtext("False discovery rate", side=1, line=4.5, cex = 3.5)
         mtext("Sensitivity", side=2, line=4, cex = 3.5)
-        axis(1, at=c(0,0.05,0.5),labels = c(0,0.05,0.5),tick = FALSE, cex.axis=3.0, line=1)
+        axis(1, at=c(0.01,0.05,0.5),labels = c(0.01,0.05,0.5),tick = FALSE, cex.axis=3.0, line=1)
         axis(2, at=c(0,0.5,1),labels = c(0,0.5,1),tick = FALSE, cex.axis=3.0)
         polygon(c(l_range,fdr[range],r_range), c(0, recall[range],0), col = convertcolor("orange",30), border = NA)
         text(x = 0.1,y = 0.1,labels = paste0("AUSFC = ", round(ausfc,digits=3)), cex = 3.5)
@@ -512,7 +512,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
 
     ###################################################################
     #
-    # plot the Precision-recall curve based on the raw values from BaMM
+    # plot the Precision-Recall curve using the raw values from BaMM
     #
     ###################################################################
     raw_fdr         <- stats$V3
