@@ -517,8 +517,19 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     ###################################################################
     raw_fdr         <- stats$V3
     raw_recall      <- stats$V4
+    # solve numeric issue
+    # reset recall to 1 when it is larger than 1
+    for(i in seq(1,length(raw_recall))){
+        if( raw_recall[i] > 1 ){
+            for(rest in i:length(raw_recall)){
+                raw_recall[rest] = 1
+            }
+            break
+        }
+    }
+
     raw_precision   = 1 - raw_fdr
-    auprc           = 1 + sum(diff(raw_precision)*rollmean(raw_recall,2))
+    auprc           = sum(diff(raw_recall)*rollmean(raw_precision,2))
     # plot the raw precision-recall curve
     if( print_PRcurve ){
         picname <- paste0( dir, '/', prefix, '_PRC.jpeg' )
