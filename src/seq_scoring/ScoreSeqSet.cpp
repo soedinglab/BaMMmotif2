@@ -80,7 +80,6 @@ void ScoreSeqSet::write( char* odir, std::string basename, float cutoff, bool ss
 	 * posSequenceBasename_motif_N.occurrence
 	 */
 
-	bool 	first_hit = true;
 	size_t 	end; 				// end of motif match
 
 	std::string opath = std::string( odir )  + '/' + basename + ".occurrence";
@@ -88,7 +87,6 @@ void ScoreSeqSet::write( char* odir, std::string basename, float cutoff, bool ss
 	std::ofstream ofile( opath );
 
 	for( size_t n = 0; n < seqSet_.size(); n++ ){
-		first_hit = true;
 		size_t seqlen = seqSet_[n]->getL();
 		if( !ss ){
 			seqlen = ( seqlen - 1 ) / 2;
@@ -97,21 +95,18 @@ void ScoreSeqSet::write( char* odir, std::string basename, float cutoff, bool ss
 		for( size_t i = 0; i < LW1; i++ ){
 
 			if( mops_scores_ [n][i] > cutoff ){
-				if( first_hit ){
-					// >header:sequence_length
-					ofile << '>' << seqSet_[n]->getHeader() << ':' << seqlen << std::endl;
-					first_hit = false;
-				}
+                // >header:sequence_length
+                ofile << '>' << seqSet_[n]->getHeader() << '\t' << seqlen << '\t';
+
 				// start:end:score:strand:sequence_matching
 				end = i + motif_->getW()-1;
 
-				ofile << i << ".." << end << ':' << std::setprecision( 3 )
-						<< mops_scores_[n][i] << ':' <<
-						( ( i < seqlen ) ? '+' : '-' ) << ':' ;
+				ofile << ( ( i < seqlen ) ? '+' : '-' ) << '\t'
+                      << i << ".." << end << '\t';
 				for( size_t m = i; m <= end; m++ ){
 					ofile << Alphabet::getBase( seqSet_[n]->getSequence()[m] );
 				}
-				ofile << std::endl;
+				ofile << '\t' << std::setprecision( 3 ) << mops_scores_[n][i] << std::endl;
 			}
 		}
 	}

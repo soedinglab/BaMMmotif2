@@ -40,9 +40,19 @@ revComp <- !args$ss
 # Read in the file
 #
 #-----------------------------
-positions <- read.table( paste0( maindir, '/', basename, ".positions" ),
-                        fileEncoding="latin1", as.is=TRUE, na.strings = "NA",
-                        fill = TRUE, strip.white = TRUE, skip=1, sep = '\t')
+file_positions = paste0( maindir, '/', basename, ".positions" )
+file_occurrence = paste0( maindir, '/', basename, ".occurrence" )
+
+if(file.exists( file_positions )){
+    positions <- read.table( file_positions,
+                            fileEncoding="latin1", as.is=TRUE, na.strings = "NA",
+                            fill = TRUE, strip.white = TRUE, skip=1, sep = '\t')
+} else {
+    positions <- read.table( file_occurrence,
+                            fileEncoding="latin1", as.is=TRUE, na.strings = "NA",
+                            fill = TRUE, strip.white = TRUE, skip=1, sep = '\t')
+}
+
 all_positions = c()
 pattern_range = c()
 pattern_range = c( pattern_range, positions$V4 )
