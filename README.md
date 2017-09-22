@@ -127,6 +127,13 @@ Sequence options
           two positions to the right of initial BaMMs. Invoking with --extend 2
           adds two positions to both sides of initial BaMMs. By default, BaMMs
           are not being extended.
+      
+      -q <FLOAT>
+          Prior probability for a positive sequence to contain a motif. The
+          default is 0.9.
+          
+      -s, --sOrder <INTERGER>
+          The order of k-mer for sampling pseudo/negative set. The default is 2.
 
   Options for the (homogeneous) background BaMM
 
@@ -143,16 +150,7 @@ Sequence options
 
       --EM
           Triggers Expectation Maximization (EM) algorithm.
-      
-      -q <FLOAT>
-          Prior probability for a positive sequence to contain a motif. The
-          default is 0.9.
-
-      -e|--epsilon <FLOAT>
-          The EM algorithm is deemed to be converged when the sum over the
-          absolute differences in BaMM probabilities from successive EM rounds
-          is smaller than epsilon. The default is 0.001.
-
+          
   Gibbs sampling options
 
       --CGS
@@ -175,18 +173,6 @@ Sequence options
           Fold number for cross-validation. 
           The default is 5, which means the training set is 4-fold of the test set.
           
-      -s, --sOrder <INTERGER>
-          The order of k-mer for sampling pseudo/negative set. The default is 2.
-
-  Options for motif occurrences
-  
-      --scoreSeqset
-          Triggers scoring of the sequence set in order to find motif occurrences.
-      
-      --scoreCutoff <FLOAT>
-          Cutoff for scoring the sequence set, in order to find motif occurrences.
-          The default for this log odds score is zero. 
-          
   Output options
 
       --saveBaMMs
@@ -194,9 +180,6 @@ Sequence options
 
       --saveInitBaMMs
           Write initialized BaMM(s) to disk.
-      
-      --saveBgModel
-          Write background model to disk.
           
       --verbose
           Verbose terminal printouts.
@@ -204,9 +187,89 @@ Sequence options
       -h, --help
           Printout this help.
 
+## Downstream analysis
+
+### Evaluate the performance of BaMMs
+
+For evaluating the optimized BaMM models, a file with extension `.stats` is required. It can be generated either by running `BaMMmotif` with `--FDR` flag, or by running `FDR` program independently.
+
+Either
+
+    ${HOME}/opt/BaMM/bin/BaMMmotif [OUTPUT_FIR] [FASTAFILE] [MOTIF_FILE] [options] --FDR
+
+or
+
+    ${HOME}/opt/BaMM/bin/FDR [OUTPUT_FIR] [FASTAFILE] [MOTIF_FILE]
+
+R script `evaluateBaMM.R` is provided in the installation directory `${HOME}/opt/BaMM/bin` to calculate the performance score AUSFC and optionally plot precision-recall curve, partial ROC, and sensitivity-FDR curve. You can run it like:
+
+    ${HOME}/opt/BaMM/bin/evaluateBaMM.R [INPUT_DIR] [PREFIX_OF_STATS_FILE] [options]
+    
+The options are:
+
+`--SFC 1` for plotting the sensitivity-false discovery rate curve.
+
+`--ROC5 1` for plotting the partial ROC with the first 5% of TPR.
+
+`--PRC 1` for plotting the precision-recall curve.
+
+You will get the following plots:
+
+![image](images/seqset_SFC.jpeg | width=200)
+
+![image](images/seqset_pROC.jpeg | width=200)
+
+![image](images/seqset_PRC.jpeg | width=200)
+
+The performance scores such as AUSFC, pAUC amd AUPRC are written in the `.bmscore` file.
+    
+### How to plot BaMM logos?
+
+R script `platBaMMLogo.R` is provided in the installation directory `${HOME}/opt/BaMM/bin` to plot the BaMM logo from a BaMM flat file. 
+
+It requires output files with extension `.ihbcp`, `.ihbp`, `.hbcp` or `.hbp` from BaMMmotif as input.
+
+The logo order is an integer between 0 to 2. 
+
+    plotBaMMLogo.R [path_to_bamm_file] [logo_order]
+
+### Motif distribution analysis
+
+For visualizing the distribution of motifs in the sequence set, you need to generate either a `.positions` file by executing `BaMMmotif` with a `--saveBaMMs` flag or an `.occurrence` file by executing `BaMMScan`.
+
+Either
+
+    ${HOME}/opt/BaMM/bin/BaMMmotif [OUTPUT_FIR] [FASTAFILE] [MOTIF_FILE] [options] --saveBaMMs
+
+or
+    
+    ${HOME}/opt/BaMM/bin/BaMMScan [OUTPUT_FIR] [FASTAFILE] [MOTIF_FILE]
+    
+After obtaining either `.positions` or `.occurrence`, you can run R script `plotMotifDistribution.R` provided in the installation directory `${HOME}/opt/BaMM/bin` to visualise the motif distribution:
+
+     ${HOME}/opt/BaMM/bin/plotMotifDistribution.R [INPUT_DIR] [PREFIX_OF_STATS_FILE] [option]
+
+The option is:
+
+`--ss 1` for only plotting the distribution of motif on single strand. Otherwise, it will visualize motif distribution on both strands.
+
+You will get one of the following plots:
+
+![image](images/seqset_ds_distribution.jpeg | width=200)
+
+![image](images/seqset_ss_distribution.jpeg | width=200)
+
+Note that, this analysis currently only work for sequences set with sequences of the same length.
+
 ## BaMM flat file format
 
-BaMMs are written to flat file when invoking BaMM!motif with the output option `--saveInitBaMMs` and/or `--saveBaMMs`. In this case, BaMM!motif generates two files for each inhomogeneous BaMM &ndash; one containing the probabilities (filename extension: `ihbp`) and one containing the conditional probabilities (filename extension: `.ihbcp`). The format is the same for these two files. While blank lines separate BaMM positions, lines 1 to *k*+1 of each BaMM position contain the (conditional) probabilities for order 0 to order *k*. For instance, the format for a BaMM of order 2 and length *W* is as follows:
+BaMM!motif generates two files for each inhomogeneous BaMM: 
+
+1. file with extension `.ihbp` contains probabilities of BaMM model;
+
+2. file with extension `.ihbcp` contains conditional probabilities of BaMM model.
+
+The format is the same for these two files. While blank lines separate BaMM positions, lines 1 to *k*+1 of each BaMM position contain the (conditional) probabilities for order 0 to order *k*. For instance, the format for a BaMM of order 2 and length *W* is as follows:
 
 Filename extension: `.ihbp`
 
@@ -239,7 +302,12 @@ P<sub>W</sub>(A|A) P<sub>W</sub>(C|A) P<sub>W</sub>(G|A) P<sub>W</sub>(T|A) P<su
 P<sub>W</sub>(A|AA) P<sub>W</sub>(C|AA) P<sub>W</sub>(G|AA) P<sub>W</sub>(T|AA) P<sub>W</sub>(A|AC) P<sub>W</sub>(C|AC) P<sub>W</sub>(G|AC) ... P<sub>W</sub>(T|TT)<br>
 
 
-In addition, BaMM!motif generates two files for the homogeneous background BaMM &ndash; one containing the probabilities (filename extension: `.hbp`) and the other containing the conditional probabilities (filename extension: `.hbcp`). For instance, the format for a background BaMM of order 2 is as follows:
+In addition, BaMM!motif generates two files for the homogeneous background BaMM:
+1. file with extension `.ihbp` contains probabilities of background model;
+
+2. file with extension `.ihbcp` contains conditional probabilities of background model.
+
+For instance, the format for a background BaMM of order 2 is as follows:
 
 Filename extension: `.hbp`
 
@@ -252,34 +320,6 @@ Filename extension: `.hbcp`
 P(A) P(C) P(G) P(T)<br>
 P(A|A) P(C|A) P(G|A) P(T|A) P(A|C) P(C|C) P(G|C) ... P(T|T)<br>
 P(A|AA) P(C|AA) P(G|AA) P(T|AA) P(A|AC) P(C|AC) P(G|AC) ... P(T|TT)<br>
-
-
-## How to plot BaMM logos?
-
-R scripts are provided in directory R to plot the BaMM logo from a BaMM flat file. 
-
-There are two R files for plotting BaMM logos: 1. plotBaMMLogo.R and 2.generateLogo.R
-
-The required input is one of the output files from BaMM!motif with extension .ihbcp, .ihbp, .hbcp or .hbp.
-
-The logo order is an integer between 0 to 8.
-
-    plotBaMMLogo.R path_to_bamm_file logo_order
-
-## Motif occurrence file
-
-Filename extension: `.occcurrence`
-
-    >sequence name:sequence length
-    start:end:log odds score:strand:matched pattern
-
-example: 
-
-    >chr6:205
-    59:70:5.25:+:CTGGTGACTGAC
-    333:344:0.103:-:CCAAGGTGTCAG
-    337:348:4.76:-:GGTGTCAGTCAC
-    365:376:0.129:-:GCAGAGACCCAC
 
 ## License
 
