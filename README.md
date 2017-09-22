@@ -215,11 +215,11 @@ The options are:
 
 You will get the following plots:
 
-![image](images/seqset_SFC.jpeg | width=200)
+![image](images/seqset_SFC.jpeg)
 
-![image](images/seqset_pROC.jpeg | width=200)
+![image](images/seqset_pROC.jpeg)
 
-![image](images/seqset_PRC.jpeg | width=200)
+![image](images/seqset_PRC.jpeg)
 
 The performance scores such as AUSFC, pAUC amd AUPRC are written in the `.bmscore` file.
     
@@ -255,9 +255,9 @@ The option is:
 
 You will get one of the following plots:
 
-![image](images/seqset_ds_distribution.jpeg | width=200)
+![image](images/seqset_ds_distribution.jpeg)
 
-![image](images/seqset_ss_distribution.jpeg | width=200)
+![image](images/seqset_ss_distribution.jpeg)
 
 Note that, this analysis currently only work for sequences set with sequences of the same length.
 
