@@ -62,9 +62,8 @@ int main( int nargs, char* args[] ){
         FDR fdr( GFdr::posSequenceSet->getSequences(), negset, GFdr::q,
                  motif, bgModel,
                  GFdr::cvFold, GFdr::mops, GFdr::zoops,
-                 GFdr::EM, GFdr::CGS,
                  true, GFdr::savePvalues, GFdr::saveLogOdds );
-        fdr.evaluateMotif();
+        fdr.evaluateMotif( GFdr::EM, GFdr::CGS );
         fdr.write( GFdr::outputDirectory,
                    GFdr::posSequenceBasename + "_motif_" + std::to_string( n+1 ) );
         if( motif )		delete motif;

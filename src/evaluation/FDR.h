@@ -27,12 +27,14 @@ public:
 	FDR( std::vector<Sequence*> posSeqs, std::vector<Sequence*> negSeqs, float q = 0.9f,
          Motif* motif = NULL, BackgroundModel* bgmodel = NULL,
          size_t cvFold = 5, bool mops = false, bool zoops = true,
-         bool EM = false, bool CGS = false, bool savePRs = true,
-         bool savePvalues = false, bool saveLogOdds = false
+         bool savePRs = true, bool savePvalues = false, bool saveLogOdds = false
         );
 	~FDR();
 
-	void 	evaluateMotif();
+	void 	evaluateMotif( bool EMoptimize = false,
+                           bool CGSoptimize = false,
+                           bool optimizeQ=false,
+                           bool advanceEM=false);
 	void 	print();
 	void	write( char* odir, std::string basename );
 
@@ -49,8 +51,6 @@ private:
 										// set is (cv-1)-fold of the testing set
 	bool				mops_;
 	bool				zoops_;
-	bool				EM_;
-	bool				CGS_;
 	bool				savePRs_;
 	bool				savePvalues_;
 	bool				saveLogOdds_;

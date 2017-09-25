@@ -15,8 +15,9 @@ class GibbsSampling {
 public:
 
     GibbsSampling( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqs, float q,
+                   bool samplingQ = true,
 				   float beta = 7.0f, float gamma = 3.0f,
-				   bool initializeZ = true, bool samplingZ = true, bool samplingQ = true,
+				   bool initializeZ = true, bool samplingZ = true,
 				   bool optimizeA = true, bool GibbsMHalphas = false, bool dissampleAlphas = false );
 	~GibbsSampling();
 

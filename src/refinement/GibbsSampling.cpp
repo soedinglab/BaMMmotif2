@@ -7,8 +7,9 @@
 #include <boost/math/distributions/beta.hpp>		/* beta distribution */
 
 GibbsSampling::GibbsSampling( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqs, float q,
+                              bool samplingQ,
                               float beta, float gamma,
-                              bool initializeZ, bool samplingZ, bool samplingQ,
+                              bool initializeZ, bool samplingZ,
                               bool optimizeA, bool GibbsMHalphas, bool dissampleAlphas ){
 
     motif_              = motif;

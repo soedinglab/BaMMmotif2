@@ -57,7 +57,7 @@ int main( int nargs, char* args[] ){
                         Global::addColumns.at(1),
                         Global::initialModelTag,
                         Global::posSequenceSet,
-                        Global::negSequenceSet->getBaseFrequencies(),
+                        Global::posSequenceSet->getBaseFrequencies(),
                         Global::modelOrder,
                         Global::modelAlpha );
 
@@ -104,7 +104,7 @@ int main( int nargs, char* args[] ){
             std::cout << "optimized q = " << model.getQ() << std::endl;
 
 		} else if ( Global::CGS ){
-			GibbsSampling model( motif, bgModel, Global::posSequenceSet->getSequences(), Global::q, Global::noQSampling );
+			GibbsSampling model( motif, bgModel, Global::posSequenceSet->getSequences(), Global::q, !Global::noQSampling );
 			// learn motifs by collapsed Gibbs sampling
 			model.optimize();
 			// write model parameters on the disc
@@ -189,9 +189,8 @@ int main( int nargs, char* args[] ){
 			FDR fdr( Global::posSequenceSet->getSequences(), negset,
                      Global::q, motif, bgModel, Global::cvFold,
                      Global::mops, Global::zoops,
-                     Global::EM, Global::CGS,
                      Global::savePRs, Global::savePvalues, Global::saveLogOdds );
-			fdr.evaluateMotif();
+			fdr.evaluateMotif(Global::EM, Global::CGS, Global::optimizeQ, Global::advanceEM);
 			fdr.write( Global::outputDirectory,
                        Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ) );
 			if( motif )		delete motif;

@@ -1,8 +1,13 @@
 #include "MotifSet.h"
 
-MotifSet::MotifSet( char* indir, size_t l_flank, size_t r_flank,
-                    std::string tag, SequenceSet* posSet,
-                    float* f_bg, size_t K, std::vector<float> alphas ){
+MotifSet::MotifSet( char* indir,
+                    size_t l_flank,
+                    size_t r_flank,
+                    std::string tag,
+                    SequenceSet* posSet,
+                    float* f_bg,
+                    size_t K,
+                    std::vector<float> alphas ){
 	N_ = 0;
 
 	if( tag.compare( "bindingsites" ) == 0 ){

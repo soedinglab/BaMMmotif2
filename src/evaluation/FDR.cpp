@@ -2,7 +2,7 @@
 
 FDR::FDR( std::vector<Sequence*> posSeqs, std::vector<Sequence*> negSeqs, float q,
           Motif* motif, BackgroundModel* bgModel, size_t cvFold,
-          bool mops, bool zoops,bool EM , bool CGS, bool savePRs,
+          bool mops, bool zoops, bool savePRs,
           bool savePvalues, bool saveLogOdds){
 
 	posSeqs_	= posSeqs;
@@ -13,8 +13,6 @@ FDR::FDR( std::vector<Sequence*> posSeqs, std::vector<Sequence*> negSeqs, float 
 	cvFold_		= cvFold;
     mops_       = mops;
     zoops_      = zoops;
-    EM_         = EM;
-    CGS_        = CGS;
     savePRs_    = savePRs;
     savePvalues_= savePvalues;
     saveLogOdds_= saveLogOdds;
@@ -27,7 +25,7 @@ FDR::~FDR(){
 
 }
 
-void FDR::evaluateMotif(){
+void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool advanceEM){
 
 	std::vector<std::vector<float>> mops_scores;
 	std::vector<float> 				zoops_scores;
@@ -63,12 +61,16 @@ void FDR::evaluateMotif(){
 		 * Training
 		 */
 		// learn motif from each training set
-		if( EM_ ){
-			EM model( motif, bgModel_, trainSet, q_ );
-			model.optimize();
+		if( EMoptimize ){
+			EM model( motif, bgModel_, trainSet, q_, optimizeQ );
+            if( advanceEM ){
+                model.advance();
+            } else {
+                model.optimize();
+            }
             updatedQ = model.getQ();
-		} else if ( CGS_ ){
-			GibbsSampling model( motif, bgModel_, trainSet, q_ );
+		} else if ( CGSoptimize ){
+			GibbsSampling model( motif, bgModel_, trainSet, q_, optimizeQ );
 			model.optimize();
             updatedQ = model.getQ();
 		}
