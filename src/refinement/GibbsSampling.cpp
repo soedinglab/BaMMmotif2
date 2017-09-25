@@ -917,21 +917,21 @@ void GibbsSampling::write( char* odir, std::string basename, bool ss ){
     ofile_pos << "seq\tlength\tstrand\tstart..end\tmotif" << std::endl;
 
     for( size_t n = 0; n < seqs_.size(); n++ ){
-        ofile_pos << seqs_[n]->getHeader() << '\t';
 
         size_t seqlen = seqs_[n]->getL();
         if( !ss )	seqlen = ( seqlen - 1 ) / 2;
 
         ofile_pos << seqlen << '\t';
         if( z_[n] > 0 ){
-            ofile_pos << ( ( z_[n] < seqlen ) ? '+' : '-' ) << '\t'
+            ofile_pos << seqs_[n]->getHeader() << '\t'
+                      << seqlen << '\t'
+                      << ( ( z_[n] < seqlen ) ? '+' : '-' ) << '\t'
                       << z_[n] << ".." << z_[n]+W_-1 << '\t';
             for( size_t b = 0; b < W_; b++ ){
-                ofile_pos << Alphabet::getBase(
-                        seqs_[n]->getSequence()[z_[n]+b-1] );
+                ofile_pos << Alphabet::getBase( seqs_[n]->getSequence()[z_[n]+b-1] );
             }
+            ofile_pos << std::endl;
         }
-        ofile_pos << std::endl;
     }
 
     // output hyper-parameter alphas: alpha[k][j]
