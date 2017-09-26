@@ -106,7 +106,7 @@ int EM::optimize(){
         std::cout << iteration << "th iteration, delta_llikelihood=" << llikelihood_diff << std::endl;
 
         if( v_diff < epsilon_ )							iterate = false;
-        if( llikelihood_diff < 0 and iteration > 10 )	iterate = false;
+        if( !optimizeQ_ and llikelihood_diff < 0 and iteration > 10 )	iterate = false;
 
 /*        // for making a movie out of all iterations
         // calculate probabilities
