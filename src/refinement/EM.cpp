@@ -89,8 +89,8 @@ int EM::optimize(){
         // M-step: update model parameters
         MStep();
 
-        // optimize hyperparameter q
-        if( optimizeQ_ )    optimize_q();
+        // optimize hyperparameter q at every 10 steps
+        if( optimizeQ_ & iteration % 10 == 1 )    optimize_q();
 
         // check parameter difference for convergence
         v_diff = 0.0f;
@@ -241,7 +241,7 @@ int EM::advance() {
     /**
      * run 5 steps of EM for k=0 and optimize q in the meantime
      */
-    for( size_t i = 0; i < 5; i++ ){
+    for( size_t i = 0; i < 1; i++ ){
 
         llikelihood_ = 0.0f;
 
@@ -355,7 +355,7 @@ int EM::advance() {
     }
     // Sort log odds scores in descending order
     std::sort( r_all.begin(), r_all.end(), std::greater<float>() );
-    float r_cutoff = r_all[pos_count / 10];
+    float r_cutoff = r_all[pos_count / 20];
     std::vector<std::vector<size_t>> ri;
     ri.resize( seqs_.size() );
 

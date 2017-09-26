@@ -141,7 +141,7 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
 void FDR::calculatePR(){
 
 	size_t posN = posSeqs_.size();
-	size_t negN = negScoreMax_.size();
+	size_t negN = negSeqs_.size();
 	float mFold = ( float )negN / ( float )posN;
 	// for MOPS model:
 	if( mops_ ){
@@ -172,7 +172,7 @@ void FDR::calculatePR(){
 
 			if( E_TP_MOPS == MOPS_TP_[i] ){
 				idx_max = i;
-	//			break;				// stop when the distance between TFP and
+//				break;				// stop when the distance between TFP and
 									// FP reaches maximum
 			}
 			if( E_TP_MOPS < MOPS_TP_[i] ){
