@@ -90,7 +90,7 @@ int EM::optimize(){
         MStep();
 
         // optimize hyperparameter q at every 10 steps
-        if( optimizeQ_ & iteration % 10 == 1 )    optimize_q();
+        if( optimizeQ_ and iteration % 10 == 1 )    optimize_q();
 
         // check parameter difference for convergence
         v_diff = 0.0f;
