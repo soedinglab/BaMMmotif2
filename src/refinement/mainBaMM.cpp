@@ -82,7 +82,8 @@ int main( int nargs, char* args[] ){
 
 		// optimize the model with either EM or Gibbs sampling
 		if( Global::EM ){
-			EM model( motif, bgModel, Global::posSequenceSet->getSequences(), Global::q, Global::optimizeQ );
+			EM model( motif, bgModel, Global::posSequenceSet->getSequences(),
+                      Global::q, Global::optimizeQ, Global::verbose );
 			// learn motifs by EM
 			if( !Global::advanceEM ) {
                 model.optimize();

@@ -3,7 +3,7 @@
 //
 #include "EM.h"
 
-EM::EM( Motif* motif, BackgroundModel* bgModel, std::vector<Sequence*> seqs, float q, bool optimizeQ ){
+EM::EM( Motif* motif, BackgroundModel* bgModel, std::vector<Sequence*> seqs, float q, bool optimizeQ, bool verbose ){
 
     motif_      = motif;
 	bgModel_    = bgModel;
@@ -35,6 +35,8 @@ EM::EM( Motif* motif, BackgroundModel* bgModel, std::vector<Sequence*> seqs, flo
 			n_[k][y] = ( float* )calloc( W_, sizeof( float ) );
 		}
 	}
+
+    verbose_ = verbose;
 }
 
 EM::~EM(){
@@ -89,8 +91,8 @@ int EM::optimize(){
         // M-step: update model parameters
         MStep();
 
-        // optimize hyperparameter q at every 10 steps
-        if( optimizeQ_ and iteration % 10 == 1 )    optimize_q();
+        // optimize hyperparameter q in the first 5 steps
+        if( optimizeQ_ and iteration <= 5 )    optimize_q();
 
         // check parameter difference for convergence
         v_diff = 0.0f;
@@ -103,16 +105,16 @@ int EM::optimize(){
         // check the change of likelihood for convergence
         llikelihood_diff = llikelihood_ - llikelihood_prev;
 
-        std::cout << iteration << "th iteration, delta_llikelihood=" << llikelihood_diff << std::endl;
+        if( verbose_ ) std::cout << iteration << "th iteration, delta_llikelihood=" << llikelihood_diff << std::endl;
 
         if( v_diff < epsilon_ )							iterate = false;
-        if( !optimizeQ_ and llikelihood_diff < 0 and iteration > 10 )	iterate = false;
+        if( llikelihood_diff < 0 and iteration > 10 )	iterate = false;
 
 /*        // for making a movie out of all iterations
         // calculate probabilities
         motif_->calculateP();
         // write out the learned model
-        motif_->write( odir, "ChIP_GATA3_iter_" + std::to_string( iteration ) );*/
+        motif_->write( odir, filename + std::to_string( iteration ) );*/
     }
 
     // calculate probabilities
@@ -241,7 +243,7 @@ int EM::advance() {
     /**
      * run 5 steps of EM for k=0 and optimize q in the meantime
      */
-    for( size_t i = 0; i < 1; i++ ){
+    for( size_t it = 0; it < 5; it++ ){
 
         llikelihood_ = 0.0f;
 
@@ -334,9 +336,8 @@ int EM::advance() {
         /**
          * optimize fractional prior q
          */
-        optimize_q();
-        // check the optimized q
-        std::cout << "optimized q = " << q_ << std::endl;
+        if( optimizeQ_ )    optimize_q();
+
     }
 
     /**
@@ -355,10 +356,13 @@ int EM::advance() {
     }
     // Sort log odds scores in descending order
     std::sort( r_all.begin(), r_all.end(), std::greater<float>() );
+
+    // find the cutoff with 10% best r's
     float r_cutoff = r_all[pos_count / 20];
     std::vector<std::vector<size_t>> ri;
     ri.resize( seqs_.size() );
 
+    // put the index of the 10% r's in an array
     for( size_t n = 0; n < seqs_.size(); n++ ){
         size_t LW1 = seqs_[n]->getL() - W_ + 1;
         r_all.push_back( r_[n][0] );
@@ -370,7 +374,7 @@ int EM::advance() {
     }
 
     /**
-     * optimize the model from the top 10% global occurrences with higher orders till convergence
+     * optimize the model from the top 10% global occurrences with the highest order till convergence
      */
     bool 	iterate = true;
 
@@ -426,7 +430,7 @@ int EM::advance() {
             pos_[n][0] = 1.0f - q_;
             r_[n][0] = pos_[n][0];
 
-
+            // update r based on the log odd ratios
             for( size_t idx = 0; idx < ri[n].size(); idx++ ){
                 for( size_t j = 0; j < W_; j++ ){
                     size_t y = kmer[LW2-ri[n][idx]+j] % Y_[K_+1];
@@ -464,6 +468,7 @@ int EM::advance() {
         }
 
         // compute fractional occurrence counts for the highest order K
+        // using the 10% r's
         // n runs over all sequences
         for( size_t n = 0; n < seqs_.size(); n++ ){
             size_t  L = seqs_[n]->getL();
@@ -504,7 +509,7 @@ int EM::advance() {
 
         // check the change of likelihood for convergence
         llikelihood_diff = llikelihood_ - llikelihood_prev;
-        std::cout << iteration << "th iteration, delta_llikelihood=" << llikelihood_diff << std::endl;
+        if( verbose_ ) std::cout << iteration << "th iteration, delta_llikelihood=" << llikelihood_diff << std::endl;
         if( v_diff < epsilon_ )							iterate = false;
         if( llikelihood_diff < 0 and iteration > 10 )	iterate = false;
 
@@ -526,6 +531,8 @@ void EM::optimize_q(){
     }
 
     q_ = ( N0 + 1.f ) / ( ( float )seqs_.size() + 2.f );
+
+    if( verbose_ ) std::cout << "optimized q=" << q_ << std::endl;
 
 }
 

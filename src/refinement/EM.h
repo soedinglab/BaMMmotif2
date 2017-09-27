@@ -17,7 +17,8 @@ class EM {
 
 public:
 
-    EM( Motif* motif, BackgroundModel* bgModel, std::vector<Sequence*> seqs, float q, bool optimizeQ = false );
+    EM( Motif* motif, BackgroundModel* bgModel, std::vector<Sequence*> seqs,
+        float q, bool optimizeQ = false, bool verbose = false );
     ~EM();
 
     int                     optimize();         // run EM optimization
@@ -60,6 +61,7 @@ private:
     size_t					maxEMIterations_    = std::numeric_limits<size_t>::max();
     bool                    optimizeQ_;
 
+    bool                    verbose_;           // show the output of each EM iteration
     std::vector<size_t>		Y_;
 
 };
