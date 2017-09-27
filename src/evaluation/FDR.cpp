@@ -211,6 +211,11 @@ void FDR::calculatePR(){
 				idx_negMax++;
 			}
 
+            // stops when TP = FP
+            if( ( float )idx_posMax <= ( float )idx_negMax / mFold ){
+                break;
+            }
+
 			ZOOPS_TP_.push_back( ( float )idx_posMax );
 			ZOOPS_FP_.push_back( ( float )idx_negMax / mFold );
 			PN_Pvalue_.push_back( ( ( float )idx_negMax + 0.5f ) / ( ( float )negN + 1.0f ) );
