@@ -21,7 +21,7 @@ char*			    GFdr::alphabetType = NULL;			// alphabet type is defaulted to standa
 // initial model(s) options
 char*			    GFdr::initialModelFilename = NULL; 	// filename of initial model
 std::string         GFdr::initialModelTag;				// tag for initializing the model
-size_t              GFdr::num = 1;                      // number of init that are to be optimized
+size_t              GFdr::num = std::numeric_limits<size_t>::max(); // number of init that are to be optimized
 bool                GFdr::mops = false;					// learn MOPS model
 bool                GFdr::zoops = true;					// learn ZOOPS model
 
