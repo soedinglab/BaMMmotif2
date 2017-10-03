@@ -362,7 +362,8 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     # get motif number from the filename; Note: important for motif reranking
     motifNumber <- sub(paste(c(dir, "/", prefix, "_motif_"), collapse=""), "", f)
     motifNumber <- sub(".zoops.stats", "", motifNumber)
-    print(motifNumber)
+
+    # get a filename for each motif
     filename = paste(c(dir, "/", prefix, "_motif_", motifNumber), collapse="")
 
     # read in p-values from file
