@@ -29,7 +29,7 @@
 library( zoo )
 # load "argparse" library for parsing arguments
 library( argparse )
-# load "fdrtool" library for calculating FDR 
+# load "fdrtool" library for calculating FDR
 library( fdrtool )
 # load "LSD" library for plotting the curves
 library( LSD )
@@ -44,16 +44,19 @@ parser <- ArgumentParser(description="evaluate motifs optimized by BaMM")
 parser$add_argument('target_directory', help="directory that contains the target file")
 parser$add_argument('prefix', help="prefix of the target file")
 # optional arguments
-parser$add_argument("--fdrtool", type="logical", default=FALSE, help="flag for print out analysis fromfdrtool" )
+parser$add_argument("--fdrtool", type="logical", default=FALSE, help="flag for print out analysis from fdrtool" )
 parser$add_argument("--SFC", type="logical", default=FALSE, help="flag for print out sensitivity-fdr curve" )
 parser$add_argument("--ROC5", type="logical", default=FALSE, help="flag for print out partial ROC curve" )
 parser$add_argument("--PRC", type="logical", default=FALSE, help="flag for print out precision-recall curve" )
 
+# parse the arguments
 args <- parser$parse_args()
 
-# get the directory of the p-value files
+# interpret the arguments
 dir 	<- args$target_directory
 prefix 	<- args$prefix
+ofile <- paste(dir, '/', prefix, ".bmscore", sep = "" )
+
 # flags for printing the curve plots
 print_FDRtool	= args$fdrtool
 print_SFcurve 	= args$SFC
@@ -356,6 +359,12 @@ results = c()
 
 for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))) {
 
+    # get motif number from the filename; Note: important for motif reranking
+    motifNumber <- sub(paste(c(dir, "/", prefix, "_motif_"), collapse=""), "", f)
+    motifNumber <- sub(".zoops.stats", "", motifNumber)
+    print(motifNumber)
+    filename = paste(c(dir, "/", prefix, "_motif_", motifNumber), collapse="")
+
     # read in p-values from file
     first_row   <- read.table(f, nrows =1 )
     stats       <- read.table(f, skip=1 )
@@ -372,9 +381,9 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     # estimate False Discovery Rates for Diverse Test Statistics
     eta0set = mfold / ( 1+mfold )
     if( print_FDRtool ){
-        pdf( file = paste(dir, prefix, '_FDRstat.pdf', sep = "" ) )
+        pdf( file = paste( filename, '_FDRstat.pdf', sep = "" ) )
         result = fdrtool( pvalues, statistic="pvalue",
-                          plot=TRUE, color.figure=TRUE, verbose=TRUE, eta0set=eta0set )
+                          plot=TRUE, color.figure=TRUE, verbose=FALSE, eta0set=eta0set )
         dev.off()
     } else {
         result = fdrtool( pvalues, statistic="pvalue", plot=FALSE, eta0set=eta0set )
@@ -448,7 +457,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     ######################################################################
     if( print_SFcurve ){
         # plot fdr vs. recall curve. Note that x-axis is in log scale
-        picname <- paste0( dir, '/', prefix, '_SFC.jpeg' )
+        picname <- paste0( filename, '_SFC.jpeg' )
         jpeg( filename = picname, width = 800, height = 800, quality = 100 )
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
         plot(fdr[range], recall[range],
@@ -489,7 +498,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     auc5 = sum(diff(FPR[1:rbound])*rollmean(TPR[1:rbound],2)) / 0.05
 
     if( print_ROC5 ){
-        picname <- paste0( dir, '/', prefix, '_pROC.jpeg' )
+        picname <- paste0( filename, '_pROC.jpeg' )
         jpeg( filename = picname, width = 800, height = 800, quality = 100 )
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
         plot(FPR[1:rbound], TPR[1:rbound],
@@ -532,7 +541,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     auprc           = sum(diff(raw_recall)*rollmean(raw_precision,2))
     # plot the raw precision-recall curve
     if( print_PRcurve ){
-        picname <- paste0( dir, '/', prefix, '_PRC.jpeg' )
+        picname <- paste0( filename, '_PRC.jpeg' )
         jpeg( filename = picname, width = 800, height = 800, quality = 100 )
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
         plot(raw_recall, raw_precision,
@@ -553,10 +562,10 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
         invisible(dev.off())
     }
 
-    resultString = paste0(c(prefix, ausfc, auc5, auprc), collapse="\t")
+    resultString = paste0(c(prefix, motifNumber, ausfc, auc5, auprc), collapse="\t")
     #print( resultString )
     results = c(results, resultString)
 }
-outConn <- file(paste(dir, '/', prefix, ".bmscore", sep = "" ))
+outConn <- file(ofile)
 writeLines(results, outConn)
 close(outConn)

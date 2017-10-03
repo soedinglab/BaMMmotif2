@@ -63,6 +63,7 @@ int main( int nargs, char* args[] ){
                  motif, bgModel,
                  GFdr::cvFold, GFdr::mops, GFdr::zoops,
                  true, GFdr::savePvalues, GFdr::saveLogOdds );
+
         fdr.evaluateMotif( GFdr::EM, GFdr::CGS );
         fdr.write( GFdr::outputDirectory,
                    GFdr::posSequenceBasename + "_motif_" + std::to_string( n+1 ) );
