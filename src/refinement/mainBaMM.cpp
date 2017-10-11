@@ -97,9 +97,6 @@ int main( int nargs, char* args[] ){
                              Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ),
                              Global::ss );
 			}
-            // write out the learned model
-            motif->write( Global::outputDirectory,
-                          Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ) );
 
             // print out the optimized q for checking:
             std::cout << "optimized q = " << model.getQ() << std::endl;
@@ -114,9 +111,6 @@ int main( int nargs, char* args[] ){
                              Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ),
                              Global::ss );
 			}
-            // write out the learned model
-            motif->write( Global::outputDirectory,
-                          Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ) );
 
             // print out the optimized q for checking:
             std::cout << "optimized q = " << model.getQ() << std::endl;
@@ -125,6 +119,20 @@ int main( int nargs, char* args[] ){
 
 			std::cout << "Note: the model is not optimized!\n";
 		}
+        // write out the learned model
+        motif->write( Global::outputDirectory,
+                      Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ) );
+
+        if( Global::scoreSeqset ){
+            // score the model on sequence set
+            ScoreSeqSet seq_set( motif, bgModel, Global::posSequenceSet->getSequences() );
+
+            seq_set.score();
+            seq_set.write( Global::outputDirectory,
+                           Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ),
+                           Global::scoreCutoff,
+                           Global::ss );
+        }
 
         delete motif;
 	}

@@ -6,6 +6,7 @@
 #include "GScan.h"
 #include "ScoreSeqSet.h"
 #include "../init/MotifSet.h"
+#include "../refinement/Global.h"
 
 int main( int nargs, char* args[] ) {
 
@@ -33,7 +34,7 @@ int main( int nargs, char* args[] ) {
                         GScan::addColumns.at(1),
                         GScan::initialModelTag,
                         GScan::posSequenceSet,
-                        GScan::negSequenceSet->getBaseFrequencies(),
+                        GScan::posSequenceSet->getBaseFrequencies(),
                         GScan::modelOrder,
                         GScan::modelAlpha );
 
@@ -44,6 +45,7 @@ int main( int nargs, char* args[] ) {
         Motif *motif = new Motif( *motif_set.getMotifs()[n] );
         // score the model on sequence set
         ScoreSeqSet seq_set( motif, bgModel, GScan::posSequenceSet->getSequences() );
+
         seq_set.score();
         seq_set.write(GScan::outputDirectory,
                       GScan::posSequenceBasename + "_motif_" + std::to_string( n + 1 ),
