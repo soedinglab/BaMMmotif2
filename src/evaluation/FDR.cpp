@@ -30,7 +30,8 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
 	std::vector<std::vector<float>> mops_scores;
 	std::vector<float> 				zoops_scores;
     float updatedQ = q_;  // obtain the updated q
-	/**
+
+    /**
 	 * Cross validation
 	 */
 	for( size_t fold = 0; fold < cvFold_; fold++ ){
@@ -128,7 +129,7 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
 
     if( savePvalues_ ){
 
-		fprintf(stderr, " ______________________\n"
+		fprintf( stderr, " ______________________\n"
 						"|                      |\n"
 						"|  calculate P-values  |\n"
 						"|______________________|\n\n" );
@@ -358,9 +359,9 @@ void FDR::write( char* odir, std::string basename ){
 		/**
 		 * save FDR results in two flat files for obtaining AUSFC:
 		 * (1) posSequenceBasename.zoops.stats:
-		 * TP, FP, FDR, recall, p-values and mFold for ZOOPS model
+		 * TP, FP, FDR, recall, p-values, mFold and fractional occurrence for ZOOPS model
 		 * (2) posSequenceBasename.mops.stats:
-		 * TP, FP, FDR, recall for MOPS model
+		 * TP, FP, FDR, recall and multiple occurrence for MOPS model
 		 */
 
 		// for ZOOPS model:
@@ -373,8 +374,8 @@ void FDR::write( char* odir, std::string basename ){
 						<< "FDR" 	<< '\t'
 						<< "Recall"	<< '\t'
 						<< "p-value"<< '\t'
-						<< ( float )negSeqs_.size() / ( float )posSeqs_.size()
-						<< std::endl;
+						<< ( float )negSeqs_.size() / ( float )posSeqs_.size() << '\t'
+                        << occ_frac_ << std::endl;
 
 			for( size_t i = 0; i < ZOOPS_FDR_.size(); i++ ){
 				ofile_zoops << ZOOPS_TP_[i]  << '\t'
@@ -390,10 +391,11 @@ void FDR::write( char* odir, std::string basename ){
 		if( mops_ ){
 			std::string opath_mops_stats = opath + ".mops.stats";
 			std::ofstream ofile_mops( opath_mops_stats );
-			ofile_mops  << "TP" 	<< '\t'
-						<< "FP" 	<< '\t'
-						<< "FDR" 	<< '\t'
-						<< "Recall"	<< std::endl;
+			ofile_mops  << "TP" 	    << '\t'
+						<< "FP" 	    << '\t'
+						<< "FDR" 	    << '\t'
+						<< "Recall"	    << '\t'
+                        << occ_mult_    << std::endl;
 
 			for( size_t i = 0; i < MOPS_FDR_.size(); i++ ){
 				ofile_mops  << MOPS_TP_[i]  << '\t'
