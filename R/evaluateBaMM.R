@@ -48,6 +48,7 @@ parser$add_argument("--fdrtool", type="logical", default=FALSE, help="flag for p
 parser$add_argument("--SFC", type="logical", default=FALSE, help="flag for print out sensitivity-fdr curve" )
 parser$add_argument("--ROC5", type="logical", default=FALSE, help="flag for print out partial ROC curve" )
 parser$add_argument("--PRC", type="logical", default=FALSE, help="flag for print out precision-recall curve" )
+parser$add_argument("--web", type="logical", default=FALSE, help="flag for print out precision-recall curve" )
 
 # parse the arguments
 args <- parser$parse_args()
@@ -62,6 +63,8 @@ print_FDRtool	= args$fdrtool
 print_SFcurve 	= args$SFC
 print_ROC5      = args$ROC5
 print_PRcurve 	= args$PRC
+# flag for verbose output for web usage
+web             = args$web
 
 ###########################
 ## For this script we need a slightly modified version of the fdrtool function.
@@ -450,6 +453,10 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     } else {
         ausfc = sum(diff(log10(fdr[range]))*rollmean(recall[range],2)) / sum_area
     }
+   
+    if(web){
+      message(ausfc)
+    } 
 
     #####################################################################
     #

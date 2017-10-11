@@ -661,7 +661,7 @@ xfontsize=15, xanchor=NULL, xborder=FALSE,
 xanchorlabel=TRUE, plot.xanchorlabel=TRUE,
 plot.xlab=TRUE, yaxis=TRUE, yfontsize=15, yat=NULL,
 ylabel=TRUE, plot.ylab=TRUE, yhjust=.3, sub=NULL, cex=1,
-lwd=1, probs.ending="ihbp", conds.ending="ihbcp",
+lwd=1, revComp=FALSE, plot_title=TRUE, probs.ending="ihbp", conds.ending="ihbcp",
 freqs.ending="freqs" ){
 
     if( !icColumnScale && icLetterScale ){
@@ -679,11 +679,16 @@ freqs.ending="freqs" ){
     # read in conditional probabilities
     file.conds <- paste( filename, conds.ending, sep="." )
     conds <- readBaMM( file.conds )
-
+    if(revComp && order == 0){
+      conds = list(conds[[1]][c(dim(conds[[1]])[1]:1),c(4:1)])
+    }
+    
     # read in probabilities
     file.probs <- paste( filename, probs.ending, sep="." )
     probs <- readBaMM( file.probs )
-
+    if(revComp && order == 0){
+      probs = list(probs[[1]][c(dim(probs[[1]])[1]:1),c(4:1)])
+    }
     MAXORDER <- 5
 
     # model formats
@@ -964,10 +969,14 @@ freqs.ending="freqs" ){
 
         # 	bottomMargin = ifelse( xaxis, 2 + xfontsize/3.5, 2 )
         # 	leftMargin = ifelse( yaxis, 2 + yfontsize/3.5, 2 )
-
-        bottomMargin = ifelse( xaxis, 8, 2 )
-        leftMargin = ifelse( yaxis, 8, 2 )
-        topMargin = 6
+        
+        bottomMargin = ifelse( xaxis, 13, 2 )
+        leftMargin = ifelse( yaxis, 16, 2 )
+        topMargin = ifelse( plot_title, 12,1)
+        
+        #bottomMargin = ifelse( xaxis, 8, 2 )
+        #leftMargin = ifelse( yaxis, 8, 2 )
+        #topMargin = 6
         # 	topMargin = 12
 
         pushViewport( plotViewport( c( bottomMargin, leftMargin, topMargin, 2 ) ) )
@@ -996,7 +1005,18 @@ freqs.ending="freqs" ){
             "native" ), gp=gpar( fill="#FFFFFF", col="#FFFFFF",
             alpha=1-alpha ) )
         }
-
+        
+        if(plot_title){
+          title = paste0( order, ifelse( order %in% 1:3, switch( k, "th","st", "nd", "rd"
+          ), "th" ), "-order sequence logo" )
+          if ( revComp ){
+            title = paste0( "reverse Complement ", order, ifelse( order %in% 1:3, switch( k, "th","st", "nd", "rd"
+            ), "th" ), "-order" )	  
+          }
+          
+          grid.text( title, y=unit(9, "lines" ), gp=gpar(cex=cex) )
+        }
+        
         if( xaxis ){
             if( unit == units ){
                 if( is.null( xanchor ) ){
@@ -1866,9 +1886,16 @@ hoContributionsToInformationContent <- function( filename, useFreqs=F ){
 parser <- ArgumentParser(description='plot higher-order bamm sequence logo')
 parser$add_argument('input_path', help='input path to the bamm file')
 parser$add_argument('logo_order', help='logo order, it must be not higher than bamm model order')
+parser$add_argument('--revComp',    type="logical", default=FALSE, help='flag to plot reverse complement logo of zeroth order' )
+parser$add_argument('--stamp',      type="logical", default=FALSE, help='flag to plot without axis' )
+
 args <- parser$parse_args()
 
 input_path <- args$input_path
+
+revComp 	= args$revComp
+stamp     = args$stamp
+
 
 # directory to hold the output log file
 dirname <- dirname(input_path)
@@ -1913,9 +1940,17 @@ yfontsize <- 15
 alpha <- .3 # icLetterScale only
 
 # .pdf parameters
-width <- 7
+#width <- 7
 
+# .png parameters
+width <- 1200
+height <- 800
 
+# add title to the logo
+plot_title = TRUE
+
+# ending used for distinguishing between revComp / stamp / general
+ending = ".png"
 #...............................................................................
 #
 # Plot higher-order sequence logo(s)
@@ -1931,10 +1966,23 @@ if( bg ){
                  xaxis=xaxis, yaxis=yaxis, xfontsize=xfontsize,
                  yfontsize=yfontsize, alpha=alpha )
 } else {
-    png( file.path( dirname, paste( filename, "-logo-order-", order, ".png", sep="" ) ) )
+    if(stamp){
+      plot_title <- FALSE
+      xaxis      <- FALSE
+      yaxis      <- FALSE
+      width      <- 1000
+      height     <- 500
+      ending     <- paste0("_stamp",ending)
+      
+    }
+    if(revComp && order == 0){
+      revComp = TRUE
+      ending = paste0("_revComp",ending)
+    }
+    png( file.path( dirname, paste( filename, "-logo-order-", order, ending, sep="" ) ), width=width , height=height )
     hoSeqLogo( filename=file.path( dirname, filename ), order=order,
                useFreqs=useFreqs, base=base, icColumnScale=icColumnScale,
                icLetterScale=icLetterScale, xaxis=xaxis, yaxis=yaxis,
-               xfontsize=xfontsize, yfontsize=yfontsize, alpha=alpha )
+               xfontsize=xfontsize, yfontsize=yfontsize, alpha=alpha, cex=4, lwd=4 ,revComp=revComp, plot_title=plot_title)
 }
 dev.off()
