@@ -374,6 +374,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     stats       <- read.table(f, skip=1 )
     pvalues     <- stats$V5
     mfold       <- as.numeric(first_row[6])
+    occurrence  <- as.numeric(first_row[7])
 
     # avoid the rounding errors when p-value = 0 or p-value > 1
     for(i in seq(1, length(pvalues))){
@@ -579,7 +580,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
         invisible(dev.off())
     }
 
-    resultString = paste0(c(prefix, motifNumber, ausfc, auc5, auprc), collapse="\t")
+    resultString = paste0(c(prefix, motifNumber, ausfc, auc5, auprc, occurrence), collapse="\t")
     #print( resultString )
     results = c(results, resultString)
 }
