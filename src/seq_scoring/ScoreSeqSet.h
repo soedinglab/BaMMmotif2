@@ -27,11 +27,13 @@ public:
 	~ScoreSeqSet();
 
 	void score();
+	void calcPvalues( std::vector<float> neg_scores );
 
 	std::vector<std::vector<float>> getMopsScores();
 	std::vector<float> 				getZoopsScores();
 
 	void write( char* odir, std::string basename, float cutoff, bool ss );
+	void writePvalues( int N, float cutoff );
 
 
 private:

@@ -43,6 +43,9 @@ int main( int nargs, char* args[] ){
 
     } else {
 		bgModel = new BackgroundModel( Global::bgModelFilename );
+		if( Global::savebgModel){
+			bgModel->write( Global::outputDirectory, Global::posSequenceBasename );
+		}
 	}
 
 	if( Global::verbose ){
@@ -133,6 +136,90 @@ int main( int nargs, char* args[] ){
                            Global::scoreCutoff,
                            Global::ss );
         }
+
+        if ( Global::bammSearch ){
+        			fprintf( stderr, "\n" );
+            		fprintf( stderr, "**********************\n" );
+        			fprintf( stderr, "*   Score Sequences  *\n" );
+        			fprintf( stderr, "**********************\n" );
+
+        			BackgroundModel* bg = bgModel;
+        			// 0. Depending on motif input, and learning, define bgModel
+        			// use bgModel generated from input sequences when prediction is turned on
+
+        			if( ! Global::EM and ! Global::CGS ){
+
+        				// use provided bgModelFile if initialized with bamm format
+        				if( Global::BaMMFilename != NULL ){
+        					if( Global::bgModelFile == NULL ){
+        						std::cout << "No background Model File provided for initial search motif!\n";
+        						exit(-1);
+        					}
+        					bg = new BackgroundModel( Global::bgModelFile );
+        				}
+        				else{
+        					std::cout << "not optimized with BammFile\n";
+        					// use bgModel generated when reading in PWM File
+        					if( Global::PWMFilename != NULL ){
+        						//std::cout << "Init with PWM instead \n";
+        						bg = new BackgroundModel( Global::PWMFilename , 0, 1);
+        						// this means that also the global motif order needs to be adjusted;
+        						Global::modelOrder = 0;
+        					}
+        					else{
+        						std::cout << "No background Model found for provided initial search motif!\n";
+        						exit(-1);
+        					}
+        				}
+
+        			}
+
+            		std::cout << "Seqgenerator, neg seqs... ";
+        			SeqGenerator neg_seqs( Global::posSequenceSet->getSequences(), model.getMotif() );
+        			std::cout << ".. sample seqset... ";
+
+        			//neg_seqs.sample_negative_seqset(  );
+        			neg_seqs.arti_bgseqset(FOLD);
+
+        			std::cout << "DONE!\n";
+
+        			// generate and score negative sequence set
+        			std::cout << "generate negative sequence set... ";
+        			ScoreSeqSet neg_seqset( model.getMotif(), bg, neg_seqs.getSeqs());
+        			std::cout << "... and score it ...";
+        			neg_seqset.score();
+        			std::cout << "DONE!\n";
+
+        			// <------this is already done in the ScoreSeqset part so probably I can scip all that
+
+        			// score positive sequence set
+        			std::cout << "generate positive sequence set... ";
+        			ScoreSeqSet pos_seqset( model.getMotif(), bg, Global::posSequenceSet->getSequences());
+        			std::cout << "... and score it ...";
+        			pos_seqset.score();
+        			std::cout << "DONE!\n";
+
+        			// collapse and rank negative scores
+        			std::vector<float> neg_scores = neg_seqset.getScoreAll();
+        			std::sort( neg_scores.begin(), neg_scores.end(), std::greater<float>() );
+
+        			fprintf( stderr, "\n" );
+            		fprintf( stderr, "***************************\n" );
+            		fprintf( stderr, "*   Evaluate Occurrences  *\n" );
+        			fprintf( stderr, "***************************\n" );
+
+        			// calculate p- and e-values for positive scores based on negative scores
+        			pos_seqset.calcPvalues(neg_scores);
+
+        			fprintf( stderr, "\n" );
+            		fprintf( stderr, "***************************\n" );
+            		fprintf( stderr, "*   print PValues         *\n" );
+        			fprintf( stderr, "***************************\n" );
+
+        			// print out scores and p-/e-values larger than p-values based cutoff
+        			pos_seqset.writePvalues( n, Global:: pvalCutoff );
+        		}
+
 
         delete motif;
 	}
