@@ -71,9 +71,14 @@ void ScoreSeqSet::score(){
 }
 
 
-// compute p_values for motif scores based on negative sequeunce scores
+// compute p_values for motif scores based on negative sequence scores
 void ScoreSeqSet::calcPvalues( std::vector<float> neg_scores ){
-
+	/* ##############################
+	 *
+	 *	BAMM SEARCH - ADJUST !!!!
+	 *
+	 * ##############################
+	 */
 	std::vector<std::vector<float>> pos_scores = mops_scores_;
 	mops_p_values_.resize( seqSet_.size() );
 	mops_e_values_.resize( seqSet_.size() );
@@ -209,10 +214,15 @@ void ScoreSeqSet::write( int N, float cutoff ){
 }
 
 void ScoreSeqSet::writePvalues( int N, float cutoff ){
-
+/* ##############################
+ *
+ *	BAMM SEARCH - ADJUST !!!!
+ *
+ * ##############################
+ */
 	/**
-	 * save log odds scores in one flat file:
-	 * posSequenceBasename.logOdds
+	 * save scores in one flat file:
+	 * posSequenceBasename.scores
 	 */
 
 	bool 	first_hit = true;
