@@ -101,7 +101,7 @@ Sequence options
       --BaMMFile <STRING>
           File that contains a model in bamm file format.
 
-      --num <INTEGER>
+      --maxPWM <INTEGER>
           Number of models to be learned by BaMM!motif, specific for PWMs.
 
   Options for the (inhomogeneous) motif BaMMs
@@ -215,11 +215,11 @@ The options are:
 
 You will get the following plots:
 
-![image](images/seqset_SFC.jpeg)
+![image](example/images/JunD_motif_1_SFC.jpeg)
 
-![image](images/seqset_pROC.jpeg)
+![image](example/images/JunD_motif_1_pROC.jpeg)
 
-![image](images/seqset_PRC.jpeg)
+![image](example/images/JunD_motif_1_PRC.jpeg)
 
 The performance scores such as AUSFC, pAUC amd AUPRC are written in the `.bmscore` file.
     
@@ -232,6 +232,14 @@ It requires output files with extension `.ihbcp`, `.ihbp`, `.hbcp` or `.hbp` fro
 The logo order is an integer between 0 to 2. 
 
     plotBaMMLogo.R [path_to_bamm_file] [logo_order]
+
+You will get the following plots:
+
+![image](example/images/JunD_motif_1-logo-order-0.png)
+
+![image](example/images/JunD_motif_1-logo-order-1.png)
+
+![image](example/images/JunD_motif_1-logo-order-2.png)
 
 ### Motif distribution analysis
 
@@ -247,7 +255,7 @@ or
     
 After obtaining either `.positions` or `.occurrence`, you can run R script `plotMotifDistribution.R` provided in the installation directory `${HOME}/opt/BaMM/bin` to visualise the motif distribution:
 
-     ${HOME}/opt/BaMM/bin/plotMotifDistribution.R [INPUT_DIR] [PREFIX_OF_STATS_FILE] [option]
+    ${HOME}/opt/BaMM/bin/plotMotifDistribution.R [INPUT_DIR] [PREFIX_OF_STATS_FILE] [option]
 
 The option is:
 
@@ -255,9 +263,9 @@ The option is:
 
 You will get one of the following plots:
 
-![image](images/seqset_ds_distribution.jpeg)
+![image](example/images/JunD_motif_1_ds_distribution.jpeg)
 
-![image](images/seqset_ss_distribution.jpeg)
+![image](example/images/JunD_motif_1_ss_distribution.jpeg)
 
 Note that, this analysis currently only work for sequences set with sequences of the same length.
 
