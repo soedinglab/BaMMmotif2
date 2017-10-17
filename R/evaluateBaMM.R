@@ -377,7 +377,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     occurrence  <- as.numeric(first_row[7])
 
     if(web){
-      print(occurrence)
+      message(occurrence)
     }
     # avoid the rounding errors when p-value = 0 or p-value > 1
     for(i in seq(1, length(pvalues))){
@@ -459,7 +459,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     }
    
     if(web){
-      print(ausfc)
+      message(ausfc)
     } 
 
     #####################################################################
