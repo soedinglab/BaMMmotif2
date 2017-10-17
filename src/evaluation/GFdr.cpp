@@ -135,10 +135,10 @@ int GFdr::readArguments( int nargs, char* args[] ){
             }
             initialModelFilename = args[i];
             initialModelTag = "BaMM";
-        } else if( !strcmp( args[i], "--num" ) ){
+        } else if( !strcmp( args[i], "--maxPWM" ) ){
             if( ++i >= nargs ){
                 printHelp();
-                std::cerr << "No expression following --num" << std::endl;
+                std::cerr << "No expression following --maxPWM" << std::endl;
                 exit( 2 );
             }
             num = std::stoi( args[i] );
@@ -283,7 +283,7 @@ void GFdr::printHelp(){
                    "				File that contains position weight matrices(PWMs).\n");
     printf("\n 			--BaMMFile <STRING> \n"
                    "				File that contains a model in bamm file format.\n\n");
-    printf("\n 			--num <INTEGER> \n"
+    printf("\n 			--maxPWM <INTEGER> \n"
                    "				Number of init to be learned by BaMM!motif, \n"
                    "				specific for PWMs. \n"
                    "				By default, all the motifs will be optimized.\n\n");

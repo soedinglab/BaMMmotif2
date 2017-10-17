@@ -38,12 +38,13 @@ int main( int nargs, char* args[] ){
                                        Global::bgModelAlpha,
                                        Global::interpolateBG,
                                        Global::posSequenceBasename );
-        // always save background model
-        bgModel->write( Global::outputDirectory, Global::posSequenceBasename );
 
     } else {
 		bgModel = new BackgroundModel( Global::bgModelFilename );
+
 	}
+    // always save the background model
+    bgModel->write( Global::outputDirectory, Global::posSequenceBasename );
 
 	if( Global::verbose ){
         std::cout << std::endl
@@ -61,12 +62,12 @@ int main( int nargs, char* args[] ){
                         Global::modelOrder,
                         Global::modelAlpha );
 
-	size_t motifNum = ( Global::num > motif_set.getN() ) ? motif_set.getN() : Global::num;
+	size_t motifNum = ( Global::maxPWM > motif_set.getN() ) ? motif_set.getN() : Global::maxPWM;
 
 	if( Global::verbose ){
         std::cout << std::endl
                   << "*********************" << std::endl
-                  << "*   BaMM training   *" << std::endl
+                  << "*   BaMM Training   *" << std::endl
                   << "*********************" << std::endl;
 	}
 
@@ -125,19 +126,69 @@ int main( int nargs, char* args[] ){
 
         if( Global::scoreSeqset ){
             // score the model on sequence set
-            ScoreSeqSet seq_set( motif, bgModel, Global::posSequenceSet->getSequences() );
+            if( Global::verbose ) {
+                std::cout << std::endl
+                          << "*************************" << std::endl
+                          << "*    Score Sequences    *" << std::endl
+                          << "*************************" << std::endl
+                          << std::endl;
+            }
 
-            seq_set.score();
-            seq_set.write( Global::outputDirectory,
-                           Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ),
-                           Global::scoreCutoff,
-                           Global::ss );
+            // Define bg Model depending on motif input, and learning
+            // use bgModel generated from input sequences when prediction is turned on
+            BackgroundModel* bg = bgModel;
+            // if no optimization is applied, get bgModel from the input
+            if( !Global::EM and !Global::CGS ) {
+                // use provided bgModelFile if initialized with bamm format
+                if( Global::initialModelTag == "BaMM" ) {
+                    if( Global::bgModelFilename == NULL ) {
+                        std::cout << "No background Model file provided for initial search motif!\n";
+                        exit(-1);
+                    }
+                    bg = new BackgroundModel( Global::bgModelFilename );
+                } else if( Global::initialModelTag == "PWM" ){
+                    // use bgModel generated when reading in PWM File
+                    bg = new BackgroundModel( Global::initialModelFilename, 0, 1 );
+                    // this means that also the global motif order needs to be adjusted;
+                    Global::modelOrder = 0;
+                }
+            }
+
+            std::vector<Sequence*>  negset;
+            // sample negative sequence set B1set based on s-mer frequencies
+            // from positive training sequence set
+            std::vector<std::unique_ptr<Sequence>> negSeqs;
+            SeqGenerator generateNegSeqs( Global::posSequenceSet->getSequences() );
+            negSeqs = generateNegSeqs.arti_bgseqset( Global::mFold );
+            // convert unique_ptr to regular pointer
+            for( size_t n = 0; n < negSeqs.size(); n++ ) {
+                negset.push_back( negSeqs[n].release() );
+            }
+            ScoreSeqSet scoreNegSet( motif, bgModel, negset );
+            scoreNegSet.calcLogOdds();
+            std::vector<std::vector<float>> negAllScores = scoreNegSet.getMopsScores();
+            std::vector<float> negScores;
+            for( size_t n = 0; n < negset.size(); n++ ){
+                negScores.insert( std::end( negScores ),
+                                  std::begin( negAllScores[n] ),
+                                  std::end( negAllScores[n] ) );
+            }
+
+            // calculate p-values based on positive and negative scores
+            ScoreSeqSet scorePosSet( motif, bg, Global::posSequenceSet->getSequences() );
+            scorePosSet.calcLogOdds();
+            std::vector<std::vector<float>> posScores = scorePosSet.getMopsScores();
+            scorePosSet.calcPvalues( posScores, negScores );
+
+            scorePosSet.write( Global::outputDirectory,
+                               Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ),
+                               Global::pvalCutoff,
+                               Global::ss );
         }
-
-        delete motif;
+        if( motif )		delete motif;
 	}
 
-    	// evaluate motifs
+    // evaluate motifs
 	if( Global::FDR ){
 		if( Global::verbose ){
             std::cout << std::endl
@@ -175,7 +226,7 @@ int main( int nargs, char* args[] ){
             B1SeqSetPrime = artificial_set.seqset_with_motif_masked(model_opti.getR());
             if ( motif_opti ) delete motif_opti;
             // draw B1setPrime from the positive sequence set with masked motifs
-            for( size_t n = 0; n < B1SeqSetPrime.size(); n++ ) {
+            for( size_t n = 0; n < B1SeqSetPrime.size(); n++ ){
                 negset.push_back(B1SeqSetPrime[n].release());
             }
         } else {
@@ -183,7 +234,7 @@ int main( int nargs, char* args[] ){
             // from positive training sequence set
             std::vector<std::unique_ptr<Sequence>> B1Seqs;
             SeqGenerator b1seqs( Global::posSequenceSet->getSequences() );
-            B1Seqs = b1seqs.arti_bgseqset(Global::mFold);
+            B1Seqs = b1seqs.arti_bgseqset( Global::mFold );
             // convert unique_ptr to regular pointer
             for( size_t n = 0; n < B1Seqs.size(); n++ ) {
                 negset.push_back( B1Seqs[n].release() );
@@ -199,7 +250,7 @@ int main( int nargs, char* args[] ){
                      Global::q, motif, bgModel, Global::cvFold,
                      Global::mops, Global::zoops,
                      Global::savePRs, Global::savePvalues, Global::saveLogOdds );
-			fdr.evaluateMotif(Global::EM, Global::CGS, Global::optimizeQ, Global::advanceEM);
+			fdr.evaluateMotif( Global::EM, Global::CGS, Global::optimizeQ, Global::advanceEM );
 			fdr.write( Global::outputDirectory,
                        Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ) );
 			if( motif )		delete motif;

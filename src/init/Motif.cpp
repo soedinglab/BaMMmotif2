@@ -308,14 +308,14 @@ void Motif::initFromBaMM( char* indir, size_t l_flank, size_t r_flank ){
 	file.open( indir, std::ifstream::in );
 	std::string line;
 
-    getline( file, line );
+/*    getline( file, line );
     std::stringstream eachline( line );
     size_t k = 0;     // count for
     while( line.length() != 0 ){
         std::cout << k << std::endl;
         getline( file, line );
         k++;
-    }
+    }*/
 
 	// loop over motif position j
 	// set each v to 0.25f in the flanking region

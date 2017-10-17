@@ -9,7 +9,7 @@ char*               GScan::outputDirectory = NULL;		// output directory
 char*               GScan::posSequenceFilename = NULL;	// filename of positive sequence FASTA file
 std::string         GScan::posSequenceBasename;			// basename of positive sequence FASTA file
 SequenceSet*        GScan::posSequenceSet = NULL;		// positive sequence set
-float               GScan::q = 0.9f;						// prior probability for a positive sequence to contain a motif
+float               GScan::q = 0.9f;					// prior probability for a positive sequence to contain a motif
 bool                GScan::ss = false;					// only search on single strand sequences
 
 char*               GScan::negSequenceFilename = NULL;	// filename of negative sequence FASTA file
@@ -19,23 +19,25 @@ SequenceSet*        GScan::negSequenceSet = NULL;		// negative sequence set
 char*			    GScan::alphabetType = NULL;			// alphabet type is defaulted to standard which is ACGT
 
 // initial model(s) options
-char*			    GScan::initialModelFilename = NULL; 	// filename of initial model
+char*			    GScan::initialModelFilename = NULL; // filename of initial model
 std::string         GScan::initialModelTag;				// tag for initializing the model
-size_t              GScan::num = 1;                      // number of init that are to be optimized
+size_t              GScan::maxPWM = std::numeric_limits<size_t>::max(); // number of init that are to be optimized
+
 // model options
 size_t              GScan::modelOrder = 2;				// model order
 std::vector<float>  GScan::modelAlpha( modelOrder+1, 1.f );// initial alphas
-float               GScan::modelBeta = 7.0f;				// alpha_k = beta x gamma^k for k > 0
+float               GScan::modelBeta = 7.0f;			// alpha_k = beta x gamma^k for k > 0
 float               GScan::modelGamma = 3.0f;
 std::vector<size_t> GScan::addColumns = {0,0};			// add columns to the left and right of initial model
 
-bool                GScan::interpolateBG = true;			// calculate prior probabilities from lower-order probabilities
+bool                GScan::interpolateBG = true;		// calculate prior probabilities from lower-order probabilities
                                                         // instead of background frequencies of mononucleotides
 // background model options
-size_t			    GScan::bgModelOrder = 2;				// background model order, defaults to 2
+char*				GScan::bgModelFilename = NULL;		// path to the background model file
+size_t			    GScan::bgModelOrder = 2;			// background model order, defaults to 2
 std::vector<float>  GScan::bgModelAlpha( bgModelOrder+1, 1.f );// background model alpha
 
-float               GScan::cutoff = 1.0f;
+float               GScan::pvalCutoff = 0.0001f;        // cutoff of p-value
 
 void GScan::init( int nargs, char* args[] ){
 
@@ -120,13 +122,20 @@ int GScan::readArguments( int nargs, char* args[] ){
             }
             initialModelFilename = args[i];
             initialModelTag = "BaMM";
-        } else if( !strcmp( args[i], "--num" ) ){
+        } else if( !strcmp( args[i], "--bgModelFile" ) ){
             if( ++i >= nargs ){
                 printHelp();
-                std::cerr << "No expression following --num" << std::endl;
+                std::cerr << "No expression following --bgModelFile" << std::endl;
                 exit( 2 );
             }
-            num = std::stoi( args[i] );
+            bgModelFilename = args[i];
+        } else if( !strcmp( args[i], "--maxPWM" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following --maxPWM" << std::endl;
+                exit( 2 );
+            }
+            maxPWM = std::stoi( args[i] );
         } else if( !strcmp( args[i], "-k" ) or !strcmp( args[i], "--order" ) ){
             if( ++i >= nargs ){
                 printHelp();
@@ -166,13 +175,13 @@ int GScan::readArguments( int nargs, char* args[] ){
             if( ++i < nargs ){
                 addColumns.at(1) = std::stoi( args[i] );
             }
-        }  else if( !strcmp( args[i], "--scoreCutoff" ) ){
+        }  else if( !strcmp( args[i], "--pvalCutoff" ) ){
             if( ++i >= nargs ){
                 printHelp();
-                std::cerr << "No expression following --scoreCutoff" << std::endl;
+                std::cerr << "No expression following --pvalCutoff" << std::endl;
                 exit( 2 );
             }
-            cutoff = std::stof( args[i] );
+            pvalCutoff = std::stof( args[i] );
         } else {
             std::cerr << "Ignoring unknown option " << args[i] << std::endl;
         }
@@ -231,7 +240,11 @@ void GScan::printHelp(){
               << "\t\t\tFile that contains position weight matrices(PWMs)." << std::endl
               << "\t\t\tSame format as MEME" << std::endl
               << "\t\t--BaMMFile <STRING>" << std::endl
-              << "\t\t\tFile that contains a model in bamm file format." << std::endl;
+              << "\t\t\tFile that contains a model in bamm file format." << std::endl
+              << "\t\t--bgModelFile <STRING>" << std::endl
+              << "\t\t\tFile that contains a background model in bamm file format." << std::endl
+              << "\t\t--maxPWM <INTEGER>" << std::endl
+              << "\t\t\tmaximal number of PWMs that should be optimized." << std::endl;
 }
 
 void GScan::destruct(){
