@@ -12,9 +12,9 @@
 #
 #-----------------------------
 # load "argparse" library for parsing arguments
-library( argparse )
+suppressMessages(library( argparse ))
 # load "LSD" library for plotting
-library( LSD )
+suppressMessages(library( LSD ))
 
 suppressMessages( library( gdata ) )
 

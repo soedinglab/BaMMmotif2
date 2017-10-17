@@ -33,10 +33,10 @@
 #...............................................................................
 
 # A package for parsing arguments
-library( argparse )
+suppressMessages(library( argparse ))
 
 # A graphics package
-library( grid )
+suppressMessages(library( grid ))
 
 #...............................................................................
 #

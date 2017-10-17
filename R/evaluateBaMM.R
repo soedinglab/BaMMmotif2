@@ -26,13 +26,13 @@
 #-----------------------------
 
 # load "zoo" library for calculating area-under-the-curve
-library( zoo )
+suppressMessages(library( zoo ))
 # load "argparse" library for parsing arguments
-library( argparse )
+suppressMessages(library( argparse ))
 # load "fdrtool" library for calculating FDR
-library( fdrtool )
+suppressMessages(library( fdrtool ))
 # load "LSD" library for plotting the curves
-library( LSD )
+suppressMessages(library( LSD ))
 
 #-----------------------------
 #
