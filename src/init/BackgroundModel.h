@@ -26,8 +26,9 @@ public:
 					std::string basename = "" );
 
 	BackgroundModel( std::string filePath );
+    BackgroundModel(char* filePath , int K, float A );
 
-	~BackgroundModel();
+    ~BackgroundModel();
 
 	std::string getName();
 	size_t		getOrder();

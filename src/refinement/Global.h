@@ -50,7 +50,7 @@ public:
 	static char*		initialModelFilename;	// filename of initial model
 	static std::string	initialModelBasename;	// basename of initial model
 	static std::string	initialModelTag;		// tag for initializing the model
-	static size_t		num;					// number of init that are to be optimized
+	static size_t		maxPWM;					// number of init that are to be optimized
 	static bool			mops;					// learn MOPS model
 	static bool			zoops;					// learn ZOOPS model
 
@@ -93,7 +93,7 @@ public:
 
 	// motif occurrence options
 	static bool         scoreSeqset;			// write logOdds Scores of positive sequence set to disk
-	static float        scoreCutoff;			// cutoff for logOdds scores to print out as motif hits
+	static float        pvalCutoff;			// cutoff for logOdds scores to print out as motif hits
 
 	// other options
 	static bool			verbose;				// verbose printouts, defaults to false

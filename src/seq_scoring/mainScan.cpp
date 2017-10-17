@@ -6,7 +6,7 @@
 #include "GScan.h"
 #include "ScoreSeqSet.h"
 #include "../init/MotifSet.h"
-#include "../refinement/Global.h"
+#include "../seq_generator/SeqGenerator.h"
 
 int main( int nargs, char* args[] ) {
 
@@ -19,12 +19,29 @@ int main( int nargs, char* args[] ) {
     /**
      * Build up the background model
      */
+    // use bgModel generated from input sequences when prediction is turned on
+    BackgroundModel* bgModel;
+    // use provided bgModelFile if initialized with bamm format
+    if( GScan::initialModelTag == "BaMM" ) {
+        if( GScan::bgModelFilename == NULL ) {
+            std::cout << "No background Model file provided for initial search motif!\n";
+            exit(-1);
+        }
+        bgModel = new BackgroundModel( GScan::bgModelFilename );
+    } else if( GScan::initialModelTag == "PWM" ){
+        // use bgModel generated when reading in PWM File
+        bgModel = new BackgroundModel( GScan::initialModelFilename, 0, 1 );
+        // this means that also the global motif order needs to be adjusted;
+        GScan::modelOrder = 0;
+    } else {
+        // learn bgModel from the negative sequence set
+        bgModel = new BackgroundModel( GScan::negSequenceSet->getSequences(),
+                                       GScan::bgModelOrder,
+                                       GScan::bgModelAlpha,
+                                       GScan::interpolateBG,
+                                       GScan::posSequenceBasename );
+    }
 
-	BackgroundModel* bgModel = new BackgroundModel( GScan::negSequenceSet->getSequences(),
-                                                    GScan::bgModelOrder,
-                                                    GScan::bgModelAlpha,
-                                                    GScan::interpolateBG,
-                                                    GScan::posSequenceBasename );
     /**
      * Initialize the model
      */
@@ -38,22 +55,54 @@ int main( int nargs, char* args[] ) {
                         GScan::modelOrder,
                         GScan::modelAlpha );
 
-	size_t motifNum = ( GScan::num > motif_set.getN() ) ? motif_set.getN() : GScan::num;
+	size_t motifNum = ( GScan::maxPWM > motif_set.getN() ) ? motif_set.getN() : GScan::maxPWM;
+
+    /**
+     * Sample negative sequence set based on s-mer frequencies
+     */
+
+    std::vector<Sequence*>  negset;
+    size_t mFold = 10;
+    // sample negative sequence set B1set based on s-mer frequencies
+    // from positive training sequence set
+    std::vector<std::unique_ptr<Sequence>> negSeqs;
+    SeqGenerator generateNegSeqs( GScan::posSequenceSet->getSequences() );
+    negSeqs = generateNegSeqs.arti_bgseqset( mFold );
+    // convert unique_ptr to regular pointer
+    for( size_t n = 0; n < negSeqs.size(); n++ ) {
+        negset.push_back( negSeqs[n].release() );
+    }
 
     for( size_t n = 0; n < motifNum; n++ ) {
         // deep copy each motif in the motif set
         Motif *motif = new Motif( *motif_set.getMotifs()[n] );
-        // score the model on sequence set
-        ScoreSeqSet seq_set( motif, bgModel, GScan::posSequenceSet->getSequences() );
 
-        seq_set.score();
-        seq_set.write(GScan::outputDirectory,
-                      GScan::posSequenceBasename + "_motif_" + std::to_string( n + 1 ),
-                      GScan::cutoff,
-                      GScan::ss);
+        // score negative sequence set
+        ScoreSeqSet scoreNegSet( motif, bgModel, negset );
+        scoreNegSet.calcLogOdds();
+        std::vector<std::vector<float>> negAllScores = scoreNegSet.getMopsScores();
+        std::vector<float> negScores;
+        for( size_t n = 0; n < negset.size(); n++ ){
+            negScores.insert( std::end( negScores ),
+                              std::begin( negAllScores[n] ),
+                              std::end( negAllScores[n] ) );
+        }
+
+        // score positive sequence set
+        // calculate p-values based on positive and negative scores
+        ScoreSeqSet scorePosSet( motif, bgModel, GScan::posSequenceSet->getSequences() );
+        scorePosSet.calcLogOdds();
+        std::vector<std::vector<float>> posScores = scorePosSet.getMopsScores();
+        scorePosSet.calcPvalues( posScores, negScores );
+
+        scorePosSet.write( GScan::outputDirectory,
+                           GScan::posSequenceBasename + "_motif_" + std::to_string( n+1 ),
+                           GScan::pvalCutoff,
+                           GScan::ss );
+
         delete motif;
     }
-
+    if( bgModel ) delete bgModel;
     GScan::destruct();
     return 0;
 }

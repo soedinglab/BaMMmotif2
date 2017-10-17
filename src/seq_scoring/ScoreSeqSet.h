@@ -17,8 +17,8 @@ class ScoreSeqSet{
 	 * scoring sequences from the given sequence set
 	 * using the (learned) model and background model,
 	 * find the occurrences of motifs on each sequence
-	 * and output these sequences when the log odds score
-	 * is larger than certain cutoff (default:0)
+	 * and output these sequences when the p-value
+	 * is smaller than certain cutoff (default:0.01)
 	 */
 
 public:
@@ -26,15 +26,13 @@ public:
 	ScoreSeqSet( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqSet );
 	~ScoreSeqSet();
 
-	void score();
-	void calcPvalues( std::vector<float> neg_scores );
+	void calcLogOdds();
+	void calcPvalues( std::vector<std::vector<float>> pos_mops_scores, std::vector<float> neg_all_scores );
 
 	std::vector<std::vector<float>> getMopsScores();
 	std::vector<float> 				getZoopsScores();
 
-	void write( char* odir, std::string basename, float cutoff, bool ss );
-	void writePvalues( int N, float cutoff );
-
+	void write( char* odir, std::string basename, float pvalCutoff, bool ss );
 
 private:
 
@@ -42,9 +40,12 @@ private:
 	BackgroundModel* 				bg_;
 	std::vector<Sequence*>			seqSet_;
 
+    std::vector<float>				zoops_scores_;
 	std::vector<std::vector<float>>	mops_scores_;
-	std::vector<float>				zoops_scores_;
+    std::vector<std::vector<float>> mops_p_values_;
+    std::vector<std::vector<float>> mops_e_values_;
 
+    bool                            pval_is_calulated_;
 	std::vector<size_t>				Y_;
 };
 

@@ -21,7 +21,7 @@ bool                Global::ss = false;						// only search on single strand seq
 char*				Global::initialModelFilename = NULL; 	// filename of initial model
 std::string			Global::initialModelBasename;			// basename of initial model
 std::string			Global::initialModelTag;				// tag for initializing the model
-size_t				Global::num = std::numeric_limits<size_t>::max(); // number of init that are to be optimized
+size_t				Global::maxPWM = std::numeric_limits<size_t>::max(); // number of init that are to be optimized
 bool				Global::mops = false;					// learn MOPS model
 bool				Global::zoops = true;					// learn ZOOPS model
 
@@ -64,7 +64,7 @@ size_t				Global::sOrder = 2;						// the k-mer order for sampling negative sequ
 
 // motif occurrence options
 bool                Global::scoreSeqset = false;            // write logOdds Scores of positive sequence set to disk
-float 				Global::scoreCutoff = 0.0f;				// score cutoff for printing log odds scores as motif hit
+float 				Global::pvalCutoff = 0.0001f;			// score cutoff for printing log odds scores as motif hit
 
 // printout options
 bool                Global::verbose = false;
@@ -172,7 +172,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	}
 	initialModelBasename = baseName( initialModelFilename );
 
-	opt >> GetOpt::Option( "num", num );
+	opt >> GetOpt::Option( "maxPWM", maxPWM );
 	opt >> GetOpt::OptionPresent( "mops", mops );
 	opt >> GetOpt::Option( "zoops", zoops );
 
@@ -279,7 +279,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	}
 	// motif occurrence option
 	opt >> GetOpt::OptionPresent( "scoreSeqset", scoreSeqset );
-	opt >> GetOpt::Option( "scoreCutoff", scoreCutoff );
+	opt >> GetOpt::Option( "pvalCutoff", pvalCutoff );
 
 	// printout options
 	opt >> GetOpt::OptionPresent( "verbose", verbose );
@@ -393,7 +393,7 @@ void Global::printHelp(){
 			"				File that contains position weight matrices(PWMs).\n");
 	printf("\n 			--BaMMFile <STRING> \n"
 			"				File that contains a model in bamm file format.\n\n");
-	printf("\n 			--num <INTEGER> \n"
+	printf("\n 			--maxPWM <INTEGER> \n"
 			"				Number of init to be learned by BaMM!motif, \n"
 			"				specific for PWMs. \n"
 			"				By default, all the motifs will be optimized.\n\n");
@@ -483,8 +483,8 @@ void Global::printHelp(){
 	printf("\n 		Options for scoring sequence set:\n");
 	printf("\n 			--scoreSeqset \n"
 			"				Score the sequence set. \n\n");
-	printf("\n 			--scoreCutoff \n"
-			"				Cutoff for scoring the sequence set, in order to \n"
+	printf("\n 			--pvalCutoff \n"
+			"				Cutoff of p-value for scoring the sequence set, in order to \n"
 			"				find motif occurrences. \n\n");
 	printf("\n 		Options for output:	\n");
 	printf("\n 			--verbose \n"
