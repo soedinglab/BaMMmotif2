@@ -81,7 +81,7 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
 		 */
 		// score positive test sequences with (learned) motif
 		ScoreSeqSet score_testset( motif, bgModel_, testSet );
-		score_testset.score();
+        score_testset.calcLogOdds();
 
 		if( mops_ ){
 			mops_scores = score_testset.getMopsScores();
@@ -101,7 +101,7 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
 
 		// score negative sequence set
 		ScoreSeqSet score_negset( motif, bgModel_, negSet );
-		score_negset.score();
+        score_negset.calcLogOdds();
 		if( mops_ ){
 			mops_scores = score_negset.getMopsScores();
 			for( size_t n = 0; n < negSet.size(); n++ ){

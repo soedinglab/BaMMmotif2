@@ -69,8 +69,7 @@ void SeqGenerator::calculate_kmer_frequency(){
 
 
 // generate negative sequences based on k-mer frequencies from positive set
-std::vector<std::unique_ptr<Sequence>> SeqGenerator::arti_bgseqset(
-        size_t fold){
+std::vector<std::unique_ptr<Sequence>> SeqGenerator::arti_bgseqset( size_t fold ){
 
 	std::vector<std::unique_ptr<Sequence>> negset;
 

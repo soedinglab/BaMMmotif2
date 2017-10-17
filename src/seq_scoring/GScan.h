@@ -29,7 +29,7 @@ public:
     // initial model(s) options
     static char*		initialModelFilename;	// filename of initial model
     static std::string	initialModelTag;		// tag for initializing the model
-    static size_t		num;					// number of init that are to be optimized
+    static size_t		maxPWM;					// number of init that are to be optimized
 
     // model options
     static size_t		modelOrder;				// model order
@@ -41,10 +41,11 @@ public:
                                                 // instead of background frequencies of mono-nucleotides
 
     // background model options
+    static char*		bgModelFilename;	    // path to the background model file
     static size_t		bgModelOrder;			// background model order, defaults to 2
     static std::vector<float> bgModelAlpha;		// background model alpha
 
-    static float        cutoff;                 // cutoff for scanning motifs
+    static float        pvalCutoff;             // cutoff of p-values for scanning motifs
 
     static void         init( int nargs, char* args[] );
     static void         destruct();
