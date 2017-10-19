@@ -56,6 +56,7 @@ void BackgroundModelSetScore::predict( char* indir, char* extensionSeqs ){
 
 	} else{
 		perror( indir );
+        exit( 1 );
 	}
 }
 
@@ -89,6 +90,7 @@ void BackgroundModelSetScore::score( char* indir, char* extensionSeqs, char* odi
 
 	} else {
 		perror( indir );
+        exit( 1 );
 	}
 }
 
@@ -205,7 +207,7 @@ void BackgroundModelSetScore::write( char* outputDirectory ){
 		} else{
 
 			std::cerr << "Error: Cannot write into output directory: " << outputDirectory << std::endl;
-			exit( -1 );
+			exit( 1 );
 		}
 
 		file.clear();
@@ -233,7 +235,7 @@ void BackgroundModelSetScore::write( char* outputDirectory ){
 		} else{
 
 			std::cerr << "Error: Cannot write into output directory: " << outputDirectory << std::endl;
-			exit( -1 );
+			exit( 1 );
 		}
 	}
 }

@@ -111,7 +111,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	if( nargs < 3 ) {
 		std::cerr << "Error: Arguments are missing! \n" << std::endl;
 		printHelp();
-		exit( -1 );
+		exit( 1 );
 	}
 
 	// read in the output directory and create it
@@ -127,7 +127,7 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	if( opt >> GetOpt::OptionPresent( 'h', "help" ) ){
 		printHelp();
-		exit( -1 );
+		exit( 1 );
 	}
 
     // mask motif patterns from the positive sequence set
@@ -168,7 +168,7 @@ int Global::readArguments( int nargs, char* args[] ){
 		initialModelTag = "BaMM";
 	} else {
 		fprintf( stderr, "Error: No initial model is provided.\n" );
-		exit( -1 );
+		exit( 1 );
 	}
 	initialModelBasename = baseName( initialModelFilename );
 
@@ -212,7 +212,7 @@ int Global::readArguments( int nargs, char* args[] ){
 		opt >> GetOpt::Option( "extend", addColumns );
 		if( addColumns.size() < 1 || addColumns.size() > 2 ){
 			fprintf( stderr, "--extend format error.\n" );
-			exit( -1 );
+			exit( 1 );
 		}
 		if( addColumns.size() == 1 )
 			addColumns.resize( 2, addColumns.back() );
@@ -303,7 +303,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	if( opt.options_remain() ){
 		printHelp();
 		std::cerr << "Oops! Unknown option(s) remaining... \n\n";
-		exit( -1 );
+		exit( 1 );
 	}
 
 	return 0;

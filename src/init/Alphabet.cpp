@@ -27,7 +27,7 @@ void Alphabet::init( char* alphabetType ){
 		complementAlphabet_ = strdup( "TGCAGG" );
 	} else {
 		std::cerr << "Error: Correct alphabet type to STANDARD, METHYLC, HYDROXYMETHYLC, or EXTENDED" << std::endl;
-		exit( -1 );
+		exit( 1 );
 	}
 
 	baseToCode_ = ( uint8_t* )calloc( 128, sizeof( uint8_t ) );

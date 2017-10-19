@@ -231,7 +231,7 @@ It requires output files with extension `.ihbcp`, `.ihbp`, `.hbcp` or `.hbp` fro
 
 The logo order is an integer between 0 to 2. 
 
-    plotBaMMLogo.R [path_to_bamm_file] [logo_order]
+    plotBaMMLogo.R [INPUT_DIR] [PREFIX_OF_OCCURRENCE_FILE] [LOGO_ORDER]
 
 You will get the following plots:
 
@@ -243,19 +243,19 @@ You will get the following plots:
 
 ### Motif distribution analysis
 
-For visualizing the distribution of motifs in the sequence set, you need to generate either a `.positions` file by executing `BaMMmotif` with a `--saveBaMMs` flag or an `.occurrence` file by executing `BaMMScan`.
+For visualizing the distribution of motifs in the sequence set, you need to generate either a `.occurrence` file by executing `BaMMmotif` with a `--scoreSeqset` flag or by executing `BaMMScan`.
 
 Either
 
-    ${HOME}/opt/BaMM/bin/BaMMmotif [OUTPUT_FIR] [FASTAFILE] [MOTIF_FILE] [options] --saveBaMMs
+    ${HOME}/opt/BaMM/bin/BaMMmotif [OUTPUT_FIR] [FASTAFILE] [MOTIF_FILE] [options] --scoreSeqset
 
 or
     
     ${HOME}/opt/BaMM/bin/BaMMScan [OUTPUT_FIR] [FASTAFILE] [MOTIF_FILE]
     
-After obtaining either `.positions` or `.occurrence`, you can run R script `plotMotifDistribution.R` provided in the installation directory `${HOME}/opt/BaMM/bin` to visualise the motif distribution:
+After obtaining a `.occurrence` file, you can run R script `plotMotifDistribution.R` provided in the installation directory `${HOME}/opt/BaMM/bin` to visualise the motif distribution:
 
-    ${HOME}/opt/BaMM/bin/plotMotifDistribution.R [INPUT_DIR] [PREFIX_OF_STATS_FILE] [option]
+    ${HOME}/opt/BaMM/bin/plotMotifDistribution.R [INPUT_DIR] [PREFIX_OF_OCCURRENCE_FILE] [option]
 
 The option is:
 

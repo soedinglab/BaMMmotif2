@@ -145,12 +145,12 @@ void Motif::initFromBindingSites( char* indir, size_t l_flank, size_t r_flank ){
 		if( bindingSiteWidth != W_ ){	// all binding sites have the same length
 			fprintf( stderr, "Error: Length of binding site on line %d differs.\n"
 					"Binding sites should have the same length.\n", ( int )C_ );
-			exit( -1 );
+			exit( 1 );
 		}
 		if( bindingSiteWidth < K_+1 ){	// binding sites should be longer than the order of model
 			fprintf( stderr, "Error: Length of binding site sequence "
 					"is shorter than model order.\n" );
-			exit( -1 );
+			exit( 1 );
 		}
 
 		// scan the binding sites and calculate k-mer counts n
@@ -304,10 +304,9 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset ){
 // initialize v from Bayesian Markov model file and set isInitialized
 void Motif::initFromBaMM( char* indir, size_t l_flank, size_t r_flank ){
 
-	std::ifstream file;
-	file.open( indir, std::ifstream::in );
+	std::ifstream file( indir, std::ifstream::in );
 	std::string line;
-
+    if( file.is_open() ) {
 /*    getline( file, line );
     std::stringstream eachline( line );
     size_t k = 0;     // count for
@@ -317,49 +316,52 @@ void Motif::initFromBaMM( char* indir, size_t l_flank, size_t r_flank ){
         k++;
     }*/
 
-	// loop over motif position j
-	// set each v to 0.25f in the flanking region
-	for( size_t j = 0; j < l_flank; j++ ){
-		for( size_t k = 0; k < K_+1; k++ ){
-			for( size_t y = 0; y < Y_[k+1]; y++ ){
-				v_[k][y][j] = 1.0f / static_cast<float>( Y_[1] );
-			}
-		}
-	}
-
-	// read in the v's from the bamm file for the core region
-	for( size_t j = l_flank; j < W_ - r_flank; j++ ){
-
-		// loop over order k
-		for( size_t k = 0; k < K_+1 ; k++ ){
-
-			getline( file, line );
-
-			std::stringstream number( line );
-
-            for( size_t y = 0; y < Y_[k+1]; y++ ){
-                number >> v_[k][y][j];
+        // loop over motif position j
+        // set each v to 0.25f in the flanking region
+        for (size_t j = 0; j < l_flank; j++) {
+            for (size_t k = 0; k < K_ + 1; k++) {
+                for (size_t y = 0; y < Y_[k + 1]; y++) {
+                    v_[k][y][j] = 1.0f / static_cast<float>( Y_[1] );
+                }
             }
-		}
-		// read 'empty' line
-		getline( file, line );
-	}
+        }
 
-	// set each v to 0.25f in the flanking region
-	for( size_t j = W_ - r_flank; j < W_; j++ ){
-		for( size_t k = 0; k < K_+1 ; k++ ){
-			for( size_t y = 0; y < Y_[k+1] ; y++ ){
-				v_[k][y][j] = 1.0f / static_cast<float>( Y_[1] );
-			}
-		}
-	}
+        // read in the v's from the bamm file for the core region
+        for (size_t j = l_flank; j < W_ - r_flank; j++) {
 
-	// calculate probabilities p
-	calculateP();
+            // loop over order k
+            for (size_t k = 0; k < K_ + 1; k++) {
 
-	// set isInitialized
-	isInitialized_ = true;
+                getline(file, line);
 
+                std::stringstream number(line);
+
+                for (size_t y = 0; y < Y_[k + 1]; y++) {
+                    number >> v_[k][y][j];
+                }
+            }
+            // read 'empty' line
+            getline(file, line);
+        }
+
+        // set each v to 0.25f in the flanking region
+        for (size_t j = W_ - r_flank; j < W_; j++) {
+            for (size_t k = 0; k < K_ + 1; k++) {
+                for (size_t y = 0; y < Y_[k + 1]; y++) {
+                    v_[k][y][j] = 1.0f / static_cast<float>( Y_[1] );
+                }
+            }
+        }
+
+        // calculate probabilities p
+        calculateP();
+
+        // set isInitialized
+        isInitialized_ = true;
+    } else {
+        std::cerr << "Input BaMM file cannot be opened!" << std::endl;
+        exit( 1 );
+    }
 }
 
 float** Motif::getS(){

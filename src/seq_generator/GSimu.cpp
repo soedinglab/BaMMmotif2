@@ -60,7 +60,7 @@ int GSimu::readArguments( int nargs, char* args[] ){
     if( nargs < 3 ) {
         std::cerr << "Error: Arguments are missing!" << std::endl;
         printHelp();
-        exit( -1 );
+        exit( 1 );
     }
 
     // read in the output directory and create it

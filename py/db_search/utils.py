@@ -58,7 +58,6 @@ def model_sim(model1, model2, H_model1_bg, H_model2_bg, H_model1, H_model2, min_
         H_model1, H_model2 = H_model2, H_model1
         models_switched = True
 
-
     scores = []
     contributions = []
     slices = []

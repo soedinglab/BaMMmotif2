@@ -37,6 +37,7 @@ BackgroundModelSet::BackgroundModelSet( char* indir, char* extension,
 
 	} else {
 		perror( indir );
+        exit( 1 );
 	}
 }
 
@@ -68,6 +69,7 @@ BackgroundModelSet::BackgroundModelSet( char* indir, char* extension ){
 
 	} else {
 		perror( indir );
+        exit( 1 );
 	}
 }
 
