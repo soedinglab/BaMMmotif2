@@ -21,10 +21,10 @@
 # e.g. basename-logo-order-0.pdf (for 0th-order)
 
 ### command line
-# plotBaMMlogo.R path_to_input_bamm_file logo_order
+# plotBaMMlogo.R path_to_input_bamm_file prefix_of_file logo_order
 # Note: The logo order can be from 0 to 5
 # e.g.
-# plotBaMMlogo.R /tmp/exampleset/example.ihbcp 0 
+# plotBaMMlogo.R /tmp/exampleset/ JunD 0
 
 #...............................................................................
 #
@@ -1010,7 +1010,7 @@ freqs.ending="freqs" ){
           title = paste0( order, ifelse( order %in% 1:3, switch( k, "th","st", "nd", "rd"
           ), "th" ), "-order sequence logo" )
           if ( revComp ){
-            title = paste0( "reverse Complement ", order, ifelse( order %in% 1:3, switch( k, "th","st", "nd", "rd"
+            title = paste0( "reverse complement ", order, ifelse( order %in% 1:3, switch( k, "th","st", "nd", "rd"
             ), "th" ), "-order" )	  
           }
           
@@ -1884,26 +1884,23 @@ hoContributionsToInformationContent <- function( filename, useFreqs=F ){
 #...............................................................................
 
 parser <- ArgumentParser(description='plot higher-order bamm sequence logo')
-parser$add_argument('input_path', help='input path to the bamm file')
-parser$add_argument('logo_order', help='logo order, it must be not higher than bamm model order')
+parser$add_argument('maindir',      help='input path to the bamm file')
+parser$add_argument('prefix',       help="prefix of the target file")
+parser$add_argument('logo_order',   help='logo order, it must be not higher than bamm model order')
 parser$add_argument('--revComp',    type="logical", default=FALSE, help='flag to plot reverse complement logo of zeroth order' )
 parser$add_argument('--stamp',      type="logical", default=FALSE, help='flag to plot without axis' )
 
-args <- parser$parse_args()
-
-input_path <- args$input_path
-
-revComp 	= args$revComp
-stamp     = args$stamp
-
-
-# directory to hold the output log file
-dirname <- dirname(input_path)
+args        <- parser$parse_args()
+maindir     <- args$maindir
+file_prefix <- args$prefix
+order       <- args$logo_order    # read in logo order (max. order: 5)
+revComp     <- args$revComp
+stamp       = args$stamp
 
 # read in filename of the bamm files without extension
 # probabilities (.ihbp) mandatory
 # conditional probabilities (.ihbcp) and background frequencies (.hbp) optional
-basename <- basename(input_path)
+basename <- basename(maindir)
 splits <- strsplit( basename, split = '\\.' )[[1]]
 filename <- splits[1]
 
@@ -1914,8 +1911,6 @@ if( length > 2 ){
 	}
 }
 
-# read in logo order (max. order: 5)
-order <- args$logo_order
 
 # background sequence logo
 bg <- FALSE
@@ -1949,23 +1944,21 @@ height <- 800
 # add title to the logo
 plot_title = TRUE
 
-# ending used for distinguishing between revComp / stamp / general
-ending = ".png"
 #...............................................................................
 #
 # Plot higher-order sequence logo(s)
 #
 #...............................................................................
+file_suffix = ".ihbcp"
+for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), collapse="")) ){
+    # get motif number from the filename
+    motifNumber <- sub(paste(c(maindir, '/', file_prefix, "_motif_"), collapse=""), "", file)
+    motifNumber <- sub(file_suffix, "", motifNumber)
+    # get a filename for each motif
+    trunc_filename = file.path( maindir, paste( file_prefix, "_motif_", motifNumber, sep="") )
+    # ending used for distinguishing between revComp / stamp / general
+    ending = ".png"
 
-if( bg ){
-    png( file.path( dirname, paste( filename, "-bg-logo-order-", paste( order,
-         collapse="-" ), ifelse( icColumnScale, "-icColumnScale", "" ), ifelse(
-         icLetterScale, "-icLetterScale", "" ), ".png", sep="" ) ) )
-    hoBgSeqLogo( filename=file.path( dirname, filename ), order=order, base=base,
-                 icColumnScale=icColumnScale, icLetterScale=icLetterScale,
-                 xaxis=xaxis, yaxis=yaxis, xfontsize=xfontsize,
-                 yfontsize=yfontsize, alpha=alpha )
-} else {
     if(stamp){
       plot_title <- FALSE
       xaxis      <- FALSE
@@ -1973,16 +1966,19 @@ if( bg ){
       width      <- 1000
       height     <- 500
       ending     <- paste0("_stamp",ending)
-      
+
     }
     if(revComp && order == 0){
       revComp = TRUE
       ending = paste0("_revComp",ending)
     }
-    png( file.path( dirname, paste( filename, "-logo-order-", order, ending, sep="" ) ), width=width , height=height )
-    hoSeqLogo( filename=file.path( dirname, filename ), order=order,
-               useFreqs=useFreqs, base=base, icColumnScale=icColumnScale,
-               icLetterScale=icLetterScale, xaxis=xaxis, yaxis=yaxis,
-               xfontsize=xfontsize, yfontsize=yfontsize, alpha=alpha, cex=4, lwd=4 ,revComp=revComp, plot_title=plot_title)
+    ofilename = paste( maindir, file_prefix, "_motif_", motifNumber, "-logo-order-", order, ending, sep="" )
+    png( file.path(ofilename), width=width , height=height )
+    hoSeqLogo( filename=trunc_filename, order=order,
+                useFreqs=useFreqs, base=base, icColumnScale=icColumnScale,
+                icLetterScale=icLetterScale, xaxis=xaxis, yaxis=yaxis,
+                xfontsize=xfontsize, yfontsize=yfontsize, alpha=alpha,
+                cex=4, lwd=4 ,revComp=revComp, plot_title=plot_title )
+
+    dev.off()
 }
-dev.off()
