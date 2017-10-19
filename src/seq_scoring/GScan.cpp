@@ -157,7 +157,7 @@ int GScan::readArguments( int nargs, char* args[] ){
                 exit( 2 );
             }
             modelGamma = std::stof( args[i] );
-        } else if( !strcmp( args[i], "-K" ) or !strcmp( args[i], "-Order" ) ){
+        } else if( !strcmp( args[i], "-K" ) or !strcmp( args[i], "--Order" ) ){
             if( ++i >= nargs ){
                 printHelp();
                 std::cerr << "No expression following -K/--Order" << std::endl;
