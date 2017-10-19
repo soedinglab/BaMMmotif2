@@ -143,7 +143,7 @@ int main( int nargs, char* args[] ){
                 if( Global::initialModelTag == "BaMM" ) {
                     if( Global::bgModelFilename == NULL ) {
                         std::cout << "No background Model file provided for initial search motif!\n";
-                        exit(-1);
+                        exit( 1 );
                     }
                     bg = new BackgroundModel( Global::bgModelFilename );
                 } else if( Global::initialModelTag == "PWM" ){

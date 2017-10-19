@@ -20,7 +20,7 @@ MotifSet::MotifSet( char* indir,
 		if( !file.good() ){
 			std::cout << "Error: Cannot open binding sites file: "
 					<< indir << std::endl;
-			exit( -1 );
+			exit( 1 );
 		} else {
 			getline( file, bindingSite );	// get length of the first sequence
 			length = bindingSite.length();
@@ -49,7 +49,7 @@ MotifSet::MotifSet( char* indir,
 
 			std::cout << "Error: Cannot open PWM file: " << indir << std::endl;
 
-			exit( -1 );
+			exit( 1 );
 
 		} else {
 
@@ -132,8 +132,8 @@ MotifSet::MotifSet( char* indir,
 
 		if( !file.good() ){
 
-			std::cout << "Error: Cannot open file: " << indir << std::endl;
-			exit( -1 );
+			std::cout << "Error: Cannot open BaMM file: " << indir << std::endl;
+			exit( 1 );
 
 		} else {
 

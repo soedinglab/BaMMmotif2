@@ -8,7 +8,7 @@ SequenceSet::SequenceSet( std::string sequenceFilepath,
 	if( Alphabet::getSize() == 0 ){
 		std::cerr << "Error: Initialize Alphabet before "
 				"constructing a sequenceSet" << std::endl;
-		exit( -1 );
+		exit( 1 );
 	}
 
 	sequenceFilepath_ = sequenceFilepath;
@@ -151,7 +151,7 @@ int SequenceSet::readFASTA( bool singleStrand ){
 						// space character in sequence
 						std::cerr << "Error: FASTA sequence contains space character: "
 								<< sequenceFilepath_ << std::endl;
-						exit( -1 );
+						exit( 1 );
 					} else {
 						sequence += line;
 					}
@@ -160,7 +160,7 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 					std::cerr << "Error: Wrong FASTA format: "
 							<< sequenceFilepath_ << std::endl;
-					exit( -1 );
+					exit( 1 );
 				}
 			}
 		}
@@ -215,7 +215,7 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 		std::cerr << "Error: Cannot open FASTA file: "
 				<< sequenceFilepath_ << std::endl;
-		exit( -1 );
+		exit( 1 );
 	}
 
 	maxL_ = maxL;
@@ -240,5 +240,5 @@ int SequenceSet::readIntensities(){
 
 	std::cerr << "Error: sequenceSet::readIntensities() "
 			"is not implemented so far." << std::endl;
-	exit( -1 );
+	exit( 1 );
 }

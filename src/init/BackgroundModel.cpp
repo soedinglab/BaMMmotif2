@@ -67,7 +67,7 @@ BackgroundModel::BackgroundModel( std::string filePath ){
 			} else{
 				std::cerr << "Error: Wrong BaMM format: "
 						<< filePath << std::endl;
-				exit( -1 );
+				exit( 1 );
 			}
 			A_.resize( K_+1 );
 
@@ -77,7 +77,7 @@ BackgroundModel::BackgroundModel( std::string filePath ){
 			} else{
 				std::cerr << "Error: Wrong BaMM format: "
 						<< filePath << std::endl;
-				exit( -1 );
+				exit( 1 );
 			}
 			for( size_t k = 1; k <= K_; k++ ){
 				if( fscanf( file, "%e", &A ) == 1 ){
@@ -85,7 +85,7 @@ BackgroundModel::BackgroundModel( std::string filePath ){
 				} else {
 					std::cerr << "Error: Wrong BaMM format: "
 							<< filePath << std::endl;
-					exit( -1 );
+					exit( 1 );
 				}
 			}
 
@@ -109,7 +109,7 @@ BackgroundModel::BackgroundModel( std::string filePath ){
 
 						std::cerr << "Error: Wrong BaMM format: "
 								<< filePath << std::endl;
-						exit( -1 );
+						exit( 1 );
 					}
 				}
 			}
@@ -119,7 +119,7 @@ BackgroundModel::BackgroundModel( std::string filePath ){
 
 			std::cerr << "Error: Cannot open BaMM file: "
 					<< filePath << std::endl;
-			exit( -1 );
+			exit( 1 );
 		}
 	}
 }
@@ -152,7 +152,7 @@ BackgroundModel::BackgroundModel(char* filePath , int K, float A ){
 
 	if( !file.good() ){
 		std::cout << "Error: Cannot open PWM file: " << filePath << std::endl;
-		exit( -1 );
+		exit( 1 );
 	} else {
 		std::string line;
 		while( getline( file, line ) ){
@@ -287,7 +287,7 @@ void BackgroundModel::calculatePosLikelihoods( std::vector<Sequence*> seqs,
 
 		std::cerr << "Error: Cannot write into output directory: "
 				<< odir << std::endl;
-		exit( -1 );
+		exit( 1 );
 	}
 }
 
@@ -376,7 +376,7 @@ void BackgroundModel::write( char* odir, std::string basename ){
 
 		std::cerr << "Error: Cannot write into output directory: "
 				<< odir << std::endl;
-		exit( -1 );
+		exit( 1 );
 	}
 
 	// calculate probabilities from conditional probabilities
@@ -425,7 +425,7 @@ void BackgroundModel::write( char* odir, std::string basename ){
 
 		std::cerr << "Error: Cannot write into output directory: "
 				<< odir << std::endl;
-		exit( -1 );
+		exit( 1 );
 	}
 
 	for( size_t k = 0; k <= K_; k++ ){

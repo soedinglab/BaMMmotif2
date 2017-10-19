@@ -24,8 +24,8 @@ int main( int nargs, char* args[] ) {
     // use provided bgModelFile if initialized with bamm format
     if( GScan::initialModelTag == "BaMM" ) {
         if( GScan::bgModelFilename == NULL ) {
-            std::cout << "No background Model file provided for initial search motif!\n";
-            exit(-1);
+            std::cerr << "Error: No background Model file provided for initial search motif!" << std::endl;
+            exit( 1 );
         }
         bgModel = new BackgroundModel( GScan::bgModelFilename );
     } else if( GScan::initialModelTag == "PWM" ){

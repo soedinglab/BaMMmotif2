@@ -72,7 +72,7 @@ int GFdr::readArguments( int nargs, char* args[] ){
     if( nargs < 3 ) {
         std::cerr << "Error: Arguments are missing!" << std::endl;
         printHelp();
-        exit( -1 );
+        exit( 1 );
     }
 
     // read in the output directory and create it
@@ -165,7 +165,7 @@ int GFdr::readArguments( int nargs, char* args[] ){
                 exit( 2 );
             }
             modelGamma = std::stof( args[i] );
-        } else if( !strcmp( args[i], "-K" ) or !strcmp( args[i], "-Order" ) ){
+        } else if( !strcmp( args[i], "-K" ) or !strcmp( args[i], "--Order" ) ){
             if( ++i >= nargs ){
                 printHelp();
                 std::cerr << "No expression following -K/--Order" << std::endl;
@@ -228,7 +228,7 @@ int GFdr::readArguments( int nargs, char* args[] ){
 
     if( initialModelFilename == NULL ){
         std::cerr << "Error: No initial model is provided." << std::endl;
-        exit( -1 );
+        exit( 1 );
     }
 
     modelAlpha.resize( modelOrder+1 );

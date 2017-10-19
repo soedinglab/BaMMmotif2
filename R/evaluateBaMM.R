@@ -44,11 +44,11 @@ parser <- ArgumentParser(description="evaluate motifs optimized by BaMM")
 parser$add_argument('target_directory', help="directory that contains the target file")
 parser$add_argument('prefix', help="prefix of the target file")
 # optional arguments
-parser$add_argument("--fdrtool", type="logical", default=FALSE, help="flag for print out analysis from fdrtool" )
-parser$add_argument("--SFC", type="logical", default=FALSE, help="flag for print out sensitivity-fdr curve" )
-parser$add_argument("--ROC5", type="logical", default=FALSE, help="flag for print out partial ROC curve" )
-parser$add_argument("--PRC", type="logical", default=FALSE, help="flag for print out precision-recall curve" )
-parser$add_argument("--web", type="logical", default=FALSE, help="flag for print out precision-recall curve" )
+parser$add_argument("--fdrtool", type="logical", default=FALSE, help="flag for printing out analysis from fdrtool" )
+parser$add_argument("--SFC", type="logical", default=FALSE, help="flag for printing out sensitivity-fdr curve" )
+parser$add_argument("--ROC5", type="logical", default=FALSE, help="flag for printing out partial ROC curve" )
+parser$add_argument("--PRC", type="logical", default=FALSE, help="flag for printing out precision-recall curve" )
+parser$add_argument("--web", type="logical", default=FALSE, help="flag for printing out ausfc score on the screen" )
 
 # parse the arguments
 args    <- parser$parse_args()
@@ -357,7 +357,7 @@ pvt.plotlabels <- function(statistic, scale.param, eta0)
 #
 #-----------------
 results = c()
-#resultTitle = paste0(c("motif_name", "ausfc_score", "auc5_score", "auprc_score"), collapse="\t")
+#resultTitle = paste0(c("motif_name", "ausfc_score", "auc5_score", "auprc_score", "occurrence"), collapse="\t")
 #results = c(results, resultTitle)
 
 for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))) {

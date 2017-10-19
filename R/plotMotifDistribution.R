@@ -16,7 +16,7 @@ suppressMessages(library( argparse ))
 # load "LSD" library for plotting
 suppressMessages(library( LSD ))
 
-suppressMessages( library( gdata ) )
+suppressMessages(library( gdata ))
 
 #-----------------------------
 #
@@ -25,106 +25,111 @@ suppressMessages( library( gdata ) )
 #-----------------------------
 parser <- ArgumentParser(description="plot the motif distribution")
 # positional arguments
-parser$add_argument('target_directory', help="directory that contains the target file")
-parser$add_argument('prefix', help="prefix of the target file")
+parser$add_argument('maindir',  help="directory that contains the target file")
+parser$add_argument('prefix',   help="prefix of the target file")
 # optional arguments
-parser$add_argument("--ss", type="logical", default=FALSE, help="flag for searching only on single strand" )
+parser$add_argument("--ss",     type="logical", default=FALSE, help="flag for searching only on single strand" )
 
-args <- parser$parse_args()
-maindir <- args$target_directory
-basename <- args$prefix
-revComp <- !args$ss
+args        <- parser$parse_args()
+maindir     <- args$maindir
+file_prefix <- args$prefix
+revComp     <- !args$ss
 
 #-----------------------------
 #
 # Read in the file
 #
 #-----------------------------
-file_positions = paste0( maindir, '/', basename, ".positions" )
-file_occurrence = paste0( maindir, '/', basename, ".occurrence" )
+file_suffix = ".occurrence"
 
-if(file.exists( file_positions )){
-    positions <- read.table( file_positions,
-                            fileEncoding="latin1", as.is=TRUE, na.strings = "NA",
-                            fill = TRUE, strip.white = TRUE, skip=1, sep = '\t')
-} else {
-    positions <- read.table( file_occurrence,
-                            fileEncoding="latin1", as.is=TRUE, na.strings = "NA",
-                            fill = TRUE, strip.white = TRUE, skip=1, sep = '\t')
-}
+for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), collapse="")) ){
+    # get motif number from the filename
+    motifNumber <- sub(paste(c(maindir, '/', file_prefix, "_motif_"), collapse=""), "", file)
+    motifNumber <- sub(file_suffix, "", motifNumber)
 
-all_positions = c()
-pattern_range = c()
-pattern_range = c( pattern_range, positions$V4 )
-#pattern_range = c( pattern_range, positions$V7 )
+    # get a filename for each motif
+    filename = paste0(c(maindir, file_prefix, "_motif_", motifNumber, file_suffix), collapse="")
 
-##### Note that this script works only for the sequence set where all sequences have the same length
-seq.length = as.numeric( positions$V2[1] )
+    if(file.exists( filename)){
+        positions <- read.table( filename,
+                                fileEncoding="latin1", as.is=TRUE, na.strings = "NA",
+                                fill = TRUE, strip.white = TRUE, skip=1, sep = '\t')
+    }else{
+        print("file does not exist.")
+    }
 
-for( i in seq(1, length(pattern_range)) ){
-    x <- unlist( regmatches(pattern_range[i], gregexpr('\\(?[0-9,]+', pattern_range[i])))
-    x <- as.numeric(gsub('\\(', '-', gsub(',', '', x)))
-    motif_pos = as.integer( ( x[2]+x[1] ) /2 )
-    all_positions = c(all_positions, na.omit(motif_pos))
-}
+    all_positions = c()
+    pattern_range = c()
+    pattern_range = c( pattern_range, positions$V4 )
 
-picname <- paste0( maindir, basename,"_distribution.jpeg")
-jpeg( filename = picname, width = 800, height = 800, quality = 100 )
-par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
+    ##### Note that this script works only for the sequence set where all sequences have the same length
+    seq.length = as.numeric( positions$V2[1] )
 
-if( revComp ){
-    ################################################
-    #   plot motif distribution on double strands  #
-    ################################################
-    pos.strand = density(all_positions[which(all_positions < seq.length)] )
-    neg.strand = density(all_positions[which(all_positions >= seq.length)] - seq.length )
-    # turn neg strand upside down
-    neg.strand$y <- neg.strand$y*-1
+    for( i in seq(1, length(pattern_range)) ){
+        x <- unlist( regmatches(pattern_range[i], gregexpr('\\(?[0-9,]+', pattern_range[i])))
+        x <- as.numeric(gsub('\\(', '-', gsub(',', '', x)))
+        motif_pos = as.integer( ( x[2]+x[1] ) /2 )
+        all_positions = c(all_positions, na.omit(motif_pos))
+    }
 
-    plot(pos.strand,
-        main="Motif Positions",
-        xlab="", ylab="",
-        type="l", lwd=7.5,
-        col="darkblue",
-        axes=FALSE, cex.axis=3.0 ,3.0, cex.main=3.0,
-        xlim = c(0,seq.length),
-        ylim=c(min(neg.strand$y),max(pos.strand$y))
+    picname <- paste0( maindir, file_prefix, "_motif_", motifNumber, "_distribution.jpeg")
+    jpeg( filename = picname, width = 800, height = 800, quality = 100 )
+    par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
 
-    )
-    mtext("Position on Sequence", side=1, line=4.5, cex = 3.5)
-    mtext("Density", side=2, line=4, cex = 3.5)
-    axis(1, labels=FALSE)
-    axis(1, tick = FALSE, cex.axis=3.0, line=1)
-    axis(2, labels=FALSE)
-    axis(2, tick = FALSE, cex.axis=3.0, line=0.5)
-    polygon(pos.strand, col=convertcolor("darkblue",30),border = NA)
-    lines(neg.strand, type="l", lwd=7.5, col="darkred")
-    polygon(neg.strand, col=convertcolor("darkred",30),border = NA)
-    legend("topright",legend = "+ strand",col = "darkblue",cex = 2.5, bty = "n",text.col = "darkblue")
-    legend("bottomright",legend = "- strand",col = "darkred",cex = 2.5, bty = "n", text.col="darkred")
-    abline(h=0)
-    box(lwd=2.5)
-    invisible(dev.off())
+    if( revComp ){
+        ################################################
+        #   plot motif distribution on double strands  #
+        ################################################
+        pos.strand = density(all_positions[which(all_positions < seq.length)] )
+        neg.strand = density(all_positions[which(all_positions >= seq.length)] - seq.length )
+        # turn neg strand upside down
+        neg.strand$y <- neg.strand$y*-1
 
-} else {
-    ################################################
-    #   plot motif distribution on single strand   #
-    ################################################
-    pos <- density(all_positions)
-    plot(pos,
-        main="Motif Positions",
-        xlab="", ylab="",
-        type="l", lwd=7.5,
-        col="darkblue",
-        axes=FALSE, cex.axis=3.0 ,3.0, cex.main=3.0
-    )
-    mtext("Position on Sequence", side=1, line=4.5, cex = 3.5)
-    mtext("Density", side=2, line=4, cex = 3.5)
-    axis(1, labels=FALSE)
-    axis(1, tick = FALSE, cex.axis=3.0, line=1)
-    axis(2, labels=FALSE)
-    axis(2, tick = FALSE, cex.axis=3.0, line=0.5)
-    polygon(pos, col=convertcolor("darkblue",30),border = NA)
-    box(lwd=2.5)
-    invisible(dev.off())
+        plot(pos.strand,
+            main="Motif Positions",
+            xlab="", ylab="",
+            type="l", lwd=7.5,
+            col="darkblue",
+            axes=FALSE, cex.axis=3.0 ,3.0, cex.main=3.0,
+            xlim = c(0,seq.length),
+            ylim=c(min(neg.strand$y),max(pos.strand$y))
+
+        )
+        mtext("Position on Sequence", side=1, line=4.5, cex = 3.5)
+        mtext("Density", side=2, line=4, cex = 3.5)
+        axis(1, labels=FALSE)
+        axis(1, tick = FALSE, cex.axis=3.0, line=1)
+        axis(2, labels=FALSE)
+        axis(2, tick = FALSE, cex.axis=3.0, line=0.5)
+        polygon(pos.strand, col=convertcolor("darkblue",30),border = NA)
+        lines(neg.strand, type="l", lwd=7.5, col="darkred")
+        polygon(neg.strand, col=convertcolor("darkred",30),border = NA)
+        legend("topright",legend = "+ strand",col = "darkblue",cex = 2.5, bty = "n",text.col = "darkblue")
+        legend("bottomright",legend = "- strand",col = "darkred",cex = 2.5, bty = "n", text.col="darkred")
+        abline(h=0)
+        box(lwd=2.5)
+        invisible(dev.off())
+
+    } else {
+        ################################################
+        #   plot motif distribution on single strand   #
+        ################################################
+        pos <- density(all_positions)
+        plot(pos,
+            main="Motif Positions",
+            xlab="", ylab="",
+            type="l", lwd=7.5,
+            col="darkblue",
+            axes=FALSE, cex.axis=3.0 ,3.0, cex.main=3.0
+        )
+        mtext("Position on Sequence", side=1, line=4.5, cex = 3.5)
+        mtext("Density", side=2, line=4, cex = 3.5)
+        axis(1, labels=FALSE)
+        axis(1, tick = FALSE, cex.axis=3.0, line=1)
+        axis(2, labels=FALSE)
+        axis(2, tick = FALSE, cex.axis=3.0, line=0.5)
+        polygon(pos, col=convertcolor("darkblue",30),border = NA)
+        box(lwd=2.5)
+        invisible(dev.off())
+    }
 }
