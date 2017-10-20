@@ -1,16 +1,12 @@
 import argparse
-import json
-import numpy as np
 import sys
 
 from utils import parse_meme, write_meme, update_models, filter_pwms
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('input_file', help='input meme file with pwms')
-    parser.add_argument('--min_overlap', type=int, default=4, help='minimal overlap in nt')
-    parser.add_argument('--n_processes', type=int)
-    parser.add_argument('output_file', help='output file for storing representative pwms')
+    parser.add_argument('input_file',  help='input meme file with pwms')
+    parser.add_argument('output_file', help='output meme file for storing representative pwms')
     args = parser.parse_args()
 
     if args.output_file is None:
@@ -20,7 +16,7 @@ def main():
     # parse input meme file
     model_set = parse_meme(args.input_file)
 
-    # pre-compute for all the models
+    # pre-compute entropy for all the models
     models = update_models(model_set['models'])
 
     # filter models using affinity propagation

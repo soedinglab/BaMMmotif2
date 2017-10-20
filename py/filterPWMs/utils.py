@@ -22,7 +22,6 @@ def calculate_H_model(model):
 
 
 def create_slices(m, n, min_overlap):
-
     # m, n are the lengths of the patterns
     # we demand that n is not longer than m
     assert m >= n
@@ -39,7 +38,6 @@ def create_slices(m, n, min_overlap):
     # 3. slice in the underhang region from m on the left,
     # 4. slice in the underhang region from m on the right,
     # 5. slice in the underhang region from n
-
     for i in range(m - n + 1):
         yield slice(i, i + n), slice(0, n), slice(0, i), slice(i + n + 1, m), slice(0, 0)
 
@@ -51,6 +49,7 @@ def create_slices(m, n, min_overlap):
 
 
 def update_models(models):
+    # make sure the entropy is pre-calculated
     upd_models = []
     for model in models:
         model['pwm'] = np.array(model['pwm'], dtype=float)
@@ -66,22 +65,34 @@ def update_models(models):
     return upd_models
 
 
-def model_sim(model1, model2, H_model1_bg, H_model2_bg, H_model1, H_model2, min_overlap=2):
-
-    models_switched = False
+def model_sim(model1, model2, min_overlap=2):
+    # initialization
+    pwm1 = model1['pwm']
+    pwm2 = model2['pwm']
+    H_model1_bg = model1['H_model_bg']
+    H_model2_bg = model2['H_model_bg']
+    H_model1 = model1['H_model']
+    H_model2 = model2['H_model']
 
     # my design model2 cannot be longer than model1
-    if len(model1) < len(model2):
-        model1, model2 = model2, model1
+    models_switched = False
+    if len(pwm1) < len(pwm2):
+        pwm1, pwm2 = pwm2, pwm1
         H_model1_bg, H_model2_bg = H_model2_bg, H_model1_bg
         H_model1, H_model2 = H_model2, H_model1
         models_switched = True
+
+    # build model for the reverse complement of the query motif(model1)
+    pwm2_rev = pwm2[::-1, ::-1]
+    H_model2_rev_bg = H_model2_bg[::-1]
+    H_model2_rev = H_model2[::-1]
 
     scores = []
     contributions = []
     slices = []
 
-    for sl1, sl2, uh1l, uh1r, uh2 in create_slices(len(model1), len(model2), min_overlap):
+    # calculate similarity score between model1 and model2
+    for sl1, sl2, uh1l, uh1r, uh2 in create_slices(len(pwm1), len(pwm2), min_overlap):
         background_score = 0
         # so we want the contributions of the background
         background_score += H_model1_bg[sl1].sum()
@@ -99,21 +110,54 @@ def model_sim(model1, model2, H_model1_bg, H_model2_bg, H_model1, H_model2, min_
         cross_score += H_model2[sl2].sum()  # entropy of model2
 
         # cross entropy part
-        p_bar = alpha * (model1[sl1, :] + model2[sl2, :])
+        p_bar = alpha * (pwm1[sl1, :] + pwm2[sl2, :])
         p_bar_entropy = xlogy(p_bar, p_bar) / loge2
         cross_score -= p_bar_entropy.sum()
 
+        # calculate similarity score
         scores.append(background_score - cross_score)
+
         contributions.append((background_score, cross_score))
         slices.append((sl1, sl2))
 
+    # calculate similarity score between model1_rev and model2
+    for sl1, sl2, uh1l, uh1r, uh2 in create_slices(len(pwm1), len(pwm2_rev), min_overlap):
+        background_score = 0
+        # so we want the contributions of the background
+        background_score += H_model1_bg[sl1].sum()
+        background_score += H_model2_rev_bg[sl2].sum()
+
+        # plus the contributions from the padded underhangs
+        padding_score = 0
+        padding_score += (1 - alpha) * H_model1_bg[uh1l].sum()
+        padding_score += (1 - alpha) * H_model1_bg[uh1r].sum()
+        padding_score += (1 - alpha) * H_model2_rev_bg[uh2].sum()
+
+        cross_score = 0
+        # and the contributions of model1 vs. model2
+        cross_score += H_model1[sl1].sum()  # entropy of model1
+        cross_score += H_model2_rev[sl2].sum()  # entropy of model2
+
+        # cross entropy part
+        p_bar = alpha * (pwm1[sl1, :] + pwm2_rev[sl2, :])
+        p_bar_entropy = xlogy(p_bar, p_bar) / loge2
+        cross_score -= p_bar_entropy.sum()
+
+        # calculate similarity score
+        scores.append(background_score - cross_score)
+
+        contributions.append((background_score, cross_score))
+        slices.append((sl1, sl2))
+
+
+    # find the maximum similarity score
     # very neat: https://stackoverflow.com/a/6193521/2272172
     max_index, max_score = max(enumerate(scores), key=operator.itemgetter(1))
     max_slice1, max_slice2 = slices[max_index]
 
     # gotta love python for that: https://stackoverflow.com/a/13335254/2272172
-    start1, end1, _ = max_slice1.indices(len(model1))
-    start2, end2, _ = max_slice2.indices(len(model2))
+    start1, end1, _ = max_slice1.indices(len(pwm1))
+    start2, end2, _ = max_slice2.indices(len(pwm2))
 
     contrib = contributions[max_index]
 
@@ -127,13 +171,10 @@ def filter_pwms(models, min_overlap=2):
     total_models = len(models)
     # calculate similarity score for each model with others
     # build a numpy array of similarity scores
-    matrix_sim = np.zeros((total_models, total_models), dtype=object)
+    matrix_sim = np.zeros((total_models, total_models), dtype=float)
     for x_idx, model_1 in enumerate(models, start=0):
         for y_idx, model_2 in enumerate(models, start=0):
-            sim_score = model_sim(model_1['pwm'], model_2['pwm'],
-                                  model_1['H_model_bg'], model_2['H_model_bg'],
-                                  model_1['H_model'], model_2['H_model'],
-                                  min_overlap)[0]
+            sim_score = model_sim(model_1, model_2, min_overlap)[0]
             matrix_sim[x_idx][y_idx] = sim_score
 
     # apply affinity propagation to cluster models
@@ -152,7 +193,6 @@ def filter_pwms(models, min_overlap=2):
     return(new_models)
 
 def parse_meme(meme_input_file):
-
     dataset = {}
 
     with open(meme_input_file) as handle:
@@ -215,7 +255,6 @@ def parse_meme(meme_input_file):
 
 
 def write_meme(dataset, meme_output_file):
-
     with open(meme_output_file, "w") as fh:
         print(dataset['version'], file=fh)
         print(file=fh)
