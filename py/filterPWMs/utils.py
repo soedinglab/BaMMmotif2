@@ -5,7 +5,7 @@ from sklearn.cluster import AffinityPropagation
 import re
 
 loge2 = np.log(2)
-alpha = 0.5
+alpha = 0.8
 
 def calculate_H_model_bg(model, bg):
     H = xlogy(model, model).sum(axis=1) / loge2
@@ -21,7 +21,7 @@ def calculate_H_model(model):
     return H
 
 
-def create_slices(m, n, min_overlap):
+def create_slices(m, n, min_overlap=2):
     # m, n are the lengths of the patterns
     # we demand that n is not longer than m
     assert m >= n
@@ -46,23 +46,6 @@ def create_slices(m, n, min_overlap):
     for ov in range(min_overlap, n):
         yield slice(0, ov), slice(-ov, None), slice(0, 0), slice(m - ov, m), slice(0, n-ov)
         yield slice(-ov, None), slice(0, ov), slice(0, m - ov), slice(0, 0), slice(ov, n)
-
-
-def update_models(models):
-    # make sure the entropy is pre-calculated
-    upd_models = []
-    for model in models:
-        model['pwm'] = np.array(model['pwm'], dtype=float)
-        model_length, _ = model['pwm'].shape
-        model['bg_freq'] = np.array(model['bg_freq'], dtype=float)
-        if 'H_model_bg' not in model or 'H_model' not in model:
-            model['H_model_bg'] = calculate_H_model_bg(model['pwm'], model['bg_freq'])
-            model['H_model'] = calculate_H_model(model['pwm'])
-        else:
-            model['H_model_bg'] = np.array(model['H_model_bg'], dtype=float)
-            model['H_model'] = np.array(model['H_model'], dtype=float)
-        upd_models.append(model)
-    return upd_models
 
 
 def model_sim(model1, model2, min_overlap=2):
@@ -93,31 +76,30 @@ def model_sim(model1, model2, min_overlap=2):
 
     # calculate similarity score between model1 and model2
     for sl1, sl2, uh1l, uh1r, uh2 in create_slices(len(pwm1), len(pwm2), min_overlap):
-        background_score = 0
+
         # so we want the contributions of the background
+        background_score = 0
         background_score += H_model1_bg[sl1].sum()
         background_score += H_model2_bg[sl2].sum()
 
         # plus the contributions from the padded underhangs
         padding_score = 0
-        padding_score += (1 - alpha) * H_model1_bg[uh1l].sum()
-        padding_score += (1 - alpha) * H_model1_bg[uh1r].sum()
-        padding_score += (1 - alpha) * H_model2_bg[uh2].sum()
+        padding_score += (alpha - 1) * H_model1_bg[uh1l].sum()
+        padding_score += (alpha - 1) * H_model1_bg[uh1r].sum()
+        padding_score += (alpha - 1) * H_model2_bg[uh2].sum()
 
-        cross_score = 0
         # and the contributions of model1 vs. model2
+        cross_score = 0
         cross_score += H_model1[sl1].sum()  # entropy of model1
         cross_score += H_model2[sl2].sum()  # entropy of model2
-
-        # cross entropy part
-        p_bar = alpha * (pwm1[sl1, :] + pwm2[sl2, :])
+        p_bar = 0.5 * (pwm1[sl1, :] + pwm2[sl2, :])
         p_bar_entropy = xlogy(p_bar, p_bar) / loge2
         cross_score -= p_bar_entropy.sum()
 
         # calculate similarity score
-        scores.append(background_score - cross_score)
+        scores.append(alpha * background_score - cross_score + padding_score)
 
-        contributions.append((background_score, cross_score))
+        contributions.append((alpha * background_score, cross_score, padding_score))
         slices.append((sl1, sl2))
 
     # calculate similarity score between model1_rev and model2
@@ -139,14 +121,14 @@ def model_sim(model1, model2, min_overlap=2):
         cross_score += H_model2_rev[sl2].sum()  # entropy of model2
 
         # cross entropy part
-        p_bar = alpha * (pwm1[sl1, :] + pwm2_rev[sl2, :])
+        p_bar = 0.5 * (pwm1[sl1, :] + pwm2_rev[sl2, :])
         p_bar_entropy = xlogy(p_bar, p_bar) / loge2
         cross_score -= p_bar_entropy.sum()
 
         # calculate similarity score
-        scores.append(background_score - cross_score)
+        scores.append(alpha * background_score - cross_score)
 
-        contributions.append((background_score, cross_score))
+        contributions.append((alpha * background_score, cross_score, padding_score))
         slices.append((sl1, sl2))
 
 
@@ -165,6 +147,27 @@ def model_sim(model1, model2, min_overlap=2):
         return max_score, (start2 + 1, end2), (start1 + 1, end1), contrib
     else:
         return max_score, (start1 + 1, end1), (start2 + 1, end2), contrib
+
+
+def update_models(models, min_overlap=2):
+    upd_models = []
+    for model in models:
+        model['pwm'] = np.array(model['pwm'], dtype=float)
+        model_length, _ = model['pwm'].shape
+        if model_length < min_overlap:
+            logger.warn('model %s with length %s too small for the chosen min_overlap (%s).'
+                        ' Please consider lowering the min_overlap threshold.',
+                        model['model_id'], model_length, min_overlap)
+            continue
+        model['bg_freq'] = np.array(model['bg_freq'], dtype=float)
+        if 'H_model_bg' not in model or 'H_model' not in model:
+            model['H_model_bg'] = calculate_H_model_bg(model['pwm'], model['bg_freq'])
+            model['H_model'] = calculate_H_model(model['pwm'])
+        else:
+            model['H_model_bg'] = np.array(model['H_model_bg'], dtype=float)
+            model['H_model'] = np.array(model['H_model'], dtype=float)
+        upd_models.append(model)
+    return upd_models
 
 
 def filter_pwms(models, min_overlap=2):
@@ -186,17 +189,17 @@ def filter_pwms(models, min_overlap=2):
         for idx, model in enumerate(models, start=0):
             if af_labels[idx] == rank:
                 new_models.append(models[idx])
-                print( idx, '\t', af_labels[idx] )
+                print( idx, '\t', af_labels[idx], '\t', models[idx]['model_id'] )
                 break
-        rank = rank - 1
 
     return(new_models)
 
+
 def parse_meme(meme_input_file):
+
     dataset = {}
 
     with open(meme_input_file) as handle:
-
         line = handle.readline()
         if line.strip() != 'MEME version 4':
             raise ValueError('requires MEME minimal file format version 4')
@@ -229,10 +232,8 @@ def parse_meme(meme_input_file):
                 model = {}
                 model['model_id'] = line.split()[1]
                 model['bg_freq'] = bg_freqs
-
                 info_line = handle.readline().rstrip('\n')
                 model['info'] = info_line
-
                 width_hit = width_pat.search(info_line)
                 if not width_hit:
                     raise MalformattedMemeError('could not read motif width')
@@ -269,7 +270,6 @@ def write_meme(dataset, meme_output_file):
             bg_probs.append(nt)
             bg_probs.append(str(dataset['bg_freq'][idx]))
         print(" ".join(bg_probs), file=fh)
-        print(file=fh)
 
         for model in dataset['models']:
             print("MOTIF {}".format(model['model_id']), file=fh)
