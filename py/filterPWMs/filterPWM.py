@@ -16,7 +16,7 @@ def create_parser():
     parser.add_argument('--highscore_fraction', type=float, default=0.1)
     parser.add_argument('--evalue_threshold', type=float, default=0.1)
     parser.add_argument('--seed', type=int, default=42)
-    parser.add_argument('--min_overlap', type=int, default=4)
+    parser.add_argument('--min_overlap', type=int, default=2)
     parser.add_argument('--n_processes', type=int)
     parser.add_argument('--output_score_file', default=None)
     return parser
@@ -44,13 +44,13 @@ def main():
     # parse input query meme file
     model_set = parse_meme(query_file)
     # pre-compute entropy for all the models
-    models = update_models(model_set['models'], min_overlap)
+    models = update_models(model_set['models'])
 
     db_models = models
     # if model_db is not given, search model files against themselves
     if db_file != None:
         model_db = parse_meme(db_file)
-        db_models = update_models(model_db['models'], min_overlap)
+        db_models = update_models(model_db['models'])
     db_size = len(db_models)
 
     #filter models using affinity propagation

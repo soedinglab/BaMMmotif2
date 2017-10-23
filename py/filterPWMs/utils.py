@@ -149,16 +149,11 @@ def model_sim(model1, model2, min_overlap=2):
         return max_score, (start1 + 1, end1), (start2 + 1, end2), contrib
 
 
-def update_models(models, min_overlap=2):
+def update_models(models):
     upd_models = []
     for model in models:
         model['pwm'] = np.array(model['pwm'], dtype=float)
         model_length, _ = model['pwm'].shape
-        if model_length < min_overlap:
-            logger.warn('model %s with length %s too small for the chosen min_overlap (%s).'
-                        ' Please consider lowering the min_overlap threshold.',
-                        model['model_id'], model_length, min_overlap)
-            continue
         model['bg_freq'] = np.array(model['bg_freq'], dtype=float)
         if 'H_model_bg' not in model or 'H_model' not in model:
             model['H_model_bg'] = calculate_H_model_bg(model['pwm'], model['bg_freq'])
@@ -183,16 +178,17 @@ def filter_pwms(models, min_overlap=2):
     # apply affinity propagation to cluster models
     af = AffinityPropagation(affinity='precomputed').fit(matrix_sim)
     af_labels = af.labels_
-    print(af_labels)
+    #print(af_labels)
+
     new_models = []
     for rank in range(total_models):
         for idx, model in enumerate(models, start=0):
             if af_labels[idx] == rank:
                 new_models.append(models[idx])
-                print( idx, '\t', af_labels[idx], '\t', models[idx]['model_id'] )
+                #print( idx, '\t', af_labels[idx], '\t', models[idx]['model_id'] )
                 break
 
-    return(new_models)
+    return new_models
 
 
 def parse_meme(meme_input_file):
