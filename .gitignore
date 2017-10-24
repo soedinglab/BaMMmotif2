@@ -49,10 +49,7 @@ CTestTestfile.cmake
 .metadata
 bin/
 tmp/
-<<<<<<< HEAD
-=======
 Debug/
->>>>>>> restruc_bamm/master
 *.tmp
 *.bak
 *.swp
@@ -62,18 +59,9 @@ local.properties
 .loadpath
 .recommenders
 .autotools
-
-# Eclipse Core
 .project
 
-<<<<<<< HEAD
-=======
-# CLion
-.idea/
-cmake-build-debug/
-.idea/*.xml
 
->>>>>>> restruc_bamm/master
 # External tool builders
 .externalToolBuilders/
 
@@ -128,4 +116,8 @@ nbdist/
 #############
 .idea/
 cmake-build-debug/
+.idea/*.xml
 
+# python
+##############
+*/*/__pycache__/
