@@ -18,11 +18,16 @@ int main( int nargs, char* args[] ){
      * Build up the background model
      */
 
-	BackgroundModel* bgModel = new BackgroundModel( GFdr::negSequenceSet->getSequences(),
-                                                    GFdr::bgModelOrder,
-                                                    GFdr::bgModelAlpha,
-                                                    GFdr::interpolateBG,
-                                                    GFdr::posSequenceBasename );
+	BackgroundModel* bgModel;
+    if( GFdr::bgModelFilename == NULL ) {
+        bgModel = new BackgroundModel(GFdr::negSequenceSet->getSequences(),
+                                      GFdr::bgModelOrder,
+                                      GFdr::bgModelAlpha,
+                                      GFdr::interpolateBG,
+                                      GFdr::posSequenceBasename);
+    } else {
+        bgModel = new BackgroundModel( GFdr::bgModelFilename );
+    }
     /**
      * Initialize the model
      */

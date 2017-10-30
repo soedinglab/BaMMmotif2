@@ -43,7 +43,7 @@ Having installed Homebrew, all required dependencies can be installed using the 
       brew tap homebrew/science
       brew install gcc5 cmake R
 
-Finally this will compile BaMM!motif
+#### Compilation
 
       export CXX=g++-5
       export CC=gcc-5
@@ -53,6 +53,15 @@ Finally this will compile BaMM!motif
       cd build
       cmake ..
       make
+      
+#### Environment setup
+Add this line to your $HOME/.bashrc (or .zshrc...) to add BaMMmotif to your PATH:
+
+    export PATH=${PATH}:${HOME}/opt/BaMM/bin
+    
+Update your environment:    
+
+    source $HOME/.bashrc
 
 ## How to use BaMM!motif from the command line?
 

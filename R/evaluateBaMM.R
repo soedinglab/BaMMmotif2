@@ -357,8 +357,8 @@ pvt.plotlabels <- function(statistic, scale.param, eta0)
 #
 #-----------------
 results = c()
-#resultTitle = paste0(c("motif_name", "ausfc_score", "auc5_score", "auprc_score", "occurrence"), collapse="\t")
-#results = c(results, resultTitle)
+resultTitle = paste0(c("name", "motif_number", "ausfc", "auc5", "auprc", "occur"), collapse="\t")
+results = c(results, resultTitle)
 
 for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))) {
 
