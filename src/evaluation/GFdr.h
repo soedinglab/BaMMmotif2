@@ -43,6 +43,7 @@ public:
                                                 // instead of background frequencies of mono-nucleotides
 
     // background model options
+    static char*		bgModelFilename;	    // filename of background model in BaMM format (.hbcp/.hbp)
     static size_t		bgModelOrder;			// background model order, defaults to 2
     static std::vector<float> bgModelAlpha;		// background model alpha
 

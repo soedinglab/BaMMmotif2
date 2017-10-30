@@ -56,6 +56,12 @@ BackgroundModel::BackgroundModel( std::string filePath ){
 
 	struct stat sb;
 
+    std::ifstream infile(filePath);
+    if( !infile.good() ){
+        std::cerr << "Error: Input Background Model file does not exist."
+                  << std::endl;
+        exit( 1 );
+    }
 	if( stat( filePath.c_str(), &sb ) == 0 && S_ISREG( sb.st_mode ) ){
 
 		FILE* file;

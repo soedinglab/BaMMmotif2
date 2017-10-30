@@ -35,6 +35,7 @@ std::vector<size_t> GFdr::addColumns = {0,0};			// add columns to the left and r
 bool                GFdr::interpolateBG = true;			// calculate prior probabilities from lower-order probabilities
                                                         // instead of background frequencies of mononucleotides
 // background model options
+char*               GFdr::bgModelFilename = NULL;       // filename of background model in BaMM format (.hbcp/.hbp)
 size_t			    GFdr::bgModelOrder = 2;				// background model order, defaults to 2
 std::vector<float>  GFdr::bgModelAlpha( bgModelOrder+1, 1.f );// background model alpha
 
@@ -165,6 +166,13 @@ int GFdr::readArguments( int nargs, char* args[] ){
                 exit( 2 );
             }
             modelGamma = std::stof( args[i] );
+        } else if( !strcmp( args[i], "--bgModelFile" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following --bgModelFile" << std::endl;
+                exit( 2 );
+            }
+            bgModelFilename = args[i];
         } else if( !strcmp( args[i], "-K" ) or !strcmp( args[i], "--Order" ) ){
             if( ++i >= nargs ){
                 printHelp();
