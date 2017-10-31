@@ -48,7 +48,6 @@ MotifSet::MotifSet( char* indir,
 		if( !file.good() ){
 
 			std::cout << "Error: Cannot open PWM file: " << indir << std::endl;
-
 			exit( 1 );
 
 		} else {

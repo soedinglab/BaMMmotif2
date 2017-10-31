@@ -71,7 +71,7 @@ int main( int nargs, char* args[] ){
 
         fdr.evaluateMotif( GFdr::EM, GFdr::CGS );
         fdr.write( GFdr::outputDirectory,
-                   GFdr::posSequenceBasename + "_motif_" + std::to_string( n+1 ) );
+                   GFdr::posSequenceBasename + GFdr::fileExtension );
         if( motif )		delete motif;
     }
 

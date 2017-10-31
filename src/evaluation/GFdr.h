@@ -32,6 +32,7 @@ public:
     static size_t		num;					// number of init that are to be optimized
     static bool			mops;					// learn MOPS model
     static bool			zoops;					// learn ZOOPS model
+    static std::string  fileExtension;          // extended filename for output
 
     // model options
     static size_t		modelOrder;				// model order

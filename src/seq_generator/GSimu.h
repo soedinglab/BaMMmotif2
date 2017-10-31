@@ -25,6 +25,7 @@ public:
     // initial model(s) options
     static char*		initialModelFilename;	// filename of initial model
     static std::string	initialModelTag;		// tag for initializing the model
+    static std::string  fileExtension;          // extended filename for output
 
     // model options
     static size_t		modelOrder;				// model order

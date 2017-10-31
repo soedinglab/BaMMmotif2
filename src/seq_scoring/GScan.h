@@ -30,6 +30,7 @@ public:
     static char*		initialModelFilename;	// filename of initial model
     static std::string	initialModelTag;		// tag for initializing the model
     static size_t		maxPWM;					// number of init that are to be optimized
+    static std::string  fileExtension;          // extended filename for output
 
     // model options
     static size_t		modelOrder;				// model order

@@ -48,13 +48,16 @@
 #define CALL_EM_FN( object, ptrToFunc )( ( object ).*( ptrToFunc ) )
 #endif
 
-static std::string						baseName( const char* filePath );
+static std::string			baseName( const char* filePath );
 // calculate posterior probabilities from log likelihoods
-std::vector<double>						calculatePosteriorProbabilities( std::vector<double> lLikelihoods );
-static void								createDirectory( char* dir );
+std::vector<double>			calculatePosteriorProbabilities( std::vector<double> lLikelihoods );
+static void					createDirectory( char* dir );
 
 // calculate the power for integer base
-static size_t							ipow( size_t base, size_t exp );
+static size_t				ipow( size_t base, size_t exp );
+
+// concatenate two strings by leaving out the overlapped characters
+static std::string          concatenate2strings( std::string s1, std::string s2 );
 
 // returns a permutation which rearranges v into ascending order
 template <typename T> std::vector<size_t> sortIndices( const std::vector<T> &v );
@@ -78,6 +81,28 @@ inline std::string baseName( const char* filePath ){
 	std::string basename( filePath, start, end-start+1 );
 
 	return basename;
+}
+
+inline std::string concatenate2strings( std::string s1, std::string s2 ){
+
+    std::string s3;
+    size_t i = 0;
+    size_t j = 0;
+
+    while( i < s2.length() ){
+        if( s2[i] != s1[j] or j == s1.length() ){
+            for( size_t t = 0; t < s2.length() - i; t++ ){
+                s3.push_back( s2[i+t] );
+            }
+            break;
+        } else {
+            i++;
+            j++;
+        }
+    }
+
+    return s3;
+
 }
 
 inline std::vector<double> calculatePosteriorProbabilities( std::vector<double> lLikelihoods ){

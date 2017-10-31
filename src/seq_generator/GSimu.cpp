@@ -17,6 +17,7 @@ char*			    GSimu::alphabetType = NULL;			// alphabet type is defaulted to stand
 // initial model(s) options
 char*			    GSimu::initialModelFilename = NULL; // filename of initial model
 std::string         GSimu::initialModelTag;				// tag for initializing the model
+std::string         GSimu::fileExtension;               // extended filename for output
 
 // model options
 size_t              GSimu::modelOrder = 2;				// model order
@@ -204,6 +205,8 @@ int GSimu::readArguments( int nargs, char* args[] ){
             bgModelAlpha[k] = 10.0f;
         }
     }
+
+    fileExtension = concatenate2strings( sequenceBasename, baseName( initialModelFilename ) );
 
     return 0;
 }
