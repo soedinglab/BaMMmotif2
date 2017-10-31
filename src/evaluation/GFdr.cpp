@@ -24,6 +24,7 @@ std::string         GFdr::initialModelTag;				// tag for initializing the model
 size_t              GFdr::num = std::numeric_limits<size_t>::max(); // number of init that are to be optimized
 bool                GFdr::mops = false;					// learn MOPS model
 bool                GFdr::zoops = true;					// learn ZOOPS model
+std::string         GFdr::fileExtension;                // extended filename for output
 
 // model options
 size_t              GFdr::modelOrder = 2;				// model order
@@ -253,6 +254,8 @@ int GFdr::readArguments( int nargs, char* args[] ){
             bgModelAlpha[k] = 10.0f;
         }
     }
+
+    fileExtension = concatenate2strings( posSequenceBasename, baseName( initialModelFilename ) );
 
     return 0;
 }

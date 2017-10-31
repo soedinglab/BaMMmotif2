@@ -22,7 +22,7 @@ char*			    GScan::alphabetType = NULL;			// alphabet type is defaulted to stand
 char*			    GScan::initialModelFilename = NULL; // filename of initial model
 std::string         GScan::initialModelTag;				// tag for initializing the model
 size_t              GScan::maxPWM = std::numeric_limits<size_t>::max(); // number of init that are to be optimized
-
+std::string         GScan::fileExtension;          // extended filename for output
 // model options
 size_t              GScan::modelOrder = 2;				// model order
 std::vector<float>  GScan::modelAlpha( modelOrder+1, 1.f );// initial alphas
@@ -215,6 +215,8 @@ int GScan::readArguments( int nargs, char* args[] ){
             bgModelAlpha[k] = 10.0f;
         }
     }
+
+    fileExtension = concatenate2strings( posSequenceBasename, baseName( initialModelFilename ) );
 
     return 0;
 }

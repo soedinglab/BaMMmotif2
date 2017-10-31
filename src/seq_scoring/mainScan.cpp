@@ -96,7 +96,7 @@ int main( int nargs, char* args[] ) {
         scorePosSet.calcPvalues( posScores, negScores );
 
         scorePosSet.write( GScan::outputDirectory,
-                           GScan::posSequenceBasename + "_motif_" + std::to_string( n+1 ),
+                           GScan::posSequenceBasename + GScan::fileExtension,
                            GScan::pvalCutoff,
                            GScan::ss );
 
