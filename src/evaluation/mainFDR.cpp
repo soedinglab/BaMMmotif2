@@ -73,10 +73,10 @@ int main( int nargs, char* args[] ){
         fdr.evaluateMotif( GFdr::EM, GFdr::CGS );
 
         std::string fileExtension;
-        if( GFdr::initialModelTag == "BaMM"){
-            fileExtension = GFdr::fileExtension;
-        } else {
+        if( GFdr::initialModelTag == "PWM" ){
             fileExtension = "_motif_" + std::to_string( n+1 );
+        } else {
+            fileExtension = GFdr::fileExtension;
         }
 
         fdr.write( GFdr::outputDirectory,

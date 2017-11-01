@@ -96,10 +96,10 @@ int main( int nargs, char* args[] ) {
         scorePosSet.calcPvalues( posScores, negScores );
 
         std::string fileExtension;
-        if( GScan::initialModelTag == "BaMM"){
-            fileExtension = GScan::fileExtension;
-        } else {
+        if( GScan::initialModelTag == "PWM"){
             fileExtension = "_motif_" + std::to_string( n+1 );
+        } else {
+            fileExtension = GScan::fileExtension;
         }
         scorePosSet.write( GScan::outputDirectory,
                            GScan::posSequenceBasename + fileExtension,
