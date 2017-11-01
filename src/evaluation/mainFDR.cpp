@@ -63,6 +63,7 @@ int main( int nargs, char* args[] ){
      */
 
     for( size_t n = 0; n < motifNum; n++ ){
+
         Motif* motif = new Motif( *motif_set.getMotifs()[n] );
         FDR fdr( GFdr::posSequenceSet->getSequences(), negset, GFdr::q,
                  motif, bgModel,
@@ -70,8 +71,16 @@ int main( int nargs, char* args[] ){
                  true, GFdr::savePvalues, GFdr::saveLogOdds );
 
         fdr.evaluateMotif( GFdr::EM, GFdr::CGS );
+
+        std::string fileExtension;
+        if( GFdr::initialModelTag == "PWM" ){
+            fileExtension = "_motif_" + std::to_string( n+1 );
+        } else {
+            fileExtension = GFdr::fileExtension;
+        }
+
         fdr.write( GFdr::outputDirectory,
-                   GFdr::posSequenceBasename + GFdr::fileExtension );
+                   GFdr::posSequenceBasename + fileExtension );
         if( motif )		delete motif;
     }
 
