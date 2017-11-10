@@ -148,7 +148,8 @@ def motif_search(model):
     hits = []
     # run pwm against the database
     for db_model in db_models_g:
-        sim, (start1, end1), (start2, end2), (bg_score, cross_score, pad_score) = model_sim(model, db_model, min_overlap_g)
+        sim, (start1, end1), (start2, end2), (bg_score, cross_score, pad_score) = \
+            model_sim(model, db_model, min_overlap_g)
         if sim < high_score:
             # the score is not in the top scores of the background model
             # this is surely not a significant hit

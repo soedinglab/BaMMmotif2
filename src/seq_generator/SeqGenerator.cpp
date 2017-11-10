@@ -78,7 +78,7 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::arti_bgseqset( size_t fold 
 	for( size_t i = 0; i < seqs_.size(); i++ ){
 		size_t L = seqs_[i]->getL();
 		for( size_t n = 0; n < fold; n++ ){
-			negset.push_back(bg_sequence(L) );
+			negset.push_back( bg_sequence(L) );
 		}
 	}
 	return negset;

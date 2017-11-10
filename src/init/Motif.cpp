@@ -193,8 +193,12 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset ){
 	for( size_t j = 0; j < W_; j++ ){
 		float norm = 0.0f;
 		for( size_t y = 0; y < asize; y++ ){
-			v_[0][y][j] = PWM[y][j];
-			norm += PWM[y][j];
+			if( PWM[y][j] <= 1.e-8 ){
+                v_[0][y][j] = 1.e-8;
+            } else {
+                v_[0][y][j] = PWM[y][j];
+            }
+			norm += v_[0][y][j];
 		}
 		// normalize PWMs to sum the weights up to 1
 		for( size_t y = 0; y < asize; y++ ){
