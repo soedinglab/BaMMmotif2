@@ -9,7 +9,7 @@ EM::EM( Motif* motif, BackgroundModel* bgModel, std::vector<Sequence*> seqs, flo
 	bgModel_    = bgModel;
 	q_          = q;
 	seqs_       = seqs;
-    optimizeQ_ = optimizeQ;
+    optimizeQ_  = optimizeQ;
 	// get motif (hyper-)parameters from motif class
 	K_ = motif_->getK();
 	W_ = motif_->getW();

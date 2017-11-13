@@ -208,16 +208,20 @@ def parse_meme(meme_input_file):
         # read in the ALPHABET info
         dataset['alphabet'] = handle.readline().split()[1]
 
-        # skip over all optional info
-        while line and line != 'Background letter frequencies\n':
-            line = handle.readline()
+        # skip the blank line
+        line = handle.readline()
+
+        # read in the background letter frequencies
+        line = handle.readline()
 
         if line != 'Background letter frequencies\n':
-            raise MalformattedMemeError('could not find background frequencies')
-
-        bg_toks = handle.readline().split()[1::2]
-        bg_freqs = [float(f) for f in bg_toks]
-        dataset['bg_freq'] = bg_freqs
+            # if not given, assign 0.25 to each letter
+            dataset['bg_freq'] = [0.25,0.25,0.25,0.25]
+        else:
+            bg_toks = handle.readline().split()[1::2]
+            bg_freqs = [float(f) for f in bg_toks]
+            dataset['bg_freq'] = bg_freqs
+        print( dataset['bg_freq'] )
 
         # parse pwms
         width_pat = re.compile('w= (\d+)')
@@ -274,3 +278,6 @@ def write_meme(dataset, meme_output_file):
             for line in pwm:
                 print(" ".join(['{:.4f}'.format(x) for x in line]), file=fh)
             print(file=fh)
+
+class MalformattedMemeError(ValueError):
+    pass
