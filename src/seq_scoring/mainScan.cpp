@@ -20,26 +20,23 @@ int main( int nargs, char* args[] ) {
      * Build up the background model
      */
     // use bgModel generated from input sequences when prediction is turned on
-    BackgroundModel* bgModel;
-    // use provided bgModelFile if initialized with bamm format
-    if( GScan::initialModelTag == "BaMM" ) {
-        if( GScan::bgModelFilename == NULL ) {
-            std::cerr << "Error: No background Model file provided for initial search motif!" << std::endl;
-            exit( 1 );
-        }
-        bgModel = new BackgroundModel( GScan::bgModelFilename );
-    } else if( GScan::initialModelTag == "PWM" ){
-        // use bgModel generated when reading in PWM File
-        bgModel = new BackgroundModel( GScan::initialModelFilename, 0, 1 );
-        // this means that also the global motif order needs to be adjusted;
-        GScan::modelOrder = 0;
-    } else {
-        // learn bgModel from the negative sequence set
-        bgModel = new BackgroundModel( GScan::negSequenceSet->getSequences(),
+    BackgroundModel* bgModel = new BackgroundModel( GScan::negSequenceSet->getSequences(),
                                        GScan::bgModelOrder,
                                        GScan::bgModelAlpha,
                                        GScan::interpolateBG,
                                        GScan::posSequenceBasename );
+
+    // use provided bgModelFile if initialized with bamm format
+    if( GScan::initialModelTag == "BaMM" ) {
+        if( GScan::bgModelFilename == NULL ) {
+            std::cerr << "Error: No background model file provided for initial search motif!" << std::endl;
+            exit( 1 );
+        }
+        // get background model from the given file
+        bgModel = new BackgroundModel( GScan::bgModelFilename );
+    } else if( GScan::initialModelTag == "PWM" ){
+        // this means that also the global motif order needs to be adjusted;
+        GScan::modelOrder = 0;
     }
 
     /**
