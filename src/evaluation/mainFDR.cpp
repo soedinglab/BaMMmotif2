@@ -28,6 +28,7 @@ int main( int nargs, char* args[] ){
     } else {
         bgModel = new BackgroundModel( GFdr::bgModelFilename );
     }
+
     /**
      * Initialize the model
      */

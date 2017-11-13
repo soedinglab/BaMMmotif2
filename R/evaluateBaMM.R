@@ -370,8 +370,8 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     filename = paste(c(dir, "/", prefix, "_motif_", motifNumber), collapse="")
 
     # read in p-values from file
-    first_row   <- read.table(f, nrows =1 )
-    stats       <- read.table(f, skip=1 )
+    first_row   <- read.table(f, nrows=1)
+    stats       <- read.table(f, skip=1)
     pvalues     <- stats$V5
     mfold       <- as.numeric(first_row[6])
     occurrence  <- as.numeric(first_row[7])

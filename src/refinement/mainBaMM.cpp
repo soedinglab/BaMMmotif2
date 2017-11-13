@@ -147,8 +147,6 @@ int main( int nargs, char* args[] ){
                     }
                     bg = new BackgroundModel( Global::bgModelFilename );
                 } else if( Global::initialModelTag == "PWM" ){
-                    // use bgModel generated when reading in PWM File
-                    bg = new BackgroundModel( Global::initialModelFilename, 0, 1 );
                     // this means that also the global motif order needs to be adjusted;
                     Global::modelOrder = 0;
                 }
