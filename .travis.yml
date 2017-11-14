@@ -1,0 +1,122 @@
+language: python
+python:
+    - 3.5
+sudo: required
+dist: trusty
+
+install:
+    - pip install flake8
+
+addons:
+  apt:
+    packages: &default_packages
+    - cmake
+
+script:
+  - mkdir build
+  - cd build
+  - cmake .. && make
+  - export PATH="$PATH:$PWD/bin"
+  - BaMMmotif example/JunD.fasta out/ --PWMFile example/PWM_peng10.meme --maxPWM 2 -k 2 --FDR --scoreSeqset
+
+
+matrix:
+  include:
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - *default_packages
+            - g++-4.9
+      env: CXX=g++-4.9
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - *default_packages
+            - g++-5
+      env: CXX=g++-5
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - *default_packages
+            - g++-6
+      env: CXX=g++-6
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - *default_packages
+            - g++-7
+      env: CXX=g++-7
+
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-3.6
+          packages:
+            - *default_packages
+            - clang-3.6
+            - util-linux
+            - libc++-dev
+      env: CXX=clang++-3.6 CXXFLAGS="-stdlib=libc++"
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.7
+          packages:
+            - *default_packages
+            - clang-3.7
+            - util-linux
+            - libc++-dev
+      env: CXX=clang++-3.7 CXXFLAGS="-stdlib=libc++"
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-3.8
+          packages:
+            - *default_packages
+            - clang-3.8
+            - util-linux
+            - libc++-dev
+      env: CXX=clang++-3.8 CXXFLAGS="-stdlib=libc++"
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-3.9
+          packages:
+            - *default_packages
+            - clang-3.9
+            - util-linux
+            - libc++-dev
+      env: CXX=clang++-3.9 CXXFLAGS="-stdlib=libc++"
+
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-4.0
+          packages:
+            - *default_packages
+            - util-linux
+            - clang-4.0
+            - libc++-dev
+      env: CXX=clang++-4.0 CXXFLAGS="-stdlib=libc++"

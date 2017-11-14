@@ -134,7 +134,7 @@ int main( int nargs, char* args[] ){
                           << std::endl;
             }
 
-            // Define bg Model depending on motif input, and learning
+            // Define bg model depending on motif input, and learning
             // use bgModel generated from input sequences when prediction is turned on
             BackgroundModel* bg = bgModel;
             // if no optimization is applied, get bgModel from the input
