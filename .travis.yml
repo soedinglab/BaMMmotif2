@@ -6,7 +6,7 @@ dist: trusty
 
 install:
     - pip install flake8
-
+    - pip install libboost-all-dev
 addons:
   apt:
     packages: &default_packages
