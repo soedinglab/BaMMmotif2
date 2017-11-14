@@ -17,8 +17,7 @@ script:
   - cd build
   - cmake .. && make
   - export PATH="$PATH:$PWD/bin"
-  - BaMMmotif ../../example/JunD.fasta out/ --PWMFile ../../example/PWM_peng10.meme --maxPWM 1 -k 2 --FDR --scoreSeqset
-
+  - bin/BaMMmotif /tmp/ ../example/JunD.fasta --PWMFile ../example/PWM_peng10.meme --EM -k 0 --FDR --scoreSeqset --maxPWM 1
 matrix:
   include:
     - compiler: gcc
