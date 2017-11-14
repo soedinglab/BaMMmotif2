@@ -8,15 +8,16 @@
 int main( int nargs, char* args[] ){
 
 	clock_t t0 = clock();
-
-	std::cout << std::endl
-              << "======================================" << std::endl
-              << "=      Welcome to use BaMM!motif     =" << std::endl
-              << "=                   Version 2.0      =" << std::endl
-              << "=              by Soeding Group      =" << std::endl
-              << "=  http://www.mpibpc.mpg.de/soeding  =" << std::endl
-              << "======================================" << std::endl;
-
+    if( Global::verbose ) {
+        std::cout << std::endl
+                  << "======================================" << std::endl
+                  << "=      Welcome to use BaMM!motif     =" << std::endl
+                  << "=                   Version 2.0      =" << std::endl
+                  << "=              by Soeding Group      =" << std::endl
+                  << "=  http://www.mpibpc.mpg.de/soeding  =" << std::endl
+                  << "======================================" << std::endl;
+    }
+    
 	// seed random number
 	srand( 42 );
 	Global::rngx.seed( 42 );
