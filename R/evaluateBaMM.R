@@ -365,8 +365,8 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     # get motif number from the filename; Note: important for motif reranking
     motif_id <- sub(paste(c(dir, "/", prefix), collapse=""), "", f)
     motif_id <- sub(".zoops.stats", "", motif_id)
-    motif_num <- sub("_motif_", "", motif_id)
-
+    motif_num <- unlist(strsplit(motif_id, "_motif_"))[-1]
+    
     # get a filename for each motif
     filename = paste(c(dir, "/", prefix, motif_id), collapse="")
 
