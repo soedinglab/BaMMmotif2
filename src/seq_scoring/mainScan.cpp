@@ -39,6 +39,11 @@ int main( int nargs, char* args[] ) {
         GScan::modelOrder = 0;
     }
 
+    if(GScan::saveInitialModel){
+        // save background model
+        bgModel->write(GScan::outputDirectory, GScan::posSequenceBasename);
+    }
+
     /**
      * Initialize the model
      */
@@ -73,6 +78,13 @@ int main( int nargs, char* args[] ) {
     for( size_t n = 0; n < motifNum; n++ ) {
         // deep copy each motif in the motif set
         Motif *motif = new Motif( *motif_set.getMotifs()[n] );
+
+        if(GScan::saveInitialModel){
+            // write out the foreground model
+            motif->write( GScan::outputDirectory,
+                          GScan::posSequenceBasename + "_init_motif_" + std::to_string( n+1 ) );
+
+        }
 
         // score negative sequence set
         ScoreSeqSet scoreNegSet( motif, bgModel, negset );

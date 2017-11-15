@@ -22,7 +22,8 @@ char*			    GScan::alphabetType = NULL;			// alphabet type is defaulted to stand
 char*			    GScan::initialModelFilename = NULL; // filename of initial model
 std::string         GScan::initialModelTag;				// tag for initializing the model
 size_t              GScan::maxPWM = std::numeric_limits<size_t>::max(); // number of init that are to be optimized
-std::string         GScan::fileExtension;          // extended filename for output
+std::string         GScan::fileExtension;               // extended filename for output
+bool                GScan::saveInitialModel = false;    // save initial model (both fg and bg) in BaMM format
 // model options
 size_t              GScan::modelOrder = 2;				// model order
 std::vector<float>  GScan::modelAlpha( modelOrder+1, 1.f );// initial alphas
@@ -129,6 +130,8 @@ int GScan::readArguments( int nargs, char* args[] ){
                 exit( 2 );
             }
             bgModelFilename = args[i];
+        } else if( !strcmp( args[i], "--saveInitialModel" ) ){
+            saveInitialModel = true;
         } else if( !strcmp( args[i], "--maxPWM" ) ){
             if( ++i >= nargs ){
                 printHelp();
@@ -245,6 +248,8 @@ void GScan::printHelp(){
               << "\t\t\tFile that contains a model in bamm file format." << std::endl
               << "\t\t--bgModelFile <STRING>" << std::endl
               << "\t\t\tFile that contains a background model in bamm file format." << std::endl
+              << "\t\t--saveInitialModel" << std::endl
+              << "\t\t\tsave initial foreground and background models in bamm-format." << std::endl
               << "\t\t--maxPWM <INTEGER>" << std::endl
               << "\t\t\tmaximal number of PWMs that should be optimized." << std::endl;
 }

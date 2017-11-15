@@ -25,7 +25,7 @@ size_t              GFdr::num = std::numeric_limits<size_t>::max(); // number of
 bool                GFdr::mops = false;					// learn MOPS model
 bool                GFdr::zoops = true;					// learn ZOOPS model
 std::string         GFdr::fileExtension;                // extended filename for output
-
+bool                GFdr::saveInitialModel = false;     // save initial model (both fg and bg) in BaMM format
 // model options
 size_t              GFdr::modelOrder = 2;				// model order
 std::vector<float>  GFdr::modelAlpha( modelOrder+1, 1.f );// initial alphas
@@ -137,6 +137,8 @@ int GFdr::readArguments( int nargs, char* args[] ){
             }
             initialModelFilename = args[i];
             initialModelTag = "BaMM";
+        } else if( !strcmp( args[i], "--saveInitialModel" ) ){
+            saveInitialModel = true;
         } else if( !strcmp( args[i], "--maxPWM" ) ){
             if( ++i >= nargs ){
                 printHelp();
@@ -304,6 +306,9 @@ void GFdr::printHelp(){
     printf("\n 			--zoops \n"
                    "				Learn zero-or-one-motif-per-sequence (ZOOPS) model.\n"
                    "				By default, it is set as true.\n\n");
+    printf("\n 			--saveInitialModel \n"
+                   "				Save initial foreground and background models in BaMM-format.\n"
+                   "				By default, it is set as false.\n\n");
     printf("\n 		Options for the (inhomogeneous) motif BaMM: \n");
     printf("\n 			-k, --order <INTEGER> \n"
                    "				Model Order. The default is 2. \n\n");

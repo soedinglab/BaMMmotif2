@@ -33,6 +33,7 @@ public:
     static bool			mops;					// learn MOPS model
     static bool			zoops;					// learn ZOOPS model
     static std::string  fileExtension;          // extended filename for output
+    static bool         saveInitialModel;       // save initial model (both fg and bg) in BaMM format
 
     // model options
     static size_t		modelOrder;				// model order

@@ -29,6 +29,11 @@ int main( int nargs, char* args[] ){
         bgModel = new BackgroundModel( GFdr::bgModelFilename );
     }
 
+    if(GFdr::saveInitialModel){
+        // save background model
+        bgModel->write(GFdr::outputDirectory, GFdr::posSequenceBasename);
+    }
+
     /**
      * Initialize the model
      */
@@ -72,6 +77,13 @@ int main( int nargs, char* args[] ){
                  true, GFdr::savePvalues, GFdr::saveLogOdds );
 
         fdr.evaluateMotif( GFdr::EM, GFdr::CGS );
+
+        if(GFdr::saveInitialModel){
+            // write out the foreground model
+            motif->write( GFdr::outputDirectory,
+                          GFdr::posSequenceBasename + "_init_motif_" + std::to_string( n+1 ) );
+
+        }
 
         std::string fileExtension;
         if( GFdr::initialModelTag == "PWM" ){

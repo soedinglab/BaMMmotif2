@@ -31,6 +31,7 @@ public:
     static std::string	initialModelTag;		// tag for initializing the model
     static size_t		maxPWM;					// number of init that are to be optimized
     static std::string  fileExtension;          // extended filename for output
+    static bool         saveInitialModel;       // save initial model (both fg and bg) in BaMM format
 
     // model options
     static size_t		modelOrder;				// model order
