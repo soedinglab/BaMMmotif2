@@ -40,20 +40,23 @@ file_prefix <- args$prefix
 file_suffix = ".occurrence"
 
 for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), collapse="")) ){
-    # get motif number from the filename
-    motifNumber <- sub(paste(c(maindir, '/', file_prefix, "_motif_"), collapse=""), "", file)
-    motifNumber <- sub(file_suffix, "", motifNumber)
 
-    # get a filename for each motif
-    filename = paste0(c(maindir, file_prefix, "_motif_", motifNumber, file_suffix), collapse="")
-
-    if(file.exists(filename)){
-        table <- read.table(filename,
-                            fileEncoding="latin1", as.is=TRUE, na.strings = "NA",
-                            fill = TRUE, strip.white = TRUE, skip=1, sep = '\t')
-    } else {
+    if(!file.exists(file)){
         print("file does not exist.")
     }
+    # get motif number from the filename
+    motif_id <- sub(paste(c(maindir, '/', file_prefix), collapse=""), "", file)
+    print(motif_id)
+    motif_id <- sub(file_suffix, "", motif_id)
+    print(motif_id)
+
+    # get a filename for each motif
+    filename = paste0(c(maindir, file_prefix, motif_id, file_suffix), collapse="")
+    # read in the data
+    table <- read.table(filename,
+                        fileEncoding="latin1", as.is=TRUE, na.strings = "NA",
+                        fill = TRUE, strip.white = TRUE, skip=1, sep = '\t')
+
 
     strand_length = c(table$V2)
     strand_ind = c(table$V3)
@@ -76,7 +79,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
 
     interval = max(max(pos_positions)-strand_center, strand_center-min(pos_positions))
     interval = as.integer( interval / 10 ) * 10
-    picname <- paste0( maindir, file_prefix, "_motif_", motifNumber, "_distribution.jpeg")
+    picname <- paste0( maindir, file_prefix, motif_id, "_distribution.jpeg")
     jpeg(filename=picname, width=800, height=800, quality=100)
     par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
 
