@@ -1,6 +1,6 @@
-# BaMM!motif
+# BaMM!motif - v2
 
-**Ba**yesian **M**arkov **M**odel **motif** discovery software.
+**Ba**yesian **M**arkov **M**odel **motif** discovery software (version 2).
 
 (C) Johannes Soeding, Wanwan Ge, Anja Kiesel, Matthias Siebert
 
@@ -28,7 +28,7 @@ To plot BaMM logos you need R and several R packages
 
 ### Clone it from GIT
 
-      git clone git@github.com:soedinglab/BaMMmotif
+      git clone git@github.com:soedinglab/BaMMmotif2 BaMMmotif
       cd BaMMmotif
 
 ### How to compile BaMM!motif?
