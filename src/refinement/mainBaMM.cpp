@@ -9,13 +9,14 @@ int main( int nargs, char* args[] ){
 
 	clock_t t0 = clock();
 
-	std::cout << std::endl
+    std::cout << std::endl
               << "======================================" << std::endl
               << "=      Welcome to use BaMM!motif     =" << std::endl
               << "=                   Version 2.0      =" << std::endl
               << "=              by Soeding Group      =" << std::endl
               << "=  http://www.mpibpc.mpg.de/soeding  =" << std::endl
               << "======================================" << std::endl;
+
 
 	// seed random number
 	srand( 42 );
@@ -134,7 +135,7 @@ int main( int nargs, char* args[] ){
                           << std::endl;
             }
 
-            // Define bg Model depending on motif input, and learning
+            // Define bg model depending on motif input, and learning
             // use bgModel generated from input sequences when prediction is turned on
             BackgroundModel* bg = bgModel;
             // if no optimization is applied, get bgModel from the input
@@ -147,8 +148,6 @@ int main( int nargs, char* args[] ){
                     }
                     bg = new BackgroundModel( Global::bgModelFilename );
                 } else if( Global::initialModelTag == "PWM" ){
-                    // use bgModel generated when reading in PWM File
-                    bg = new BackgroundModel( Global::initialModelFilename, 0, 1 );
                     // this means that also the global motif order needs to be adjusted;
                     Global::modelOrder = 0;
                 }

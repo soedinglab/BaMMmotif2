@@ -363,15 +363,16 @@ results = c(results, resultTitle)
 for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))) {
 
     # get motif number from the filename; Note: important for motif reranking
-    motifNumber <- sub(paste(c(dir, "/", prefix, "_motif_"), collapse=""), "", f)
-    motifNumber <- sub(".zoops.stats", "", motifNumber)
+    motif_id <- sub(paste(c(dir, "/", prefix), collapse=""), "", f)
+    motif_id <- sub(".zoops.stats", "", motif_id)
+    motif_num <- sub("_motif_", "", motif_id)
 
     # get a filename for each motif
-    filename = paste(c(dir, "/", prefix, "_motif_", motifNumber), collapse="")
+    filename = paste(c(dir, "/", prefix, motif_id), collapse="")
 
     # read in p-values from file
-    first_row   <- read.table(f, nrows =1 )
-    stats       <- read.table(f, skip=1 )
+    first_row   <- read.table(f, nrows=1)
+    stats       <- read.table(f, skip=1)
     pvalues     <- stats$V5
     mfold       <- as.numeric(first_row[6])
     occurrence  <- as.numeric(first_row[7])
@@ -583,7 +584,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
         invisible(dev.off())
     }
 
-    resultString = paste0(c(prefix, motifNumber, ausfc, auc5, auprc, occurrence), collapse="\t")
+    resultString = paste0(c(prefix, motif_num, ausfc, auc5, auprc, occurrence), collapse="\t")
     #print( resultString )
     results = c(results, resultString)
 }

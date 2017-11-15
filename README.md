@@ -10,10 +10,19 @@ To compile from source, you need:
 
   * [GCC](https://gcc.gnu.org/) compiler 4.7 or later  (we suggest GCC-5.x)
   * [CMake](http://cmake.org/) 2.8.11 or later
+  
+C++ packages
+  * [Boost](http://www.boost.org/) 
 
-To plot BaMM logos you need
+To plot BaMM logos you need R and several R packages 
 
   * [R](https://cran.r-project.org/) 2.14.1 or later
+  * install.packages( "zoo" )
+  * install.packages( "argparse" )
+  * install.packages( "fdrtool" )
+  * install.packages( "LSD" )
+  * install.packages( "grid" )
+  * install.packages( "gdata" )
 
 ## Installation
 

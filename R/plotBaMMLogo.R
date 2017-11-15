@@ -739,9 +739,9 @@ hoSeqLogo <- function( filename, order, useFreqs=F, base=2, icColumnScale=TRUE,
   if( icLetterScale ){
     
     if( is.null( ylim ) ){
-      if( order == 0 ) { ylim <- c( -0.5, 2 ) }  	  # for order 0
-      if( order == 1 ) { ylim <- c( -0.3, 1 ) }     # for order 1
-      if( order == 2 ) { ylim <- c( -0.15, 0.2 ) }	# for order 2
+      if( order == 0 ) { ylim <- c( -0.5, 2 ) }  	# for order 0
+      if( order == 1 ) { ylim <- c( -0.4, 1 ) }     # for order 1
+      if( order == 2 ) { ylim <- c( -0.3, 0.5 ) }	# for order 2
     }
     ylab <-""
     
@@ -1952,61 +1952,61 @@ height <- 800
 #...............................................................................
 file_suffix = ".ihbcp"
 for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), collapse="")) ){
-  # add title to the logo
-  plot_title = TRUE
-  xaxis <- TRUE
-  yaxis <- TRUE
-  # .png parameters
-  width <- 1200
-  height <- 800
-  
-  # get motif number from the filename
-  motifNumber <- sub(paste(c(maindir, '/', file_prefix, "_motif_"), collapse=""), "", file)
-  motifNumber <- sub(file_suffix, "", motifNumber)
-  # get a filename for each motif
-  trunc_filename = file.path( maindir, paste( file_prefix, "_motif_", motifNumber, sep="") )
-  # ending used for distinguishing between revComp / stamp / general
-  ending = ".png"
-  
-  if(stamp){
+    # add title to the logo
+    plot_title = TRUE
+    xaxis <- TRUE
+    yaxis <- TRUE
+    # .png parameters
+    width <- 1200
+    height <- 800
+
+    # get motif number from the filename
+    motif_id <- sub(paste(c(maindir, '/', file_prefix), collapse=""), "", file)
+    motif_id <- sub(file_suffix, "", motif_id)
+    # get a filename for each motif
+    trunc_filename = file.path( maindir, paste( file_prefix, motif_id, sep="") )
+    # ending used for distinguishing between revComp / stamp / general
+    ending = ".png"
+
+    if(stamp){
     plot_title <- FALSE
     xaxis      <- FALSE
     yaxis      <- FALSE
     width      <- 1000
     height     <- 500
     ending     <- paste0("_stamp",ending)
-    
-  }
-  if(revComp && order == 0){
+
+    }
+    if(revComp && order == 0){
     revComp = TRUE
     ending = paste0("_revComp",ending)
-  }
-  ofilename = paste( maindir, file_prefix, "_motif_", motifNumber, "-logo-order-", order, ending, sep="" )
-  png( file.path(ofilename), width=width , height=height )
-  hoSeqLogo( filename=trunc_filename, order=order,
+    }
+    ofilename = paste( maindir, file_prefix, motif_id, "-logo-order-", order, ending, sep="" )
+    png( file.path(ofilename), width=width , height=height )
+    hoSeqLogo( filename=trunc_filename, order=order,
              useFreqs=useFreqs, base=base, icColumnScale=icColumnScale,
              icLetterScale=icLetterScale, xaxis=xaxis, yaxis=yaxis,
              xfontsize=xfontsize, yfontsize=yfontsize, alpha=alpha,
              cex=4, lwd=4 ,revComp=revComp, plot_title=plot_title )
-  
-  dev.off()
-  
-  if( web && order == 0 ){
+
+    dev.off()
+
+    if( web && order == 0 ){
     # add revcomp and stamp versions to the original logo in web mode
-    
+
     # 1. revComp with axis
     revComp = TRUE
     ending = paste0("_revComp",ending)
-    ofilename = paste( maindir, file_prefix, "_motif_", motifNumber, "-logo-order-", order, ending, sep="" )
+    ofilename = paste( maindir, file_prefix, motif_id, "-logo-order-", order, ending, sep="" )
     png( file.path(ofilename), width=width , height=height )
     hoSeqLogo( filename=trunc_filename, order=order,
                useFreqs=useFreqs, base=base, icColumnScale=icColumnScale,
                icLetterScale=icLetterScale, xaxis=xaxis, yaxis=yaxis,
                xfontsize=xfontsize, yfontsize=yfontsize, alpha=alpha,
                cex=4, lwd=4 ,revComp=revComp, plot_title=plot_title )
-    
+
     dev.off()
-    
+
     # 2. revComp without axis
     plot_title <- FALSE
     xaxis      <- FALSE
@@ -2014,30 +2014,30 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
     width      <- 1000
     height     <- 500
     ending     <- paste0("_stamp",ending)
-    
-    ofilename = paste( maindir, file_prefix, "_motif_", motifNumber, "-logo-order-", order, ending, sep="" )
+
+    ofilename = paste( maindir, file_prefix, motif_id, "-logo-order-", order, ending, sep="" )
     png( file.path(ofilename), width=width , height=height )
     hoSeqLogo( filename=trunc_filename, order=order,
                useFreqs=useFreqs, base=base, icColumnScale=icColumnScale,
                icLetterScale=icLetterScale, xaxis=xaxis, yaxis=yaxis,
                xfontsize=xfontsize, yfontsize=yfontsize, alpha=alpha,
                cex=4, lwd=4 ,revComp=revComp, plot_title=plot_title )
-    
+
     dev.off()
-    
+
     # 3. original without axis
     revComp = FALSE
     ending = paste0("_stamp.png")
-    
-    ofilename = paste( maindir, file_prefix, "_motif_", motifNumber, "-logo-order-", order, ending, sep="" )
+
+    ofilename = paste( maindir, file_prefix, motif_id, "-logo-order-", order, ending, sep="" )
     png( file.path(ofilename), width=width , height=height )
     hoSeqLogo( filename=trunc_filename, order=order,
                useFreqs=useFreqs, base=base, icColumnScale=icColumnScale,
                icLetterScale=icLetterScale, xaxis=xaxis, yaxis=yaxis,
                xfontsize=xfontsize, yfontsize=yfontsize, alpha=alpha,
                cex=4, lwd=4 ,revComp=revComp, plot_title=plot_title )
-    
+
     dev.off()
-    
-  }
+
+    }
 }
