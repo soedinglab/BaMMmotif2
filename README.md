@@ -4,11 +4,12 @@
 
 (C) Johannes Soeding, Wanwan Ge, Anja Kiesel, Matthias Siebert
 
+[![Build Status](https://travis-ci.org/soedinglab/BaMMmotif2.svg?branch=master)](https://travis-ci.org/soedinglab/BaMMmotif2)
 
 ## Requirements
 To compile from source, you need:
 
-  * [GCC](https://gcc.gnu.org/) compiler 4.7 or later  (we suggest GCC-5.x)
+  * [GCC](https://gcc.gnu.org/) compiler 4.7 or later (we suggest GCC-5.x)
   * [CMake](http://cmake.org/) 2.8.11 or later
   
 C++ packages
