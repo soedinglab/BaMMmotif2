@@ -366,7 +366,11 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     motif_id <- sub(paste(c(dir, "/", prefix), collapse=""), "", f)
     motif_id <- sub(".zoops.stats", "", motif_id)
     motif_num <- unlist(strsplit(motif_id, "_motif_"))[-1]
-    
+
+    if( length(motif_num) == 0){
+        motif_num = "NaN"
+    }
+
     # get a filename for each motif
     filename = paste(c(dir, "/", prefix, motif_id), collapse="")
 
