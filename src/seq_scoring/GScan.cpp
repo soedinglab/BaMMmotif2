@@ -5,6 +5,7 @@
 #include "GScan.h"
 
 char*               GScan::outputDirectory = NULL;		// output directory
+std::string         GScan::outputFileBasename;
 
 char*               GScan::posSequenceFilename = NULL;	// filename of positive sequence FASTA file
 std::string         GScan::posSequenceBasename;			// basename of positive sequence FASTA file
@@ -70,12 +71,20 @@ int GScan::readArguments( int nargs, char* args[] ){
     // read in the positive sequence file
     posSequenceFilename = args[2];
     posSequenceBasename = baseName( posSequenceFilename );
+    outputFileBasename = posSequenceBasename;
 
     // read in options from the third argument on
     for( int i = 3; i < nargs; i++ ){
+
         if( !strcmp( args[i], "-h" ) or !strcmp( args[i], "--help" ) ){
             printHelp();
             exit( 1 );
+        } else if( !strcmp( args[i], "--basename" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following --basename" << std::endl;
+            }
+            outputFileBasename = args[i];
         } else if( !strcmp( args[i], "-q" ) ){
             if( ++i >= nargs ){
                 printHelp();
@@ -178,7 +187,7 @@ int GScan::readArguments( int nargs, char* args[] ){
             if( ++i < nargs ){
                 addColumns.at(1) = std::stoi( args[i] );
             }
-        }  else if( !strcmp( args[i], "--pvalCutoff" ) ){
+        } else if( !strcmp( args[i], "--pvalCutoff" ) ){
             if( ++i >= nargs ){
                 printHelp();
                 std::cerr << "No expression following --pvalCutoff" << std::endl;
@@ -219,7 +228,7 @@ int GScan::readArguments( int nargs, char* args[] ){
         }
     }
 
-    fileExtension = concatenate2strings( posSequenceBasename, baseName( initialModelFilename ) );
+    fileExtension = concatenate2strings( outputFileBasename, baseName( initialModelFilename ) );
 
     return 0;
 }
@@ -251,7 +260,9 @@ void GScan::printHelp(){
               << "\t\t--saveInitialModel" << std::endl
               << "\t\t\tsave initial foreground and background models in bamm-format." << std::endl
               << "\t\t--maxPWM <INTEGER>" << std::endl
-              << "\t\t\tmaximal number of PWMs that should be optimized." << std::endl;
+              << "\t\t\tmaximal number of PWMs that should be optimized." << std::endl
+              << "\t\t--basename <STRING>" << std::endl
+              << "\t\t\tbasename of the outputt files." << std::endl;
 }
 
 void GScan::destruct(){

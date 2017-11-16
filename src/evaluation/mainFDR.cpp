@@ -24,14 +24,14 @@ int main( int nargs, char* args[] ){
                                       GFdr::bgModelOrder,
                                       GFdr::bgModelAlpha,
                                       GFdr::interpolateBG,
-                                      GFdr::posSequenceBasename);
+                                      GFdr::outputFileBasename);
     } else {
         bgModel = new BackgroundModel( GFdr::bgModelFilename );
     }
 
     if(GFdr::saveInitialModel){
         // save background model
-        bgModel->write(GFdr::outputDirectory, GFdr::posSequenceBasename);
+        bgModel->write(GFdr::outputDirectory, GFdr::outputFileBasename);
     }
 
     /**
@@ -81,7 +81,7 @@ int main( int nargs, char* args[] ){
         if(GFdr::saveInitialModel){
             // write out the foreground model
             motif->write( GFdr::outputDirectory,
-                          GFdr::posSequenceBasename + "_init_motif_" + std::to_string( n+1 ) );
+                          GFdr::outputFileBasename + "_init_motif_" + std::to_string( n+1 ) );
 
         }
 
@@ -93,7 +93,7 @@ int main( int nargs, char* args[] ){
         }
 
         fdr.write( GFdr::outputDirectory,
-                   GFdr::posSequenceBasename + fileExtension );
+                   GFdr::outputFileBasename + fileExtension );
         if( motif )		delete motif;
     }
 

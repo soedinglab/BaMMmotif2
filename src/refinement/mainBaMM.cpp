@@ -38,14 +38,14 @@ int main( int nargs, char* args[] ){
                                        Global::bgModelOrder,
                                        Global::bgModelAlpha,
                                        Global::interpolateBG,
-                                       Global::posSequenceBasename );
+                                       Global::outputFileBasename );
 
     } else {
 		bgModel = new BackgroundModel( Global::bgModelFilename );
 
 	}
     // always save the background model
-    bgModel->write( Global::outputDirectory, Global::posSequenceBasename );
+    bgModel->write( Global::outputDirectory, Global::outputFileBasename );
 
 	if( Global::verbose ){
         std::cout << std::endl
@@ -79,7 +79,7 @@ int main( int nargs, char* args[] ){
 		if( Global::saveInitialBaMMs ){
 			// optional: save initial model
 			motif->write( Global::outputDirectory,
-                          Global::posSequenceBasename + "_init_motif_" + std::to_string( n+1 ) );
+                          Global::outputFileBasename + "_init_motif_" + std::to_string( n+1 ) );
 		}
 
 		// optimize the model with either EM or Gibbs sampling
@@ -96,7 +96,7 @@ int main( int nargs, char* args[] ){
             // write model parameters on the disc
 			if( Global::saveBaMMs ){
 				model.write( Global::outputDirectory,
-                             Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ),
+                             Global::outputFileBasename + "_motif_" + std::to_string( n+1 ),
                              Global::ss );
 			}
 
@@ -110,7 +110,7 @@ int main( int nargs, char* args[] ){
 			// write model parameters on the disc
 			if( Global::saveBaMMs ){
 				model.write( Global::outputDirectory,
-                             Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ),
+                             Global::outputFileBasename + "_motif_" + std::to_string( n+1 ),
                              Global::ss );
 			}
 
@@ -123,7 +123,7 @@ int main( int nargs, char* args[] ){
 		}
         // write out the learned model
         motif->write( Global::outputDirectory,
-                      Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ) );
+                      Global::outputFileBasename + "_motif_" + std::to_string( n+1 ) );
 
         if( Global::scoreSeqset ){
             // score the model on sequence set
@@ -180,7 +180,7 @@ int main( int nargs, char* args[] ){
             scorePosSet.calcPvalues( posScores, negScores );
 
             scorePosSet.write( Global::outputDirectory,
-                               Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ),
+                               Global::outputFileBasename + "_motif_" + std::to_string( n+1 ),
                                Global::pvalCutoff,
                                Global::ss );
         }
@@ -251,7 +251,7 @@ int main( int nargs, char* args[] ){
                      Global::savePRs, Global::savePvalues, Global::saveLogOdds );
 			fdr.evaluateMotif( Global::EM, Global::CGS, Global::optimizeQ, Global::advanceEM );
 			fdr.write( Global::outputDirectory,
-                       Global::posSequenceBasename + "_motif_" + std::to_string( n+1 ) );
+                       Global::outputFileBasename + "_motif_" + std::to_string( n+1 ) );
 			if( motif )		delete motif;
 		}
 

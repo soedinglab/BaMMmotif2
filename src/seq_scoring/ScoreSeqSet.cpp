@@ -72,18 +72,24 @@ void ScoreSeqSet::calcPvalues( std::vector<std::vector<float>> pos_scores, std::
 	/**
 	 * calculate P-values for motif occurrences
 	 */
+
     size_t posN = seqSet_.size();
     size_t negN = neg_all_scores.size();
     mops_p_values_.resize( posN );
     mops_e_values_.resize( posN );
 
     float eps = 1.0e-5;
-    size_t nTop = std::min( 100, ( int )negN / 10 );
 
-    // sort negative set scores in ascending order
+    // sort negative set scores in descending order
+    // todo: this will be debugged soon
     std::sort( neg_all_scores.begin(), neg_all_scores.end(), std::less<float>() );
+    //std::sort( neg_all_scores.begin(), neg_all_scores.end(), std::greater<float>() );
 
+    // get the top n-th score from the negative set
+    size_t nTop = std::min( 100, ( int )negN / 10 );
     float S_ntop = neg_all_scores[nTop];
+
+    // calculate the rate parameter lambda
     float lambda = 0.f;
 	for( size_t n = 0; n < nTop; n++ ){
 		lambda += ( neg_all_scores[n] - S_ntop );
@@ -96,10 +102,12 @@ void ScoreSeqSet::calcPvalues( std::vector<std::vector<float>> pos_scores, std::
 
 		for( size_t i = 0; i < LW1; i++ ){
 
+            // todo: this is wrongly assigned
             float Sl = pos_scores[n][i];
             // count the accumulated number of scores from the negative set up to rank l
             size_t FPl = std::distance( std::upper_bound( neg_all_scores.begin(), neg_all_scores.end(), Sl ),
                                         neg_all_scores.end() );
+            //std::cout << FPl << '\t';
 
             float p_value;
 			if( FPl == negN ){
@@ -107,7 +115,13 @@ void ScoreSeqSet::calcPvalues( std::vector<std::vector<float>> pos_scores, std::
 				p_value = 1.f;
 			} else if( FPl < 10 ){
                 // when only few or no negative scores are higher than Sl:
+/*                lambda += eps;
+                std::cout << float( nTop ) / ( float )negN << '\t'
+                          << Sl - S_ntop  << '\t'
+                          << Sl << '\t' << S_ntop << '\t'
+                          << exp( - ( Sl - S_ntop ) / lambda ) << '\n';*/
 				p_value = float( nTop ) / ( float )negN * exp( - ( Sl - S_ntop ) / lambda );
+
 			} else {
 				// when Sl_higher and Sl_lower can be defined:
 				float SlHigher = neg_all_scores[negN-FPl-1];
@@ -131,9 +145,10 @@ std::vector<float> ScoreSeqSet::getZoopsScores(){
 }
 
 void ScoreSeqSet::write( char* odir, std::string basename, float pvalCutoff, bool ss ){
-	/**
+
+    /**
 	 * save log odds scores in one flat file:
-	 * posSequenceBasename_motif_N.occurrence
+	 * basename.occurrence
 	 */
 
     assert( pval_is_calulated_ );

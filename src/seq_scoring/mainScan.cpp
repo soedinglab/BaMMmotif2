@@ -24,7 +24,7 @@ int main( int nargs, char* args[] ) {
                                        GScan::bgModelOrder,
                                        GScan::bgModelAlpha,
                                        GScan::interpolateBG,
-                                       GScan::posSequenceBasename );
+                                       GScan::outputFileBasename );
 
     // use provided bgModelFile if initialized with bamm format
     if( GScan::initialModelTag == "BaMM" ) {
@@ -41,7 +41,7 @@ int main( int nargs, char* args[] ) {
 
     if(GScan::saveInitialModel){
         // save background model
-        bgModel->write(GScan::outputDirectory, GScan::posSequenceBasename);
+        bgModel->write(GScan::outputDirectory, GScan::outputFileBasename);
     }
 
     /**
@@ -82,7 +82,7 @@ int main( int nargs, char* args[] ) {
         if(GScan::saveInitialModel){
             // write out the foreground model
             motif->write( GScan::outputDirectory,
-                          GScan::posSequenceBasename + "_init_motif_" + std::to_string( n+1 ) );
+                          GScan::outputFileBasename + "_init_motif_" + std::to_string( n+1 ) );
 
         }
 
@@ -111,7 +111,7 @@ int main( int nargs, char* args[] ) {
             fileExtension = GScan::fileExtension;
         }
         scorePosSet.write( GScan::outputDirectory,
-                           GScan::posSequenceBasename + fileExtension,
+                           GScan::outputFileBasename + fileExtension,
                            GScan::pvalCutoff,
                            GScan::ss );
 

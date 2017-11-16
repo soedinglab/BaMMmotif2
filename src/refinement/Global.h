@@ -28,9 +28,11 @@ class Global{
 public:
 
 	static char*		outputDirectory; 		// output directory
+    static std::string	outputFileBasename;	    // basename of output file, if not given,
+                                                // take basename of the input positive sequence FASTA file
 
 	static char*		posSequenceFilename;	// filename of positive sequence FASTA file
-	static std::string	posSequenceBasename;	// basename of positive sequence FASTA file
+    static std::string	posSequenceBasename;    // basename of positive sequence FASTA file
 	static SequenceSet*	posSequenceSet;			// positive sequence set
 	static bool 		maskPosSequenceSet;		// mask motif patterns from positive sequence set
 
@@ -59,7 +61,7 @@ public:
 	static std::vector<float> modelAlpha;		// initial alphas
 	static float		modelBeta;				// alpha_k = beta x gamma^k for k > 0
 	static float		modelGamma;
-	static std::vector<size_t>	addColumns;		// add columns to the left and right of init used to initialize Markov init
+	static std::vector<size_t>	addColumns;		// add columns to the left and right of init used to initialize Markov model
     static bool			interpolate;			// calculate prior probabilities from lower-order probabilities
     											// instead of background frequencies of mono-nucleotides
     static bool			interpolateBG;			// calculate prior probabilities from lower-order probabilities
@@ -93,7 +95,7 @@ public:
 
 	// motif occurrence options
 	static bool         scoreSeqset;			// write logOdds Scores of positive sequence set to disk
-	static float        pvalCutoff;			// cutoff for logOdds scores to print out as motif hits
+	static float        pvalCutoff;			    // cutoff for logOdds scores to print out as motif hits
 
 	// other options
 	static bool			verbose;				// verbose printouts, defaults to false

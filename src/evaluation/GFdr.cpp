@@ -5,6 +5,7 @@
 #include "GFdr.h"
 
 char*               GFdr::outputDirectory = NULL;		// output directory
+std::string         GFdr::outputFileBasename;
 
 char*               GFdr::posSequenceFilename = NULL;	// filename of positive sequence FASTA file
 std::string         GFdr::posSequenceBasename;			// basename of positive sequence FASTA file
@@ -84,12 +85,19 @@ int GFdr::readArguments( int nargs, char* args[] ){
     // read in the positive sequence file
     posSequenceFilename = args[2];
     posSequenceBasename = baseName( posSequenceFilename );
+    outputFileBasename = posSequenceBasename;
 
     // read in options from the third argument on
     for( int i = 3; i < nargs; i++ ){
         if( !strcmp( args[i], "-h" ) or !strcmp( args[i], "--help" ) ){
             printHelp();
             exit( 1 );
+        } else if( !strcmp( args[i], "--basename" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following --basename" << std::endl;
+            }
+            outputFileBasename = args[i];
         } else if( !strcmp( args[i], "-q" ) ){
             if( ++i >= nargs ){
                 printHelp();
@@ -257,7 +265,7 @@ int GFdr::readArguments( int nargs, char* args[] ){
         }
     }
 
-    fileExtension = concatenate2strings( posSequenceBasename, baseName( initialModelFilename ) );
+    fileExtension = concatenate2strings( outputFileBasename, baseName( initialModelFilename ) );
 
     return 0;
 }
@@ -351,6 +359,10 @@ void GFdr::printHelp(){
                    "				The default for this log odds score is zero.\n\n");
     printf("\n 			-h, --help\n"
                    "				Printout this help function.\n\n");
+    printf("\n 			--basename\n"
+           "						Specify the basename of output files.\n"
+           "						By default, all output files have the same basename as \n"
+           "						the input positive FASTA file.\n\n");
     printf("\n==================================================================\n");
 }
 

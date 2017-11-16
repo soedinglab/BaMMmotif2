@@ -1,6 +1,7 @@
 #include "Global.h"
 
 char*               Global::outputDirectory = NULL;			// output directory
+std::string			Global::outputFileBasename;
 
 char*               Global::posSequenceFilename = NULL;		// filename of positive sequence FASTA file
 std::string			Global::posSequenceBasename;			// basename of positive sequence FASTA file
@@ -120,7 +121,7 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	// read in the positive sequence file
 	posSequenceFilename = args[2];
-	posSequenceBasename = baseName( posSequenceFilename );
+    posSequenceBasename = baseName( posSequenceFilename );
 
 	// read in options from the third argument on
 	GetOpt::GetOpt_pp opt( nargs-2, args+2 );
@@ -130,6 +131,13 @@ int Global::readArguments( int nargs, char* args[] ){
 		exit( 1 );
 	}
 
+    // read in the basename of output file,
+    // if not given, take the basename of input FASTA file
+    if( opt >> GetOpt::OptionPresent( "basename" ) ){
+        opt >> GetOpt::Option("basename", outputFileBasename);
+    } else {
+        outputFileBasename = posSequenceBasename;
+    }
     // mask motif patterns from the positive sequence set
     opt >> GetOpt::OptionPresent( "maskPosSequenceSet", maskPosSequenceSet );
 
@@ -324,7 +332,7 @@ void Global::printStat(){
 
 	// for positive sequence set
 	std::cout << "\nGiven positive sequence set is "
-              << Global::posSequenceBasename << ".\n	"
+              << Global::outputFileBasename << ".\n	"
               << Global::posSequenceSet->getSequences().size()
               << " sequences, max.length: " << Global::posSequenceSet->getMaxL()
               << ", min.length: " << Global::posSequenceSet->getMinL()
@@ -508,6 +516,10 @@ void Global::printHelp(){
 	printf("\n 			--scoreSeqset\n"
 			"				Find the motif occurrences on the sequences due to\n"
 			"				log odds scores and write them out.\n\n");
+    printf("\n 			--basename\n"
+           "				Specify the basename of output files.\n"
+           "				By default, all output files have the same basename as \n"
+           "				the input positive FASTA file.\n\n");
 	printf("\n 			-h, --help\n"
 			"				Printout this help function.\n\n");
 	printf("\n==================================================================\n");

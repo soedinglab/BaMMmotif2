@@ -15,6 +15,7 @@ class GScan{
 public:
 
     static char*		outputDirectory; 		// output directory
+    static std::string	outputFileBasename;
 
     // sequence set options
     static char*		posSequenceFilename;	// filename of positive sequence FASTA file
