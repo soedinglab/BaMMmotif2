@@ -264,19 +264,19 @@ void FDR::calculatePvalues(){
             std::sort( posScoreAll_.begin(), posScoreAll_.end(), std::less<float>() );
             for( size_t i = 0; i < posScoreAll_.size(); i++ ){
                 // Return iterator to lower/upper bound
-                int low, up;
-                low = static_cast<int>( std::distance( negScoreAll_.begin(),
-                                                       std::lower_bound( negScoreAll_.begin(),
-                                                                         negScoreAll_.end(),
-                                                                         posScoreAll_[i] ) ) );
-                up =  static_cast<int>( std::distance( negScoreAll_.begin(),
-                                                       std::upper_bound( negScoreAll_.begin(),
-                                                                         negScoreAll_.end(),
-                                                                         posScoreAll_[i] ) ) );
+                size_t low, up;
+                low = std::distance( negScoreAll_.begin(),
+                                     std::lower_bound( negScoreAll_.begin(),
+                                                       negScoreAll_.end(),
+                                                       posScoreAll_[i] ) );
+                up = std::distance( negScoreAll_.begin(),
+                                    std::upper_bound( negScoreAll_.begin(),
+                                                      negScoreAll_.end(),
+                                                      posScoreAll_[i] ) );
                 float p = 1.0f - ( float )( up + low ) / ( 2.0f * ( float ) negScoreAll_.size() );
                 // avoid the rounding errors, such as p-value = 0 or p-value > 1
-                if( p < 1e-6 ) p = 0.000001f;
-                if( p > 1.0f ) p = 1.0f;
+                if( p < 1.e-6 ) p = 1.e-6;
+                if( p > 1.0f )  p = 1.0f;
                 MOPS_Pvalue_.push_back( p );
             }
         }
@@ -288,19 +288,19 @@ void FDR::calculatePvalues(){
             std::sort( posScoreMax_.begin(), posScoreMax_.end(), std::less<float>() );
             for( size_t i = 0; i < posScoreMax_.size(); i++ ){
                 // Return iterator to lower/upper bound
-                int low, up;
-                low = static_cast<int>( std::distance( negScoreMax_.begin(),
-                                                       std::lower_bound( negScoreMax_.begin(),
-                                                                         negScoreMax_.end(),
-                                                                         posScoreMax_[i] ) ) );
-                up =  static_cast<int>( std::distance( negScoreMax_.begin(),
-                                                       std::upper_bound( negScoreMax_.begin(),
-                                                                         negScoreMax_.end(),
-                                                                         posScoreMax_[i] ) ) );
+                size_t low, up;
+                low = std::distance( negScoreMax_.begin(),
+                                     std::lower_bound( negScoreMax_.begin(),
+                                                       negScoreMax_.end(),
+                                                       posScoreMax_[i] ) );
+                up = std::distance( negScoreMax_.begin(),
+                                    std::upper_bound( negScoreMax_.begin(),
+                                                      negScoreMax_.end(),
+                                                      posScoreMax_[i] ) );
                 float p = 1.0f - ( float )( up + low ) / ( 2.0f * ( float )negScoreMax_.size() );
                 // avoid the rounding errors, such as p-value = 0 or p-value > 1
-                if( p < 1e-6 ) p = 0.000001f;
-                if( p > 1.0f ) p = 1.0f;
+                if( p < 1.e-6 ) p = 1.e-6;
+                if( p > 1.0f )  p = 1.0f;
                 ZOOPS_Pvalue_.push_back( p );
             }
         }
