@@ -88,10 +88,7 @@ int main( int nargs, char* args[] ){
         std::string fileExtension;
         if( GFdr::initialModelTag == "PWM" ){
             fileExtension = "_motif_" + std::to_string( n+1 );
-        } else {
-            fileExtension = GFdr::fileExtension;
         }
-
         fdr.write( GFdr::outputDirectory,
                    GFdr::outputFileBasename + fileExtension );
         if( motif )		delete motif;
