@@ -741,7 +741,7 @@ hoSeqLogo <- function( filename, order, useFreqs=F, base=2, icColumnScale=TRUE,
     if( is.null( ylim ) ){
       if( order == 0 ) { ylim <- c( -0.5, 2 ) }  	# for order 0
       if( order == 1 ) { ylim <- c( -0.4, 1 ) }     # for order 1
-      if( order == 2 ) { ylim <- c( -0.3, 0.5 ) }	# for order 2
+      if( order >= 2 ) { ylim <- c( -0.3, 0.5 ) }	# for order 2
     }
     ylab <-""
     
