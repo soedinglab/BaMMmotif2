@@ -46,9 +46,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
     }
     # get motif number from the filename
     motif_id <- sub(paste(c(maindir, '/', file_prefix), collapse=""), "", file)
-    print(motif_id)
     motif_id <- sub(file_suffix, "", motif_id)
-    print(motif_id)
 
     # get a filename for each motif
     filename = paste0(c(maindir, file_prefix, motif_id, file_suffix), collapse="")
@@ -56,8 +54,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
     table <- read.table(filename,
                         fileEncoding="latin1", as.is=TRUE, na.strings = "NA",
                         fill = TRUE, strip.white = TRUE, skip=1, sep = '\t')
-
-
+    
     strand_length = c(table$V2)
     strand_ind = c(table$V3)
     pattern_range = c(table$V4)
