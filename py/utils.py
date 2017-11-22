@@ -221,7 +221,7 @@ def parse_meme(meme_input_file):
             bg_toks = handle.readline().split()[1::2]
             bg_freqs = [float(f) for f in bg_toks]
             dataset['bg_freq'] = bg_freqs
- 
+
         # parse pwms
         width_pat = re.compile('w= (\d+)')
 
