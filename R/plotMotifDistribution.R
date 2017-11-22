@@ -54,7 +54,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
     table <- read.table(filename,
                         fileEncoding="latin1", as.is=TRUE, na.strings = "NA",
                         fill = TRUE, strip.white = TRUE, skip=1, sep = '\t')
-    
+
     strand_length = c(table$V2)
     strand_ind = c(table$V3)
     pattern_range = c(table$V4)

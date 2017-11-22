@@ -145,8 +145,6 @@ void FDR::calculatePR(){
 	size_t negN = negSeqs_.size();
 	float mFold = ( float )negN / ( float )posN;
 
-    // seed the random generator
-    srand( 42 );
 	// for MOPS model:
 	if( mops_ ){
 		// Sort log odds scores in descending order
@@ -166,11 +164,7 @@ void FDR::calculatePR(){
 		for( size_t i = 0; i < len_all; i++ ){
 			if( posScoreAll_[idx_posAll] > negScoreAll_[idx_negAll] || idx_negAll == len_all ){
 				idx_posAll++;
-			} else if( ( posScoreAll_[idx_posAll] == negScoreAll_[idx_negAll] || idx_posAll == 0 ) and
-                    random() % 2 == 0 ){
-                // Note: when pos and neg have the same score, assign them randomly
-                idx_posAll++;
-            } else {
+			} else {
 				idx_negAll++;
 			}
 
@@ -213,11 +207,7 @@ void FDR::calculatePR(){
 		for( size_t i = 0; i < posN + negN; i++ ){
 			if( posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] || idx_negMax == posN+negN-1 ){
 				idx_posMax++;
-			} else if( (posScoreMax_[idx_posMax] == negScoreMax_[idx_negMax] || idx_posMax == 0 ) and
-                    random() % 2 == 0 ){
-                // Note: when pos and neg have the same score, assign them randomly
-                idx_posMax++;
-            } else {
+			} else {
 				idx_negMax++;
 			}
 
@@ -319,7 +309,7 @@ void FDR::calculatePvalues(){
             size_t len_all = posScoreAll_.size() + negScoreAll_.size();
 
             for( size_t i = 0; i < len_all; i++ ){
-                if( posScoreAll_[idx_posAll] >= negScoreAll_[idx_negAll]
+                if( posScoreAll_[idx_posAll] > negScoreAll_[idx_negAll]
                     || idx_posAll == 0 || idx_negAll == len_all - 1 ){
                     idx_posAll++;
                     MOPS_Pvalue_.push_back( ( ( float )idx_negAll + 0.5f )
@@ -342,7 +332,7 @@ void FDR::calculatePvalues(){
             size_t idx_negMax = 0;
             size_t len_max = posScoreMax_.size() + negScoreMax_.size();
             for( size_t i = 0; i < len_max; i++ ){
-                if( posScoreMax_[idx_posMax] >= negScoreMax_[idx_negMax]
+                if( posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax]
                     || idx_posMax == 0  || idx_negMax == len_max - 1 ){
                     idx_posMax++;
                     ZOOPS_Pvalue_.push_back( ( ( float )idx_negMax + 0.5f )
