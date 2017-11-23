@@ -588,12 +588,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
         invisible(dev.off())
     }
 
-    resultString = paste0(c(prefix,
-                            motif_num,
-                            round(ausfc, digits=6),
-                            round(auc5, digits=6),
-                            round(auprc, digits=6),
-                            round(occurrence, digits=6)), collapse="\t")
+    resultString = paste0(c(prefix, motif_num, ausfc, auc5, auprc, occurrence), collapse="\t")
     #print( resultString )
     results = c(results, resultString)
 }

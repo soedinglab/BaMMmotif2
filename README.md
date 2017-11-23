@@ -29,7 +29,7 @@ To plot BaMM logos you need R and several R packages
 
 ### Clone it from GIT
 
-      git clone git@github.com:soedinglab/BaMMmotif2 BaMMmotif
+      git clone https://github.com/soedinglab/BaMMmotif2.git BaMMmotif
       cd BaMMmotif
 
 ### How to compile BaMM!motif?
@@ -61,8 +61,9 @@ Having installed Homebrew, all required dependencies can be installed using the 
 
       mkdir build
       cd build
-      cmake ..
-      make
+      cmake -DCMAKE_INSTALL_PREFIX=${HOME}/opt/BaMM ..
+      make 
+      make install
       
 #### Environment setup
 Add this line to your $HOME/.bashrc (or .zshrc...) to add BaMMmotif to your PATH:
