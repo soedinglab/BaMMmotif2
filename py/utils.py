@@ -279,5 +279,12 @@ def write_meme(dataset, meme_output_file):
                 print(" ".join(['{:.4f}'.format(x) for x in line]), file=fh)
             print(file=fh)
 
+def write_bamm(pwm, ofile):
+    eps = 1e-16
+    with open(ofile, "w") as fh:
+        for i in range(len(pwm)):
+            print(' '.join(['{:.4e}'.format(x+eps) for x in pwm[i]]) + ' \n', file=fh)
+
+
 class MalformattedMemeError(ValueError):
     pass

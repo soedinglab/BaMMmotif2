@@ -121,3 +121,4 @@ cmake-build-debug/
 # python
 ##############
 */*/__pycache__/
+*/__pycache__/
