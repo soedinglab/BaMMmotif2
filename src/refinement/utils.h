@@ -153,7 +153,7 @@ inline void createDirectory( char* dir ){
 
 	if( stat( dir, &fileStatus ) != 0 ){
 		std::cout << "New output directory is created automatically.\n";
-		if( system( ( "mkdir " + std::string( dir ) ).c_str() ) != 0 ){
+		if( system( ( "mkdir -p " + std::string( dir ) ).c_str() ) != 0 ){
 			std::cerr << "Error: Directory " << dir << " could not be created." << std::endl;
 			exit( -1 );
 		}
