@@ -18,7 +18,8 @@ public:
                    bool samplingQ = true,
 				   float beta = 7.0f, float gamma = 3.0f,
 				   bool initializeZ = true, bool samplingZ = true,
-				   bool optimizeA = true, bool GibbsMHalphas = false, bool dissampleAlphas = false );
+				   bool optimizeA = true, bool GibbsMHalphas = false, bool dissampleAlphas = false,
+                   bool verbose = false );
 	~GibbsSampling();
 
 	void 					optimize();			// optimize BaMM model with Gibbs sampling
@@ -41,15 +42,13 @@ private:
 	size_t 					K_bg_;				// the order of the background model
 
 	float** 				r_;		        	// responsibilities at all the positions in sequence n
-                                                // Note: here the r_[n][0] indicates the responsibility of not having
-                                                //      a motif on the sequence;
-                                                //      r_[n][i] (for i > 0) indicates the responsibility of having a motif
-                                                //      on position L-W+2-i
+                                                // Note: here r_[n][i] indicates the responsibility of having a motif
+                                                //      on position L-W-i
 
 	float**					s_;					// log odds scores
 	float*** 				n_;	            	// fractional counts n for (k+1)-mers y at motif position j
 	size_t*					z_;					// observed position of motif in each sequence
-	float**					pos_;				// positional prior, pos[i][0] indicates the prior for no motif present on sequence i
+	float**					pos_;				// positional prior
 
 	float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif
 	std::vector<Sequence*>	seqs_;				// copy positive sequences
@@ -73,6 +72,7 @@ private:
 	bool					optimizeA_;
 	bool					GibbsMHalphas_;
 	bool					dissampleAlphas_;
+    bool                    verbose_;
 
 							// sample motif position z by collapsed Gibbs sampling
 	void					Collapsed_Gibbs_sampling_z();

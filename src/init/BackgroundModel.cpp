@@ -414,7 +414,7 @@ void BackgroundModel::write( char* odir, std::string basename ){
 		file << "# K = " << K_ << std::endl;
 		file << "# A =";
 		for( size_t k = 0; k <= K_; k++ ){
-			file << " " << A_[k];
+			file << std::fixed << std::setprecision( 2 ) << " " << A_[k];
 		}
 		file << std::endl;
 

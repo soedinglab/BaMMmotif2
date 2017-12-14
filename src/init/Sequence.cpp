@@ -39,6 +39,7 @@ Sequence::Sequence( uint8_t* sequence,
 						( sequence_[i-k+1] - 1 ) ) * Y_[k-1];
 		}
 	}
+
 }
 
 Sequence::~Sequence(){

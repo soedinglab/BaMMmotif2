@@ -18,7 +18,7 @@ class EM {
 public:
 
     EM( Motif* motif, BackgroundModel* bgModel, std::vector<Sequence*> seqs,
-        float q, bool optimizeQ = false, bool verbose = false );
+        float q, bool optimizeQ = true, bool verbose = false );
     ~EM();
 
     int                     optimize();         // run EM optimization
@@ -37,7 +37,7 @@ public:
 private:
 
     Motif* 					motif_;				// motif to optimize within the EM
-    BackgroundModel*		bgModel_;				// background model
+    BackgroundModel*		bgModel_;			// background model
 
     size_t 					K_;					// the order of the motif model
     size_t					W_;					// the width of the motif pattern

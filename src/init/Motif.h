@@ -88,16 +88,23 @@ inline void Motif::updateV( float*** n, float** alpha, size_t K ){
 	assert( isInitialized_ );
 
 	// sum up the n over (k+1)-mers at different position of motif
-	float sumN = 0.0f;
+	std::vector<float> sumN(W_);
+    for( size_t j = 0; j < W_; j++ ) {
+        sumN[j] = 0.f;
+    }
+
 	for( size_t y = 0; y < Y_[1]; y++ ){
-		sumN += n[0][y][0];
+        for( size_t j = 0; j < W_; j++ ) {
+            sumN[j] += n[0][y][j];
+        }
 	}
 
 	// for k = 0, v_ = freqs:
 	for( size_t y = 0; y < Y_[1]; y++ ){
 		for( size_t j = 0; j < W_; j++ ){
 			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * f_bg_[y] )
-						/ ( sumN + alpha[0][j] );
+						/ ( sumN[j] + alpha[0][j] );
+            assert( v_[0][y][j] <= 1 );
 		}
 	}
 

@@ -10,7 +10,7 @@ std::string         GFdr::outputFileBasename;
 char*               GFdr::posSequenceFilename = NULL;	// filename of positive sequence FASTA file
 std::string         GFdr::posSequenceBasename;			// basename of positive sequence FASTA file
 SequenceSet*        GFdr::posSequenceSet = NULL;		// positive sequence set
-float               GFdr::q = 0.9f;						// prior probability for a positive sequence to contain a motif
+float               GFdr::q = 0.3f;						// prior probability for a positive sequence to contain a motif
 bool                GFdr::ss = false;					// only search on single strand sequences
 
 char*               GFdr::negSequenceFilename = NULL;	// filename of negative sequence FASTA file

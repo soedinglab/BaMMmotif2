@@ -9,7 +9,7 @@ char*               GSimu::outputDirectory = NULL;		// output directory
 char*               GSimu::sequenceFilename = NULL;	    // filename of input sequence FASTA file
 std::string         GSimu::sequenceBasename;			// basename of input sequence FASTA file
 SequenceSet*        GSimu::sequenceSet = NULL;		    // input sequence set
-float               GSimu::q = 0.9f;					// prior probability for a positive sequence to contain a motif
+float               GSimu::q = 0.3f;					// prior probability for a positive sequence to contain a motif
 
 // alphabet options
 char*			    GSimu::alphabetType = NULL;			// alphabet type is defaulted to standard which is ACGT

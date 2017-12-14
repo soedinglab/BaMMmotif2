@@ -104,7 +104,8 @@ int main( int nargs, char* args[] ){
             std::cout << "optimized q = " << model.getQ() << std::endl;
 
 		} else if ( Global::CGS ){
-			GibbsSampling model( motif, bgModel, Global::posSequenceSet->getSequences(), Global::q, !Global::noQSampling );
+			GibbsSampling model( motif, bgModel, Global::posSequenceSet->getSequences(),
+                                 Global::q, !Global::noQSampling, Global::verbose );
 			// learn motifs by collapsed Gibbs sampling
 			model.optimize();
 			// write model parameters on the disc
