@@ -106,8 +106,10 @@ int EM::optimize(){
         // check the change of likelihood for convergence
         llikelihood_diff = llikelihood_ - llikelihood_prev;
 
-        if( verbose_ ) std::cout << iteration << " iter, delta_llikelihood=" << llikelihood_diff
-                                 << ", llikelihood="<< llikelihood_ << std::endl;
+        if( verbose_ ) std::cout << iteration << " iter, llh=" << llikelihood_
+                                 << ", diff_llh=" << llikelihood_diff
+                                 << ", v_diff=" << v_diff
+                                 << std::endl;
 
         if( v_diff < epsilon_ )							iterate = false;
         if( llikelihood_diff < 0 and iteration > 10 )	iterate = false;

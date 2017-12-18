@@ -149,7 +149,7 @@ std::unique_ptr<Sequence> SeqGenerator::bg_sequence(size_t L){
 
 	std::unique_ptr<Sequence> seq( new Sequence( sequence, L, header, Y_, true ) );
 
-	free( sequence );
+	//free( sequence );
 
 	return seq;
 
@@ -229,7 +229,7 @@ std::unique_ptr<Sequence> SeqGenerator::posseq_motif_embedded( Sequence* seq, si
 
     std::unique_ptr<Sequence> seq_with_motif( new Sequence( sequence, L, header, Y_, true ) );
 
-    free( sequence );
+    //free( sequence );
 
     return seq_with_motif;
 
@@ -358,7 +358,7 @@ std::unique_ptr<Sequence> SeqGenerator::artiseq_motif_embedded(size_t seqlen){
 
 	std::unique_ptr<Sequence> seq( new Sequence( sequence, L, header, Y_, true ) );
 
-	free( sequence );
+	//free( sequence );
 
 	return seq;
 
@@ -402,7 +402,7 @@ std::unique_ptr<Sequence> SeqGenerator::sequence_with_motif_masked(Sequence *pos
 	}
 	std::string header = "-motif";
 	std::unique_ptr<Sequence> seq_mask_motif( new Sequence( real_seq, L, header, Y_, true ) );
-	free( real_seq );
+	//free( real_seq );
 	return seq_mask_motif;
 }
 

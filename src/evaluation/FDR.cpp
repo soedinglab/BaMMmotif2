@@ -205,7 +205,8 @@ void FDR::calculatePR(){
 		size_t posN_est = static_cast<size_t>( q_ * ( float )posN );
 
 		for( size_t i = 0; i < posN + negN; i++ ){
-			if( posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] || idx_negMax == posN+negN-1 ){
+			if( ( posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] || idx_negMax == posN+negN-1 )
+                and idx_posMax < posN ){
 				idx_posMax++;
 			} else {
 				idx_negMax++;
@@ -217,23 +218,24 @@ void FDR::calculatePR(){
                 break;
             }
 */
-
-			ZOOPS_TP_.push_back( ( float )idx_posMax );
-			ZOOPS_FP_.push_back( ( float )idx_negMax / mFold );
+            float tp = ( float )idx_posMax;
+            float fp = ( float )idx_negMax / mFold;
+			ZOOPS_TP_.push_back( tp );
+			ZOOPS_FP_.push_back( fp );
 			PN_Pvalue_.push_back( ( ( float )idx_negMax + 0.5f ) / ( ( float )negN + 1.0f ) );
 
 			// take the faction of q sequences as real positives
 			if( idx_posMax == posN_est ){
-				min_idx_pos = i + 1;
+				min_idx_pos = i;
 			}
 
-			ZOOPS_FDR_.push_back( ZOOPS_FP_[i] / ( ZOOPS_TP_[i] + ZOOPS_FP_[i] ) );
-			ZOOPS_Rec_.push_back( ZOOPS_TP_[i] / ( float )posN );
+			ZOOPS_FDR_.push_back( fp / ( tp + fp ) );
+			ZOOPS_Rec_.push_back( tp / ( float )posN );
 
 		}
 
 		// the fraction of motif occurrence
-		occ_frac_ = 1 - ZOOPS_FP_[min_idx_pos] / ( float )posN;
+		occ_frac_ = 1.0f - ZOOPS_FP_[min_idx_pos] / ( float )posN;
 	}
 }
 
