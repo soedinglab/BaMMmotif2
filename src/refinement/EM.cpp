@@ -267,16 +267,15 @@ int EM::advance() {
             size_t L = seqs_[n]->getL();
             size_t LW1 = L - W_ + 1;
             size_t *kmer = seqs_[n]->getKmer();
-            float normFactor = 0.0f;
+            float normFactor = 1.0f - q_;
 
             // initialize r_[n][i] and pos_[n][i]
             float pos_i = q_ / static_cast<float>( LW1 );
-            for (size_t i = 1; i <= LW1; i++) {
+            for (size_t i = 0; i < LW1; i++) {
                 r_[n][i] = 1.0f;
                 pos_[n][i] = pos_i;
             }
-            pos_[n][0] = 1.0f - q_;
-            r_[n][0] = pos_[n][0];
+
 
             // when p(z_n > 0), ij = i+j runs over all positions in sequence
             for (size_t ij = 0; ij < L; ij++) {
@@ -285,20 +284,19 @@ int EM::advance() {
                 size_t y = kmer[ij] % Y_[1];
                 // j runs over all motif positions
                 size_t padding = (static_cast<int>( ij - L + W_ ) > 0) * (ij - L + W_);
-                for (size_t j = padding; j < (W_ < (ij + 1) ? W_ : ij + 1); j++) {
-                    r_[n][LW1 - ij + j] *= s_[y][j];
+                for (size_t j = padding; j < (W_ < ij ? W_ : ij ); j++) {
+                    r_[n][L-W_-ij + j] *= s_[y][j];
                 }
             }
 
             // calculate the responsibilities and sum them up
-            normFactor += r_[n][0];
-            for (size_t i = 1; i <= LW1; i++) {
-                r_[n][i] *= pos_[n][LW1 + 1 - i];
+            for (size_t i = 0; i < LW1; i++) {
+                r_[n][i] *= pos_[n][L-W_-i];
                 normFactor += r_[n][i];
             }
 
             // normalize responsibilities
-            for (size_t i = 0; i <= LW1; i++) {
+            for (size_t i = 0; i < LW1; i++) {
                 r_[n][i] /= normFactor;
             }
 
@@ -327,7 +325,7 @@ int EM::advance() {
                 size_t y = kmer[ij] % Y_[1];
                 size_t padding = ( static_cast<int>( ij-L+W_ ) > 0 ) * ( ij-L+W_ );
                 for( size_t j = padding; j < ( W_ < (ij+1) ? W_ : ij+1 ); j++ ){
-                    n_[0][y][j] += r_[n][L-W_+1-ij+j];
+                    n_[0][y][j] += r_[n][L-W_-ij+j];
                 }
             }
         }
@@ -351,7 +349,7 @@ int EM::advance() {
     // add all r's to an array for sorting
     for( size_t n = 0; n < seqs_.size(); n++ ){
         size_t LW1 = seqs_[n]->getL() - W_ + 1;
-        for (size_t i = 1; i <= LW1; i++) {
+        for (size_t i = 0; i < LW1; i++) {
             r_all.push_back( r_[n][i] );
         }
         pos_count += LW1;
@@ -367,8 +365,7 @@ int EM::advance() {
     // put the index of the 10% r's in an array
     for( size_t n = 0; n < seqs_.size(); n++ ){
         size_t LW1 = seqs_[n]->getL() - W_ + 1;
-        r_all.push_back( r_[n][0] );
-        for( size_t i = 1; i <= LW1; i++ ){
+        for( size_t i = 0; i < LW1; i++ ){
             if( r_[n][i] >= r_cutoff ){
                 ri[n].push_back( i );
             }
@@ -379,7 +376,6 @@ int EM::advance() {
      * optimize the model from the top 10% global occurrences with the highest order till convergence
      */
     bool 	iterate = true;
-
     float 	v_diff, llikelihood_prev, llikelihood_diff;
 
     std::vector<std::vector<float>> v_before;
@@ -411,7 +407,7 @@ int EM::advance() {
         motif_->calculateLinearS( bgModel_->getV(), K_bg_ );
 
         // todo: parallelize the code
-    //	#pragma omp parallel for
+        //	#pragma omp parallel for
 
         // calculate responsibilities r at all LW1 positions on sequence n
         // n runs over all sequences
@@ -419,9 +415,8 @@ int EM::advance() {
 
             size_t 	L = seqs_[n]->getL();
             size_t 	LW1 = L - W_ + 1;
-            size_t  LW2 = L - W_ + 2;
             size_t*	kmer = seqs_[n]->getKmer();
-            float 	normFactor = 0.0f;
+            float 	normFactor = 1.0f - q_;
 
             // initialize r_[n][i] and pos_[n][i]
             float pos_i = q_ / static_cast<float>( LW1 );
@@ -429,24 +424,18 @@ int EM::advance() {
                 r_[n][ri[n][idx]] = 1.0f;
                 pos_[n][ri[n][idx]] = pos_i;
             }
-            pos_[n][0] = 1.0f - q_;
-            r_[n][0] = pos_[n][0];
 
             // update r based on the log odd ratios
             for( size_t idx = 0; idx < ri[n].size(); idx++ ){
                 for( size_t j = 0; j < W_; j++ ){
-                    size_t y = kmer[LW2-ri[n][idx]+j] % Y_[K_+1];
+                    size_t y = kmer[L-W_-ri[n][idx]+j] % Y_[K_+1];
                     r_[n][ri[n][idx]] *= s_[y][j];
                 }
-            }
-
-            // calculate the responsibilities and sum them up
-            normFactor += r_[n][0];
-
-            for( size_t idx = 0; idx < ri[n].size(); idx++ ){
-                r_[n][ri[n][idx]] *= pos_[n][LW2-ri[n][idx]];
+                // calculate the responsibilities and sum them up
+                r_[n][ri[n][idx]] *= pos_[n][LW1-ri[n][idx]];
                 normFactor += r_[n][ri[n][idx]];
             }
+            
             // normalize responsibilities
             r_[n][0] /= normFactor;
             for( size_t idx = 0; idx < ri[n].size(); idx++ ){
@@ -474,12 +463,11 @@ int EM::advance() {
         // n runs over all sequences
         for( size_t n = 0; n < seqs_.size(); n++ ){
             size_t  L = seqs_[n]->getL();
-            size_t  LW2 = L - W_ + 2;
             size_t* kmer = seqs_[n]->getKmer();
 
             for( size_t idx = 0; idx < ri[n].size(); idx++ ){
                 for( size_t j = 0; j < W_; j++ ){
-                    size_t y = kmer[LW2-ri[n][idx]+j] % Y_[K_+1];
+                    size_t y = kmer[L-W_-ri[n][idx]+j] % Y_[K_+1];
                     n_[K_][y][j] += r_[n][ri[n][idx]];
                 }
             }

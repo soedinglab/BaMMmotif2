@@ -44,7 +44,7 @@ std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.f );// background mod
 
 // EM options
 bool				Global::EM = false;						// flag to trigger EM learning
-float				Global::q = 0.3f;						// prior probability for a positive sequence to contain a motif
+float				Global::q = 0.9f;						// prior probability for a positive sequence to contain a motif
 bool 				Global::optimizeQ = false;				// optimize hyperparameter q in EM algorithm
 
 // CGS (Collapsed Gibbs sampling) options
