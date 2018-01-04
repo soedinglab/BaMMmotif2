@@ -435,11 +435,16 @@ int EM::advance() {
                 r_[n][ri[n][idx]] *= pos_[n][LW1-ri[n][idx]];
                 normFactor += r_[n][ri[n][idx]];
             }
-            
+
             // normalize responsibilities
             r_[n][0] /= normFactor;
             for( size_t idx = 0; idx < ri[n].size(); idx++ ){
                 r_[n][ri[n][idx]] /= normFactor;
+            }
+
+            // for the unused positions
+            for( size_t i = LW1; i < L; i++ ){
+                r_[n][i] = 0.0f;
             }
 
             // calculate log likelihood over all sequences
@@ -584,14 +589,15 @@ void EM::write( char* odir, std::string basename, bool ss ){
     for( size_t n = 0; n < seqs_.size(); n++ ){
 
         size_t L = seqs_[n]->getL();
-        size_t LW1 = L - W_ + 1;
         L = ss ? L : ( L - 1 ) / 2;
-        for( size_t i = 0; i < LW1; i++ ){
-            if( r_[n][LW1-1-i] >= cutoff ){
+
+        for( size_t i = 0; i < seqs_[n]->getL()-W_+1; i++ ){
+
+            if( r_[n][seqs_[n]->getL() -W_-i] >= cutoff ){
                 ofile_pos << '>' << seqs_[n]->getHeader() << '\t' << L << '\t'
                           << ( ( i < L ) ? '+' : '-' ) << '\t' << i + 1 << ".." << i+W_ << '\t';
-                for( size_t b = 0; b < W_; b++ ){
-                    ofile_pos << Alphabet::getBase( seqs_[n]->getSequence()[LW1-1-i+b] );
+                for( size_t b = i; b < i+W_; b++ ){
+                    ofile_pos << Alphabet::getBase( seqs_[n]->getSequence()[b] );
                 }
                 ofile_pos << std::endl;
             }
