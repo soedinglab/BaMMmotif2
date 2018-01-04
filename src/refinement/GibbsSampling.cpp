@@ -919,7 +919,6 @@ void GibbsSampling::write( char* odir, std::string basename, bool ss ){
         size_t seqlen = seqs_[n]->getL();
         if( !ss )	seqlen = ( seqlen - 1 ) / 2;
 
-        ofile_pos << seqlen << '\t';
         if( z_[n] > 0 ){
             ofile_pos << seqs_[n]->getHeader() << '\t'
                       << seqlen << '\t'
