@@ -220,8 +220,8 @@ int main( int nargs, char* args[] ){
             Motif *motif_opti = new Motif( *motif_set.getMotifs()[0] );
             SeqGenerator artificial_set( Global::negSequenceSet->getSequences(), motif_opti );
             EM model_opti( motif_opti, bgModel, Global::posSequenceSet->getSequences(), Global::q );
-            // learn motifs by EM
-            model_opti.advance();
+            // run one E-step to estimate r
+            model_opti.EStep();
             std::vector<std::unique_ptr<Sequence>> B1SeqSetPrime;
             B1SeqSetPrime = artificial_set.seqset_with_motif_masked(model_opti.getR());
             if ( motif_opti ) delete motif_opti;

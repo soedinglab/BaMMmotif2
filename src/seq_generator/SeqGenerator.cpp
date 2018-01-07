@@ -149,7 +149,7 @@ std::unique_ptr<Sequence> SeqGenerator::bg_sequence(size_t L){
 
 	std::unique_ptr<Sequence> seq( new Sequence( sequence, L, header, Y_, true ) );
 
-	//free( sequence );
+	free( sequence );
 
 	return seq;
 
@@ -229,7 +229,7 @@ std::unique_ptr<Sequence> SeqGenerator::posseq_motif_embedded( Sequence* seq, si
 
     std::unique_ptr<Sequence> seq_with_motif( new Sequence( sequence, L, header, Y_, true ) );
 
-    //free( sequence );
+    free( sequence );
 
     return seq_with_motif;
 
@@ -358,7 +358,7 @@ std::unique_ptr<Sequence> SeqGenerator::artiseq_motif_embedded(size_t seqlen){
 
 	std::unique_ptr<Sequence> seq( new Sequence( sequence, L, header, Y_, true ) );
 
-	//free( sequence );
+	free( sequence );
 
 	return seq;
 
@@ -380,29 +380,29 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::seqset_with_motif_masked(fl
 std::unique_ptr<Sequence> SeqGenerator::sequence_with_motif_masked(Sequence *posseq, size_t W, float *r){
 
 	float cutoff = 0.3f;
+    size_t L = posseq->getL();
 
-	std::vector<uint8_t> fake_seq;
+    uint8_t* masked_seq = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
 	// copy the original sequence from a C-array to a vector
 	// and mask patterns with a weight larger than certain cutoff
 	size_t i = 0;
-	while( i < posseq->getL() ){
-		size_t LW1 = posseq->getL() - W + 1;
-		if( r[LW1-i+1] < cutoff ){
-			fake_seq.push_back( posseq->getSequence()[i] );
+    size_t j = 0;
+	while( i <= L - W ){
+		if( r[L-W-i] < cutoff ){
+            masked_seq[j] = posseq->getSequence()[i];
 			i++;
+            j++;
 		} else {
 			i += W;
 		}
 	}
 
-	size_t L = fake_seq.size();
-	uint8_t* real_seq = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
-	for( size_t j = 0; j < L; j++ ){
-		real_seq[j] = fake_seq[j];
-	}
-	std::string header = "-motif";
-	std::unique_ptr<Sequence> seq_mask_motif( new Sequence( real_seq, L, header, Y_, true ) );
-	//free( real_seq );
+	std::string header = "seq with motif masked";
+
+    std::unique_ptr<Sequence> seq_mask_motif( new Sequence( masked_seq, L, header, Y_, true ) );
+
+    free( masked_seq );
+
 	return seq_mask_motif;
 }
 
