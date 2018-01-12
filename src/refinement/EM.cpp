@@ -3,11 +3,14 @@
 //
 #include "EM.h"
 
-EM::EM( Motif* motif, BackgroundModel* bgModel, std::vector<Sequence*> seqs, float q, bool optimizeQ, bool verbose ){
+EM::EM( Motif* motif, BackgroundModel* bgModel,
+        std::vector<Sequence*> seqs,
+        float q, bool optimizeQ, bool verbose, float f ){
 
     motif_      = motif;
 	bgModel_    = bgModel;
 	q_          = q;
+    f_          = f;
 	seqs_       = seqs;
     optimizeQ_  = optimizeQ;
 
@@ -357,12 +360,12 @@ int EM::advance() {
     // Sort log odds scores in descending order
     std::sort( r_all.begin(), r_all.end(), std::greater<float>() );
 
-    // find the cutoff with 10% best r's
-    float r_cutoff = r_all[pos_count / 20];
+    // find the cutoff with f_% best r's
+    float r_cutoff = r_all[size_t(pos_count * f_)];
     std::vector<std::vector<size_t>> ri;
     ri.resize( seqs_.size() );
 
-    // put the index of the 10% r's in an array
+    // put the index of the f_% r's in an array
     for( size_t n = 0; n < seqs_.size(); n++ ){
         size_t LW1 = seqs_[n]->getL() - W_ + 1;
         for( size_t i = 0; i < LW1; i++ ){
@@ -400,7 +403,7 @@ int EM::advance() {
         }
 
         /**
-         * E-step for 10% motif occurrences
+         * E-step for f_% motif occurrences
          */
         llikelihood_ = 0.0f;
 
@@ -452,7 +455,7 @@ int EM::advance() {
         }
 
         /**
-         * M-step for 10% motif occurrences
+         * M-step for f_% motif occurrences
          */
         // reset the fractional counts n
         for( size_t k = 0; k < K_+1; k++ ){
@@ -464,7 +467,7 @@ int EM::advance() {
         }
 
         // compute fractional occurrence counts for the highest order K
-        // using the 10% r's
+        // using the f_% r's
         // n runs over all sequences
         for( size_t n = 0; n < seqs_.size(); n++ ){
             size_t  L = seqs_[n]->getL();

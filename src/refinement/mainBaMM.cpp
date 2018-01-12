@@ -85,7 +85,7 @@ int main( int nargs, char* args[] ){
 		// optimize the model with either EM or Gibbs sampling
 		if( Global::EM ){
 			EM model( motif, bgModel, Global::posSequenceSet->getSequences(),
-                      Global::q, Global::optimizeQ, Global::verbose );
+                      Global::q, Global::optimizeQ, Global::verbose, Global::f );
 			// learn motifs by EM
 			if( !Global::advanceEM ) {
                 model.optimize();
@@ -219,7 +219,7 @@ int main( int nargs, char* args[] ){
             // generate sequences from positive sequences with masked motif
             Motif *motif_opti = new Motif( *motif_set.getMotifs()[0] );
             SeqGenerator artificial_set( Global::negSequenceSet->getSequences(), motif_opti );
-            EM model_opti( motif_opti, bgModel, Global::posSequenceSet->getSequences(), Global::q );
+            EM model_opti( motif_opti, bgModel, Global::posSequenceSet->getSequences(), Global::q, Global::f );
             // run one E-step to estimate r
             model_opti.EStep();
             std::vector<std::unique_ptr<Sequence>> B1SeqSetPrime;
@@ -250,7 +250,7 @@ int main( int nargs, char* args[] ){
                      Global::q, motif, bgModel, Global::cvFold,
                      Global::mops, Global::zoops,
                      Global::savePRs, Global::savePvalues, Global::saveLogOdds );
-			fdr.evaluateMotif( Global::EM, Global::CGS, Global::optimizeQ, Global::advanceEM );
+			fdr.evaluateMotif( Global::EM, Global::CGS, Global::optimizeQ, Global::advanceEM, Global::f );
 			fdr.write( Global::outputDirectory,
                        Global::outputFileBasename + "_motif_" + std::to_string( n+1 ) );
 			if( motif )		delete motif;

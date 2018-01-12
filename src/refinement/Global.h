@@ -76,6 +76,7 @@ public:
 
 	// EM options
 	static bool			EM;						// flag to trigger EM learning
+    static float        f;                      // fraction of sequences to be masked
 
 	// Gibbs sampling options
 	static bool			CGS;					// flag to trigger Collapsed Gibbs sampling

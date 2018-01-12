@@ -25,7 +25,7 @@ FDR::~FDR(){
 
 }
 
-void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool advanceEM ){
+void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool advanceEM, float f ){
 
 	std::vector<std::vector<float>> mops_scores;
 	std::vector<float> 				zoops_scores;
@@ -63,7 +63,7 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
 		 */
 		// learn motif from each training set
 		if( EMoptimize ){
-			EM model( motif, bgModel_, trainSet, q_, optimizeQ );
+			EM model( motif, bgModel_, trainSet, q_, optimizeQ, f );
             if( advanceEM ){
                 model.advance();
             } else {

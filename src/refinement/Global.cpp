@@ -45,7 +45,8 @@ std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.f );// background mod
 // EM options
 bool				Global::EM = false;						// flag to trigger EM learning
 float				Global::q = 0.3f;						// prior probability for a positive sequence to contain a motif
-bool 				Global::optimizeQ = false;				// optimize hyperparameter q in EM algorithm
+bool 				Global::optimizeQ = false;				// optimize hyper-parameter q in EM algorithm
+float               Global::f = 0.05f;                      // fraction of sequences to be masked
 
 // CGS (Collapsed Gibbs sampling) options
 bool				Global::CGS = false;					// flag to trigger Collapsed Gibbs sampling
@@ -278,6 +279,9 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	// saturation options
 	opt >> GetOpt::Option( 'q', q );
+
+    // masking options
+	opt >> GetOpt::Option( 'f', f );
 
 	// FDR options
 	if( opt >> GetOpt::OptionPresent( "FDR", FDR ) ){
