@@ -26,6 +26,7 @@ public:
     static char*		negSequenceFilename;	// filename of negative sequence FASTA file
     static SequenceSet*	negSequenceSet;			// negative sequence set
     static char* 		alphabetType;			// provide alphabet type
+    static bool         B3;                     // whether or not to take the given negative sequences for evaluation
 
     // initial model(s) options
     static char*		initialModelFilename;	// filename of initial model

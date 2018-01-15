@@ -15,6 +15,7 @@ bool                GFdr::ss = false;					// only search on single strand sequen
 
 char*               GFdr::negSequenceFilename = NULL;	// filename of negative sequence FASTA file
 SequenceSet*        GFdr::negSequenceSet = NULL;		// negative sequence set
+bool                GFdr::B3 = false;                   // whether or not to take the given negative sequences for evaluation
 
 // alphabet options
 char*			    GFdr::alphabetType = NULL;			// alphabet type is defaulted to standard which is ACGT
@@ -107,6 +108,8 @@ int GFdr::readArguments( int nargs, char* args[] ){
             q = std::stof( args[i] );
         } else if( !strcmp( args[i], "--ss" ) ){
             ss = true;
+        } else if( !strcmp( args[i], "--B3" ) ){
+            B3 = true;
         } else if( !strcmp( args[i], "--negSeqFile" ) ){
             if( ++i >= nargs ){
                 printHelp();
