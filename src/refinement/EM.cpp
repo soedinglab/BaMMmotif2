@@ -362,7 +362,6 @@ int EM::advance() {
 
     // find the cutoff with f_% best r's
     float r_cutoff = r_all[size_t((float)pos_count * f_)];
-    std::cout << f_ << std::endl;
 
     std::vector<std::vector<size_t>> ri;
     ri.resize( seqs_.size() );
