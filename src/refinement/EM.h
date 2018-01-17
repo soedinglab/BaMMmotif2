@@ -18,7 +18,7 @@ class EM {
 public:
 
     EM( Motif* motif, BackgroundModel* bgModel, std::vector<Sequence*> seqs,
-        float q, bool optimizeQ = true, bool verbose = false, float f = 0.05f );
+        float q, bool optimizeQ = true, bool verbose = false, float f = 0.2f );
     ~EM();
 
     int                     optimize();         // run EM optimization

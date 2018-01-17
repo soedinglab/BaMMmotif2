@@ -347,6 +347,9 @@ void Global::printStat(){
 	}
 	std::cout << "\n	" << Global::q * 100 << "% of the sequences "
               << "contain the optimized motif.";
+    if( Global::advanceEM ){
+        std::cout << "\n    " << Global::f * 100 << "% of the sequences are used for EM after masking.";
+    }
 	// for negative sequence set
 	if( Global::negSeqGiven ){
 		std::cout << "\nGiven negative sequence set is " << Global::negSequenceBasename
