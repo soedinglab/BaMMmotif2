@@ -93,7 +93,7 @@ void Global::init( int nargs, char* args[] ){
 
 	Alphabet::init( alphabetType );
 
-	// read in positive, negative and background sequence set
+	// read in positive and negative sequence set
 	posSequenceSet = new SequenceSet( posSequenceFilename, ss );
 	negSequenceSet = new SequenceSet( negSequenceFilename, ss );
 

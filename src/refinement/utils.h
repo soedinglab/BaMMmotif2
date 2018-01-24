@@ -365,4 +365,13 @@ inline double digamma(double x)
 	}
 }
 
+// free allocation memory for sequence
+struct deleter{
+    void operator()(Sequence* seq){
+        free(seq->getSequence());
+        std::cout<< "hi" << std::endl;
+    };
+};
+
+
 #endif /* UTILS_H_ */
