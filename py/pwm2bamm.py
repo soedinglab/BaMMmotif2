@@ -12,7 +12,7 @@ from utils import parse_meme, write_bamm
 def create_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('meme_file')
-    parser.add_argument('-O', default=None)
+    parser.add_argument('-o', default=None)
 
     return parser
 
@@ -22,7 +22,7 @@ def main():
 
     ipath = args.meme_file
     if args.o is None:
-        dir = os.path.dirname(os.path.abspath(ipath))
+        dir = os.path.dirname(ipath)
     else:
         dir = args.o
         if not os.path.exists(dir):
