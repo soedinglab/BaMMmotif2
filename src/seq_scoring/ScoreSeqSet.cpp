@@ -259,11 +259,11 @@ void ScoreSeqSet::write( char* odir, std::string basename, float pvalCutoff, boo
                 ofile << '>' << seqSet_[n]->getHeader() << '\t' << seqlen << '\t';
 
 				// start:end:score:strand:sequence_matching
-				end = i + motif_->getW()-1;
+				end = i + motif_->getW();
 
 				ofile << ( ( i < seqlen ) ? '+' : '-' ) << '\t'
-                      << i << ".." << end << '\t';
-				for( size_t m = i; m <= end; m++ ){
+                      << i+1 << ".." << end << '\t';
+				for( size_t m = i; m < end; m++ ){
 					ofile << Alphabet::getBase( seqSet_[n]->getSequence()[m] );
 				}
 				ofile << '\t' << std::setprecision( 3 )

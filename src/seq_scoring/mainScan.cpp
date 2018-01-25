@@ -67,7 +67,7 @@ int main( int nargs, char* args[] ) {
     size_t mFold = 10;
     // sample negative sequence set B1set based on s-mer frequencies
     // from positive training sequence set
-    std::vector<std::unique_ptr<Sequence>> negSeqs;
+    std::vector<std::unique_ptr<Sequence, deleter>> negSeqs;
     SeqGenerator generateNegSeqs( GScan::posSequenceSet->getSequences() );
     negSeqs = generateNegSeqs.arti_bgseqset( mFold );
     // convert unique_ptr to regular pointer

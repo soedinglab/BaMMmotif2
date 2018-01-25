@@ -10,7 +10,7 @@ std::string         GScan::outputFileBasename;
 char*               GScan::posSequenceFilename = NULL;	// filename of positive sequence FASTA file
 std::string         GScan::posSequenceBasename;			// basename of positive sequence FASTA file
 SequenceSet*        GScan::posSequenceSet = NULL;		// positive sequence set
-float               GScan::q = 0.9f;					// prior probability for a positive sequence to contain a motif
+float               GScan::q = 0.3f;					// prior probability for a positive sequence to contain a motif
 bool                GScan::ss = false;					// only search on single strand sequences
 
 char*               GScan::negSequenceFilename = NULL;	// filename of negative sequence FASTA file

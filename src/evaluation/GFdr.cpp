@@ -10,11 +10,12 @@ std::string         GFdr::outputFileBasename;
 char*               GFdr::posSequenceFilename = NULL;	// filename of positive sequence FASTA file
 std::string         GFdr::posSequenceBasename;			// basename of positive sequence FASTA file
 SequenceSet*        GFdr::posSequenceSet = NULL;		// positive sequence set
-float               GFdr::q = 0.9f;						// prior probability for a positive sequence to contain a motif
+float               GFdr::q = 0.3f;						// prior probability for a positive sequence to contain a motif
 bool                GFdr::ss = false;					// only search on single strand sequences
 
 char*               GFdr::negSequenceFilename = NULL;	// filename of negative sequence FASTA file
 SequenceSet*        GFdr::negSequenceSet = NULL;		// negative sequence set
+bool                GFdr::B3 = false;                   // whether or not to take the given negative sequences for evaluation
 
 // alphabet options
 char*			    GFdr::alphabetType = NULL;			// alphabet type is defaulted to standard which is ACGT
@@ -107,6 +108,8 @@ int GFdr::readArguments( int nargs, char* args[] ){
             q = std::stof( args[i] );
         } else if( !strcmp( args[i], "--ss" ) ){
             ss = true;
+        } else if( !strcmp( args[i], "--B3" ) ){
+            B3 = true;
         } else if( !strcmp( args[i], "--negSeqFile" ) ){
             if( ++i >= nargs ){
                 printHelp();

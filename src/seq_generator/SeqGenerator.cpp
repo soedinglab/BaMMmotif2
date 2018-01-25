@@ -69,9 +69,9 @@ void SeqGenerator::calculate_kmer_frequency(){
 
 
 // generate negative sequences based on k-mer frequencies from positive set
-std::vector<std::unique_ptr<Sequence>> SeqGenerator::arti_bgseqset( size_t fold ){
+std::vector<std::unique_ptr<Sequence, deleter>> SeqGenerator::arti_bgseqset( size_t fold ){
 
-	std::vector<std::unique_ptr<Sequence>> negset;
+	std::vector<std::unique_ptr<Sequence, deleter>> negset;
 
 	calculate_kmer_frequency();
 
@@ -85,7 +85,7 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::arti_bgseqset( size_t fold 
 }
 
 // generate background sequence based on k-mer frequencies from positive set
-std::unique_ptr<Sequence> SeqGenerator::bg_sequence(size_t L){
+std::unique_ptr<Sequence, deleter> SeqGenerator::bg_sequence(size_t L){
 
 	uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
 	std::string header = "bg_seq";
@@ -147,18 +147,18 @@ std::unique_ptr<Sequence> SeqGenerator::bg_sequence(size_t L){
 		}
 	}
 
-	std::unique_ptr<Sequence> seq( new Sequence( sequence, L, header, Y_, true ) );
+	std::unique_ptr<Sequence, deleter> seq( new Sequence( sequence, L, header, Y_, true ) );
 
-	free( sequence );
+	if( sequence ) free( sequence );
 
 	return seq;
 
 }
 
 // generate sequences with given motif emebedded into the given sequences
-std::vector<std::unique_ptr<Sequence>> SeqGenerator::arti_posset_motif_embedded( size_t at ){
+std::vector<std::unique_ptr<Sequence, deleter>> SeqGenerator::arti_posset_motif_embedded( size_t at ){
 
-	std::vector<std::unique_ptr<Sequence>> posset_with_motif_embedded;
+	std::vector<std::unique_ptr<Sequence, deleter>> posset_with_motif_embedded;
 
 	calculate_kmer_frequency();
 
@@ -180,7 +180,7 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::arti_posset_motif_embedded(
 }
 
 // generate sequences with given motif embedded into the given sequences
-std::unique_ptr<Sequence> SeqGenerator::posseq_motif_embedded( Sequence* seq, size_t at ){
+std::unique_ptr<Sequence, deleter> SeqGenerator::posseq_motif_embedded( Sequence* seq, size_t at ){
 
     size_t W = motif_->getW();
     size_t L = seq -> getL();
@@ -227,146 +227,15 @@ std::unique_ptr<Sequence> SeqGenerator::posseq_motif_embedded( Sequence* seq, si
         sequence[i] = seq->getSequence()[i-W];
     }
 
-    std::unique_ptr<Sequence> seq_with_motif( new Sequence( sequence, L, header, Y_, true ) );
-
-    free( sequence );
+    std::unique_ptr<Sequence, deleter> seq_with_motif( new Sequence( sequence, L, header, Y_, true ) );
 
     return seq_with_motif;
 
 }
 
-// generate pseudo-sequence based on k-mer frequencies from positive set and implant the given motif
-std::unique_ptr<Sequence> SeqGenerator::artiseq_motif_embedded(size_t seqlen){
+std::vector<std::unique_ptr<Sequence, deleter>> SeqGenerator::seqset_with_motif_masked(float **r){
 
-    size_t W = motif_->getW();
-    size_t L = seqlen + W;
-	uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
-
-    std::string header = "arti_seq+motif";
-
-	for( uint8_t i = 0; i < L; i++ ){
-		sequence[i] = 1;
-	}
-
-	// sample the first nucleotide
-	double random = ( double )rand() / ( double )RAND_MAX;
-	double f = 0.0f;
-	for( uint8_t a = 1; a <= Y_[1]; a++ ){
-		f += freqs_[0][a-1];
-		if( random <= f ){
-			sequence[0] = a;
-			break;
-		}
-		// Trick: this solves the numerical problem
-		if( sequence[0] == 0 )	sequence[0] = a;
-	}
-
-	// sample the next ( K-1 ) nucleotides
-	for( size_t i = 1; i < sOrder_; i++ ){
-
-		// extract y from k-mer
-		size_t yk = 0;
-		for( size_t k = i; k > 0; k-- ){
-			yk += ( sequence[i-k] - 1 ) * Y_[k];
-		}
-
-		// sample a nucleotide based on k-mer frequency
-		random = ( double )rand() / ( double )RAND_MAX;
-		f = 0.0f;
-		for( uint8_t a = 1; a <= Y_[1]; a++ ){
-			f += freqs_[i][yk+a-1];
-			if( random <= f ){
-				sequence[i] = a;
-				break;
-			}
-			// Trick: this solves the numerical problem
-			if( sequence[i] == 0 )	sequence[i] = a;
-		}
-	}
-	// sample nucleotides till the position for motif implantation
-	// due to k-mer frequencies
-    std::uniform_int_distribution<> range( sOrder_, L-W+1 );
-    size_t mid = range( rngx_ );
-
-    mid = 95;
-    for( size_t i = sOrder_; i < mid; i++ ){
-
-		// extract y from K-mer
-		size_t yk = 0;
-		for( size_t k = sOrder_; k > 0; k-- ){
-			yk += ( sequence[i-k] - 1 ) * Y_[k];
-		}
-
-		// sample a nucleotide based on k-mer frequency
-		random = ( double )rand() / ( double )RAND_MAX;
-		f = 0.0f;
-		for( uint8_t a = 1; a <= Y_[1]; a++ ){
-			f += freqs_[sOrder_][yk+a-1];
-			if( random <= f ){
-				sequence[i] = a;
-				break;
-			}
-			// Trick: this solves the numerical problem
-			if( sequence[i] == 0 )	sequence[i] = a;
-		}
-	}
-
-	// sample W-nt based on conditional probabilities of the motif
-	float*** v = motif_->getV();
-	for( size_t j = 0; j < W; j++ ){
-		// extract y from K-mer
-		size_t yk = 0;
-		for( size_t k = sOrder_; k > 0; k-- ){
-			yk += ( sequence[j+mid-k] - 1 ) * Y_[k];
-		}
-		// sample a nucleotide based on k-mer frequency
-		random = ( double )rand() / ( double )RAND_MAX;
-		f = 0.0f;
-		for( uint8_t a = 1; a <= Y_[1]; a++ ){
-			f += v[sOrder_][yk+a-1][j];
-			if( random <= f ){
-				sequence[j+mid] = a;
-				break;
-			}
-			// Trick: this solves the numerical problem
-			if( sequence[j+mid] == 0 )	sequence[j+mid] = a;
-		}
-
-	}
-
-	// sample the rest of the sequence till it reaches the length of L
-	for( size_t i = mid + W; i < L; i++ ){
-		// extract y from K-mer
-		size_t yk = 0;
-		for( size_t k = sOrder_; k > 0; k-- ){
-			yk += ( sequence[i-k] - 1 ) * Y_[k];
-		}
-
-		// sample a nucleotide based on k-mer frequency
-		random = ( double )rand() / ( double )RAND_MAX;
-		f = 0.0f;
-		for( uint8_t a = 1; a <= Y_[1]; a++ ){
-			f += freqs_[sOrder_][yk+a-1];
-			if( random <= f ){
-				sequence[i] = a;
-				break;
-			}
-			// Trick: this solves the numerical problem
-			if( sequence[i] == 0 )	sequence[i] = a;
-		}
-	}
-
-	std::unique_ptr<Sequence> seq( new Sequence( sequence, L, header, Y_, true ) );
-
-	free( sequence );
-
-	return seq;
-
-}
-
-std::vector<std::unique_ptr<Sequence>> SeqGenerator::seqset_with_motif_masked(float **r){
-
-	std::vector<std::unique_ptr<Sequence>> seqset;
+	std::vector<std::unique_ptr<Sequence, deleter>> seqset;
 	size_t W = motif_->getW();
 
 	for( size_t n = 0; n < seqs_.size(); n++ ){
@@ -377,36 +246,34 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::seqset_with_motif_masked(fl
 	return seqset;
 }
 
-std::unique_ptr<Sequence> SeqGenerator::sequence_with_motif_masked(Sequence *posseq, size_t W, float *r){
+std::unique_ptr<Sequence, deleter> SeqGenerator::sequence_with_motif_masked(Sequence *posseq, size_t W, float *r){
 
 	float cutoff = 0.3f;
+    size_t L = posseq->getL();
 
-	std::vector<uint8_t> fake_seq;
+    uint8_t* masked_seq = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
 	// copy the original sequence from a C-array to a vector
 	// and mask patterns with a weight larger than certain cutoff
 	size_t i = 0;
-	while( i < posseq->getL() ){
-		size_t LW1 = posseq->getL() - W + 1;
-		if( r[LW1-i+1] < cutoff ){
-			fake_seq.push_back( posseq->getSequence()[i] );
+    size_t j = 0;
+	while( i <= L - W ){
+		if( r[L-W-i] < cutoff ){
+            masked_seq[j] = posseq->getSequence()[i];
 			i++;
+            j++;
 		} else {
 			i += W;
 		}
 	}
 
-	size_t L = fake_seq.size();
-	uint8_t* real_seq = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
-	for( size_t j = 0; j < L; j++ ){
-		real_seq[j] = fake_seq[j];
-	}
-	std::string header = "-motif";
-	std::unique_ptr<Sequence> seq_mask_motif( new Sequence( real_seq, L, header, Y_, true ) );
-	free( real_seq );
+	std::string header = "seq with motif masked";
+
+    std::unique_ptr<Sequence, deleter> seq_mask_motif( new Sequence( masked_seq, L, header, Y_, true ) );
+
 	return seq_mask_motif;
 }
 
-void SeqGenerator::write( char* odir, std::string basename, std::vector<std::unique_ptr<Sequence>> seqset ){
+void SeqGenerator::write( char* odir, std::string basename, std::vector<std::unique_ptr<Sequence, deleter>> seqset ){
 	/**
 	 * save the generated sequence set in fasta file:
 	 */
@@ -416,7 +283,7 @@ void SeqGenerator::write( char* odir, std::string basename, std::vector<std::uni
 	std::ofstream ofile( opath );
 
 	for( size_t n = 0; n < seqset.size(); n++ ){
-		ofile << "> " << seqset[n]->getHeader() << std::endl;
+		ofile << ">" << seqset[n]->getHeader() << std::endl;
 		for( size_t i = 0; i < seqset[n]->getL(); i++ ){
 			ofile << Alphabet::getBase( seqset[n]->getSequence()[i] );
 		}

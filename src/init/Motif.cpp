@@ -391,7 +391,7 @@ void Motif::calculateV( float*** n ){
 			for( size_t j = 0; j < k; j++ ){	// when j < k, i.e. p_j(A|CG) = p_j(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
 			}
-			for( size_t j = 0; j < W_; j++ ){
+			for( size_t j = k; j < W_; j++ ){
 				v_[k][y][j] = ( n[k][y][j] + A_[k][j] * v_[k-1][y2][j] )
 							/ ( n[k-1][yk][j-1] + A_[k][j] );
 			}
@@ -443,6 +443,7 @@ void Motif::calculateLinearS( float** Vbg, size_t K_bg ){
 			s_[y][j] = v_[K_][y][j] / Vbg[K_bg][y_bg];
 		}
 	}
+
 }
 
 void Motif::print(){

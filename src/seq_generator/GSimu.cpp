@@ -9,7 +9,7 @@ char*               GSimu::outputDirectory = NULL;		// output directory
 char*               GSimu::sequenceFilename = NULL;	    // filename of input sequence FASTA file
 std::string         GSimu::sequenceBasename;			// basename of input sequence FASTA file
 SequenceSet*        GSimu::sequenceSet = NULL;		    // input sequence set
-float               GSimu::q = 0.9f;					// prior probability for a positive sequence to contain a motif
+float               GSimu::q = 0.3f;					// prior probability for a positive sequence to contain a motif
 
 // alphabet options
 char*			    GSimu::alphabetType = NULL;			// alphabet type is defaulted to standard which is ACGT
@@ -17,7 +17,6 @@ char*			    GSimu::alphabetType = NULL;			// alphabet type is defaulted to stand
 // initial model(s) options
 char*			    GSimu::initialModelFilename = NULL; // filename of initial model
 std::string         GSimu::initialModelTag;				// tag for initializing the model
-std::string         GSimu::fileExtension;               // extended filename for output
 
 // model options
 size_t              GSimu::modelOrder = 2;				// model order
@@ -206,8 +205,6 @@ int GSimu::readArguments( int nargs, char* args[] ){
         }
     }
 
-    fileExtension = concatenate2strings( sequenceBasename, baseName( initialModelFilename ) );
-
     return 0;
 }
 
@@ -231,7 +228,7 @@ void GSimu::printHelp(){
     printf("\n 		Options for simulation: \n");
     printf("\n 			--sampleBgset\n"
                    "				Sample background sequence set based on s-mer frequencies \n"
-                   "                from the input sequence set. Defaults to false.\n\n");
+                   "				from the input sequence set. Defaults to false.\n\n");
     printf("\n 			--maskSeqset\n"
                    "				Mask the given motif from the input sequence set.\n"
                    "				Defaults to false.\n\n");

@@ -18,7 +18,7 @@ class EM {
 public:
 
     EM( Motif* motif, BackgroundModel* bgModel, std::vector<Sequence*> seqs,
-        float q, bool optimizeQ = false, bool verbose = false );
+        float q, bool optimizeQ = true, bool verbose = false, float f = 0.2f );
     ~EM();
 
     int                     optimize();         // run EM optimization
@@ -37,7 +37,7 @@ public:
 private:
 
     Motif* 					motif_;				// motif to optimize within the EM
-    BackgroundModel*		bgModel_;				// background model
+    BackgroundModel*		bgModel_;			// background model
 
     size_t 					K_;					// the order of the motif model
     size_t					W_;					// the width of the motif pattern
@@ -54,6 +54,7 @@ private:
     float**					pos_;				// positional prior, pos[i][0] indicates the prior for no motif present on sequence i
 
     float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif
+    float                   f_;                 // fraction of sequences to be masked
     std::vector<Sequence*>	seqs_;				// copy positive sequences
 
     float 					llikelihood_        = 0.0f;     // log likelihood for each iteration

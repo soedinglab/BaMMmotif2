@@ -44,8 +44,9 @@ std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.f );// background mod
 
 // EM options
 bool				Global::EM = false;						// flag to trigger EM learning
-float				Global::q = 0.9f;						// prior probability for a positive sequence to contain a motif
-bool 				Global::optimizeQ = false;				// optimize hyperparameter q in EM algorithm
+float				Global::q = 0.3f;						// prior probability for a positive sequence to contain a motif
+bool 				Global::optimizeQ = false;				// optimize hyper-parameter q in EM algorithm
+float               Global::f = 0.05f;                      // fraction of sequences to be masked
 
 // CGS (Collapsed Gibbs sampling) options
 bool				Global::CGS = false;					// flag to trigger Collapsed Gibbs sampling
@@ -92,7 +93,7 @@ void Global::init( int nargs, char* args[] ){
 
 	Alphabet::init( alphabetType );
 
-	// read in positive, negative and background sequence set
+	// read in positive and negative sequence set
 	posSequenceSet = new SequenceSet( posSequenceFilename, ss );
 	negSequenceSet = new SequenceSet( negSequenceFilename, ss );
 
@@ -279,6 +280,9 @@ int Global::readArguments( int nargs, char* args[] ){
 	// saturation options
 	opt >> GetOpt::Option( 'q', q );
 
+    // masking options
+	opt >> GetOpt::Option( 'f', f );
+
 	// FDR options
 	if( opt >> GetOpt::OptionPresent( "FDR", FDR ) ){
 		opt >> GetOpt::Option( 'm', "mFold", mFold );
@@ -343,6 +347,9 @@ void Global::printStat(){
 	}
 	std::cout << "\n	" << Global::q * 100 << "% of the sequences "
               << "contain the optimized motif.";
+    if( Global::advanceEM ){
+        std::cout << "\n    " << Global::f * 100 << "% of the sequences are used for EM after masking.";
+    }
 	// for negative sequence set
 	if( Global::negSeqGiven ){
 		std::cout << "\nGiven negative sequence set is " << Global::negSequenceBasename

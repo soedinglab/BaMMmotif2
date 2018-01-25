@@ -33,8 +33,9 @@ public:
 
 	void 	evaluateMotif( bool EMoptimize = false,
                            bool CGSoptimize = false,
-                           bool optimizeQ=false,
-                           bool advanceEM=false );
+                           bool optimizeQ = false,
+                           bool advanceEM = false,
+                           float f = 0.05f );
 	void 	print();
 	void	write( char* odir, std::string basename );
 

@@ -55,7 +55,7 @@ int main( int nargs, char* args[] ){
                  * optimize motif using EM
                  */
                 EM model(motif, bgModel, GSimu::sequenceSet->getSequences(), GSimu::q);
-                model.optimize();
+                model.EStep();
                 /**
                  * Mask the given motif from the input sequence set
                  */
