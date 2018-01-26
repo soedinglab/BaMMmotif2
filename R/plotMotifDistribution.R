@@ -51,8 +51,9 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
 
     # get a filename for each motif
     filename = paste0(c(maindir, file_prefix, motif_id, file_suffix), collapse="")
+    line_number = as.integer(system2("wc", args=c("-l", filename, " | awk '{print $1}'" ), stdout = TRUE))
 
-    if( file.info(filename)$size == 0 ){
+    if( line_number < 3 ){
         print("The input file is empty. No query motif is found in the sequence set.")
         # print out an empty image
         picname <- paste0( maindir, file_prefix, motif_id, "_distribution.jpeg")
@@ -79,6 +80,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
         legend("topright",legend="no motif found", col="darkblue", cex=2.5, bty="n", text.col="darkblue")
         box(lwd=2.5)
         invisible(dev.off())
+
     } else {
         # read in the data
         table <- try(read.table(filename,
