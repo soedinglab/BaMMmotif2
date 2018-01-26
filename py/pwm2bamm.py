@@ -1,7 +1,6 @@
 '''
-This is a script to convert PWMs from a MEME-formated file to BaMM-formated files.
-The only input is a MEME-formated file (version 4)
-Written by Wanwan Ge
+This is a script to convert PWMs from a MEME-formatted file to BaMM-formatted file(s).
+Prerequisite: The input file must be in MEME-format (version 4).
 '''
 
 import argparse

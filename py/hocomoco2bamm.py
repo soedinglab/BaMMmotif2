@@ -1,7 +1,6 @@
 '''
-This script is aimed for converting PWMs from HOCOMOCO batch download
-to BaMM-formatted files. Prerequisite:
-Input file is a MEME-formatted, version 4
+This script is aimed for converting PWMs downloaded from HOCOMOCO batch to BaMM-formatted files.
+Prerequisite: input file must be in MEME-format, version 4
 '''
 
 import argparse
