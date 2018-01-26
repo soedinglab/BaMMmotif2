@@ -1,6 +1,7 @@
 '''
 This script is used for comparing a given motif to motifs in a given database.
-Prerequisite: all motifs must be in BaMM format.
+Prerequisite: all motifs in database must be in BaMM format.
+Note: currently it only compares motifs by 0th-order.
 '''
 
 import argparse
