@@ -256,6 +256,60 @@ def parse_meme(meme_input_file):
     return dataset
 
 
+def parse_bamm_file(bamm_ifile):
+
+    bamms = []
+    # get the basename of the file
+    bn = os.path.splitext(os.path.basename(bamm_ifile))[0]
+
+    if os.path.isfile(bamm_ifile) :
+        # read in the model order
+        motif_order = 0
+        bamm = {}
+        bamm['model_id'] = bn
+
+        with open(bamm_ifile) as bamm_file:
+            for line in bamm_file:
+                if line[0] != '\n':
+                    motif_order = motif_order + 1
+                else:
+                    break
+
+        # count the motif length
+        motif_length = int( sum(1 for line in open(bamm_ifile)) / (motif_order + 1) )
+
+        # read in bamm model
+        model = {}
+        for k in range(motif_order):
+            model[k] = []
+
+        with open(bamm_ifile) as bamm_file:
+            for j in range(motif_length):
+                for k in range(motif_order):
+                    model[k].append( [float(p) for p in bamm_file.readline().split()] )
+                # skip the blank line
+                bamm_file.readline()
+
+        # convert a bamm array to numpy array
+        for k in range(motif_order):
+            model[k] = np.array(model[k], dtype=float)
+
+        bamm['model'] = model
+        bamm['motif_length'] = motif_length
+        bamm['motif_order'] = motif_order
+        bamm['pwm'] = model[0]
+
+        # set background model frequency
+        bamm['bg_freq'] = [0.25,0.25,0.25,0.25]
+
+        bamm['H_model_bg'] = calculate_H_model_bg(bamm['pwm'], bamm['bg_freq']).tolist()
+        bamm['H_model'] = calculate_H_model(bamm['pwm']).tolist()
+
+        bamms.append(bamm)
+
+    return bamms
+
+
 def parse_bamm_db(db_path):
 
     bamms = []

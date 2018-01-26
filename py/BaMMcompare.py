@@ -10,7 +10,8 @@ import logging
 import sys
 
 
-from utils import calculate_H_model_bg, calculate_H_model, model_sim, update_models, parse_meme, parse_bamm_db
+from utils import calculate_H_model_bg, calculate_H_model, model_sim, update_models, \
+    parse_meme, parse_bamm_db, parse_bamm_file
 
 
 def create_parser():
@@ -19,17 +20,18 @@ def create_parser():
     parser.add_argument('db_path', help="specify the path to database that you want to search for")
     parser.add_argument('output_score_file', default=None, help="name the output file with path")
 
-    parser.add_argument('--db_order', type=int, default=4, help="the order of motifs in the database. Default: 4")
-    parser.add_argument('--query_order', type=int, default=0, help="the order of query motif. Default: 0")
+    parser.add_argument('--input_format', default="PWM",
+                        help="declare input format: PWM or BaMM. This needs to be consistent with your input model! "
+                             "Default: PWM")
 
     parser.add_argument('--n_neg_perm', type=int, default=10)
     parser.add_argument('--highscore_fraction', type=float, default=0.1)
-    parser.add_argument('--evalue_threshold', type=float, default=1)
     parser.add_argument('--pvalue_threshold', type=float, default=0.01,
                         help="p-value threshold for output models. Default: 0.01")
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--min_overlap', type=int, default=2, help="minimal overlaps between PWMs. Default: 2")
     parser.add_argument('--n_processes', type=int, default=4, help="how many cores are used. Default: 4")
+
 
     return parser
 
@@ -52,11 +54,21 @@ def main():
     logger.addHandler(console_handler)
     logger.setLevel(logging.INFO)
 
-    # parse input query meme file
-    query_meme_set = parse_meme(query_file)
+    # parse input query file
+    model_format = args.input_format
+    query_model_set = []
+    if model_format == "PWM":
+        # parse input meme file
+        query_model_set = parse_meme(query_file)['models']
+    elif model_format == "BaMM":
+        # parse input bamm file
+        query_model_set = parse_bamm_file(query_file)
+
+    else:
+        logger.info('Input model file is not recognised. ')
 
     # pre-compute entropy for all query meme models
-    models = update_models(query_meme_set['models'])
+    models = update_models(query_model_set)
 
     # parse bamms from the target database
     logger.info('Reading in BaMMs from the target database')
@@ -72,8 +84,6 @@ def main():
         np.random.seed(args.seed)
         global highscore_fraction_g
         highscore_fraction_g = args.highscore_fraction
-        global evalue_thresh_g
-        evalue_thresh_g = args.evalue_threshold
         global pvalue_thresh_g
         pvalue_thresh_g = args.pvalue_threshold
         global db_models_g
