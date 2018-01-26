@@ -255,6 +255,10 @@ void GScan::printHelp(){
               << "\t\t\tSame format as MEME" << std::endl
               << "\t\t--BaMMFile <STRING>" << std::endl
               << "\t\t\tFile that contains a model in bamm file format." << std::endl
+              << "\t\t-k, --order <INTEGER>" << std::endl
+              << "\t\t\tmotif model order." << std::endl
+              << "\t\t-K, --Order <INTEGER>" << std::endl
+              << "\t\t\tbackground model order." << std::endl
               << "\t\t--bgModelFile <STRING>" << std::endl
               << "\t\t\tFile that contains a background model in bamm file format." << std::endl
               << "\t\t--saveInitialModel" << std::endl
@@ -262,7 +266,9 @@ void GScan::printHelp(){
               << "\t\t--maxPWM <INTEGER>" << std::endl
               << "\t\t\tmaximal number of PWMs that should be optimized." << std::endl
               << "\t\t--basename <STRING>" << std::endl
-              << "\t\t\tbasename of the outputt files." << std::endl;
+              << "\t\t\tbasename of the outputt files." << std::endl
+              << "\t\t--pvalCutoff <FLOAT>" << std::endl
+              << "\t\t\tp-value cutoff for scoring the sequences." << std::endl ;
 }
 
 void GScan::destruct(){
