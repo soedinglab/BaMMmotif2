@@ -95,6 +95,8 @@ int main( int nargs, char* args[] ) {
             negScores.insert( std::end( negScores ),
                               std::begin( negAllScores[n] ),
                               std::end( negAllScores[n] ) );
+            // free the memory
+            delete negset[n];
         }
 
         // score positive sequence set
