@@ -259,13 +259,36 @@ def parse_meme(meme_input_file):
 def parse_bamm_file(bamm_ifile):
 
     bamms = []
+    bamms.append(parse_single_bamm_from_file(bamm_ifile))
+
+    return bamms
+
+
+def parse_bamm_db(db_path):
+
+    bamms = []
+
+    bamm_suffix = '*.ihbcp'
+
+    for eachdir in os.listdir(db_path):
+
+        for ifile in glob.glob(os.path.join(db_path, eachdir, bamm_suffix)):
+            bamm = parse_single_bamm_from_file(ifile)
+            bamms.append(bamm)
+
+    return bamms
+
+
+def parse_single_bamm_from_file(bamm_ifile):
+
     # get the basename of the file
     bn = os.path.splitext(os.path.basename(bamm_ifile))[0]
-
-    if os.path.isfile(bamm_ifile) :
+    dir = os.path.splitext(os.path.dirname(bamm_ifile))[0]
+    bg_file = os.path.join(dir, bn.split('_motif_')[0] +'.hbcp')
+    bamm = {}
+    if os.path.isfile(bamm_ifile):
         # read in the model order
         motif_order = 0
-        bamm = {}
         bamm['model_id'] = bn
 
         with open(bamm_ifile) as bamm_file:
@@ -299,80 +322,22 @@ def parse_bamm_file(bamm_ifile):
         bamm['motif_order'] = motif_order
         bamm['pwm'] = model[0]
 
+        # get background model frequency
+        if os.path.isfile(bg_file):
+            with open(bg_file) as bgmodel_file:
+                line = bgmodel_file.readline()  # skip the first line for K
+                line = bgmodel_file.readline()  # skip the second line for Alpha
+                bg_freq = [float(p) for p in bgmodel_file.readline().split()]
+            bamm['bg_freq'] = np.array(bg_freq, dtype=float)
+        else:
+            bamm['bg_freq'] = [0.25,0.25,0.25,0.25]
+
         # set background model frequency
-        bamm['bg_freq'] = [0.25,0.25,0.25,0.25]
 
         bamm['H_model_bg'] = calculate_H_model_bg(bamm['pwm'], bamm['bg_freq']).tolist()
         bamm['H_model'] = calculate_H_model(bamm['pwm']).tolist()
 
-        bamms.append(bamm)
-
-    return bamms
-
-
-def parse_bamm_db(db_path):
-
-    bamms = []
-
-    bamm_suffix = '*.ihbcp'
-
-    for eachdir in os.listdir(db_path):
-
-        # get foreground model
-        # note: this assumes that each folder contains only one motif!
-        for file in glob.glob(os.path.join(db_path, eachdir, bamm_suffix)):
-
-            if os.path.isfile(file) :
-                # read in the model order
-                motif_order = 0
-                bamm = {}
-                bamm['model_id'] = eachdir
-
-                with open(file) as bamm_file:
-                    for line in bamm_file:
-                        if line[0] != '\n':
-                            motif_order = motif_order + 1
-                        else:
-                            break
-
-                # count the motif length
-                motif_length = int( sum(1 for line in open(file)) / (motif_order + 1) )
-
-                # read in bamm model
-                model = {}
-                for k in range(motif_order):
-                    model[k] = []
-
-                with open(file) as bamm_file:
-                    for j in range(motif_length):
-                        for k in range(motif_order):
-                            model[k].append( [float(p) for p in bamm_file.readline().split()] )
-                        # skip the blank line
-                        bamm_file.readline()
-
-                # convert a bamm array to numpy array
-                for k in range(motif_order):
-                    model[k] = np.array(model[k], dtype=float)
-
-                bamm['model'] = model
-                bamm['motif_length'] = motif_length
-                bamm['motif_order'] = motif_order
-                bamm['pwm'] = model[0]
-
-                # get background model frequency
-                for bg_file in glob.glob(os.path.join(db_path, eachdir, '*.hbcp')):
-                    with open(bg_file) as bgmodel_file:
-                        line = bgmodel_file.readline()  # skip the first line for K
-                        line = bgmodel_file.readline()  # skip the second line for Alpha
-                        bg_freq = [float(p) for p in bgmodel_file.readline().split()]
-                    bamm['bg_freq'] = np.array(bg_freq, dtype=float)
-
-                bamm['H_model_bg'] = calculate_H_model_bg(bamm['pwm'], bamm['bg_freq']).tolist()
-                bamm['H_model'] = calculate_H_model(bamm['pwm']).tolist()
-
-                bamms.append(bamm)
-
-    return bamms
+    return bamm
 
 
 def write_meme(dataset, meme_output_file):
