@@ -1,11 +1,12 @@
 '''
 This script is for reducing the redundancy of PWMs by filtering similar PWMs out and only keep one PWM from each cluster.
-Prerequisite: input file must be in MEME-format, version 4; it must contain more than one PWM.
+Prerequisite: input file must be in MEME-format, version 4
 '''
 import argparse
 
 import logging
 import sys
+import shutil
 
 from utils import update_models, filter_pwms, parse_meme, write_meme
 
@@ -38,6 +39,12 @@ def main():
 
     # parse input query meme file
     model_set = parse_meme(query_file)
+
+    if len(model_set['models']) < 2:
+        # no real filtering possible, copy input to output
+        shutil.copyfile(query_file, out_file)
+        return
+
     # pre-compute entropy for all the models
     models = update_models(model_set['models'])
 
