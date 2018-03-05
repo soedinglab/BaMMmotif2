@@ -506,9 +506,11 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     ########################################################
     TP  <- stats$V1
     FP  <- stats$V2
-    TPR <- TP / TP[length(TP)]
-    FPR <- FP / FP[length(FP)]
-    for(i in seq(1,length(FP))){
+    numPos = TP[length(TP)]
+    numNeg = numPos * mfold
+    TPR <- TP / numPos
+    FPR <- FP / numNeg
+    for(i in seq(1,numNeg)){
         if( FPR[i] >= 0.05 ){
           rbound = i
           break
