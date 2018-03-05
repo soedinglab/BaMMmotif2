@@ -67,7 +67,7 @@ int main( int nargs, char* args[] ) {
     size_t mFold = 10;
     // sample negative sequence set B1set based on s-mer frequencies
     // from positive training sequence set
-    std::vector<std::unique_ptr<Sequence, deleter>> negSeqs;
+    std::vector<std::unique_ptr<Sequence>> negSeqs;
     SeqGenerator generateNegSeqs( GScan::posSequenceSet->getSequences() );
     negSeqs = generateNegSeqs.arti_bgseqset( mFold );
     // convert unique_ptr to regular pointer
@@ -101,12 +101,15 @@ int main( int nargs, char* args[] ) {
         // calculate p-values based on positive and negative scores
         ScoreSeqSet scorePosSet( motif, bgModel, GScan::posSequenceSet->getSequences() );
         scorePosSet.calcLogOdds();
+        scorePosSet.writeLogOdds( GScan::outputDirectory,
+                   GScan::outputFileBasename + std::to_string( n+1 ),
+                   GScan::ss );
         std::vector<std::vector<float>> posScores = scorePosSet.getMopsScores();
         scorePosSet.calcPvalues( posScores, negScores );
 
         std::string fileExtension;
         if( GScan::initialModelTag == "PWM"){
-            fileExtension = "_motif_" + std::to_string( n+1 );
+            fileExtension = "_init_motif_" + std::to_string( n+1 );
         }
         
         scorePosSet.write( GScan::outputDirectory,

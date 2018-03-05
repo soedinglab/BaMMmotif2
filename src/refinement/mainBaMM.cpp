@@ -157,7 +157,7 @@ int main( int nargs, char* args[] ){
             std::vector<Sequence*>  negset;
             // sample negative sequence set B1set based on s-mer frequencies
             // from positive training sequence set
-            std::vector<std::unique_ptr<Sequence, deleter>> negSeqs;
+            std::vector<std::unique_ptr<Sequence>> negSeqs;
             SeqGenerator generateNegSeqs( Global::posSequenceSet->getSequences() );
             negSeqs = generateNegSeqs.arti_bgseqset( Global::mFold );
             // convert unique_ptr to regular pointer
@@ -178,6 +178,9 @@ int main( int nargs, char* args[] ){
             // calculate p-values based on positive and negative scores
             ScoreSeqSet scorePosSet( motif, bg, Global::posSequenceSet->getSequences() );
             scorePosSet.calcLogOdds();
+            scorePosSet.writeLogOdds(Global::outputDirectory,
+                                     Global::outputFileBasename + "_motif_" + std::to_string( n+1 ),
+                                     Global::ss );
             std::vector<std::vector<float>> posScores = scorePosSet.getMopsScores();
             scorePosSet.calcPvalues( posScores, negScores );
 
@@ -207,7 +210,7 @@ int main( int nargs, char* args[] ){
         if( Global::B2 ) {
             // sample negative sequence set B2set based on s-mer frequencies
             // from the given sampled negative sequence set
-            std::vector<std::unique_ptr<Sequence, deleter>> B2Seqs;
+            std::vector<std::unique_ptr<Sequence>> B2Seqs;
             SeqGenerator b2seqs( Global::negSequenceSet->getSequences() );
             B2Seqs = b2seqs.arti_bgseqset(1);
             // convert unique_ptr to regular pointer
@@ -225,7 +228,7 @@ int main( int nargs, char* args[] ){
             EM model_opti( motif_opti, bgModel, Global::posSequenceSet->getSequences(), Global::q, Global::f );
             // run one E-step to estimate r
             model_opti.EStep();
-            std::vector<std::unique_ptr<Sequence, deleter>> B1SeqSetPrime;
+            std::vector<std::unique_ptr<Sequence>> B1SeqSetPrime;
             B1SeqSetPrime = artificial_set.seqset_with_motif_masked(model_opti.getR());
             if ( motif_opti ) delete motif_opti;
             // draw B1setPrime from the positive sequence set with masked motifs
@@ -235,7 +238,7 @@ int main( int nargs, char* args[] ){
         } else {
             // sample negative sequence set B1set based on s-mer frequencies
             // from positive training sequence set
-            std::vector<std::unique_ptr<Sequence, deleter>> B1Seqs;
+            std::vector<std::unique_ptr<Sequence>> B1Seqs;
             SeqGenerator b1seqs( Global::posSequenceSet->getSequences() );
             B1Seqs = b1seqs.arti_bgseqset( Global::mFold );
             // convert unique_ptr to regular pointer
