@@ -49,6 +49,7 @@ parser$add_argument("--SFC", type="logical", default=FALSE, help="flag for print
 parser$add_argument("--ROC5", type="logical", default=FALSE, help="flag for printing out partial ROC curve" )
 parser$add_argument("--PRC", type="logical", default=FALSE, help="flag for printing out precision-recall curve" )
 parser$add_argument("--web", type="logical", default=FALSE, help="flag for printing out ausfc score on the screen" )
+parser$add_argument("--rerank", type="logical", default=FALSE, help="flag for switching to rerank mode" )
 
 # parse the arguments
 args    <- parser$parse_args()
@@ -57,6 +58,9 @@ args    <- parser$parse_args()
 dir 	<- args$target_directory
 prefix 	<- args$prefix
 ofile   <- paste(dir, '/', prefix, ".bmscore", sep = "" )
+
+# flag for switching to rerank mode
+rerank  = args$rerank
 
 # flags for printing the curve plots
 print_FDRtool	= args$fdrtool
@@ -105,7 +109,7 @@ fdrtool = function(x,
   plot=TRUE, color.figure=TRUE, verbose=FALSE,
   cutoff.method=c("fndr", "pct0", "locfdr"),
   pct0=0.75,
-  eta0set=0.9091)
+  eta0set=0)
 {
   statistic = match.arg(statistic)
   cutoff.method = match.arg(cutoff.method)
@@ -174,7 +178,7 @@ fdrtool = function(x,
   else
     scale.param <- cf.out[1,5] # variance parameter
 
-  cf.out[1,3] <- eta0set		# <---- Here is what is changed by the modified version
+  if(eta0set > 0)  cf.out[1,3] <- eta0set		# <---- Here is what is changed by the modified version
   eta0 = cf.out[1,3]
 
 
@@ -391,15 +395,29 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
         }
     }
 
-    # estimate False Discovery Rates for Diverse Test Statistics
-    eta0set = mfold / ( 1+mfold )
-    if( print_FDRtool ){
-        pdf( file = paste( filename, '_FDRstat.pdf', sep = "" ) )
-        result = fdrtool( pvalues, statistic="pvalue",
-                          plot=TRUE, color.figure=TRUE, verbose=FALSE, eta0set=eta0set )
-        dev.off()
+    if( rerank ){
+        # For reranking motifs, use fdrtool to estimate the FDR ratio eta0
+        if( print_FDRtool ){
+            pdf( file = paste( filename, '_FDRstat.pdf', sep = "" ) )
+            result = fdrtool( pvalues, statistic="pvalue",
+            plot=TRUE, color.figure=TRUE, verbose=FALSE )
+            dev.off()
+        } else {
+            result = fdrtool( pvalues, statistic="pvalue", plot=FALSE )
+        }
     } else {
-        result = fdrtool( pvalues, statistic="pvalue", plot=FALSE, eta0set=eta0set )
+        # For benchmarking, assume all the scores for positive sequences as positives
+        # Thus, set eta0 to the ratio between FP and TP+FP
+        # Estimate False Discovery Rates for Diverse Test Statistics
+        eta0set = mfold / ( 1+mfold )
+        if( print_FDRtool ){
+            pdf( file = paste( filename, '_FDRstat.pdf', sep = "" ) )
+            result = fdrtool( pvalues, statistic="pvalue",
+                              plot=TRUE, color.figure=TRUE, verbose=FALSE, eta0set=eta0set )
+            dev.off()
+        } else {
+            result = fdrtool( pvalues, statistic="pvalue", plot=FALSE, eta0set=eta0set )
+        }
     }
 
     # get the global fdr values and estimate of the weight eta0 of
@@ -591,7 +609,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     }
 
     resultString = paste0(c(prefix, motif_num, ausfc, auc5, auprc, occurrence), collapse="\t")
-    #print( resultString )
+    print( resultString )
     results = c(results, resultString)
 }
 outConn <- file(ofile)
