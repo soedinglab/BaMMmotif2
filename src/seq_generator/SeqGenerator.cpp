@@ -69,9 +69,9 @@ void SeqGenerator::calculate_kmer_frequency(){
 
 
 // generate negative sequences based on k-mer frequencies from positive set
-std::vector<std::unique_ptr<Sequence, deleter>> SeqGenerator::arti_bgseqset( size_t fold ){
+std::vector<std::unique_ptr<Sequence>> SeqGenerator::arti_bgseqset( size_t fold ){
 
-	std::vector<std::unique_ptr<Sequence, deleter>> negset;
+	std::vector<std::unique_ptr<Sequence>> negset;
 
 	calculate_kmer_frequency();
 
@@ -85,7 +85,7 @@ std::vector<std::unique_ptr<Sequence, deleter>> SeqGenerator::arti_bgseqset( siz
 }
 
 // generate background sequence based on k-mer frequencies from positive set
-std::unique_ptr<Sequence, deleter> SeqGenerator::bg_sequence(size_t L){
+std::unique_ptr<Sequence> SeqGenerator::bg_sequence(size_t L){
 
 	uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
 	std::string header = "bg_seq";
@@ -147,7 +147,7 @@ std::unique_ptr<Sequence, deleter> SeqGenerator::bg_sequence(size_t L){
 		}
 	}
 
-	std::unique_ptr<Sequence, deleter> seq( new Sequence( sequence, L, header, Y_, true ) );
+	std::unique_ptr<Sequence> seq( new Sequence( sequence, L, header, Y_, true ) );
 
 	if( sequence ) free( sequence );
 
@@ -155,10 +155,30 @@ std::unique_ptr<Sequence, deleter> SeqGenerator::bg_sequence(size_t L){
 
 }
 
-// generate sequences with given motif emebedded into the given sequences
-std::vector<std::unique_ptr<Sequence, deleter>> SeqGenerator::arti_posset_motif_embedded( size_t at ){
+// generate background sequence based on k-mer frequencies from positive set
+std::unique_ptr<Sequence> SeqGenerator::raw_sequence( Sequence* seq ){
 
-	std::vector<std::unique_ptr<Sequence, deleter>> posset_with_motif_embedded;
+    size_t L = seq->getL();
+    uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
+    std::string header = "raw_seq";
+
+    // copy original sequence to the raw sequence
+    for( size_t i = 0; i < L; i++ ){
+        sequence[i] = seq->getSequence()[i];
+    }
+
+    std::unique_ptr<Sequence> raw_seq( new Sequence( sequence, L, header, Y_, true ) );
+
+    if( sequence ) free( sequence );
+
+    return raw_seq;
+
+}
+
+// generate sequences with given motif embedded into the given sequences
+std::vector<std::unique_ptr<Sequence>> SeqGenerator::arti_posset_motif_embedded( size_t at ){
+
+	std::vector<std::unique_ptr<Sequence>> posset_with_motif_embedded;
 
 	calculate_kmer_frequency();
 
@@ -168,9 +188,9 @@ std::vector<std::unique_ptr<Sequence, deleter>> SeqGenerator::arti_posset_motif_
 	for( size_t i = 0; i < seq_size; i++ ){
         posset_with_motif_embedded.push_back(posseq_motif_embedded( seqs_[i], at ));
 	}
-    // generative background sequences for the rest 1-q portion
+    // copy the original sequences for the rest 1-q portion
     for( size_t i = seq_size; i < seqs_.size(); i++ ){
-        posset_with_motif_embedded.push_back( bg_sequence( seqs_[i]->getL() ) );
+        posset_with_motif_embedded.push_back( raw_sequence( seqs_[i] ) );
     }
 
     // randomly shuffle the sequence set after implantation
@@ -180,7 +200,7 @@ std::vector<std::unique_ptr<Sequence, deleter>> SeqGenerator::arti_posset_motif_
 }
 
 // generate sequences with given motif embedded into the given sequences
-std::unique_ptr<Sequence, deleter> SeqGenerator::posseq_motif_embedded( Sequence* seq, size_t at ){
+std::unique_ptr<Sequence> SeqGenerator::posseq_motif_embedded( Sequence* seq, size_t at ){
 
     size_t W = motif_->getW();
     size_t L = seq -> getL();
@@ -227,15 +247,15 @@ std::unique_ptr<Sequence, deleter> SeqGenerator::posseq_motif_embedded( Sequence
         sequence[i] = seq->getSequence()[i-W];
     }
 
-    std::unique_ptr<Sequence, deleter> seq_with_motif( new Sequence( sequence, L, header, Y_, true ) );
+    std::unique_ptr<Sequence> seq_with_motif( new Sequence( sequence, L, header, Y_, true ) );
 
     return seq_with_motif;
 
 }
 
-std::vector<std::unique_ptr<Sequence, deleter>> SeqGenerator::seqset_with_motif_masked(float **r){
+std::vector<std::unique_ptr<Sequence>> SeqGenerator::seqset_with_motif_masked(float **r){
 
-	std::vector<std::unique_ptr<Sequence, deleter>> seqset;
+	std::vector<std::unique_ptr<Sequence>> seqset;
 	size_t W = motif_->getW();
 
 	for( size_t n = 0; n < seqs_.size(); n++ ){
@@ -246,7 +266,7 @@ std::vector<std::unique_ptr<Sequence, deleter>> SeqGenerator::seqset_with_motif_
 	return seqset;
 }
 
-std::unique_ptr<Sequence, deleter> SeqGenerator::sequence_with_motif_masked(Sequence *posseq, size_t W, float *r){
+std::unique_ptr<Sequence> SeqGenerator::sequence_with_motif_masked(Sequence *posseq, size_t W, float *r){
 
 	float cutoff = 0.3f;
     size_t L = posseq->getL();
@@ -268,12 +288,12 @@ std::unique_ptr<Sequence, deleter> SeqGenerator::sequence_with_motif_masked(Sequ
 
 	std::string header = "seq with motif masked";
 
-    std::unique_ptr<Sequence, deleter> seq_mask_motif( new Sequence( masked_seq, L, header, Y_, true ) );
+    std::unique_ptr<Sequence> seq_mask_motif( new Sequence( masked_seq, L, header, Y_, true ) );
 
 	return seq_mask_motif;
 }
 
-void SeqGenerator::write( char* odir, std::string basename, std::vector<std::unique_ptr<Sequence, deleter>> seqset ){
+void SeqGenerator::write( char* odir, std::string basename, std::vector<std::unique_ptr<Sequence>> seqset ){
 	/**
 	 * save the generated sequence set in fasta file:
 	 */
