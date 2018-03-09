@@ -356,10 +356,10 @@ pvt.plotlabels <- function(statistic, scale.param, eta0)
 
 # plot p-value statistics using fdrtool
 
-plotPvalStat = function(pvalues, picname, motif_eta0, dataset_eta0){
+plotPvalStat = function(pvalues, filename, eta0, data_eta0){
 
-    jpeg( filename = picname, width = 800, height = 800, quality = 100 )
-    draw_eta0 = !is.null(motif_eta0)
+    jpeg( filename = filename, width = 800, height = 800, quality = 100 )
+
     histRes <- hist(pvalues,plot=FALSE, breaks=30)
     xvals <- histRes$breaks
     yvals <- histRes$density
@@ -368,36 +368,39 @@ plotPvalStat = function(pvalues, picname, motif_eta0, dataset_eta0){
     xvals <- c(xvals, 0)
     yvals <- c(0, yvals, 0)
 
-    if(is.null(motif_eta0)){motif_eta0=dataset_eta0}
-
     par(cex=1.5)
     plot(xvals,yvals,
     type="S",
     main="p-value statistics",
     xlab="P-values", ylab="density",
-    lwd=3, axes=FALSE, frame.plot=TRUE)
+    lwd=3, axes=FALSE, frame.plot=TRUE, cex.main = 2.0, cex.axis=1.5)
     axis(1, lwd=3)
-    rect(0, 0, 1, dataset_eta0,
-    col="gray", angle=45, density=4, lty=NULL, lwd=2, xpd=FALSE)
-    lines(xvals,yvals,type="S")
 
-    cutoff=0.1
+    # mark the negative regions from background sequences
+    rect(0, 0, 1, data_eta0,
+        col="grey", angle=45, density=4, lty=NULL, lwd=2, xpd=FALSE)
+        lines(xvals,yvals,type="S")
 
-    if(draw_eta0){abline(h=motif_eta0, col="orange", lwd=3, lty=2)}
+    cutoff=0.1      # cutoff for p-values
     abline(v=cutoff, col="red", lwd=4)
 
-    rect(0, 0, cutoff, motif_eta0,
-    col=rgb(1, 0, 0, 0.1), border=par("fg"), lty=NULL, lwd=0, xpd=FALSE)
+    if(eta0 != data_eta0) abline(h=eta0, col="orange", lwd=3, lty=2)
+
+    rect(0, 0, cutoff, data_eta0,
+    col=rgb(1, 0, 0, 0.1),
+    border=par("fg"), lty=NULL, lwd=0, xpd=FALSE)
 
     mask = xvals <= cutoff
+
     xpoly = xvals[mask]
     ypoly = yvals[mask]
 
     xpoly = rep(xpoly[2:length(xpoly)], each=2)
     ypoly = c(rep(ypoly[2:length(ypoly)], each=2), rep(ypoly[length(ypoly)], each=2))
     xpoly = c(0, xpoly[1:length(xpoly) - 1], cutoff, cutoff)
-    ypoly = pmax(ypoly, motif_eta0)
-    polygon(c(xpoly, rev(xpoly)), c(ypoly, rev(rep(motif_eta0, length(ypoly)))),
+    ypoly = pmax(ypoly, data_eta0)
+
+    polygon(c(xpoly, rev(xpoly)), c(ypoly, rev(rep(eta0, length(ypoly)))),
     col =rgb(0, 1, 0, 0.1) , border = NA)
 
     text_cex = 1.2
@@ -405,18 +408,18 @@ plotPvalStat = function(pvalues, picname, motif_eta0, dataset_eta0){
     v_spacer = 0.05
     h_spacer = 0.06
 
-    text(cutoff - v_spacer, motif_eta0 + h_spacer, "TP", col="darkgreen", font=font, cex=text_cex)
-    text(cutoff + v_spacer, motif_eta0 - h_spacer, "TN", col="black", font=font, cex=text_cex)
-    text(cutoff - v_spacer, motif_eta0 - h_spacer, "FP", col="darkred", font=font, cex=text_cex)
-    text(cutoff + v_spacer, motif_eta0 + h_spacer, "FN", col="black", font=font, cex=text_cex)
+    text(cutoff - v_spacer, eta0 + h_spacer, "TP", col="darkgreen", font=font, cex=text_cex)
+    text(cutoff + v_spacer, eta0 - h_spacer, "TN", col="black", font=font, cex=text_cex)
+    text(cutoff - v_spacer, eta0 - h_spacer, "FP", col="darkred", font=font, cex=text_cex)
+    text(cutoff + v_spacer, eta0 + h_spacer, "FN", col="black", font=font, cex=text_cex)
 
-    text(0.5, dataset_eta0 / 2, "background sequences", font=font, cex=text_cex, col="gray30")
+    text(0.5, data_eta0 / 2, "background sequences", font=font, cex=text_cex, col="gray30")
     invisible(dev.off() )
 }
 
 # plot TP/FP ratio vs. recall curve
 
-plotRRC = function(picname, recall, TFR ){
+plotRRC = function(picname, recall, TFR){
 
     jpeg( filename = picname, width = 800, height = 800, quality = 100 )
 
@@ -426,9 +429,10 @@ plotRRC = function(picname, recall, TFR ){
 
     # compute the area under the RRC curve (AURRC):
     aurrc = sum(diff(recall)*rollmean(log10(TFR),2)) / sum_area * 1.75
+    aurrc = round(aurrc, digits=3)
 
     plot(recall, TFR,
-    main=paste0("Motif Performance, AURRC=", round(aurrc, digits=3)),
+    main=paste0("Motif Performance, AURRC=", aurrc),
     log="y",
     xlim=c(0,1),ylim=c(0.1,max(max(TFR),100)),
     xlab="", ylab="",
@@ -441,7 +445,7 @@ plotRRC = function(picname, recall, TFR ){
         recall, TFR/10,
         type="l", lty=2,
         lwd=7.5,
-        col= convertcolor("darkblue", 50)
+        col= convertcolor("darkgreen", 50)
     )
 
     mtext("Recall = TP / (TP+FN)", side=1, line=4.5, cex = 3.5)
@@ -455,8 +459,8 @@ plotRRC = function(picname, recall, TFR ){
     border = NA
     )
 
-    text(x = 0.6,y = 10, cex = 3.5, locator(), labels = c("1:1"), col="darkorange")
-    text(x = 0.6,y = 1, cex = 3.5, locator(), labels = c("1:10"), col="darkorange")
+    text(x = 0.6,y = 10, cex = 3.5, locator(), labels = c("1:1"), col="darkgreen")
+    text(x = 0.6,y = 1, cex = 3.5, locator(), labels = c("1:10"), col="darkgreen")
 
     box(lwd=2.5)
     invisible(dev.off())
@@ -471,16 +475,14 @@ plotRRC = function(picname, recall, TFR ){
 #
 #--------------------------
 
-evaluateMotif = function( pvalues, filename, rerank, eta0raw=NULL ){
+evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
 
-    if( !is.null(rerank) && is.null(eta0raw) ){
-        stop("eta0 must be given when using reranking function!")
-    } else if(!is.null(rerank)) {
-        eta0set = eta0raw
+    if( rerank ){
+        eta0set = NULL
         pn_pval <- paste0( filename, '_motifPval.jpeg' )
         pn_rrc  <- paste0( filename, '_motifRRC.jpeg' )
     } else {
-        eta0set = NULL
+        eta0set = data_eta0
         pn_pval <- paste0( filename, '_dataPval.jpeg' )
         pn_rrc  <- paste0( filename, '_dataRRC.jpeg' )
     }
@@ -495,6 +497,7 @@ evaluateMotif = function( pvalues, filename, rerank, eta0raw=NULL ){
     # get the global fdr values and estimate of the weight eta0 of the null component
     fdr	    <- result_fdrtool$qval
     eta0 	<- result_fdrtool$param[3]
+
     # calculate recall
     len 	= length(fdr)
     list 	<- seq(1, len)
@@ -514,7 +517,7 @@ evaluateMotif = function( pvalues, filename, rerank, eta0raw=NULL ){
     fdr     <- append(fdr, 0.5)
     range   <- seq(1, len+1)
     # limit the frame of the curve to FDR(0.01-0.5)
-    l_range = 0.01	    # left range for FDR
+    l_range = 0.01	                # left range for FDR
     for(i in range){
         if( fdr[i] >= l_range ){
             recall[i] = 0
@@ -527,19 +530,21 @@ evaluateMotif = function( pvalues, filename, rerank, eta0raw=NULL ){
     tfr <- (1-fdr)/fdr * ratio
 
     # plot p-value density plot and TP/FP vs. recall plot
-    plotPvalStat(pvalues, picname=pn_pval, motif_eta0=eta0set, eta0)
-    plotRRC(pn_rrc, recall, tfr)
+    plotPvalStat(pvalues, filename=pn_pval, eta0=eta0, data_eta0=data_eta0)
+    rrc = plotRRC(pn_rrc, recall, tfr)
 
+    aurrc = rrc$aurrc
     # return to the results
-    return( list(aurrc=plotRRC$aurrc, eta0=eta0) )
+    return( list(aurrc=aurrc, eta0=eta0) )
 
 }
 
-#-----------------
+#--------------
 #
-# main functions
+# main function
 #
-#-----------------
+#--------------
+
 results = c()
 resultTitle = paste0(c("name", "motif_number", "aurrc", "occur"), collapse="\t")
 results = c(results, resultTitle)
@@ -571,18 +576,14 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
         }
     }
 
-    if(!is.null(rerank)){
-        eta0set = mfold / ( 1+mfold )
-    } else {
-        eta0set = NULL
-    }
+    data_eta0 = mfold / ( 1+mfold )
 
     # evaluate motif and plot p-value density plot and TP/FP-recall curve
-    evaluateMotif(pvalues, filename = filename, rerank=rerank, eta0set=eta0set)
-    occurrence = 1-evaluateMotif$eta0
-    aurrc = evaluateMotif$aurrc
+    eval = evaluateMotif(pvalues, filename = filename, rerank=rerank, data_eta0=data_eta0)
+    occurrence = 1-eval$eta0
+    aurrc = eval$aurrc
 
-    # calculate the result
+    # output the result
     resultString = paste0(c(prefix, motif_num, aurrc, occurrence), collapse="\t")
 
     if(web){
