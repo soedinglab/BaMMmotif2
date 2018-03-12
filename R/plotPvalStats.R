@@ -368,13 +368,18 @@ plotPvalStat = function(pvalues, filename, eta0, data_eta0){
     xvals <- c(xvals, 0)
     yvals <- c(0, yvals, 0)
 
-    par(cex=1.5)
+    par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
+
     plot(xvals,yvals,
     type="S",
-    main="p-value statistics",
-    xlab="P-values", ylab="density",
-    lwd=3, axes=FALSE, frame.plot=TRUE, cex.main = 2.0, cex.axis=1.5)
-    axis(1, lwd=3)
+    main="P-value statistics",
+    xlab="", ylab="",
+    lwd=3, axes=FALSE, frame.plot=TRUE, cex.main = 3.0, cex.axis=2.5)
+
+    mtext("P-values", side=1, line=4.5, cex = 3)
+    mtext("Density", side=2, line=4, cex = 3)
+
+    axis(1,tick =FALSE, cex.axis=2.5, line=1)
 
     # mark the negative regions from background sequences
     rect(0, 0, 1, data_eta0,
@@ -386,7 +391,7 @@ plotPvalStat = function(pvalues, filename, eta0, data_eta0){
 
     if(eta0 != data_eta0){
         abline(h=eta0, col="orange", lwd=3, lty=2)
-        text(0.9, eta0 + 0.05, round(eta0, digits=2)) # label et0 line
+        #text(0.9, eta0 + 0.05, round(eta0, digits=2)) # label et0 line
     }
 
     # color FP region
@@ -412,7 +417,7 @@ plotPvalStat = function(pvalues, filename, eta0, data_eta0){
         border = NA
     )
 
-    text_cex = 1.2
+    text_cex = 2
     font = 2
     v_spacer = 0.05
     h_spacer = 0.06
@@ -423,6 +428,9 @@ plotPvalStat = function(pvalues, filename, eta0, data_eta0){
     text(cutoff + v_spacer, eta0 + h_spacer, "FN", col="black", font=font, cex=text_cex)
 
     text(0.5, data_eta0 / 2, "background sequences", font=font, cex=text_cex, col="gray30")
+
+    box(lwd=2.5)
+
     invisible(dev.off() )
 }
 
@@ -434,12 +442,9 @@ plotRRC = function(picname, recall, TFR){
 
     par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
 
-    sum_area = log10(1000)-log10(0.1)
-
     # compute the area under the RRC curve (AURRC):
-    aurrc = sum(diff(recall)*rollmean(log10(TFR)+1,2))
-    print(aurrc)
-    aurrc = aurrc/ sum_area
+    sum_area = log10(1000)-log10(0.1)
+    aurrc = sum(diff(recall)*rollmean(log10(TFR)+1,2)) / sum_area
     aurrc = round(aurrc, digits=3)
 
     # plot the line when positives:negatives = 1:1
@@ -461,8 +466,9 @@ plotRRC = function(picname, recall, TFR){
         col= convertcolor("darkgreen", 50)
     )
 
-    mtext("Recall = TP / (TP+FN)", side=1, line=4.5, cex = 3.5)
-    mtext("TP/FP", side=2, line=4, cex = 3.5)
+    mtext("Recall = TP / (TP+FN)", side=1, line=4.5, cex = 3.0)
+    mtext("TP/FP", side=2, line=4, cex = 3.0)
+
     axis(1, at=c(0,0.5,1),labels = c(0,0.5,1),tick =FALSE, cex.axis=2.5, line=1)
     axis(2, at=c(0.1,1,10,100,1000),labels = expression(10^-1,10^0, 10^1, 10^2, 10^3), tick=FALSE, cex.axis=2.5, line=0, las=1)
 
@@ -473,10 +479,11 @@ plotRRC = function(picname, recall, TFR){
         border = NA
     )
 
-    text(x = 0.95,y = min(TFR)+0.5, cex = 3.0, locator(), labels = c("1:1"), col="darkgreen")
-    text(x = 0.95,y = min(TFR/10)+0.05, cex = 3.0, locator(), labels = c("1:10"), col=convertcolor("darkgreen",70))
+    text(x = 0.95,y = min(TFR)+0.5, cex = 2.0, locator(), labels = c("1:1"), col="darkgreen")
+    text(x = 0.95,y = min(TFR/10)+0.05, cex = 2.0, locator(), labels = c("1:10"), col=convertcolor("darkgreen",70))
 
     box(lwd=2.5)
+
     invisible(dev.off())
 
     # access the aurrc value
