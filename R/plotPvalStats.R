@@ -359,7 +359,7 @@ pvt.plotlabels <- function(statistic, scale.param, eta0)
 plotPvalStat = function(pvalues, filename, eta0, data_eta0){
 
     jpeg( filename = filename, width = 800, height = 800, quality = 100 )
-
+    
     histRes <- hist(pvalues,plot=FALSE, breaks=30)
     xvals <- histRes$breaks
     yvals <- histRes$density
@@ -384,11 +384,15 @@ plotPvalStat = function(pvalues, filename, eta0, data_eta0){
     cutoff=0.1      # cutoff for p-values
     abline(v=cutoff, col="red", lwd=4)
 
-    if(eta0 != data_eta0) abline(h=eta0, col="orange", lwd=3, lty=2)
+    if(eta0 != data_eta0){
+        abline(h=eta0, col="orange", lwd=3, lty=2)
+        text(0.9, eta0 + 0.05, round(eta0, digits=2)) # label et0 line
+    }
 
-    rect(0, 0, cutoff, data_eta0,
-    col=rgb(1, 0, 0, 0.1),
-    border=par("fg"), lty=NULL, lwd=0, xpd=FALSE)
+    # color FP region
+    rect(0, 0, cutoff, eta0,
+        col=rgb(1, 0, 0, 0.1),
+        border=par("fg"), lty=NULL, lwd=0, xpd=FALSE)
 
     mask = xvals <= cutoff
 
@@ -400,8 +404,13 @@ plotPvalStat = function(pvalues, filename, eta0, data_eta0){
     xpoly = c(0, xpoly[1:length(xpoly) - 1], cutoff, cutoff)
     ypoly = pmax(ypoly, data_eta0)
 
-    polygon(c(xpoly, rev(xpoly)), c(ypoly, rev(rep(eta0, length(ypoly)))),
-    col =rgb(0, 1, 0, 0.1) , border = NA)
+    # color TP region
+    polygon(
+        c(xpoly, rev(xpoly)),
+        c(ypoly, rev(rep(eta0, length(ypoly)))),
+        col =rgb(0, 1, 0, 0.1),
+        border = NA
+    )
 
     text_cex = 1.2
     font = 2
@@ -425,22 +434,26 @@ plotRRC = function(picname, recall, TFR){
 
     par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
 
-    sum_area = log10(max(max(TFR),100))-log10(0.1)
+    sum_area = log10(1000)-log10(0.1)
 
     # compute the area under the RRC curve (AURRC):
-    aurrc = sum(diff(recall)*rollmean(log10(TFR),2)) / sum_area * 1.75
+    aurrc = sum(diff(recall)*rollmean(log10(TFR)+1,2))
+    print(aurrc)
+    aurrc = aurrc/ sum_area
     aurrc = round(aurrc, digits=3)
 
+    # plot the line when positives:negatives = 1:1
     plot(recall, TFR,
-    main=paste0("Motif Performance, AURRC=", aurrc),
-    log="y",
-    xlim=c(0,1),ylim=c(0.1,max(max(TFR),100)),
-    xlab="", ylab="",
-    type="l", lwd=7.5,
-    col=convertcolor("darkgreen",90),
-    axes = FALSE, cex.main = 3.0
+        main=paste0("Motif Performance, AURRC=", aurrc),
+        log="y",
+        xlim=c(0,1),ylim=c(0.1,1000),
+        xlab="", ylab="",
+        type="l", lwd=7.5,
+        col=convertcolor("darkgreen",90),
+        axes = FALSE, cex.main = 3.0
     )
 
+    # plot the line when positives:negatives = 1:10
     lines(
         recall, TFR/10,
         type="l", lty=2,
@@ -450,17 +463,18 @@ plotRRC = function(picname, recall, TFR){
 
     mtext("Recall = TP / (TP+FN)", side=1, line=4.5, cex = 3.5)
     mtext("TP/FP", side=2, line=4, cex = 3.5)
-    axis(1, at=c(0,0.5,1),labels = c(0,0.5,1),tick = FALSE, cex.axis=2.5, line=1)
-    axis(2, at=c(0.1,1,10,100),labels = expression(10^-1,10^0, 10^1, 10^2), tick = FALSE, cex.axis=2.5, line=0, las=1)
+    axis(1, at=c(0,0.5,1),labels = c(0,0.5,1),tick =FALSE, cex.axis=2.5, line=1)
+    axis(2, at=c(0.1,1,10,100,1000),labels = expression(10^-1,10^0, 10^1, 10^2, 10^3), tick=FALSE, cex.axis=2.5, line=0, las=1)
 
-    polygon(c(0, recall, 1),
-    c(0.1, TFR, 0.1),
-    col = convertcolor("darkgreen",30),
-    border = NA
+    polygon(
+        c(0, recall, 1),
+        c(0.1, TFR, 0.1),
+        col = convertcolor("darkgreen",30),
+        border = NA
     )
 
-    text(x = 0.6,y = 10, cex = 3.5, locator(), labels = c("1:1"), col="darkgreen")
-    text(x = 0.6,y = 1, cex = 3.5, locator(), labels = c("1:10"), col="darkgreen")
+    text(x = 0.95,y = min(TFR)+0.5, cex = 3.0, locator(), labels = c("1:1"), col="darkgreen")
+    text(x = 0.95,y = min(TFR/10)+0.05, cex = 3.0, locator(), labels = c("1:10"), col=convertcolor("darkgreen",70))
 
     box(lwd=2.5)
     invisible(dev.off())
@@ -487,12 +501,12 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
         pn_rrc  <- paste0( filename, '_dataRRC.jpeg' )
     }
 
-    if (max(pvalues) > 1 | min(pvalues) < 0){
+    if(max(pvalues) > 1 | min(pvalues) < 0){
         stop("input p-values must all be in the range 0 to 1!")
     }
 
     # use fdrtool to estimate eta0
-    result_fdrtool = fdrtool( pvalues, statistic="pvalue", plot=FALSE, eta0set=eta0set)
+    result_fdrtool = fdrtool(pvalues, statistic="pvalue", plot=FALSE, eta0set=eta0set)
 
     # get the global fdr values and estimate of the weight eta0 of the null component
     fdr	    <- result_fdrtool$qval
@@ -502,7 +516,7 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
     len 	= length(fdr)
     list 	<- seq(1, len)
     recall  <- ( 1 - fdr ) * list / ( 1 - eta0 ) / len
-    # modify the SF curve:
+
     # reset recall to 1 when it is larger than 1
     for(i in list){
         if( recall[i] > 1 ){
@@ -512,28 +526,18 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
             break
         }
     }
-    # extend the SF curve till FDR reaches 0.5
-    recall  <- append(recall, 1)
-    fdr     <- append(fdr, 0.5)
-    range   <- seq(1, len+1)
-    # limit the frame of the curve to FDR(0.01-0.5)
-    l_range = 0.01	                # left range for FDR
-    for(i in range){
-        if( fdr[i] >= l_range ){
-            recall[i] = 0
-            break
-        }
-    }
 
     # set TP / FP ratio to 1:1
     ratio  = eta0 / (1-eta0)
     tfr <- (1-fdr)/fdr * ratio
 
-    # plot p-value density plot and TP/FP vs. recall plot
+    # plot p-value density plot
     plotPvalStat(pvalues, filename=pn_pval, eta0=eta0, data_eta0=data_eta0)
-    rrc = plotRRC(pn_rrc, recall, tfr)
 
-    aurrc = rrc$aurrc
+    # plot TP/FP vs. recall plot
+    rrc     = plotRRC(pn_rrc, recall, tfr)
+    aurrc   = rrc$aurrc     # get AURRC score
+
     # return to the results
     return( list(aurrc=aurrc, eta0=eta0) )
 
@@ -576,18 +580,19 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
         }
     }
 
+    # calculate eta0 based on negative/postitive ratio
     data_eta0 = mfold / ( 1+mfold )
 
     # evaluate motif and plot p-value density plot and TP/FP-recall curve
-    eval = evaluateMotif(pvalues, filename = filename, rerank=rerank, data_eta0=data_eta0)
-    occurrence = 1-eval$eta0
-    aurrc = eval$aurrc
+    eval  = evaluateMotif(pvalues, filename = filename, rerank=rerank, data_eta0=data_eta0)
+    occur = round(1-eval$eta0, digits=3)    # acquire motif occurrence
+    aurrc = eval$aurrc                      # acquire AURRC score
 
     # output the result
-    resultString = paste0(c(prefix, motif_num, aurrc, occurrence), collapse="\t")
+    resultString = paste0(c(prefix, motif_num, aurrc, occur), collapse="\t")
 
     if(web){
-        message(occurrence)
+        message(occur)
     }
 
     print( resultString )
