@@ -44,7 +44,6 @@ parser <- ArgumentParser(description="evaluate motifs optimized by BaMM")
 parser$add_argument('target_directory', help="directory that contains the target file")
 parser$add_argument('prefix', help="prefix of the target file")
 # optional arguments
-parser$add_argument("--rerank", type="logical", default=FALSE, help="flag for switching to rerank mode" )
 parser$add_argument("--web", type="logical", default=FALSE, help="flag for printing out ausfc score on the screen" )
 
 # parse the arguments
@@ -53,9 +52,6 @@ args    <- parser$parse_args()
 # interpret the arguments
 dir 	<- args$target_directory
 prefix 	<- args$prefix
-
-# flag for switching to rerank mode
-rerank  = args$rerank
 
 # flag for verbose output for web usage
 web             = args$web
@@ -466,7 +462,7 @@ plotRRC = function(picname, recall, TFR){
         col= convertcolor("darkgreen", 50)
     )
 
-    mtext("Recall = TP / (TP+FN)", side=1, line=4.5, cex = 3.0)
+    mtext("Recall = TP/(TP+FN)", side=1, line=4.5, cex = 3.0)
     mtext("TP/FP", side=2, line=4, cex = 3.0)
 
     axis(1, at=c(0,0.5,1),labels = c(0,0.5,1),tick =FALSE, cex.axis=2.5, line=1)
@@ -557,7 +553,7 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
 #--------------
 
 results = c()
-resultTitle = paste0(c("name", "motif_number", "aurrc", "occur"), collapse="\t")
+resultTitle = paste0(c("name", "motif_number", "data_aurrc", "data_occur", "motif_aurrc", "motif_occur"), collapse="\t")
 results = c(results, resultTitle)
 
 for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))) {
@@ -590,16 +586,22 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     # calculate eta0 based on negative/postitive ratio
     data_eta0 = mfold / ( 1+mfold )
 
-    # evaluate motif and plot p-value density plot and TP/FP-recall curve
-    eval  = evaluateMotif(pvalues, filename = filename, rerank=rerank, data_eta0=data_eta0)
-    occur = round(1-eval$eta0, digits=3)    # acquire motif occurrence
-    aurrc = eval$aurrc                      # acquire AURRC score
+    # evaluate motif on the dataset
+    eval_dataset = evaluateMotif(pvalues, filename = filename, rerank=FALSE, data_eta0=data_eta0)
+
+    # evaluate motif
+    eval_motif = evaluateMotif(pvalues, filename = filename, rerank=TRUE, data_eta0=data_eta0)
+
+    data_occur = round(1-eval_dataset$eta0, digits=3)   # acquire motif occurrence
+    data_aurrc = eval_dataset$aurrc                     # acquire AURRC score
+    motif_occur = round(1-eval_motif$eta0, digits=3)    # acquire motif occurrence
+    motif_aurrc = eval_motif$aurrc                      # acquire AURRC score
 
     # output the result
-    resultString = paste0(c(prefix, motif_num, aurrc, occur), collapse="\t")
+    resultString = paste0(c(prefix, motif_num, data_aurrc, data_occur, motif_aurrc, motif_occur), collapse="\t")
 
     if(web){
-        message(occur)
+        message(motif_occur)
     }
 
     print( resultString )
