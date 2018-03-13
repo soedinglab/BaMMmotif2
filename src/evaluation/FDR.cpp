@@ -159,6 +159,7 @@ void FDR::calculatePR(){
 		size_t idx_max = posN+negN;	// index when the distance between TFP and
 									// FP reaches maximum; otherwise, set the
 									// the number as initial cutoff
+
 		size_t len_all = posScoreAll_.size() + negScoreAll_.size();
 
 		for( size_t i = 0; i < len_all; i++ ){
@@ -204,11 +205,28 @@ void FDR::calculatePR(){
 		size_t min_idx_pos = 0;
 		size_t posN_est = static_cast<size_t>( q_ * ( float )posN );
 
+        // set limit for using the exponential extrapolation for p-value calculation
+        size_t n_top = 100 < (negN / 10) ? 100 : (negN / 10);
+
+        float lambda = 0.f;
+        for( size_t l = 0; l < n_top; l++ ){
+            lambda += negScoreMax_[l] - negScoreMax_[n_top];
+        }
+        lambda /= n_top;
+
+        std::cout << "n_top=" << n_top << "\tlambda=" << lambda << std::endl;
+        std::cout << "S_ntop- = " << negScoreMax_[n_top] << std::endl;
+        size_t count = 0;
+        //float eta = 1e-5;
+        float Sl = 0.f;
 		for( size_t i = 0; i < posN + negN; i++ ){
-			if( ( posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] || idx_negMax == posN+negN-1 )
+
+            if( ( posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] || idx_negMax == posN+negN-1 )
                 and idx_posMax < posN ){
+                Sl = posScoreMax_[idx_posMax];
 				idx_posMax++;
 			} else {
+                Sl = negScoreMax_[idx_negMax];
 				idx_negMax++;
 			}
 
@@ -218,22 +236,46 @@ void FDR::calculatePR(){
                 break;
             }
 */
-            float tp = ( float )idx_posMax;
-            float fp = ( float )idx_negMax / mFold;
-			ZOOPS_TP_.push_back( tp );
-			ZOOPS_FP_.push_back( fp );
-			PN_Pvalue_.push_back( ( ( float )idx_negMax + 0.5f ) / ( ( float )negN + 1.0f ) );
+            float TP = ( float )idx_posMax;
+            float FP = ( float )idx_negMax / mFold;
+			ZOOPS_TP_.push_back( TP );
+			ZOOPS_FP_.push_back( FP );
+
+            float p_value;
+
+            // calculate p-values in two different ways:
+            if( Sl < negScoreMax_[n_top] ){
+                // p-value is calculated in an interpolated way:
+                // Find iterator to lower/upper bound
+/*                size_t low, up;
+                low = std::distance( negScoreMax_.begin(), std::lower_bound( negScoreMax_.begin(), negScoreMax_.end(), Sl ) );
+                up = std::distance( negScoreMax_.begin(), std::upper_bound( negScoreMax_.begin(), negScoreMax_.end(), Sl ) );
+
+                float Sl_lower = negScoreMax_[low];
+                float Sl_higher = negScoreMax_[up];
+
+                p_value = ( FP + ( Sl_higher - Sl ) / ( Sl_higher - Sl_lower + eta ) ) / negN;*/
+                p_value = ( ( float )idx_negMax + 0.5f ) / ( ( float )negN + 1.0f );
+                count++;
+
+            } else {
+                // p-value is calculated by relying on a parametric fit of the exponentially cumulative distribution
+                // p_value = n_top * expf( ( negScoreMax_[n_top] - Sl ) / lambda ) / negN;
+                p_value = ( ( float )idx_negMax + 0.5f ) / ( ( float )negN + 1.0f );
+            }
+
+			PN_Pvalue_.push_back( p_value );
 
 			// take the faction of q sequences as real positives
 			if( idx_posMax == posN_est ){
 				min_idx_pos = i;
 			}
 
-			ZOOPS_FDR_.push_back( fp / ( tp + fp ) );
-			ZOOPS_Rec_.push_back( tp / ( float )posN );
+			ZOOPS_FDR_.push_back( FP / ( TP + FP ) );
+			ZOOPS_Rec_.push_back( TP / ( float )posN );
 
 		}
-
+        std::cout << "count=" << count << std::endl;
 		// the fraction of motif occurrence
 		occ_frac_ = 1.0f - ZOOPS_FP_[min_idx_pos] / ( float )posN;
 	}
@@ -246,105 +288,53 @@ void FDR::calculatePvalues(){
 	 * 	later used for ranking models using fdrtool R package
 	 */
 
-	bool use_method_1 = true;
-	if( use_method_1 ){
-        // Method 1:
-        // for MOPS model:
-        if( mops_ ){
-            // Sort log odds scores in ascending order
-            std::sort( negScoreAll_.begin(), negScoreAll_.end(), std::less<float>() );
-            std::sort( posScoreAll_.begin(), posScoreAll_.end(), std::less<float>() );
-            for( size_t i = 0; i < posScoreAll_.size(); i++ ){
-                // Return iterator to lower/upper bound
-                size_t low, up;
-                low = std::distance( negScoreAll_.begin(),
-                                     std::lower_bound( negScoreAll_.begin(),
-                                                       negScoreAll_.end(),
-                                                       posScoreAll_[i] ) );
-                up = std::distance( negScoreAll_.begin(),
-                                    std::upper_bound( negScoreAll_.begin(),
-                                                      negScoreAll_.end(),
-                                                      posScoreAll_[i] ) );
-                float p = 1.0f - ( float )( up + low ) / ( 2.0f * ( float ) negScoreAll_.size() );
-                // avoid the rounding errors, such as p-value = 0 or p-value > 1
-                if( p < 1.e-6 ) p = 1.e-6;
-                if( p > 1.0f )  p = 1.0f;
-                MOPS_Pvalue_.push_back( p );
-            }
+    // for MOPS model:
+    if( mops_ ){
+        // Sort log odds scores in ascending order
+        std::sort( negScoreAll_.begin(), negScoreAll_.end(), std::less<float>() );
+        std::sort( posScoreAll_.begin(), posScoreAll_.end(), std::less<float>() );
+        for( size_t i = 0; i < posScoreAll_.size(); i++ ){
+            // Return iterator to lower/upper bound
+            size_t low, up;
+            low = std::distance( negScoreAll_.begin(),
+                                 std::lower_bound( negScoreAll_.begin(),
+                                                   negScoreAll_.end(),
+                                                   posScoreAll_[i] ) );
+            up = std::distance( negScoreAll_.begin(),
+                                std::upper_bound( negScoreAll_.begin(),
+                                                  negScoreAll_.end(),
+                                                  posScoreAll_[i] ) );
+            float p = 1.0f - ( float )( up + low ) / ( 2.0f * ( float ) negScoreAll_.size() );
+            // avoid the rounding errors, such as p-value = 0 or p-value > 1
+            if( p < 1.e-6 ) p = 1.e-6;
+            if( p > 1.0f )  p = 1.0f;
+            MOPS_Pvalue_.push_back( p );
         }
+    }
 
-        // for ZOOPS model:
-        if( zoops_ ){
-            // Sort log odds scores in ascending order
-            std::sort( negScoreMax_.begin(), negScoreMax_.end(), std::less<float>() );
-            std::sort( posScoreMax_.begin(), posScoreMax_.end(), std::less<float>() );
-            for( size_t i = 0; i < posScoreMax_.size(); i++ ){
-                // Return iterator to lower/upper bound
-                size_t low, up;
-                low = std::distance( negScoreMax_.begin(),
-                                     std::lower_bound( negScoreMax_.begin(),
-                                                       negScoreMax_.end(),
-                                                       posScoreMax_[i] ) );
-                up = std::distance( negScoreMax_.begin(),
-                                    std::upper_bound( negScoreMax_.begin(),
-                                                      negScoreMax_.end(),
-                                                      posScoreMax_[i] ) );
-                float p = 1.0f - ( float )( up + low ) / ( 2.0f * ( float )negScoreMax_.size() );
-                // avoid the rounding errors, such as p-value = 0 or p-value > 1
-                if( p < 1.e-6 ) p = 1.e-6;
-                if( p > 1.0f )  p = 1.0f;
-                ZOOPS_Pvalue_.push_back( p );
-            }
+    // for ZOOPS model:
+    if( zoops_ ){
+        // Sort log odds scores in ascending order
+        std::sort( negScoreMax_.begin(), negScoreMax_.end(), std::less<float>() );
+        std::sort( posScoreMax_.begin(), posScoreMax_.end(), std::less<float>() );
+        for( size_t i = 0; i < posScoreMax_.size(); i++ ){
+            // Return iterator to lower/upper bound
+            size_t low, up;
+            low = std::distance( negScoreMax_.begin(),
+                                 std::lower_bound( negScoreMax_.begin(),
+                                                   negScoreMax_.end(),
+                                                   posScoreMax_[i] ) );
+            up = std::distance( negScoreMax_.begin(),
+                                std::upper_bound( negScoreMax_.begin(),
+                                                  negScoreMax_.end(),
+                                                  posScoreMax_[i] ) );
+            float p = 1.0f - ( float )( up + low ) / ( 2.0f * ( float )negScoreMax_.size() );
+            // avoid the rounding errors, such as p-value = 0 or p-value > 1
+            if( p < 1.e-6 ) p = 1.e-6;
+            if( p > 1.0f )  p = 1.0f;
+            ZOOPS_Pvalue_.push_back( p );
         }
-
-	} else {
-        // Method 2:
-        // for MOPS model:
-        if( mops_ ){
-            // Sort log odds scores in descending order
-            std::sort( posScoreAll_.begin(), posScoreAll_.end(), std::greater<float>() );
-            std::sort( negScoreAll_.begin(), negScoreAll_.end(), std::greater<float>() );
-
-            // Rank and score these log odds score values
-            size_t idx_posAll = 0;
-            size_t idx_negAll = 0;
-            size_t len_all = posScoreAll_.size() + negScoreAll_.size();
-
-            for( size_t i = 0; i < len_all; i++ ){
-                if( posScoreAll_[idx_posAll] > negScoreAll_[idx_negAll]
-                    || idx_posAll == 0 || idx_negAll == len_all - 1 ){
-                    idx_posAll++;
-                    MOPS_Pvalue_.push_back( ( ( float )idx_negAll + 0.5f )
-                            / ( ( float ) negScoreAll_.size()  + 1.0f ) );
-                } else {
-                    idx_negAll++;
-                }
-
-            }
-        }
-
-        // for ZOOPS model:
-        if( zoops_ ){
-            // Sort log odds scores in descending order
-            std::sort( posScoreMax_.begin(), posScoreMax_.end(), std::greater<float>() );
-            std::sort( negScoreMax_.begin(), negScoreMax_.end(), std::greater<float>() );
-
-            // Rank and score these log odds score values
-            size_t idx_posMax = 0;
-            size_t idx_negMax = 0;
-            size_t len_max = posScoreMax_.size() + negScoreMax_.size();
-            for( size_t i = 0; i < len_max; i++ ){
-                if( posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax]
-                    || idx_posMax == 0  || idx_negMax == len_max - 1 ){
-                    idx_posMax++;
-                    ZOOPS_Pvalue_.push_back( ( ( float )idx_negMax + 0.5f )
-                            / ( ( float )negSeqs_.size() + 1.0f ) );
-                } else {
-                    idx_negMax++;
-                }
-            }
-        }
-	}
+    }
 }
 
 void FDR::print(){

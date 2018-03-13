@@ -57,7 +57,7 @@ prefix 	<- args$prefix
 web             = args$web
 
 # preset variables
-ofile   <- paste(dir, '/', prefix, ".bmscore", sep = "" )
+ofile   <- paste(dir, '/', prefix, ".aucscore", sep = "" )
 
 ###########################
 ## For this script we need a slightly modified version of the fdrtool function.
@@ -604,7 +604,8 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
         message(motif_occur)
     }
 
-    print( resultString )
+    #print( resultString )
+
     results = c(results, resultString)
 }
 outConn <- file(ofile)

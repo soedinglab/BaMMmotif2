@@ -61,7 +61,7 @@ int main( int nargs, char* args[] ){
     } else {
         // generate negative sequence set based on s-mer frequencies
         // from positive training sequence set
-        std::vector<std::unique_ptr<Sequence, deleter>> negSeqs;
+        std::vector<std::unique_ptr<Sequence>> negSeqs;
         SeqGenerator negseq(GFdr::posSequenceSet->getSequences(), NULL, GFdr::sOrder);
         negSeqs = negseq.arti_bgseqset(GFdr::mFold);
         // convert unique_ptr to regular pointer
@@ -97,6 +97,10 @@ int main( int nargs, char* args[] ){
         fdr.write( GFdr::outputDirectory,
                    GFdr::outputFileBasename + fileExtension );
         if( motif )		delete motif;
+    }
+
+    for (size_t n = 0; n < negset.size(); n++) {
+        if( !GFdr::B3 and negset[n] ) delete negset[n];
     }
 
     GFdr::destruct();
