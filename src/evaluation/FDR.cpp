@@ -45,7 +45,7 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
 		std::vector<Sequence*> testSet;
 		std::vector<Sequence*> trainSet;
         std::vector<Sequence*> negSet;
-		for( size_t n = 0; n < posSeqs_.size()-cvFold_; n+=cvFold_ ){
+		for( size_t n = 0; n <= posSeqs_.size()-cvFold_; n+=cvFold_ ){
 			for( size_t f = 0; f < cvFold_; f++ ){
 				if( f != fold ){
 					trainSet.push_back( posSeqs_[n+f] );
@@ -54,7 +54,7 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
 				}
 			}
 		}
-		for( size_t n = fold; n < negSeqs_.size()-cvFold_; n+=cvFold_ ){
+		for( size_t n = 0; n <= negSeqs_.size()-cvFold_; n+=cvFold_ ){
             negSet.push_back( negSeqs_[n] );
 		}
 
@@ -213,22 +213,23 @@ void FDR::calculatePR(){
             lambda += negScoreMax_[l] - negScoreMax_[n_top];
         }
         lambda /= n_top;
-
-        std::cout << "n_top=" << n_top << "\tlambda=" << lambda << std::endl;
-        std::cout << "S_ntop- = " << negScoreMax_[n_top] << std::endl;
-        size_t count = 0;
         //float eta = 1e-5;
+
+        size_t count = 0;
+
         float Sl = 0.f;
+
 		for( size_t i = 0; i < posN + negN; i++ ){
 
-            if( ( posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] || idx_negMax == posN+negN-1 )
-                and idx_posMax < posN ){
-                Sl = posScoreMax_[idx_posMax];
-				idx_posMax++;
-			} else {
-                Sl = negScoreMax_[idx_negMax];
-				idx_negMax++;
-			}
+            if( idx_posMax < posN and idx_negMax < negN ){
+                if( posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] or idx_negMax == posN+negN-1){
+                    Sl = posScoreMax_[idx_posMax];
+                    idx_posMax++;
+                } else {
+                    Sl = negScoreMax_[idx_negMax];
+                    idx_negMax++;
+                }
+            }
 
 /*
             // stops when TP = FP
@@ -241,7 +242,7 @@ void FDR::calculatePR(){
 			ZOOPS_TP_.push_back( TP );
 			ZOOPS_FP_.push_back( FP );
 
-            float p_value;
+            float p_value= 0.f;
 
             // calculate p-values in two different ways:
             if( Sl < negScoreMax_[n_top] ){
