@@ -76,6 +76,13 @@ int main( int nargs, char* args[] ){
     for( size_t n = 0; n < motifNum; n++ ){
 
         Motif* motif = new Motif( *motif_set.getMotifs()[n] );
+
+        // make sure the motif length does not exceed the sequence length
+        size_t minPosL = ( GFdr::ss ) ? GFdr::posSequenceSet->getMinL() : GFdr::posSequenceSet->getMinL() * 2;
+        size_t minNegL = ( GFdr::ss ) ? GFdr::negSequenceSet->getMinL() : GFdr::negSequenceSet->getMinL() * 2;
+        assert( motif->getW() <= minPosL );
+        assert( motif->getW() <= minNegL );
+
         FDR fdr( GFdr::posSequenceSet->getSequences(), negset, GFdr::q,
                  motif, bgModel,
                  GFdr::cvFold, GFdr::mops, GFdr::zoops,

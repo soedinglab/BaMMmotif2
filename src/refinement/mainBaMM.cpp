@@ -76,6 +76,12 @@ int main( int nargs, char* args[] ){
 		// deep copy each motif in the motif set
 		Motif* motif = new Motif( *motif_set.getMotifs()[n] );
 
+        // make sure the motif length does not exceed the sequence length
+        size_t minPosL = ( Global::ss ) ? Global::posSequenceSet->getMinL() : Global::posSequenceSet->getMinL() * 2;
+        size_t minNegL = ( Global::ss ) ? Global::negSequenceSet->getMinL() : Global::negSequenceSet->getMinL() * 2;
+        assert( motif->getW() <= minPosL );
+        assert( motif->getW() <= minNegL );
+
 		if( Global::saveInitialBaMMs ){
 			// optional: save initial model
 			motif->write( Global::outputDirectory,

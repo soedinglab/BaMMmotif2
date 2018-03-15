@@ -242,7 +242,7 @@ void FDR::calculatePR(){
 			ZOOPS_TP_.push_back( TP );
 			ZOOPS_FP_.push_back( FP );
 
-            float p_value= 0.f;
+            float p_value;
 
             // calculate p-values in two different ways:
             if( Sl < negScoreMax_[n_top] ){
@@ -276,8 +276,9 @@ void FDR::calculatePR(){
 			ZOOPS_Rec_.push_back( TP / ( float )posN );
 
 		}
-        std::cout << "count=" << count << std::endl;
-		// the fraction of motif occurrence
+        //std::cout << "count=" << count << std::endl;
+
+        // the fraction of motif occurrence
 		occ_frac_ = 1.0f - ZOOPS_FP_[min_idx_pos] / ( float )posN;
 	}
 }
