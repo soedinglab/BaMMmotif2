@@ -213,9 +213,6 @@ void FDR::calculatePR(){
             lambda += negScoreMax_[l] - negScoreMax_[n_top];
         }
         lambda /= n_top;
-        //float eta = 1e-5;
-
-        size_t count = 0;
 
         float Sl = 0.f;
 
@@ -246,23 +243,11 @@ void FDR::calculatePR(){
 
             // calculate p-values in two different ways:
             if( Sl < negScoreMax_[n_top] ){
-                // p-value is calculated in an interpolated way:
-                // Find iterator to lower/upper bound
-/*                size_t low, up;
-                low = std::distance( negScoreMax_.begin(), std::lower_bound( negScoreMax_.begin(), negScoreMax_.end(), Sl ) );
-                up = std::distance( negScoreMax_.begin(), std::upper_bound( negScoreMax_.begin(), negScoreMax_.end(), Sl ) );
-
-                float Sl_lower = negScoreMax_[low];
-                float Sl_higher = negScoreMax_[up];
-
-                p_value = ( FP + ( Sl_higher - Sl ) / ( Sl_higher - Sl_lower + eta ) ) / negN;*/
                 p_value = ( ( float )idx_negMax + 0.5f ) / ( ( float )negN + 1.0f );
-                count++;
 
             } else {
                 // p-value is calculated by relying on a parametric fit of the exponentially cumulative distribution
-                // p_value = n_top * expf( ( negScoreMax_[n_top] - Sl ) / lambda ) / negN;
-                p_value = ( ( float )idx_negMax + 0.5f ) / ( ( float )negN + 1.0f );
+                p_value = n_top * expf( ( negScoreMax_[n_top] - Sl ) / lambda ) / negN;
             }
 
 			PN_Pvalue_.push_back( p_value );
@@ -276,7 +261,6 @@ void FDR::calculatePR(){
 			ZOOPS_Rec_.push_back( TP / ( float )posN );
 
 		}
-        //std::cout << "count=" << count << std::endl;
 
         // the fraction of motif occurrence
 		occ_frac_ = 1.0f - ZOOPS_FP_[min_idx_pos] / ( float )posN;

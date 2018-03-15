@@ -432,7 +432,7 @@ plotPvalStat = function(pvalues, filename, eta0, data_eta0){
 
 # plot TP/FP ratio vs. recall curve
 
-plotRRC = function(picname, recall, TFR){
+plotRRC = function(picname, recall, TFR, rerank){
 
     jpeg( filename = picname, width = 800, height = 800, quality = 100 )
 
@@ -443,14 +443,22 @@ plotRRC = function(picname, recall, TFR){
     aurrc = sum(diff(recall)*rollmean(log10(TFR)+1,2)) / sum_area
     aurrc = round(aurrc, digits=3)
 
+    if(rerank){
+        mainname = paste0("Motif Performance, AURRC=", aurrc)
+        unicolor = "darkgreen"
+    } else{
+        mainname = paste0("Dataset Performance, AURRC=", aurrc)
+        unicolor = "darkblue"
+    }
+
     # plot the line when positives:negatives = 1:1
     plot(recall, TFR,
-        main=paste0("Motif Performance, AURRC=", aurrc),
+        main=mainname,
         log="y",
         xlim=c(0,1),ylim=c(0.1,1000),
         xlab="", ylab="",
         type="l", lwd=7.5,
-        col=convertcolor("darkgreen",90),
+        col=convertcolor(unicolor,90),
         axes = FALSE, cex.main = 3.0
     )
 
@@ -459,11 +467,11 @@ plotRRC = function(picname, recall, TFR){
         recall, TFR/10,
         type="l", lty=2,
         lwd=7.5,
-        col= convertcolor("darkgreen", 50)
+        col= convertcolor(unicolor, 50)
     )
 
     mtext("Recall = TP/(TP+FN)", side=1, line=4.5, cex = 3.0)
-    mtext("TP/FP", side=2, line=4, cex = 3.0)
+    mtext("TP/FP Ratio", side=2, line=4, cex = 3.0)
 
     axis(1, at=c(0,0.5,1),labels = c(0,0.5,1),tick =FALSE, cex.axis=2.5, line=1)
     axis(2, at=c(0.1,1,10,100,1000),labels = expression(10^-1,10^0, 10^1, 10^2, 10^3), tick=FALSE, cex.axis=2.5, line=0, las=1)
@@ -471,12 +479,12 @@ plotRRC = function(picname, recall, TFR){
     polygon(
         c(0, recall, 1),
         c(0.1, TFR, 0.1),
-        col = convertcolor("darkgreen",30),
+        col = convertcolor(unicolor,30),
         border = NA
     )
 
-    text(x = 0.95,y = min(TFR)+0.5, cex = 2.0, locator(), labels = c("1:1"), col="darkgreen")
-    text(x = 0.95,y = min(TFR/10)+0.05, cex = 2.0, locator(), labels = c("1:10"), col=convertcolor("darkgreen",70))
+    text(x = 0.95,y = min(TFR)+0.5, cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
+    text(x = 0.95,y = min(TFR/10)+0.05, cex = 2.0, locator(), labels = c("1:10"), col=convertcolor(unicolor,70))
 
     box(lwd=2.5)
 
@@ -538,7 +546,7 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
     plotPvalStat(pvalues, filename=pn_pval, eta0=eta0, data_eta0=data_eta0)
 
     # plot TP/FP vs. recall plot
-    rrc     = plotRRC(pn_rrc, recall, tfr)
+    rrc     = plotRRC(pn_rrc, recall, tfr, rerank)
     aurrc   = rrc$aurrc     # get AURRC score
 
     # return to the results
