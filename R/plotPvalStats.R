@@ -34,6 +34,8 @@ suppressMessages(library( fdrtool ))
 # load "LSD" library for plotting the curves
 suppressMessages(library( LSD ))
 
+suppressMessages(library( raster ))
+
 #-----------------------------
 #
 # Parameter setting
@@ -438,9 +440,14 @@ plotRRC = function(picname, recall, TFR, rerank){
 
     par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
 
+    # set the upper and lower region for the y-axis
+    y_upper = 1000
+    y_lower = 1
+
     # compute the area under the RRC curve (AURRC):
-    sum_area = log10(1000)-log10(0.1)
-    aurrc = sum(diff(recall)*rollmean(log10(TFR)+1,2)) / sum_area
+    sum_area = log10(y_upper)-log10(y_lower)
+
+    aurrc = sum(diff(recall)*rollmean(log10(TFR),2)) / sum_area
     aurrc = round(aurrc, digits=3)
 
     if(rerank){
@@ -451,40 +458,56 @@ plotRRC = function(picname, recall, TFR, rerank){
         unicolor = "darkblue"
     }
 
+    mask_upper = TFR <= y_upper
+    TFR_maskup = TFR[mask_upper]
+    recall_maskup = recall[mask_upper]
+
     # plot the line when positives:negatives = 1:1
-    plot(recall, TFR,
+    plot(recall_maskup, TFR_maskup,
         main=mainname,
         log="y",
-        xlim=c(0,1),ylim=c(0.1,1000),
+        xlim=c(0,1),ylim=c(y_lower,y_upper),
         xlab="", ylab="",
         type="l", lwd=7.5,
         col=convertcolor(unicolor,90),
         axes = FALSE, cex.main = 3.0
     )
+    polygon(
+    c(0, recall, 1),
+    c(y_lower, pmin(TFR, y_upper), y_lower),
+    col = convertcolor(unicolor,30),
+    border = NA
+    )
 
     # plot the line when positives:negatives = 1:10
-    lines(
-        recall, TFR/10,
-        type="l", lty=2,
-        lwd=7.5,
-        col= convertcolor(unicolor, 50)
+    par(new=T)
+
+    # make sure that the lower border does not exceed y_lower
+    mask_lower = TFR <= y_lower*10
+    TFR = TFR[!mask_lower]
+    recall = recall[!mask_lower]
+    mask_2upper = TFR <= y_upper*10
+    TFR = TFR[mask_2upper]
+    recall = recall[mask_2upper]
+
+    plot(recall, TFR/10,
+        main=mainname,
+        log="y",
+        xlim=c(0,1),ylim=c(y_lower,y_upper),
+        xlab="", ylab="",
+        type="l", lty=2, lwd=7.5,
+        col=convertcolor(unicolor,50),
+        axes = FALSE, cex.main = 3.0
     )
 
     mtext("Recall = TP/(TP+FN)", side=1, line=4.5, cex = 3.0)
     mtext("TP/FP Ratio", side=2, line=4, cex = 3.0)
 
-    axis(1, at=c(0,0.5,1),labels = c(0,0.5,1),tick =FALSE, cex.axis=2.5, line=1)
-    axis(2, at=c(0.1,1,10,100,1000),labels = expression(10^-1,10^0, 10^1, 10^2, 10^3), tick=FALSE, cex.axis=2.5, line=0, las=1)
+    axis(1, at=c(0,0.5,1), labels = c(0,0.5,1), tick =TRUE, cex.axis=2.5, line=0)
+    axis(2, at=c(y_lower,10,100,y_upper), labels = expression(10^0, 10^1, 10^2, 10^3), tick=TRUE, cex.axis=2.5, line=0, las=1)
 
-    polygon(
-        c(0, recall, 1),
-        c(0.1, TFR, 0.1),
-        col = convertcolor(unicolor,30),
-        border = NA
-    )
-
-    text(x = 0.95,y = min(TFR)+0.5, cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
-    text(x = 0.95,y = min(TFR/10)+0.05, cex = 2.0, locator(), labels = c("1:10"), col=convertcolor(unicolor,70))
+    text(x = min(max(recall), 0.9),y = min(TFR+10), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
+    text(x = min(max(recall), 0.9),y = min(TFR/10+1), cex = 2.0, locator(), labels = c("1:10"), col=convertcolor(unicolor,70))
 
     box(lwd=2.5)
 
@@ -528,15 +551,14 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
     list 	<- seq(1, len)
     recall  <- ( 1 - fdr ) * list / ( 1 - eta0 ) / len
 
-    # reset recall to 1 when it is larger than 1
+    # cut values when recall is larger than 1
     for(i in list){
         if( recall[i] > 1 ){
-            for(rest in i:len){
-                recall[rest] = 1
-            }
             break
         }
     }
+    recall=recall[1:i]
+    fdr=fdr[1:i]
 
     # set TP / FP ratio to 1:1
     ratio  = eta0 / (1-eta0)

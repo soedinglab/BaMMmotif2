@@ -65,7 +65,7 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
 		if( EMoptimize ){
 			EM model( motif, bgModel_, trainSet, q_, optimizeQ, false, frac );
             if( advanceEM ){
-                model.advance();
+                model.mask();
             } else {
                 model.optimize();
             }
@@ -206,7 +206,7 @@ void FDR::calculatePR(){
 		size_t posN_est = static_cast<size_t>( q_ * ( float )posN );
 
         // set limit for using the exponential extrapolation for p-value calculation
-        size_t n_top = 100 < (negN / 10) ? 100 : (negN / 10);
+        size_t n_top = 100 > (negN / 10) ? 100 : (negN / 10);
 
         float lambda = 0.f;
         for( size_t l = 0; l < n_top; l++ ){
