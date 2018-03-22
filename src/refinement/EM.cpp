@@ -239,7 +239,7 @@ void EM::MStep(){
     motif_->updateV( n_, A_, K_ );
 }
 
-int EM::advance() {
+int EM::mask() {
     /**
      * upgraded version of EM to eliminate the effect of unrelated motifs
      */
@@ -248,7 +248,7 @@ int EM::advance() {
     /**
      * run 5 steps of EM for k=0 and optimize q in the meantime
      */
-    for( size_t it = 0; it < 5; it++ ){
+    for( size_t it = 0; it < 1; it++ ){
 
         llikelihood_ = 0.0f;
 

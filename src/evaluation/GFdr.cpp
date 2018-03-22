@@ -47,7 +47,7 @@ bool                GFdr::EM = false;					// flag to trigger EM learning
 bool			    GFdr::CGS = false;					// flag to trigger Collapsed Gibbs sampling
 
 // FDR options
-size_t		        GFdr::mFold = 10;					// number of negative sequences as multiple of positive sequences
+size_t		        GFdr::mFold = 1;					// number of negative sequences as multiple of positive sequences
 size_t		        GFdr::cvFold = 5;					// number of cross-validation (cv) folds
 size_t		        GFdr::sOrder = 2;					// k-mer order for sampling negative sequence set
 

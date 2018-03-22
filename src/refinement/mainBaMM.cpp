@@ -96,7 +96,7 @@ int main( int nargs, char* args[] ){
 			if( !Global::advanceEM ) {
                 model.optimize();
             } else {
-                model.advance();
+                model.mask();
             }
 
             // write model parameters on the disc

@@ -34,8 +34,6 @@ suppressMessages(library( fdrtool ))
 # load "LSD" library for plotting the curves
 suppressMessages(library( LSD ))
 
-suppressMessages(library( raster ))
-
 #-----------------------------
 #
 # Parameter setting
@@ -441,13 +439,22 @@ plotRRC = function(picname, recall, TFR, rerank){
     par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
 
     # set the upper and lower region for the y-axis
-    y_upper = 1000
+    y_upper = 100
     y_lower = 1
 
     # compute the area under the RRC curve (AURRC):
-    sum_area = log10(y_upper)-log10(y_lower)
+    sum_area = log10(y_upper)-log10(y_lower)    # the total area
+    # make sure TFR does not exceed y_upper
+    TFR_modified = c()
+    for( i in seq(1, length(TFR))) {
+        if( TFR[i] > y_upper){
+            TFR_modified[i] <- y_upper
+        } else {
+            TFR_modified[i] <- TFR[i]
+        }
+    }
 
-    aurrc = sum(diff(recall)*rollmean(log10(TFR),2)) / sum_area
+    aurrc = sum(diff(recall)*rollmean(log10(TFR_modified),2)) / sum_area
     aurrc = round(aurrc, digits=3)
 
     if(rerank){
@@ -472,16 +479,15 @@ plotRRC = function(picname, recall, TFR, rerank){
         col=convertcolor(unicolor,90),
         axes = FALSE, cex.main = 3.0
     )
+    # color the area under the curve
     polygon(
-    c(0, recall, 1),
-    c(y_lower, pmin(TFR, y_upper), y_lower),
-    col = convertcolor(unicolor,30),
-    border = NA
+        c(0, recall, 1),
+        c(y_lower, pmin(TFR, y_upper), y_lower),
+        col = convertcolor(unicolor,30),
+        border = NA
     )
 
-    # plot the line when positives:negatives = 1:10
-    par(new=T)
-
+    # plot the line when positives:negatives = 1:1
     # make sure that the lower border does not exceed y_lower
     mask_lower = TFR <= y_lower*10
     TFR = TFR[!mask_lower]
@@ -489,7 +495,7 @@ plotRRC = function(picname, recall, TFR, rerank){
     mask_2upper = TFR <= y_upper*10
     TFR = TFR[mask_2upper]
     recall = recall[mask_2upper]
-
+    par(new=T)
     plot(recall, TFR/10,
         main=mainname,
         log="y",
@@ -504,7 +510,7 @@ plotRRC = function(picname, recall, TFR, rerank){
     mtext("TP/FP Ratio", side=2, line=4, cex = 3.0)
 
     axis(1, at=c(0,0.5,1), labels = c(0,0.5,1), tick =TRUE, cex.axis=2.5, line=0)
-    axis(2, at=c(y_lower,10,100,y_upper), labels = expression(10^0, 10^1, 10^2, 10^3), tick=TRUE, cex.axis=2.5, line=0, las=1)
+    axis(2, at=c(y_lower,10,y_upper), labels = expression(10^0, 10^1, 10^2), tick=TRUE, cex.axis=2.5, line=0, las=1)
 
     text(x = min(max(recall), 0.9),y = min(TFR+10), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
     text(x = min(max(recall), 0.9),y = min(TFR/10+1), cex = 2.0, locator(), labels = c("1:10"), col=convertcolor(unicolor,70))
@@ -583,7 +589,7 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
 #--------------
 
 results = c()
-resultTitle = paste0(c("name", "motif_number", "data_aurrc", "data_occur", "motif_aurrc", "motif_occur"), collapse="\t")
+resultTitle = paste0(c("TF_name", "#motif", "data_aurrc", "data_occur", "motif_aurrc", "motif_occur"), collapse="\t")
 results = c(results, resultTitle)
 
 for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))) {

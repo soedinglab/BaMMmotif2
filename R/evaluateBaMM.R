@@ -361,7 +361,7 @@ pvt.plotlabels <- function(statistic, scale.param, eta0)
 #
 #-----------------
 results = c()
-resultTitle = paste0(c("name", "motif_number", "ausfc", "auc5", "auprc", "occur"), collapse="\t")
+resultTitle = paste0(c("TF_name", "#motif", "ausfc", "auc5", "auprc", "occur"), collapse="\t")
 results = c(results, resultTitle)
 
 for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))) {
@@ -422,16 +422,16 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
 
     # get the global fdr values and estimate of the weight eta0 of
     # the null component
-    fdr_m	<- result$qval
+    fdr_g	<- result$qval
     eta0 	<- result$param[3]
 
-    #calculate FDR
-    fdr 	<- 1 / ( 1 + mfold * ( 1 / fdr_m - 1 ) )
+    # calculate FDR for posN:negN=1:1 ratio
+    fdr 	<- 1 / ( 1 + mfold * ( 1 / fdr_g - 1 ) )
 
     # calculate recall
     len 	= length(fdr)
     list 	<- seq(1, len)
-    recall  <- ( 1 - fdr ) * list / ( 1 - eta0 ) / len
+    recall  <- ( 1 - fdr_g ) * list / ( 1 - eta0 ) / len
 
     # modify the SF curve:
     # reset recall to 1 when it is larger than 1
@@ -478,12 +478,15 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     if(right == left){
         ausfc = 0
     } else {
-        ausfc = sum(diff(log10(fdr[range]))*rollmean(recall[range],2)) / sum_area
+        ausfc = round(sum(diff(log10(fdr[range]))*rollmean(recall[range],2)) / sum_area, digits=3)
     }
    
     if(web){
       message(ausfc)
     } 
+
+    cex_axis_size = 2.5
+    cex_main_size = 3.5
 
     #####################################################################
     #
@@ -502,17 +505,17 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
             xlab="", ylab="",
             type="l", lwd=7.5,
             col="orange",
-            axes = FALSE, cex.main=3.0
+            axes = FALSE, cex.main=cex_main_size
         )
-        mtext("False discovery rate", side=1, line=4.5, cex = 3.5)
-        mtext("Sensitivity", side=2, line=4, cex = 3.5)
-        axis(1, at=c(0.01,0.05,0.5),labels = c(0.01,0.05,0.5),tick = FALSE, cex.axis=3.0, line=1)
-        axis(2, at=c(0,0.5,1),labels = c(0,0.5,1),tick = FALSE, cex.axis=3.0)
+        mtext("False discovery rate", side=1, line=4.5, cex = cex_main_size)
+        mtext("Sensitivity", side=2, line=4, cex = cex_main_size)
+        axis(1, at=c(0.01,0.05,0.1,0.2,0.5),labels = c(0.01,0.05,0.1,0.2,0.5), tick=TRUE, cex.axis=cex_axis_size, line=0)
+        axis(2, at=c(0,0.5,1),labels = c(0,0.5,1), tic =TRUE, cex.axis=cex_axis_size, line=0)
         polygon(c(l_range,fdr[range],r_range),
                 c(0, recall[range],0),
                 col = convertcolor("orange",30),
                 border = NA)
-        text(x = 0.1,y = 0.1,labels = paste0("AUSFC = ", round(ausfc,digits=3)), cex = 3.5)
+        text(x = 0.1,y = 0.1,labels = paste0("AUSFC = ", ausfc), cex = cex_main_size)
         box(lwd=2.5)
         invisible(dev.off())
     }
@@ -522,6 +525,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     #   calculate AUC5 under the ROC curve with FDR~(0,0.05)
     #
     ########################################################
+    right_bound = 0.05
     TP  <- stats$V1
     FP  <- stats$V2
     numPos = TP[length(TP)]
@@ -529,13 +533,13 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     TPR <- TP / numPos
     FPR <- FP / numNeg
     for(i in seq(1,numNeg)){
-        if( FPR[i] >= 0.05 ){
+        if( FPR[i] >= right_bound ){
           rbound = i
           break
         }
     }
     # compute the area under the partical TP-FP curve(AUC5):
-    auc5 = sum(diff(FPR[1:rbound])*rollmean(TPR[1:rbound],2)) / 0.05
+    auc5 = round(sum(diff(FPR[1:rbound])*rollmean(TPR[1:rbound],2)) / right_bound, digits=3)
 
     if( print_ROC5 ){
         picname <- paste0( filename, '_pROC.jpeg' )
@@ -543,21 +547,21 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
         plot(FPR[1:rbound], TPR[1:rbound],
             main="Partial ROC",
-            xlim=range(0,0.05), ylim=range(0,1),
+            xlim=range(0,right_bound), ylim=range(0,1),
             xlab="", ylab="",
             type="l", lwd=7.5,
             col="darkgreen",
-            axes = FALSE, cex.main=3.0
+            axes = FALSE, cex.main=cex_main_size
         )
-        mtext("False positive rate", side=1, line=4.5, cex = 3.5)
-        mtext("True positive rate", side=2, line=4, cex = 3.5)
-        axis(1, at=c(0,0.025,0.05),labels = c(0,0.025,0.05),tick = FALSE, cex.axis=3.0, line=1)
-        axis(2, at=c(0,0.5,1),labels = c(0,0.5,1),tick = FALSE, cex.axis=3.0)
-        polygon(c(0,FPR[1:rbound],0.05),
+        mtext("False positive rate", side=1, line=4.5, cex = cex_main_size)
+        mtext("True positive rate", side=2, line=4, cex = cex_main_size)
+        axis(1, at=c(0,right_bound/2,right_bound),labels=c(0,right_bound/2,right_bound),tick = TRUE, cex.axis=cex_axis_size, line=0)
+        axis(2, at=c(0,0.5,1),labels=c(0,0.5,1),tick = TRUE, cex.axis=cex_axis_size, line=0)
+        polygon(c(0,FPR[1:rbound],right_bound),
                 c(0,TPR[1:rbound],0),
                 col = convertcolor("darkgreen",30),
                 border = NA)
-        text(x = 0.025,y = 0.1,labels = paste0("pAUC = ", round(auc5,digits=3)), cex = 3.5)
+        text(x = right_bound/2,y = 0.1,labels = paste0("pAUC = ", auc5), cex = cex_main_size)
         box(lwd=2.5)
         invisible(dev.off())
     }
@@ -581,7 +585,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     }
 
     raw_precision   = 1 - raw_fdr
-    auprc           = sum(diff(raw_recall)*rollmean(raw_precision,2))
+    auprc           = round( sum(diff(raw_recall)*rollmean(raw_precision,2)), digits=3 )
     # plot the raw precision-recall curve
     if( print_PRcurve ){
         picname <- paste0( filename, '_PRC.jpeg' )
@@ -593,23 +597,23 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
             xlab="", ylab="",
             type="l", lwd=7.5,
             col="darkblue",
-            axes = FALSE, cex.main=3.0
+            axes = FALSE, cex.main=cex_main_size
         )
-        mtext("Recall", side=1, line=4.5, cex = 3.5)
-        mtext("Precision", side=2, line=4, cex = 3.5)
-        axis(1, at=c(0,0.5,1),labels = c(0,0.5,1),tick = FALSE, cex.axis=3.0, line=1)
-        axis(2, at=c(0,0.5,1),labels = c(0,0.5,1),tick = FALSE, cex.axis=3.0)
+        mtext("Recall", side=1, line=4.5, cex = cex_main_size)
+        mtext("Precision", side=2, line=4, cex = cex_main_size)
+        axis(1, at=c(0,0.5,1), labels = c(0,0.5,1), tick = TRUE, cex.axis=cex_axis_size, line=0)
+        axis(2, at=c(0,0.5,1), labels = c(0,0.5,1), tick = TRUE, cex.axis=cex_axis_size, line=0)
         polygon(c(0, raw_recall, raw_recall[length(raw_recall)]),
                 c(0, raw_precision, 0),
                 col = convertcolor("darkblue",30),
                 border = NA)
-        text(x = 0.5,y = 0.3,labels = paste0("AUC = ", round(auprc,digits=3)), cex = 3.5)
+        text(x = 0.5,y = 0.3,labels = paste0("AUC = ", auprc), cex = cex_main_size)
         box(lwd=2.5)
         invisible(dev.off())
     }
 
     resultString = paste0(c(prefix, motif_num, ausfc, auc5, auprc, occurrence), collapse="\t")
-    print( resultString )
+    # print( resultString )
     results = c(results, resultString)
 }
 outConn <- file(ofile)

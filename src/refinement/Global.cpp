@@ -60,7 +60,7 @@ bool				Global::debugAlphas = false;
 
 // FDR options
 bool				Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
-size_t				Global::mFold = 10;						// number of negative sequences as multiple of positive sequences
+size_t				Global::mFold = 1;						// number of negative sequences as multiple of positive sequences
 size_t				Global::cvFold = 5;						// size of cross-validation folds
 size_t				Global::sOrder = 2;						// the k-mer order for sampling negative sequence set
 
