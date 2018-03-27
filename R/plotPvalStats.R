@@ -354,7 +354,7 @@ pvt.plotlabels <- function(statistic, scale.param, eta0)
 
 plotPvalStat = function(pvalues, filename, eta0, data_eta0){
 
-    jpeg( filename = filename, width = 800, height = 800, quality = 100 )
+    png( filename = paste0(filename,".png"), width = 800, height = 800 )
     
     histRes <- hist(pvalues,plot=FALSE, breaks=30)
     xvals <- histRes$breaks
@@ -433,10 +433,6 @@ plotPvalStat = function(pvalues, filename, eta0, data_eta0){
 # plot TP/FP ratio vs. recall curve
 plotRRC = function(picname, recall, TFR, rerank){
 
-    jpeg( filename = picname, width = 800, height = 800, quality = 100 )
-
-    par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
-
     # set the upper and lower region for the y-axis
     y_upper = 100
     y_lower = 1
@@ -464,18 +460,30 @@ plotRRC = function(picname, recall, TFR, rerank){
         unicolor = "darkblue"
     }
 
+    # make sure that the upper border does not exceed y_upper
     mask_upper = TFR <= y_upper
     TFR_maskup = TFR[mask_upper]
     recall_maskup = recall[mask_upper]
 
+    # calculate for the case when positives: negatives = 1:10
+    # make sure that the lower border does not exceed y_lower
+    mask_lower = TFR <= y_lower*10
+    TFR_low = TFR[!mask_lower]
+    recall_low = recall[!mask_lower]
+    mask_2upper = TFR_low <= y_upper*10
+    TFR_low = TFR_low[mask_2upper]
+    recall_low = recall_low[mask_2upper]
+
     # plot the line when positives:negatives = 1:1
+    png( filename = paste0(picname, ".png"), width = 800, height = 800 )
+    par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
     plot(recall_maskup, TFR_maskup,
         main=mainname,
         log="y",
         xlim=c(0,1),ylim=c(y_lower,y_upper),
         xlab="", ylab="",
         type="l", lwd=7.5,
-        col=convertcolor(unicolor,90),
+        col=unicolor,
         axes = FALSE, cex.main = 3.0
     )
     # color the area under the curve
@@ -485,17 +493,9 @@ plotRRC = function(picname, recall, TFR, rerank){
         col = convertcolor(unicolor,30),
         border = NA
     )
-
-    # plot the line when positives:negatives = 1:1
-    # make sure that the lower border does not exceed y_lower
-    mask_lower = TFR <= y_lower*10
-    TFR = TFR[!mask_lower]
-    recall = recall[!mask_lower]
-    mask_2upper = TFR <= y_upper*10
-    TFR = TFR[mask_2upper]
-    recall = recall[mask_2upper]
+    # plot the line when positives:negatives = 1:10
     par(new=T)
-    plot(recall, TFR/10,
+    plot(recall_low, TFR_low/10,
         main=mainname,
         log="y",
         xlim=c(0,1),ylim=c(y_lower,y_upper),
@@ -504,18 +504,51 @@ plotRRC = function(picname, recall, TFR, rerank){
         col=convertcolor(unicolor,50),
         axes = FALSE, cex.main = 3.0
     )
-
     mtext("Recall = TP/(TP+FN)", side=1, line=4.5, cex = 3.0)
     mtext("TP/FP Ratio", side=2, line=4, cex = 3.0)
-
     axis(1, at=c(0,0.5,1), labels = c(0,0.5,1), tick =TRUE, cex.axis=2.5, line=0)
     axis(2, at=c(y_lower,10,y_upper), labels = expression(10^0, 10^1, 10^2), tick=TRUE, cex.axis=2.5, line=0, las=1)
-
     text(x = min(max(recall), 0.9),y = min(TFR+10), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
-    text(x = min(max(recall), 0.9),y = min(TFR/10+1), cex = 2.0, locator(), labels = c("1:10"), col=convertcolor(unicolor,70))
-
+    text(x = min(max(recall), 0.9),y = min(TFR/10+1), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
     box(lwd=2.5)
-
+    invisible(dev.off())
+    # export plots to .pdf file
+    pdf( file = paste0(picname, ".pdf"), width = 10, height = 10 )
+    par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
+    plot(recall_maskup, TFR_maskup,
+    main=mainname,
+    log="y",
+    xlim=c(0,1),ylim=c(y_lower,y_upper),
+    xlab="", ylab="",
+    type="l", lwd=7.5,
+    col=unicolor,
+    axes = FALSE, cex.main = 3.0
+    )
+    # color the area under the curve
+    polygon(
+    c(0, recall, 1),
+    c(y_lower, pmin(TFR, y_upper), y_lower),
+    col = convertcolor(unicolor,30),
+    border = NA
+    )
+    # plot the line when positives:negatives = 1:10
+    par(new=T)
+    plot(recall_low, TFR_low/10,
+    main=mainname,
+    log="y",
+    xlim=c(0,1),ylim=c(y_lower,y_upper),
+    xlab="", ylab="",
+    type="l", lty=2, lwd=7.5,
+    col=convertcolor(unicolor,50),
+    axes = FALSE, cex.main = 3.0
+    )
+    mtext("Recall = TP/(TP+FN)", side=1, line=4.5, cex = 3.0)
+    mtext("TP/FP Ratio", side=2, line=4, cex = 3.0)
+    axis(1, at=c(0,0.5,1), labels = c(0,0.5,1), tick =TRUE, cex.axis=2.5, line=0)
+    axis(2, at=c(y_lower,10,y_upper), labels = expression(10^0, 10^1, 10^2), tick=TRUE, cex.axis=2.5, line=0, las=1)
+    text(x = min(max(recall), 0.9),y = min(TFR+10), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
+    text(x = min(max(recall), 0.9),y = min(TFR/10+1), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
+    box(lwd=2.5)
     invisible(dev.off())
 
     # access the aurrc value
@@ -532,12 +565,12 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
 
     if( rerank ){
         eta0set = NULL
-        pn_pval <- paste0( filename, '_motifPval.jpeg' )
-        pn_rrc  <- paste0( filename, '_motifRRC.jpeg' )
+        pn_pval <- paste0( filename, '_motifPval' )
+        pn_rrc  <- paste0( filename, '_motifRRC' )
     } else {
         eta0set = data_eta0
-        pn_pval <- paste0( filename, '_dataPval.jpeg' )
-        pn_rrc  <- paste0( filename, '_dataRRC.jpeg' )
+        pn_pval <- paste0( filename, '_dataPval' )
+        pn_rrc  <- paste0( filename, '_dataRRC' )
     }
 
     if(max(pvalues) > 1 | min(pvalues) < 0){

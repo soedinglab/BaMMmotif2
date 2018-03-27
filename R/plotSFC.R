@@ -362,7 +362,7 @@ pvt.plotlabels <- function(statistic, scale.param, eta0)
 #--------------------------
 
 ### plot Sensitivity-SFC curve
-plotSFC = function(picname, fdr, recall){
+plotSFC = function(filename, fdr, recall){
 
     l_range = 0.01	    # left range for FDR
     r_range = 0.5		# right range for FDR
@@ -416,8 +416,8 @@ plotSFC = function(picname, fdr, recall){
     cex_axis_size = 2.5
     cex_main_size = 3.5
     unicolor = "orange"
-    # plot fdr vs. recall curve. Note that x-axis is in log scale
-    jpeg( filename = picname, width = 800, height = 800, quality = 100 )
+    # plot fdr vs. recall curve in .png. Note that x-axis is in log scale
+    png( filename = paste0(filename,".png"), width = 800, height = 800 )
     par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
     plot(fdr[range], recall[range],
         log="x",
@@ -441,12 +441,37 @@ plotSFC = function(picname, fdr, recall){
     box(lwd=2.5)
     invisible(dev.off())
 
+    # export the plot to .pdf file
+    pdf(file=paste0(filename,".pdf"), width = 10, height = 10)
+    par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
+    plot(fdr[range], recall[range],
+    log="x",
+    main="Motif Performance",
+    xlim=c(l_range,r_range), ylim=c(0,1),
+    xlab="", ylab="",
+    type="l", lwd=7.5,
+    col=unicolor,
+    axes = FALSE, cex.main=cex_main_size
+    )
+    mtext("False discovery rate", side=1, line=4.5, cex = cex_main_size)
+    mtext("Recall=TP/(TP+FN)", side=2, line=4, cex = cex_main_size)
+    axis(1, at=c(0.01,0.05,0.1,0.2,0.5),labels = c(0.01,0.05,0.1,0.2,0.5), tick=TRUE, cex.axis=cex_axis_size, line=0)
+    axis(2, at=c(0,0.5,1),labels = c(0,0.5,1), tic =TRUE, cex.axis=cex_axis_size, line=0)
+    polygon(c(l_range,fdr[range],r_range),
+    c(0, recall[range],0),
+    col = convertcolor(unicolor,30),
+    border = NA)
+    text(x = 0.1,y = 0.1,labels = paste0("AUSFC = ", ausfc), cex = cex_main_size)
+    text(x = 0.35,y = max(recall[range])-0.03, cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
+    box(lwd=2.5)
+    invisible(dev.off())
+
     # output ausfc
     return( list(ausfc=ausfc) )
 }
 
 ### plot partial ROC curve
-plotROC = function( picname, TP, FP, mfold){
+plotROC = function( filename, TP, FP, mfold){
 
     rbound = 0.05
     numPos = TP[length(TP)]
@@ -465,7 +490,8 @@ plotROC = function( picname, TP, FP, mfold){
     cex_axis_size = 2.5
     cex_main_size = 3.5
     unicolor = "darkgreen"
-    jpeg( filename = picname, width = 800, height = 800, quality = 100 )
+
+    png( filename = paste0(filename, "_ROC5.png"), width = 800, height = 800 )
     par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
     plot(FPR[1:rbound_refined], TPR[1:rbound_refined],
         main="partial ROC",
@@ -483,16 +509,43 @@ plotROC = function( picname, TP, FP, mfold){
     c(0,TPR[1:rbound_refined],0),
     col = convertcolor(unicolor,30),
     border = NA)
-    text(x = rbound/2,y = 0.1,labels = paste0("pAUC = ", auc5), cex = cex_main_size)
-    text(x = min(max(FPR), 0.045),y = max(TPR[1:rbound_refined])+0.05, cex = 2.0, locator(), labels=paste0(c("1:"),round(mfold, digits=1)), col=unicolor)
+    text(x = rbound/2,y = 0.1,labels =paste0("pAUC = ", auc5), cex = cex_main_size)
+    text(x = min(max(FPR), 0.045),y = max(TPR[1:rbound_refined])+0.05,
+        cex = 2.0, locator(),
+        labels=paste0(c("1:"),round(mfold, digits=1)), col=unicolor)
     box(lwd=2.5)
     invisible(dev.off())
 
+    # export plot to .pdf file
+    pdf( file = paste0(filename, "_ROC5.pdf"), width = 10, height = 10 )
+    par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
+    plot(FPR[1:rbound_refined], TPR[1:rbound_refined],
+        main="partial ROC",
+        xlim=range(0,rbound), ylim=range(0,1),
+        xlab="", ylab="",
+        type="l", lwd=7.5,
+        col=unicolor,
+        axes = FALSE, cex.main=cex_main_size
+    )
+    mtext("False positive rate", side=1, line=4.5, cex = cex_main_size)
+    mtext("True positive rate (Recall)", side=2, line=4, cex = cex_main_size)
+    axis(1, at=c(0,rbound/2,rbound),labels=c(0,rbound/2,rbound), tick=TRUE, cex.axis=cex_axis_size, line=0)
+    axis(2, at=c(0,0.5,1),labels=c(0,0.5,1),tick = TRUE, cex.axis=cex_axis_size, line=0)
+    polygon(c(0,FPR[1:rbound_refined],rbound),
+    c(0,TPR[1:rbound_refined],0),
+    col = convertcolor(unicolor,30),
+    border = NA)
+    text(x = rbound/2,y = 0.1,labels =paste0("pAUC = ", auc5), cex = cex_main_size)
+    text(x = min(max(FPR), 0.045),y = max(TPR[1:rbound_refined])+0.05,
+        cex = 2.0, locator(),
+        labels=paste0(c("1:"),round(mfold, digits=1)), col=unicolor)
+    box(lwd=2.5)
+    invisible(dev.off())
     return( list(auc5=auc5) )
 }
 
 ### plot precision-recall curve
-plotPRC = function(picname, precision, recall){
+plotPRC = function(filename, precision, recall){
     # solve numeric issue
     # reset recall to 1 when it is larger than 1
     for(i in seq(1,length(recall))){
@@ -509,7 +562,31 @@ plotPRC = function(picname, precision, recall){
     cex_axis_size = 2.5
     cex_main_size = 3.5
     unicolor = "darkblue"
-    jpeg( filename=picname, width=800, height=800, quality=100 )
+    png( filename=paste0(filename, "_PRC.png"), width=800, height=800 )
+    par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
+    plot(recall, precision,
+    main="Motif Performance",
+    xlim=range(0,1), ylim=range(0,1),
+    xlab="", ylab="",
+    type="l", lwd=7.5,
+    col=unicolor,
+    axes = FALSE, cex.main=cex_main_size
+    )
+    mtext("Recall", side=1, line=4.5, cex = cex_main_size)
+    mtext("Precision", side=2, line=4, cex = cex_main_size)
+    axis(1, at=c(0,0.5,1), labels = c(0,0.5,1), tick = TRUE, cex.axis=cex_axis_size, line=0)
+    axis(2, at=c(0,0.5,1), labels = c(0,0.5,1), tick = TRUE, cex.axis=cex_axis_size, line=0)
+    polygon(c(0, recall, recall[length(recall)]),
+    c(0, precision, 0),
+    col = convertcolor(unicolor,30),
+    border = NA)
+    text(x = 0.5,y = 0.3,labels = paste0("AUPRC = ", auprc), cex = cex_main_size)
+    text(x = min(max(recall), 0.9),y = min(precision+0.03), cex = 2.0, locator(), labels = paste0(c("1:"), round(mfold, digits=1)), col=unicolor)
+    box(lwd=2.5)
+    invisible(dev.off())
+
+    # export plot to .pdf file
+    pdf( file=paste0(filename, "_PRC.pdf"), width=10, height=10 )
     par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
     plot(recall, precision,
     main="Motif Performance",
@@ -546,10 +623,10 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
 
     if( rerank ){
         eta0set = NULL
-        pn_sfc  <- paste0( filename, '_motifSFC.jpeg' )
+        fn_sfc  <- paste0( filename, '_motifSFC' )
     } else {
         eta0set = data_eta0
-        pn_sfc  <- paste0( filename, '_dataSFC.jpeg' )
+        fn_sfc  <- paste0( filename, '_dataSFC' )
     }
 
     # use fdrtool to estimate eta0
@@ -573,7 +650,7 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
     recall  <- ( 1 - fdr ) * list / ( 1 - eta0 ) / len
 
     # print out SFC plots
-    sfc = plotSFC(pn_sfc, fdr, recall)
+    sfc = plotSFC(filename=fn_sfc, fdr=fdr, recall=recall)
 
     # return to the results
     return( list(ausfc=sfc$ausfc, eta0=eta0) )
@@ -644,7 +721,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     #   calculate AUC5 under the ROC curve with FDR~(0,0.05)
     #
     ########################################################
-    ROC = plotROC( picname=paste0( filename, '_pROC.jpeg' ), TP=TP, FP=FP, mfold=mfold)
+    ROC = plotROC( filename=filename, TP=TP, FP=FP, mfold=mfold)
     auc5 = ROC$auc5
 
     ###################################################################
@@ -654,7 +731,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     ###################################################################
     # convert fdr to the case where posN:posN = 1:1
     #raw_fdr <- raw_fdr / (mfold * (1-raw_fdr)+raw_fdr)
-    PRC = plotPRC( picname=paste0( filename, '_PRC.jpeg' ), precision=1-raw_fdr, recall=raw_recall)
+    PRC = plotPRC( filename=filename, precision=1-raw_fdr, recall=raw_recall)
     auprc = PRC$auprc
 
     # summarize all output
