@@ -422,16 +422,16 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
 
     # get the global fdr values and estimate of the weight eta0 of
     # the null component
-    fdr_g	<- result$qval
+    fdr_l	<- result$qval
     eta0 	<- result$param[3]
 
     # calculate FDR for posN:negN=1:1 ratio
-    fdr 	<- 1 / ( 1 + mfold * ( 1 / fdr_g - 1 ) )
+    fdr 	<- 1 / ( 1 + mfold * ( 1 / fdr_l - 1 ) )
 
     # calculate recall
     len 	= length(fdr)
     list 	<- seq(1, len)
-    recall  <- ( 1 - fdr_g ) * list / ( 1 - eta0 ) / len
+    recall  <- ( 1 - fdr_l ) * list / ( 1 - eta0 ) / len
 
     # modify the SF curve:
     # reset recall to 1 when it is larger than 1

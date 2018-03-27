@@ -431,7 +431,6 @@ plotPvalStat = function(pvalues, filename, eta0, data_eta0){
 }
 
 # plot TP/FP ratio vs. recall curve
-
 plotRRC = function(picname, recall, TFR, rerank){
 
     jpeg( filename = picname, width = 800, height = 800, quality = 100 )
@@ -558,17 +557,19 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
     recall  <- ( 1 - fdr ) * list / ( 1 - eta0 ) / len
 
     # cut values when recall is larger than 1
+    cutoff = 1
     for(i in list){
         if( recall[i] > 1 ){
+            cutoff = i
             break
         }
     }
-    recall=recall[1:i]
-    fdr=fdr[1:i]
+    recall=recall[1:cutoff]
+    fdr=fdr[1:cutoff]
 
-    # set TP / FP ratio to 1:1
-    ratio  = eta0 / (1-eta0)
-    tfr <- (1-fdr)/fdr * ratio
+    # set FP / TP ratio to 1:1
+    mfold  = eta0 / (1-eta0)
+    tfr <- (1-fdr)/fdr * mfold
 
     # plot p-value density plot
     plotPvalStat(pvalues, filename=pn_pval, eta0=eta0, data_eta0=data_eta0)
@@ -589,7 +590,7 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
 #--------------
 
 results = c()
-resultTitle = paste0(c("TF_name", "#motif", "data_aurrc", "data_occur", "motif_aurrc", "motif_occur"), collapse="\t")
+resultTitle = paste0(c("TF", "#", "d_aurrc", "d_occur", "m_aurrc", "m_occur"), collapse="\t")
 results = c(results, resultTitle)
 
 for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))) {
@@ -611,6 +612,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     stats       <- read.table(f, skip=1)
     pvalues     <- stats$V5
     mfold       <- as.numeric(first_row[6])
+    occurrence  <- as.numeric(first_row[7])
 
     # avoid the rounding errors when p-value = 0 or p-value > 1
     for(i in seq(1, length(pvalues))){
@@ -623,15 +625,15 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     data_eta0 = mfold / ( 1+mfold )
 
     # evaluate motif on the dataset
-    eval_dataset = evaluateMotif(pvalues, filename = filename, rerank=FALSE, data_eta0=data_eta0)
+    eval_dataset    = evaluateMotif(pvalues, filename = filename, rerank=FALSE, data_eta0=data_eta0)
+    data_occur      = occurrence                             # acquire motif occurrence
+    data_aurrc      = eval_dataset$aurrc                     # acquire AURRC score
 
-    # evaluate motif
-    eval_motif = evaluateMotif(pvalues, filename = filename, rerank=TRUE, data_eta0=data_eta0)
-
-    data_occur = round(1-eval_dataset$eta0, digits=3)   # acquire motif occurrence
-    data_aurrc = eval_dataset$aurrc                     # acquire AURRC score
-    motif_occur = round(1-eval_motif$eta0, digits=3)    # acquire motif occurrence
-    motif_aurrc = eval_motif$aurrc                      # acquire AURRC score
+    # evaluate motif indenpendent from dataset
+    eval_motif      = evaluateMotif(pvalues, filename = filename, rerank=TRUE, data_eta0=data_eta0)
+    motif_eta0      = eval_motif$eta0
+    motif_occur     = round((1-motif_eta0)/(motif_eta0-data_eta0), digits=3)   # acquire motif occurrence
+    motif_aurrc     = eval_motif$aurrc                      # acquire AURRC score
 
     # output the result
     resultString = paste0(c(prefix, motif_num, data_aurrc, data_occur, motif_aurrc, motif_occur), collapse="\t")
