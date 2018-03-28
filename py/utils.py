@@ -342,7 +342,7 @@ def parse_single_bamm_from_file(bamm_ifile):
 
 def write_meme(dataset, meme_output_file):
     with open(meme_output_file, "w") as fh:
-        print(dataset['version'], file=fh)
+        print(dataset['version'], file=fh)2
         print(file=fh)
 
         print("ALPHABET= " + dataset['alphabet'], file=fh)
