@@ -34,6 +34,7 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
     /**
 	 * Cross validation
 	 */
+    #pragma omp parallel for
 	for( size_t fold = 0; fold < cvFold_; fold++ ){
 
 		// deep copy the initial motif
@@ -83,42 +84,44 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
 		ScoreSeqSet score_testset( motif, bgModel_, testSet );
         score_testset.calcLogOdds();
 
-		if( mops_ ){
-			mops_scores = score_testset.getMopsScores();
-			for( size_t n = 0; n < testSet.size(); n++ ){
-				posScoreAll_.insert( std::end( posScoreAll_ ),
-                                     std::begin( mops_scores[n] ),
-                                     std::end( mops_scores[n] ) );
-			}
-		}
+        #pragma omp critical
+        {
+            if (mops_) {
+                mops_scores = score_testset.getMopsScores();
 
-		if( zoops_ ){
-			zoops_scores = score_testset.getZoopsScores();
-			posScoreMax_.insert( std::end( posScoreMax_ ),
-                                 std::begin( zoops_scores ),
-                                 std::end( zoops_scores ) );
-		}
+                for (size_t n = 0; n < testSet.size(); n++) {
+                    posScoreAll_.insert(std::end(posScoreAll_),
+                                        std::begin(mops_scores[n]),
+                                        std::end(mops_scores[n]));
+                }
+            }
 
-		// score negative sequence set
-		ScoreSeqSet score_negset( motif, bgModel_, negSet );
-        score_negset.calcLogOdds();
-		if( mops_ ){
-			mops_scores = score_negset.getMopsScores();
-			for( size_t n = 0; n < negSet.size(); n++ ){
-				negScoreAll_.insert( std::end( negScoreAll_ ),
-                                     std::begin( mops_scores[n] ),
-                                     std::end( mops_scores[n] ) );
-			}
-		}
-		if( zoops_ ){
-			zoops_scores = score_negset.getZoopsScores();
-			negScoreMax_.insert( std::end( negScoreMax_ ),
-                                 std::begin( zoops_scores ),
-                                 std::end( zoops_scores ) );
-		}
+            if (zoops_) {
+                zoops_scores = score_testset.getZoopsScores();
+                posScoreMax_.insert(std::end(posScoreMax_),
+                                    std::begin(zoops_scores),
+                                    std::end(zoops_scores));
+            }
 
+            // score negative sequence set
+            ScoreSeqSet score_negset(motif, bgModel_, negSet);
+            score_negset.calcLogOdds();
+            if (mops_) {
+                mops_scores = score_negset.getMopsScores();
+                for (size_t n = 0; n < negSet.size(); n++) {
+                    negScoreAll_.insert(std::end(negScoreAll_),
+                                        std::begin(mops_scores[n]),
+                                        std::end(mops_scores[n]));
+                }
+            }
+            if (zoops_) {
+                zoops_scores = score_negset.getZoopsScores();
+                negScoreMax_.insert(std::end(negScoreMax_),
+                                    std::begin(zoops_scores),
+                                    std::end(zoops_scores));
+            }
+        }
 		if( motif ) 				delete motif;
-
 	}
 
     // update Q
@@ -206,7 +209,7 @@ void FDR::calculatePR(){
 		size_t posN_est = static_cast<size_t>( q_ * ( float )posN );
 
         // set limit for using the exponential extrapolation for p-value calculation
-        size_t n_top = 100 > (negN / 10) ? 100 : (negN / 10);
+        size_t n_top = std::fmax(200, negN / 10);
 
         float lambda = 0.f;
         for( size_t l = 0; l < n_top; l++ ){
