@@ -31,10 +31,11 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
 	std::vector<float> 				zoops_scores;
     float updatedQ = q_;  // obtain the updated q
 
+#pragma omp parallel for
+
     /**
 	 * Cross validation
 	 */
-    #pragma omp parallel for
 	for( size_t fold = 0; fold < cvFold_; fold++ ){
 
 		// deep copy the initial motif
@@ -84,7 +85,7 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
 		ScoreSeqSet score_testset( motif, bgModel_, testSet );
         score_testset.calcLogOdds();
 
-        #pragma omp critical
+#pragma omp critical
         {
             if (mops_) {
                 mops_scores = score_testset.getMopsScores();

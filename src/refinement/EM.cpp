@@ -246,95 +246,55 @@ int EM::mask() {
     clock_t t0 = clock();
 
     /**
-     * run 5 steps of EM for k=0 and optimize q in the meantime
+     * E-step for k = 0 to estimate weights r
      */
-    for( size_t it = 0; it < 1; it++ ){
+    // calculate the log odds ratio for k=0
+    for( size_t y = 0; y < Y_[1]; y++ ){
+        for( size_t j = 0; j < W_; j++ ){
+            s_[y][j] = motif_->getV()[0][y][j] / bgModel_->getV()[0][y];
+        }
+    }
 
-        llikelihood_ = 0.0f;
+    // todo: parallelize the code
+    // calculate responsibilities r at all LW1 positions on sequence n
+    // n runs over all sequences
+    for( size_t n = 0; n < seqs_.size(); n++ ) {
 
-        /**
-         * E-step for k = 0
-         */
-        // calculate the log odds ratio for k=0
-        for( size_t y = 0; y < Y_[1]; y++ ){
-            for( size_t j = 0; j < W_; j++ ){
-                s_[y][j] = motif_->getV()[0][y][j] / bgModel_->getV()[0][y];
+        size_t L = seqs_[n]->getL();
+        size_t LW1 = L - W_ + 1;
+        size_t *kmer = seqs_[n]->getKmer();
+        float normFactor = 1.0f - q_;
+
+        // initialize r_[n][i] and pos_[n][i]
+        float pos_i = q_ / static_cast<float>( LW1 );
+        for (size_t i = 0; i < LW1; i++) {
+            r_[n][i] = 1.0f;
+            pos_[n][i] = pos_i;
+        }
+
+
+        // when p(z_n > 0), ij = i+j runs over all positions in sequence
+        for (size_t ij = 0; ij < L; ij++) {
+
+            // extract monomer y at position i
+            size_t y = kmer[ij] % Y_[1];
+            // j runs over all motif positions
+            size_t padding = (static_cast<int>( ij - L + W_ ) > 0) * (ij - L + W_);
+            for (size_t j = padding; j < (W_ < ij ? W_ : ij ); j++) {
+                r_[n][L-W_-ij + j] *= s_[y][j];
             }
         }
 
-        // todo: parallelize the code
-        // calculate responsibilities r at all LW1 positions on sequence n
-        // n runs over all sequences
-        for( size_t n = 0; n < seqs_.size(); n++ ) {
-
-            size_t L = seqs_[n]->getL();
-            size_t LW1 = L - W_ + 1;
-            size_t *kmer = seqs_[n]->getKmer();
-            float normFactor = 1.0f - q_;
-
-            // initialize r_[n][i] and pos_[n][i]
-            float pos_i = q_ / static_cast<float>( LW1 );
-            for (size_t i = 0; i < LW1; i++) {
-                r_[n][i] = 1.0f;
-                pos_[n][i] = pos_i;
-            }
-
-
-            // when p(z_n > 0), ij = i+j runs over all positions in sequence
-            for (size_t ij = 0; ij < L; ij++) {
-
-                // extract monomer y at position i
-                size_t y = kmer[ij] % Y_[1];
-                // j runs over all motif positions
-                size_t padding = (static_cast<int>( ij - L + W_ ) > 0) * (ij - L + W_);
-                for (size_t j = padding; j < (W_ < ij ? W_ : ij ); j++) {
-                    r_[n][L-W_-ij + j] *= s_[y][j];
-                }
-            }
-
-            // calculate the responsibilities and sum them up
-            for (size_t i = 0; i < LW1; i++) {
-                r_[n][i] *= pos_[n][L-W_-i];
-                normFactor += r_[n][i];
-            }
-
-            // normalize responsibilities
-            for (size_t i = 0; i < LW1; i++) {
-                r_[n][i] /= normFactor;
-            }
-
-            // calculate log likelihood over all sequences
-            llikelihood_ += logf(normFactor);
+        // calculate the responsibilities and sum them up
+        for (size_t i = 0; i < LW1; i++) {
+            r_[n][i] *= pos_[n][L-W_-i];
+            normFactor += r_[n][i];
         }
 
-        /**
-         * M-Step for k=0
-         */
-        // reset the fractional counts n for k = 0
-        for( size_t y = 0; y < Y_[1]; y++ ){
-            for( size_t j = 0; j < W_; j++ ){
-                n_[0][y][j] = 0.0f;
-            }
+        // normalize responsibilities
+        for (size_t i = 0; i < LW1; i++) {
+            r_[n][i] /= normFactor;
         }
-
-        // compute fractional occurrence counts for k = 0
-        // n runs over all sequences
-        for( size_t n = 0; n < seqs_.size(); n++ ){
-            size_t L = seqs_[n]->getL();
-            size_t* kmer = seqs_[n]->getKmer();
-
-            // ij = i+j runs over all positions i on sequence n
-            for( size_t ij = 0; ij < L; ij++ ){
-                size_t y = kmer[ij] % Y_[1];
-                size_t padding = ( static_cast<int>( ij-L+W_ ) > 0 ) * ( ij-L+W_ );
-                for( size_t j = padding; j < ( W_ < (ij+1) ? W_ : ij+1 ); j++ ){
-                    n_[0][y][j] += r_[n][L-W_-ij+j];
-                }
-            }
-        }
-
-        // update model parameters v[k][y][j], due to the kmer counts, alphas and model order
-        motif_->updateV( n_, A_, 0 );
 
         /**
          * optimize fractional prior q

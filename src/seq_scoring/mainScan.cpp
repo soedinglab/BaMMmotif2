@@ -75,6 +75,8 @@ int main( int nargs, char* args[] ) {
         negset.push_back( negSeqs[n].release() );
     }
 
+#pragma omp parallel for
+
     for( size_t n = 0; n < motifNum; n++ ) {
         // deep copy each motif in the motif set
         Motif *motif = new Motif( *motif_set.getMotifs()[n] );
@@ -107,9 +109,7 @@ int main( int nargs, char* args[] ) {
         // calculate p-values based on positive and negative scores
         ScoreSeqSet scorePosSet( motif, bgModel, GScan::posSequenceSet->getSequences() );
         scorePosSet.calcLogOdds();
-        scorePosSet.writeLogOdds( GScan::outputDirectory,
-                   GScan::outputFileBasename + std::to_string( n+1 ),
-                   GScan::ss );
+        //scorePosSet.writeLogOdds( GScan::outputDirectory, GScan::outputFileBasename + std::to_string( n+1 ), GScan::ss );
         std::vector<std::vector<float>> posScores = scorePosSet.getMopsScores();
         scorePosSet.calcPvalues( posScores, negScores );
 

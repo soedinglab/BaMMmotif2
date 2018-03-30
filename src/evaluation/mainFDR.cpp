@@ -69,10 +69,12 @@ int main( int nargs, char* args[] ){
             negset.push_back(negSeqs[n].release());
         }
     }
+
+#pragma omp parallel for
+
     /**
      * Cross-validate the motif model
      */
-
     for( size_t n = 0; n < motifNum; n++ ){
 
         Motif* motif = new Motif( *motif_set.getMotifs()[n] );

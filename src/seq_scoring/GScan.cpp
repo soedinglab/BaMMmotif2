@@ -274,6 +274,6 @@ void GScan::printHelp(){
 void GScan::destruct(){
     Alphabet::destruct();
     if( alphabetType ) 			delete[] alphabetType;
-    if( posSequenceSet )	 	delete[] posSequenceSet;
-    if( negSequenceSet ) 		delete[] negSequenceSet;
+    if( posSequenceSet )	 	delete posSequenceSet;
+    if( negSequenceSet ) 		delete negSequenceSet;
 }

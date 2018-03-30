@@ -81,10 +81,12 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::arti_bgseqset( size_t fold 
 			negset.push_back( bg_sequence(L) );
 		}
 	}
+
 	return negset;
+
 }
 
-// generate background sequence based on k-mer frequencies from positive set
+// generate each background sequence based on k-mer frequencies from positive set
 std::unique_ptr<Sequence> SeqGenerator::bg_sequence(size_t L){
 
 	uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
@@ -147,15 +149,15 @@ std::unique_ptr<Sequence> SeqGenerator::bg_sequence(size_t L){
 		}
 	}
 
-	std::unique_ptr<Sequence> seq( new Sequence( sequence, L, header, Y_, true ) );
+	std::unique_ptr<Sequence> arti_seq( new Sequence( sequence, L, header, Y_, true ) );
 
 	if( sequence ) free( sequence );
 
-	return seq;
+	return arti_seq;
 
 }
 
-// generate background sequence based on k-mer frequencies from positive set
+// copy sequences from positive set
 std::unique_ptr<Sequence> SeqGenerator::raw_sequence( Sequence* seq ){
 
     size_t L = seq->getL();

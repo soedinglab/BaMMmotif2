@@ -72,6 +72,8 @@ int main( int nargs, char* args[] ){
                   << "*********************" << std::endl;
 	}
 
+#pragma omp parallel for
+
     for( size_t n = 0; n < motifNum; n++ ){
 		// deep copy each motif in the motif set
 		Motif* motif = new Motif( *motif_set.getMotifs()[n] );
@@ -253,10 +255,12 @@ int main( int nargs, char* args[] ){
             }
         }
 
+#pragma omp parallel for
+
         /**
          * cross-validate the motif model
          */
-		for( size_t n = 0; n < motifNum; n++ ){
+        for( size_t n = 0; n < motifNum; n++ ){
 			Motif* motif = new Motif( *motif_set.getMotifs()[n] );
 			FDR fdr( Global::posSequenceSet->getSequences(), negset,
                      Global::q, motif, bgModel, Global::cvFold,
