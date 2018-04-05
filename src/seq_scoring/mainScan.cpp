@@ -55,9 +55,8 @@ int main( int nargs, char* args[] ) {
                         GScan::posSequenceSet,
                         GScan::posSequenceSet->getBaseFrequencies(),
                         GScan::modelOrder,
-                        GScan::modelAlpha );
-
-	size_t motifNum = ( GScan::maxPWM > motif_set.getN() ) ? motif_set.getN() : GScan::maxPWM;
+                        GScan::modelAlpha,
+                        GScan::maxPWM);
 
     /**
      * Sample negative sequence set based on s-mer frequencies
@@ -77,7 +76,7 @@ int main( int nargs, char* args[] ) {
 
 #pragma omp parallel for
 
-    for( size_t n = 0; n < motifNum; n++ ) {
+    for( size_t n = 0; n < motif_set.getN(); n++ ) {
         // deep copy each motif in the motif set
         Motif *motif = new Motif( *motif_set.getMotifs()[n] );
 

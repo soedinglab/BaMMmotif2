@@ -45,9 +45,8 @@ int main( int nargs, char* args[] ){
                         GFdr::posSequenceSet,
                         GFdr::negSequenceSet->getBaseFrequencies(),
                         GFdr::modelOrder,
-                        GFdr::modelAlpha );
-
-	size_t motifNum = ( GFdr::num > motif_set.getN() ) ? motif_set.getN() : GFdr::num;
+                        GFdr::modelAlpha,
+                        GFdr::maxPWM );
 
     /**
      * Generate negative sequence set for cross-validation
@@ -93,7 +92,7 @@ int main( int nargs, char* args[] ){
      * Cross-validate the motif model
      */
 #pragma omp parallel for
-    for( size_t n = 0; n < motifNum; n++ ){
+    for( size_t n = 0; n < motif_set.getN(); n++ ){
 
         Motif* motif = new Motif( *motif_set.getMotifs()[n] );
 

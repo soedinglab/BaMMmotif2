@@ -29,7 +29,7 @@ char*			    GFdr::alphabetType = NULL;			// alphabet type is defaulted to standa
 // initial model(s) options
 char*			    GFdr::initialModelFilename = NULL; 	// filename of initial model
 std::string         GFdr::initialModelTag;				// tag for initializing the model
-size_t              GFdr::num = std::numeric_limits<size_t>::max(); // number of init that are to be optimized
+size_t              GFdr::maxPWM = std::numeric_limits<size_t>::max(); // number of init that are to be optimized
 bool                GFdr::mops = false;					// learn MOPS model
 bool                GFdr::zoops = true;					// learn ZOOPS model
 std::string         GFdr::fileExtension;                // extended filename for output
@@ -174,7 +174,7 @@ int GFdr::readArguments( int nargs, char* args[] ){
                 std::cerr << "No expression following --maxPWM" << std::endl;
                 exit( 2 );
             }
-            num = std::stoi( args[i] );
+            maxPWM = std::stoi( args[i] );
         } else if( !strcmp( args[i], "--mops" ) ){
             mops = true;
         } else if( !strcmp( args[i], "-k" ) or !strcmp( args[i], "--order" ) ){

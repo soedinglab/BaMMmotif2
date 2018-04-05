@@ -7,7 +7,8 @@ MotifSet::MotifSet( char* indir,
                     SequenceSet* posSet,
                     float* f_bg,
                     size_t K,
-                    std::vector<float> alphas ){
+                    std::vector<float> alphas,
+                    size_t maxPWM ){
 	N_ = 0;
 
 	if( tag.compare( "bindingsites" ) == 0 ){
@@ -61,7 +62,7 @@ MotifSet::MotifSet( char* indir,
 			while( getline( file, line ) ){
 
 				// search for the line starting with "letter-probability matrix"
-				if( line[0] == 'l' ){
+				if( line.find("letter-probability matrix") != std::string::npos ){
 
 					// get the size of alphabet after "alength= "
 					std::stringstream A( line.substr( line.find( "h=" ) + 2 ) );
@@ -75,7 +76,7 @@ MotifSet::MotifSet( char* indir,
 					length += l_flank + r_flank;
 
                     // get the q of motif after "occur= "
-                    if( line.find("occur=") != std::string::npos) {
+                    if( line.find("occur=") != std::string::npos ) {
                         std::stringstream Q(line.substr(line.find("occur=") + 7) );
                         Q >> q;
                     } else {
@@ -128,6 +129,11 @@ MotifSet::MotifSet( char* indir,
 						delete[] PWM[y];
 					}
 					delete[] PWM;
+
+                    // parse PWMs due to the maximal PWM counts
+                    if( N_ >= maxPWM ){
+                        break;
+                    }
 				}
 			}
 		}

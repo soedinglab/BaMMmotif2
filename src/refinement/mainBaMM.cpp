@@ -61,9 +61,8 @@ int main( int nargs, char* args[] ){
                         Global::posSequenceSet,
                         Global::posSequenceSet->getBaseFrequencies(),
                         Global::modelOrder,
-                        Global::modelAlpha );
-
-	size_t motifNum = ( Global::maxPWM > motif_set.getN() ) ? motif_set.getN() : Global::maxPWM;
+                        Global::modelAlpha,
+                        Global::maxPWM);
 
 	if( Global::verbose ){
         std::cout << std::endl
@@ -73,7 +72,7 @@ int main( int nargs, char* args[] ){
 	}
 
 #pragma omp parallel for
-    for( size_t n = 0; n < motifNum; n++ ){
+    for( size_t n = 0; n < motif_set.getN(); n++ ){
 		// deep copy each motif in the motif set
 		Motif* motif = new Motif( *motif_set.getMotifs()[n] );
 
@@ -259,7 +258,7 @@ int main( int nargs, char* args[] ){
         /**
          * cross-validate the motif model
          */
-        for( size_t n = 0; n < motifNum; n++ ){
+        for( size_t n = 0; n < motif_set.getN(); n++ ){
 			Motif* motif = new Motif( *motif_set.getMotifs()[n] );
 			FDR fdr( Global::posSequenceSet->getSequences(), negset,
                      Global::q, motif, bgModel, Global::cvFold,

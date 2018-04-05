@@ -33,7 +33,7 @@ public:
     // initial model(s) options
     static char*		initialModelFilename;	// filename of initial model
     static std::string	initialModelTag;		// tag for initializing the model
-    static size_t		num;					// number of init that are to be optimized
+    static size_t		maxPWM;					// number of init that are to be optimized
     static bool			mops;					// learn MOPS model
     static bool			zoops;					// learn ZOOPS model
     static std::string  fileExtension;          // extended filename for output
