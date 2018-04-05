@@ -73,7 +73,6 @@ int main( int nargs, char* args[] ){
 	}
 
 #pragma omp parallel for
-
     for( size_t n = 0; n < motifNum; n++ ){
 		// deep copy each motif in the motif set
 		Motif* motif = new Motif( *motif_set.getMotifs()[n] );
@@ -167,7 +166,7 @@ int main( int nargs, char* args[] ){
             // from positive training sequence set
             std::vector<std::unique_ptr<Sequence>> negSeqs;
             SeqGenerator generateNegSeqs( Global::posSequenceSet->getSequences() );
-            negSeqs = generateNegSeqs.arti_bgseqset( Global::mFold );
+            negSeqs = generateNegSeqs.sample_bgseqset_by_fold(Global::mFold);
             // convert unique_ptr to regular pointer
             for( size_t n = 0; n < negSeqs.size(); n++ ) {
                 negset.push_back( negSeqs[n].release() );
@@ -220,7 +219,7 @@ int main( int nargs, char* args[] ){
             // from the given sampled negative sequence set
             std::vector<std::unique_ptr<Sequence>> B2Seqs;
             SeqGenerator b2seqs( Global::negSequenceSet->getSequences() );
-            B2Seqs = b2seqs.arti_bgseqset(1);
+            B2Seqs = b2seqs.sample_bgseqset_by_fold(1);
             // convert unique_ptr to regular pointer
             for( size_t n = 0; n < B2Seqs.size(); n++ ) {
                 negset.push_back( B2Seqs[n].release() );
@@ -248,7 +247,7 @@ int main( int nargs, char* args[] ){
             // from positive training sequence set
             std::vector<std::unique_ptr<Sequence>> B1Seqs;
             SeqGenerator b1seqs( Global::posSequenceSet->getSequences() );
-            B1Seqs = b1seqs.arti_bgseqset( Global::mFold );
+            B1Seqs = b1seqs.sample_bgseqset_by_fold(Global::mFold);
             // convert unique_ptr to regular pointer
             for( size_t n = 0; n < B1Seqs.size(); n++ ) {
                 negset.push_back( B1Seqs[n].release() );

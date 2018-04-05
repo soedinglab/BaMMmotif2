@@ -26,7 +26,7 @@ int main( int nargs, char* args[] ){
         SeqGenerator negseq( GSimu::sequenceSet->getSequences(), NULL, GSimu::sOrder );
         negseq.write( GSimu::outputDirectory,
                       GSimu::sequenceBasename + "_bgset",
-                      negseq.arti_bgseqset(GSimu::mFold) );
+                      negseq.sample_bgseqset_by_fold(GSimu::mFold) );
     } else {
         /**
          * Build up the background model

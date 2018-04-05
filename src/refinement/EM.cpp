@@ -137,15 +137,14 @@ int EM::optimize(){
 
 void EM::EStep(){
 
-    llikelihood_ = 0.0f;
+    float llikelihood = 0.0f;
 
     motif_->calculateLinearS( bgModel_->getV(), K_bg_ );
 
-    // todo: parallelize the code
-//	#pragma omp parallel for
-
     // calculate responsibilities r at all LW1 positions on sequence n
     // n runs over all sequences
+
+#pragma omp parallel for reduction(+:llikelihood)
     for( size_t n = 0; n < seqs_.size(); n++ ){
 
         size_t 	L = seqs_[n]->getL();
@@ -191,8 +190,10 @@ void EM::EStep(){
             r_[n][i] = 0.0f;
        }
         // calculate log likelihood over all sequences
-        llikelihood_ += logf( normFactor );
+        llikelihood += logf( normFactor );
     }
+
+    llikelihood_ = llikelihood;
 
 }
 
@@ -209,6 +210,7 @@ void EM::MStep(){
 
     // compute fractional occurrence counts for the highest order K
     // n runs over all sequences
+//#pragma omp parallel for
     for( size_t n = 0; n < seqs_.size(); n++ ){
         size_t L = seqs_[n]->getL();
         size_t* kmer = seqs_[n]->getKmer();
@@ -217,6 +219,7 @@ void EM::MStep(){
         for( size_t ij = 0; ij < L-W_+1; ij++ ){
             size_t y = kmer[ij] % Y_[K_+1];
             for( size_t j = 0; j < W_; j++ ){
+//                __sync_fetch_and_add(n_[K_][y] + j, r_[n][L-W_-ij+j]);
                 n_[K_][y][j] += r_[n][L-W_-ij+j];
             }
         }
@@ -366,15 +369,13 @@ int EM::mask() {
         /**
          * E-step for f_% motif occurrences
          */
-        llikelihood_ = 0.0f;
+        float llikelihood = 0.0f;
 
         motif_->calculateLinearS( bgModel_->getV(), K_bg_ );
 
-        // todo: parallelize the code
-        //	#pragma omp parallel for
-
         // calculate responsibilities r at all LW1 positions on sequence n
         // n runs over all sequences
+#pragma omp parallel for reduction(+:llikelihood)
         for( size_t n = 0; n < seqs_.size(); n++ ){
 
             size_t 	L = seqs_[n]->getL();
@@ -412,9 +413,10 @@ int EM::mask() {
             }
 
             // calculate log likelihood over all sequences
-            llikelihood_ += logf( normFactor );
+            llikelihood += logf( normFactor );
         }
 
+        llikelihood_ = llikelihood;
         /**
          * M-step for f_% motif occurrences
          */

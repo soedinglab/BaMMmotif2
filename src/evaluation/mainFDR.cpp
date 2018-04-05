@@ -63,18 +63,36 @@ int main( int nargs, char* args[] ){
         // from positive training sequence set
         std::vector<std::unique_ptr<Sequence>> negSeqs;
         SeqGenerator negseq(GFdr::posSequenceSet->getSequences(), NULL, GFdr::sOrder);
-        negSeqs = negseq.arti_bgseqset(GFdr::mFold);
+        if( !GFdr::fixedNegN ){
+            negSeqs = negseq.sample_bgseqset_by_fold(GFdr::mFold);
+        } else {
+            negSeqs = negseq.sample_bgseqset_by_num(GFdr::negN, GFdr::posSequenceSet->getMaxL());
+        }
         // convert unique_ptr to regular pointer
         for (size_t n = 0; n < negSeqs.size(); n++) {
             negset.push_back(negSeqs[n].release());
         }
     }
 
-#pragma omp parallel for
+    /**
+     * Optional: subsample input sequence set
+     */
+    std::vector<Sequence*> posset;
+    if(!GFdr::fixedPosN){
+        posset = GFdr::posSequenceSet->getSequences();
+    } else {
+        std::vector<size_t> indices(GFdr::posSequenceSet->getSequences().size());
+        std::iota(indices.begin(), indices.end(), 0);
+        std::random_shuffle(indices.begin(), indices.end());
+        for(size_t n = 0; n < GFdr::maxPosN; n++){
+            posset.push_back(GFdr::posSequenceSet->getSequences()[indices[n]]);
+        }
+    }
 
     /**
      * Cross-validate the motif model
      */
+#pragma omp parallel for
     for( size_t n = 0; n < motifNum; n++ ){
 
         Motif* motif = new Motif( *motif_set.getMotifs()[n] );
@@ -85,7 +103,7 @@ int main( int nargs, char* args[] ){
         assert( motif->getW() <= minPosL );
         assert( motif->getW() <= minNegL );
 
-        FDR fdr( GFdr::posSequenceSet->getSequences(), negset, GFdr::q,
+        FDR fdr( posset, negset, GFdr::q,
                  motif, bgModel,
                  GFdr::cvFold, GFdr::mops, GFdr::zoops,
                  true, GFdr::savePvalues, GFdr::saveLogOdds );

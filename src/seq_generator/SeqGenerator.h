@@ -25,7 +25,8 @@ public:
 
 	~SeqGenerator();
 
-	std::vector<std::unique_ptr<Sequence>> arti_bgseqset(size_t fold);
+	std::vector<std::unique_ptr<Sequence>> sample_bgseqset_by_fold(size_t fold);
+    std::vector<std::unique_ptr<Sequence>> sample_bgseqset_by_num(size_t negN, size_t maxL);
 	std::vector<std::unique_ptr<Sequence>> arti_posset_motif_embedded(size_t at);
 	std::vector<std::unique_ptr<Sequence>> seqset_with_motif_masked(float **r);
 

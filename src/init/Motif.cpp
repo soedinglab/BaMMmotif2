@@ -178,7 +178,7 @@ void Motif::initFromBindingSites( char* indir, size_t l_flank, size_t r_flank ){
 }
 
 // initialize v from PWM file
-void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset ){
+void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, float q ){
 
 	// set k-mer counts to zero
 	for( size_t k = 0; k < K_+1; k++ ){
@@ -221,8 +221,6 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset ){
 
 	// sampling z from each sequence of the sequence set based on the weights:
 	std::vector<Sequence*> posSet = posSeqset->getSequences();
-	// todo: better to get the q (enrichment of the PWM pattern) from PEnG!motif
-	float q = posSeqset->getQ();
 	std::mt19937 rngx;
 
 	for( size_t n = 0; n < posSet.size(); n++ ){

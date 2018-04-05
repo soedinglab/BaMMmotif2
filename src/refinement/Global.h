@@ -118,6 +118,9 @@ public:
     static bool         B3prime;
     static bool         advanceEM;
 
+    // option for openMP
+    static size_t       threads;                // number of threads to use
+
 	static void         init( int nargs, char* args[] );
 	static void         destruct();
 	static void			printStat();

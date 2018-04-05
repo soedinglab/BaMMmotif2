@@ -21,7 +21,7 @@ public:
 
 	void initFromBindingSites( char* indir, size_t l_flank, size_t r_flank );
 
-	void initFromPWM( float** PWM, size_t asize, SequenceSet* posSet );
+	void initFromPWM( float** PWM, size_t asize, SequenceSet* posSet, float q );
 
 	void initFromBaMM( char* indir, size_t l_flank, size_t r_flank );
 

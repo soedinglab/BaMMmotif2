@@ -54,6 +54,7 @@ MotifSet::MotifSet( char* indir,
 
 			size_t length;						// length of motif
 			size_t asize;						// alphabet size
+            float  q;                           // fraction of sequences that contain a motif
 			std::string line;
 			std::string row;
 
@@ -73,6 +74,15 @@ MotifSet::MotifSet( char* indir,
 					// extend the length due to addColumns option
 					length += l_flank + r_flank;
 
+                    // get the q of motif after "occur= "
+                    if( line.find("occur=") != std::string::npos) {
+                        std::stringstream Q(line.substr(line.find("occur=") + 7) );
+                        Q >> q;
+                    } else {
+                        q = posSet->getQ();
+                    }
+
+                    std::cout <<"W=" <<length << "\tq=" << q << std::endl;
 					// construct an initial motif
 					Motif* motif = new Motif( length, K, alphas, f_bg );
 
@@ -106,7 +116,7 @@ MotifSet::MotifSet( char* indir,
 					}
 
 					// initialize each motif with a PWM
-					motif->initFromPWM( PWM, asize, posSet );
+					motif->initFromPWM( PWM, asize, posSet, q );
 
 					motifs_.push_back( motif );
 
