@@ -708,7 +708,8 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     eval_motif      = evaluateMotif(pvalues, filename=filename, rerank=TRUE, data_eta0=data_eta0)
     motif_ausfc     = eval_motif$ausfc
     motif_eta0      = eval_motif$eta0
-    motif_occur     = round((1-motif_eta0)/(motif_eta0-data_eta0), digits=3)
+
+    motif_occur     = round(1-motif_eta0, digits=3)
 
     # for the webserver
     if(web){

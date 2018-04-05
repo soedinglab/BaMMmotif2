@@ -665,7 +665,8 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     # evaluate motif indenpendent from dataset
     eval_motif      = evaluateMotif(pvalues, filename = filename, rerank=TRUE, data_eta0=data_eta0)
     motif_eta0      = eval_motif$eta0
-    motif_occur     = round((1-motif_eta0)/(motif_eta0-data_eta0), digits=3)   # acquire motif occurrence
+    #motif_occur     = round((1-motif_eta0)/(motif_eta0-data_eta0), digits=3)   # acquire motif occurrence
+    motif_occur     = 1 - motif_eta0
     motif_aurrc     = eval_motif$aurrc                      # acquire AURRC score
 
     # output the result

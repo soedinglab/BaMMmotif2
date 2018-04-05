@@ -56,8 +56,8 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
     if( line_number < 3 ){
         print("The input file is empty. No query motif is found in the sequence set.")
         # print out an empty image
-        picname <- paste0( maindir, file_prefix, motif_id, "_distribution.jpeg")
-        jpeg(filename=picname, width=800, height=800, quality=100)
+        picname <- paste0( maindir, file_prefix, motif_id, "_distribution.png")
+        png(filename=picname, width=800, height=800)
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
         plot(y=0,
             main="Motif Positions",
@@ -108,8 +108,9 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
 
         interval = max(max(pos_positions)-strand_center, strand_center-min(pos_positions))
         interval = as.integer( interval / 10 ) * 10
-        picname <- paste0( maindir, file_prefix, motif_id, "_distribution.jpeg")
-        jpeg(filename=picname, width=800, height=800, quality=100)
+        picname <- paste0( maindir, file_prefix, motif_id, "_distribution.png")
+
+        png( filename = picname, width = 800, height = 800 )
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
 
         pos.strand = density(pos_positions)

@@ -532,12 +532,14 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     numNeg = numPos * mfold
     TPR <- TP / numPos
     FPR <- FP / numNeg
+    rbound = 0
     for(i in seq(1,numNeg)){
         if( FPR[i] >= right_bound ){
           rbound = i
           break
         }
     }
+
     # compute the area under the partical TP-FP curve(AUC5):
     auc5 = round(sum(diff(FPR[1:rbound])*rollmean(TPR[1:rbound],2)) / right_bound, digits=3)
 
