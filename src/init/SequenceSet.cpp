@@ -1,4 +1,5 @@
 #include "SequenceSet.h"
+#include <boost/algorithm/string.hpp>
 
 SequenceSet::SequenceSet( std::string sequenceFilepath,
 							bool singleStrand,
@@ -142,8 +143,10 @@ int SequenceSet::readFASTA( bool singleStrand ){
 						// set header to sequence counter
 						header = '>';
 					} else {
-						header = line.substr( 1 );  // fetch header
-					}
+						// fetch header till the first tab
+                        std::vector<std::string> strs;
+                        header = boost::split(strs, line ,boost::is_any_of("\t"))[0];
+                    }
 
 				} else if( !( header.empty() ) ){
 

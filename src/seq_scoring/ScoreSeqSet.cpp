@@ -248,6 +248,9 @@ void ScoreSeqSet::write( char* odir, std::string basename, float pvalCutoff, boo
 
 	std::ofstream ofile( opath );
 
+    // add a header to the results
+    ofile << "seq\tlength\tstrand\tstart..end\tpattern\tp-value\te-value" << std::endl;
+
 	for( size_t n = 0; n < seqSet_.size(); n++ ){
 		size_t seqlen = seqSet_[n]->getL();
 		if( !ss ){
@@ -259,7 +262,7 @@ void ScoreSeqSet::write( char* odir, std::string basename, float pvalCutoff, boo
 
 			if( mops_p_values_[n][i] < pvalCutoff ){
                 // >header:sequence_length
-                ofile << '>' << seqSet_[n]->getHeader() << '\t' << seqlen << '\t';
+                ofile << seqSet_[n]->getHeader() << '\t' << seqlen << '\t';
 
 				// start:end:score:strand:sequence_matching
 				end = i + motif_->getW();
@@ -291,6 +294,9 @@ void ScoreSeqSet::writeLogOdds( char* odir, std::string basename, bool ss ){
 
     std::ofstream ofile( opath );
 
+    // add a header to the results
+    ofile << "seq\tlength\tstrand\tstart..end\tpattern\tzoops_score" << std::endl;
+
     for( size_t n = 0; n < seqSet_.size(); n++ ){
         size_t seqlen = seqSet_[n]->getL();
         if( !ss ){
@@ -298,7 +304,7 @@ void ScoreSeqSet::writeLogOdds( char* odir, std::string basename, bool ss ){
         }
 
         // >header:sequence_length
-        ofile << '>' << seqSet_[n]->getHeader() << '\t' << seqlen << '\t';
+        ofile << seqSet_[n]->getHeader() << '\t' << seqlen << '\t';
 
         // start:end:score:strand:sequence_matching
         end = z_[n] + motif_->getW();

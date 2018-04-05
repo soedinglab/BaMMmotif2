@@ -105,7 +105,7 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_bgseqset_by_num(size
 std::unique_ptr<Sequence> SeqGenerator::bg_sequence(size_t L){
 
 	uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
-	std::string header = "bg_seq";
+	std::string header = ">bg_seq";
 
 	// sample the first nucleotide
 	double random = ( double )rand() / ( double )RAND_MAX;
@@ -177,7 +177,7 @@ std::unique_ptr<Sequence> SeqGenerator::raw_sequence( Sequence* seq ){
 
     size_t L = seq->getL();
     uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
-    std::string header = "raw_seq";
+    std::string header = ">raw_seq";
 
     // copy original sequence to the raw sequence
     for( size_t i = 0; i < L; i++ ){
@@ -303,7 +303,7 @@ std::unique_ptr<Sequence> SeqGenerator::sequence_with_motif_masked(Sequence *pos
 		}
 	}
 
-	std::string header = "seq with motif masked";
+	std::string header = ">seq with motif masked";
 
     std::unique_ptr<Sequence> seq_mask_motif( new Sequence( masked_seq, L, header, Y_, true ) );
 
@@ -320,7 +320,7 @@ void SeqGenerator::write( char* odir, std::string basename, std::vector<std::uni
 	std::ofstream ofile( opath );
 
 	for( size_t n = 0; n < seqset.size(); n++ ){
-		ofile << ">" << seqset[n]->getHeader() << std::endl;
+		ofile << seqset[n]->getHeader() << std::endl;
 		for( size_t i = 0; i < seqset[n]->getL(); i++ ){
 			ofile << Alphabet::getBase( seqset[n]->getSequence()[i] );
 		}

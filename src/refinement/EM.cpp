@@ -560,7 +560,7 @@ void EM::write( char* odir, std::string basename, bool ss ){
         for( size_t i = 0; i < seqs_[n]->getL()-W_+1; i++ ){
 
             if( r_[n][seqs_[n]->getL() -W_-i] >= cutoff ){
-                ofile_pos << '>' << seqs_[n]->getHeader() << '\t' << L << '\t'
+                ofile_pos << seqs_[n]->getHeader() << '\t' << L << '\t'
                           << ( ( i < L ) ? '+' : '-' ) << '\t' << i + 1 << ".." << i+W_ << '\t';
                 for( size_t b = i; b < i+W_; b++ ){
                     ofile_pos << Alphabet::getBase( seqs_[n]->getSequence()[b] );

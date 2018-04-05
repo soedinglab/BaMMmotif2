@@ -91,7 +91,7 @@ bool 				Global::B3prime = false;
 bool                Global::advanceEM = false;
 
 // option for openMP
-size_t              Global::threads = 1;                   // number of threads to use
+size_t              Global::threads = 4;                   // number of threads to use
 
 void Global::init( int nargs, char* args[] ){
 
