@@ -253,11 +253,10 @@ int main( int nargs, char* args[] ){
             }
         }
 
-#pragma omp parallel for
-
         /**
          * cross-validate the motif model
          */
+#pragma omp parallel for
         for( size_t n = 0; n < motif_set.getN(); n++ ){
 			Motif* motif = new Motif( *motif_set.getMotifs()[n] );
 			FDR fdr( Global::posSequenceSet->getSequences(), negset,

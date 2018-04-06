@@ -301,8 +301,6 @@ int GFdr::readArguments( int nargs, char* args[] ){
         }
     }
 
-    std::cout << "maxPosN=" << maxPosN << std::endl;
-
     fileExtension = concatenate2strings( outputFileBasename, baseName( initialModelFilename ) );
     // option for openMP
 #ifdef OPENMP

@@ -80,10 +80,11 @@ int main( int nargs, char* args[] ){
     if(!GFdr::fixedPosN){
         posset = GFdr::posSequenceSet->getSequences();
     } else {
+        size_t posN = std::min( GFdr::maxPosN,  GFdr::posSequenceSet->getSequences().size() );
         std::vector<size_t> indices(GFdr::posSequenceSet->getSequences().size());
         std::iota(indices.begin(), indices.end(), 0);
         std::random_shuffle(indices.begin(), indices.end());
-        for(size_t n = 0; n < GFdr::maxPosN; n++){
+        for(size_t n = 0; n < posN; n++){
             posset.push_back(GFdr::posSequenceSet->getSequences()[indices[n]]);
         }
     }

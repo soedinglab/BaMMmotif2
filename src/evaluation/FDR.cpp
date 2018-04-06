@@ -35,7 +35,6 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
 	 * Cross validation
 	 */
 #pragma omp parallel for
-
 	for( size_t fold = 0; fold < cvFold_; fold++ ){
 
 		// deep copy the initial motif
