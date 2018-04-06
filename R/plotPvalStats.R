@@ -506,10 +506,11 @@ plotRRC = function(picname, recall, TFR, rerank){
         mtext("TP/FP Ratio", side=2, line=4, cex = 3.0)
         axis(1, at=c(0,0.5,1), labels = c(0,0.5,1), tick =TRUE, cex.axis=2.5, line=0)
         axis(2, at=c(y_lower,10,y_upper), labels = expression(10^0, 10^1, 10^2), tick=TRUE, cex.axis=2.5, line=0, las=1)
-        text(x = min(max(recall), 0.9),y = min(TFR+10), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
-        text(x = min(max(recall), 0.9),y = min(TFR/10+1), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
+        text(x = 0.05,y = min(max(TFR+10), 90), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
+        if(max(TFR)>10) text(x = 0.05,y = min(max(TFR/10+1), 90), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
         box(lwd=2.5)
         invisible(dev.off())
+
         # export plots to .pdf file
         pdf( file = paste0(picname, ".pdf"), width = 10, height = 10 )
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
@@ -544,8 +545,8 @@ plotRRC = function(picname, recall, TFR, rerank){
         mtext("TP/FP Ratio", side=2, line=4, cex = 3.0)
         axis(1, at=c(0,0.5,1), labels = c(0,0.5,1), tick =TRUE, cex.axis=2.5, line=0)
         axis(2, at=c(y_lower,10,y_upper), labels = expression(10^0, 10^1, 10^2), tick=TRUE, cex.axis=2.5, line=0, las=1)
-        text(x = min(max(recall), 0.9),y = min(TFR+10), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
-        text(x = min(max(recall), 0.9),y = min(TFR/10+1), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
+        text(x = 0.05,y = min(max(TFR+10), 90), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
+        if(max(TFR)>10) text(x = 0.05,y = min(max(TFR/10+1), 90), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
         box(lwd=2.5)
         invisible(dev.off())
     }
@@ -663,7 +664,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     # evaluate motif indenpendent from dataset
     eval_motif      = evaluateMotif(pvalues, filename = filename, rerank=TRUE, data_eta0=data_eta0)
     motif_eta0      = eval_motif$eta0
-    motif_occur     = round(1-(motif_eta0 - data_eta0)/data_eta0, digits=3) # acquire motif occurrence
+    motif_occur     = round((1-motif_eta0)*(1+mfold), digits=3) # acquire motif occurrence
     motif_aurrc     = eval_motif$aurrc                      # acquire AURRC score
 
     # output the result
