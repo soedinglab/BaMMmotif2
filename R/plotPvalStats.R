@@ -4,20 +4,15 @@
 # Documentation
 #
 #-----------------------------------------------------------------
-# based on the output of BaMM FDR function:
-# 1. calculate false discovery rate(FDR), and sensitivity
-#    using the p-values for log odds ratios of positive sequences
-#    and Grenander fitting in the "fdrtool" library;
-# 2. calculate area-under-FDR-sensitivity-curve (AUSFC);
-# 3. plot FDR-sensitivity curve using fitted FDR and sensitivity scores;
-# 4. plot partial ROC using raw TPs and FPs;
-# 5. plot precision-recall curve using raw FDR and recall scores;
-# 6. ausfc score, pAUC score and auprc score are saved in .bmscore file.
+# based on the output of BaMM FDR function (.stats file):
+# 1. p-value statistics from FDR for both motif itself and motif tested on the dataset
+# 2. plot Recall-TP/FP ratio curves for both motif itself and motif tested on the dataset
+# 3. output the AURRC and motif occurrence in a .aucscore file
 
 # command for executing this script:
-# ./evaluateBaMM.R INPUT_DIR FILE_PREFIX [options]
+# ./plotPvalStat.R INPUT_DIR FILE_PREFIX [options]
 
-# ./evaluateBaMM.R /home/bamm_result/ JunD [--SFC 1 ...]
+# ./plotPvalStat.R /home/bamm_result/ JunD [--web 1] [--plots 1]
 
 #-----------------------------
 #
@@ -44,6 +39,7 @@ parser <- ArgumentParser(description="evaluate motifs optimized by BaMM")
 parser$add_argument('target_directory', help="directory that contains the target file")
 parser$add_argument('prefix', help="prefix of the target file")
 # optional arguments
+parser$add_argument("--plots", type="logical", default=FALSE, help="flag for printing out plots" )
 parser$add_argument("--web", type="logical", default=FALSE, help="flag for printing out ausfc score on the screen" )
 
 # parse the arguments
@@ -54,7 +50,10 @@ dir 	<- args$target_directory
 prefix 	<- args$prefix
 
 # flag for verbose output for web usage
-web             = args$web
+web     <- args$web
+
+# flag for plots
+plots   <- args$plots
 
 # preset variables
 ofile   <- paste(dir, '/', prefix, ".aucscore", sep = "" )
@@ -351,11 +350,8 @@ pvt.plotlabels <- function(statistic, scale.param, eta0)
 #-----------------------------------------
 
 # plot p-value statistics using fdrtool
-
 plotPvalStat = function(pvalues, filename, eta0, data_eta0){
-
     png( filename = paste0(filename,".png"), width = 800, height = 800 )
-    
     histRes <- hist(pvalues,plot=FALSE, breaks=30)
     xvals <- histRes$breaks
     yvals <- histRes$density
@@ -430,6 +426,7 @@ plotPvalStat = function(pvalues, filename, eta0, data_eta0){
     invisible(dev.off() )
 }
 
+
 # plot TP/FP ratio vs. recall curve
 plotRRC = function(picname, recall, TFR, rerank){
 
@@ -474,10 +471,49 @@ plotRRC = function(picname, recall, TFR, rerank){
     TFR_low = TFR_low[mask_2upper]
     recall_low = recall_low[mask_2upper]
 
-    # plot the line when positives:negatives = 1:1
-    png( filename = paste0(picname, ".png"), width = 800, height = 800 )
-    par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
-    plot(recall_maskup, TFR_maskup,
+    if(plots){
+        # plot the line when positives:negatives = 1:1
+        png( filename = paste0(picname, ".png"), width = 800, height = 800 )
+        par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
+        plot(recall_maskup, TFR_maskup,
+            main=mainname,
+            log="y",
+            xlim=c(0,1),ylim=c(y_lower,y_upper),
+            xlab="", ylab="",
+            type="l", lwd=7.5,
+            col=unicolor,
+            axes = FALSE, cex.main = 3.0
+        )
+        # color the area under the curve
+        polygon(
+            c(0, recall, 1),
+            c(y_lower, pmin(TFR, y_upper), y_lower),
+            col = convertcolor(unicolor,30),
+            border = NA
+        )
+        # plot the line when positives:negatives = 1:10
+        par(new=T)
+        plot(recall_low, TFR_low/10,
+            main=mainname,
+            log="y",
+            xlim=c(0,1),ylim=c(y_lower,y_upper),
+            xlab="", ylab="",
+            type="l", lty=2, lwd=7.5,
+            col=convertcolor(unicolor,50),
+            axes = FALSE, cex.main = 3.0
+        )
+        mtext("Recall = TP/(TP+FN)", side=1, line=4.5, cex = 3.0)
+        mtext("TP/FP Ratio", side=2, line=4, cex = 3.0)
+        axis(1, at=c(0,0.5,1), labels = c(0,0.5,1), tick =TRUE, cex.axis=2.5, line=0)
+        axis(2, at=c(y_lower,10,y_upper), labels = expression(10^0, 10^1, 10^2), tick=TRUE, cex.axis=2.5, line=0, las=1)
+        text(x = min(max(recall), 0.9),y = min(TFR+10), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
+        text(x = min(max(recall), 0.9),y = min(TFR/10+1), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
+        box(lwd=2.5)
+        invisible(dev.off())
+        # export plots to .pdf file
+        pdf( file = paste0(picname, ".pdf"), width = 10, height = 10 )
+        par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
+        plot(recall_maskup, TFR_maskup,
         main=mainname,
         log="y",
         xlim=c(0,1),ylim=c(y_lower,y_upper),
@@ -485,17 +521,17 @@ plotRRC = function(picname, recall, TFR, rerank){
         type="l", lwd=7.5,
         col=unicolor,
         axes = FALSE, cex.main = 3.0
-    )
-    # color the area under the curve
-    polygon(
+        )
+        # color the area under the curve
+        polygon(
         c(0, recall, 1),
         c(y_lower, pmin(TFR, y_upper), y_lower),
         col = convertcolor(unicolor,30),
         border = NA
-    )
-    # plot the line when positives:negatives = 1:10
-    par(new=T)
-    plot(recall_low, TFR_low/10,
+        )
+        # plot the line when positives:negatives = 1:10
+        par(new=T)
+        plot(recall_low, TFR_low/10,
         main=mainname,
         log="y",
         xlim=c(0,1),ylim=c(y_lower,y_upper),
@@ -503,54 +539,16 @@ plotRRC = function(picname, recall, TFR, rerank){
         type="l", lty=2, lwd=7.5,
         col=convertcolor(unicolor,50),
         axes = FALSE, cex.main = 3.0
-    )
-    mtext("Recall = TP/(TP+FN)", side=1, line=4.5, cex = 3.0)
-    mtext("TP/FP Ratio", side=2, line=4, cex = 3.0)
-    axis(1, at=c(0,0.5,1), labels = c(0,0.5,1), tick =TRUE, cex.axis=2.5, line=0)
-    axis(2, at=c(y_lower,10,y_upper), labels = expression(10^0, 10^1, 10^2), tick=TRUE, cex.axis=2.5, line=0, las=1)
-    text(x = min(max(recall), 0.9),y = min(TFR+10), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
-    text(x = min(max(recall), 0.9),y = min(TFR/10+1), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
-    box(lwd=2.5)
-    invisible(dev.off())
-    # export plots to .pdf file
-    pdf( file = paste0(picname, ".pdf"), width = 10, height = 10 )
-    par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
-    plot(recall_maskup, TFR_maskup,
-    main=mainname,
-    log="y",
-    xlim=c(0,1),ylim=c(y_lower,y_upper),
-    xlab="", ylab="",
-    type="l", lwd=7.5,
-    col=unicolor,
-    axes = FALSE, cex.main = 3.0
-    )
-    # color the area under the curve
-    polygon(
-    c(0, recall, 1),
-    c(y_lower, pmin(TFR, y_upper), y_lower),
-    col = convertcolor(unicolor,30),
-    border = NA
-    )
-    # plot the line when positives:negatives = 1:10
-    par(new=T)
-    plot(recall_low, TFR_low/10,
-    main=mainname,
-    log="y",
-    xlim=c(0,1),ylim=c(y_lower,y_upper),
-    xlab="", ylab="",
-    type="l", lty=2, lwd=7.5,
-    col=convertcolor(unicolor,50),
-    axes = FALSE, cex.main = 3.0
-    )
-    mtext("Recall = TP/(TP+FN)", side=1, line=4.5, cex = 3.0)
-    mtext("TP/FP Ratio", side=2, line=4, cex = 3.0)
-    axis(1, at=c(0,0.5,1), labels = c(0,0.5,1), tick =TRUE, cex.axis=2.5, line=0)
-    axis(2, at=c(y_lower,10,y_upper), labels = expression(10^0, 10^1, 10^2), tick=TRUE, cex.axis=2.5, line=0, las=1)
-    text(x = min(max(recall), 0.9),y = min(TFR+10), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
-    text(x = min(max(recall), 0.9),y = min(TFR/10+1), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
-    box(lwd=2.5)
-    invisible(dev.off())
-
+        )
+        mtext("Recall = TP/(TP+FN)", side=1, line=4.5, cex = 3.0)
+        mtext("TP/FP Ratio", side=2, line=4, cex = 3.0)
+        axis(1, at=c(0,0.5,1), labels = c(0,0.5,1), tick =TRUE, cex.axis=2.5, line=0)
+        axis(2, at=c(y_lower,10,y_upper), labels = expression(10^0, 10^1, 10^2), tick=TRUE, cex.axis=2.5, line=0, las=1)
+        text(x = min(max(recall), 0.9),y = min(TFR+10), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
+        text(x = min(max(recall), 0.9),y = min(TFR/10+1), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
+        box(lwd=2.5)
+        invisible(dev.off())
+    }
     # access the aurrc value
     return( list(aurrc=aurrc) )
 }
@@ -605,7 +603,7 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
     tfr <- (1-fdr)/fdr * mfold
 
     # plot p-value density plot
-    plotPvalStat(pvalues, filename=pn_pval, eta0=eta0, data_eta0=data_eta0)
+    if(plots) plotPvalStat(pvalues, filename=pn_pval, eta0=eta0, data_eta0=data_eta0)
 
     # plot TP/FP vs. recall plot
     rrc     = plotRRC(pn_rrc, recall, tfr, rerank)
@@ -665,8 +663,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     # evaluate motif indenpendent from dataset
     eval_motif      = evaluateMotif(pvalues, filename = filename, rerank=TRUE, data_eta0=data_eta0)
     motif_eta0      = eval_motif$eta0
-    #motif_occur     = round((1-motif_eta0)/(motif_eta0-data_eta0), digits=3)   # acquire motif occurrence
-    motif_occur     = 1 - motif_eta0
+    motif_occur     = round(1-(motif_eta0 - data_eta0)/data_eta0, digits=3) # acquire motif occurrence
     motif_aurrc     = eval_motif$aurrc                      # acquire AURRC score
 
     # output the result

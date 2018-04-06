@@ -15,9 +15,9 @@
 # 6. ausfc score, pAUC score and auprc score are saved in .bmscore file.
 
 # command for executing this script:
-# ./evaluateBaMM.R INPUT_DIR FILE_PREFIX [options]
+# ./plotSFC.R INPUT_DIR FILE_PREFIX [options]
 
-# ./evaluateBaMM.R /home/bamm_result/ JunD [--SFC 1 ...]
+# ./plotSFC.R /home/bamm_result/ JunD [--web 1]
 
 #-----------------------------
 #
@@ -44,12 +44,7 @@ parser <- ArgumentParser(description="evaluate motifs optimized by BaMM")
 parser$add_argument('target_directory', help="directory that contains the target file")
 parser$add_argument('prefix', help="prefix of the target file")
 # optional arguments
-parser$add_argument("--fdrtool", type="logical", default=FALSE, help="flag for printing out analysis from fdrtool" )
-parser$add_argument("--SFC", type="logical", default=FALSE, help="flag for printing out sensitivity-fdr curve" )
-parser$add_argument("--ROC5", type="logical", default=FALSE, help="flag for printing out partial ROC curve" )
-parser$add_argument("--PRC", type="logical", default=FALSE, help="flag for printing out precision-recall curve" )
 parser$add_argument("--web", type="logical", default=FALSE, help="flag for printing out ausfc score on the screen" )
-parser$add_argument("--rerank", type="logical", default=FALSE, help="flag for switching to rerank mode" )
 
 # parse the arguments
 args    <- parser$parse_args()
@@ -59,14 +54,6 @@ dir 	<- args$target_directory
 prefix 	<- args$prefix
 ofile   <- paste(dir, '/', prefix, ".bmscore", sep = "" )
 
-# flag for switching to rerank mode
-rerank  = args$rerank
-
-# flags for printing the curve plots
-print_FDRtool	= args$fdrtool
-print_SFcurve 	= args$SFC
-print_ROC5      = args$ROC5
-print_PRcurve 	= args$PRC
 # flag for verbose output for web usage
 web             = args$web
 
@@ -708,8 +695,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     eval_motif      = evaluateMotif(pvalues, filename=filename, rerank=TRUE, data_eta0=data_eta0)
     motif_ausfc     = eval_motif$ausfc
     motif_eta0      = eval_motif$eta0
-
-    motif_occur     = round(1-motif_eta0, digits=3)
+    motif_occur     = round(1-(motif_eta0 - data_eta0)/data_eta0, digits=3)
 
     # for the webserver
     if(web){
@@ -722,7 +708,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     #   calculate AUC5 under the ROC curve with FDR~(0,0.05)
     #
     ########################################################
-    ROC = plotROC( filename=filename, TP=TP, FP=FP, mfold=mfold)
+    ROC = plotROC(filename=filename, TP=TP, FP=FP, mfold=mfold)
     auc5 = ROC$auc5
 
     ###################################################################
