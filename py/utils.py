@@ -193,50 +193,56 @@ def filter_pwms(models, min_overlap=2):
 
 
 def parse_meme(meme_input_file):
-
     dataset = {}
-
     with open(meme_input_file) as handle:
+
         line = handle.readline()
-        if line.strip() != 'MEME version 4':
+
+        # check the MEME format version
+        if 'MEME version 4' not in line:
             raise ValueError('requires MEME minimal file format version 4')
         else:
             dataset['version'] = line.strip()
 
-        # skip the blank line
-        line = handle.readline()
-
-        # read in the ALPHABET info
-        dataset['alphabet'] = handle.readline().split()[1]
-
-        # skip the blank line
-        line = handle.readline()
-
-        # read in the background letter frequencies
-        line = handle.readline()
-
-        if line != 'Background letter frequencies\n':
-            # if not given, assign 0.25 to each letter
-            dataset['bg_freq'] = [0.25,0.25,0.25,0.25]
-        else:
-            bg_toks = handle.readline().split()[1::2]
-            bg_freqs = [float(f) for f in bg_toks]
-            dataset['bg_freq'] = bg_freqs
-
-        # parse pwms
-        width_pat = re.compile('w= (\d+)')
-
         models = []
         for line in handle:
+
+            # read in the ALPHABET info
+            if line.startswith('ALPHABET'):
+                dataset['alphabet'] = line.split()[1]
+            else:
+                dataset['alphabet'] = 'unknown'
+
+            # skip strands lines
+            if line.startswith('strands'):
+                continue
+
+            if line.startswith('Background letter frequencies'):
+                bg_toks = handle.readline().split()[1::2]
+                bg_freqs = [float(f) for f in bg_toks]
+                dataset['bg_freq'] = bg_freqs
+            else:
+                # if not given, assign 0.25 to each letter
+                dataset['bg_freq'] = [0.25,0.25,0.25,0.25]
+
             if line.startswith('MOTIF'):
                 model = {}
                 model['model_id'] = line.split()[1]
                 model['bg_freq'] = bg_freqs
-                info_line = handle.readline().rstrip('\n')
+
+                # read in the information line
+                readline = True
+                while readline:
+                    line = handle.readline()
+                    if line.startswith('letter-probability matrix'):
+                        readline = False
+                info_line = line.rstrip('\n')
                 model['info'] = info_line
-                width_hit = width_pat.search(info_line)
+                width_hit = re.compile('w= (\d+)').search(info_line)
                 if not width_hit:
                     raise MalformattedMemeError('could not read motif width')
+
+                # read in the PWM
                 pwm_length = int(width_hit.group(1))
                 pwm = []
 
