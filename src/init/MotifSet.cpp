@@ -64,6 +64,9 @@ MotifSet::MotifSet( char* indir,
 				// search for the line starting with "letter-probability matrix"
 				if( line.find("letter-probability matrix") != std::string::npos ){
 
+                    // count the number of motifs
+                    N_++;
+
 					// get the size of alphabet after "alength= "
 					std::stringstream A( line.substr( line.find( "h=" ) + 2 ) );
 					A >> asize;
@@ -83,7 +86,6 @@ MotifSet::MotifSet( char* indir,
                         q = posSet->getQ();
                     }
 
-                    std::cout <<"W=" <<length << "\tq=" << q << std::endl;
 					// construct an initial motif
 					Motif* motif = new Motif( length, K, alphas, f_bg );
 
@@ -121,9 +123,6 @@ MotifSet::MotifSet( char* indir,
 
 					motifs_.push_back( motif );
 
-					// count the number of motifs
-					N_++;
-
 					// free memory for PWM
 					for( size_t y = 0; y < asize; y++ ){
 						delete[] PWM[y];
@@ -134,12 +133,15 @@ MotifSet::MotifSet( char* indir,
                     if( N_ >= maxPWM ){
                         break;
                     }
-				} else {
-                    std::cout << "Error: Cannot find any PWM in the MEME-format file: " << indir
-                              << "\nPlease check the content of your input MEME file." << std::endl;
-                    exit( 1 );
-                }
+				}
 			}
+
+            // check if the MEME file is empty
+            if( N_ == 0 ) {
+                std::cout << "Error: Cannot find any PWM in the MEME-format file: " << indir
+                          << "\nPlease check the content of your input MEME file." << std::endl;
+                exit( 1 );
+           }
 		}
 
 	} else if( tag.compare( "BaMM" ) == 0 ){
@@ -190,6 +192,7 @@ MotifSet::MotifSet( char* indir,
 			N_ = 1;
 		}
 	}
+    std::cout << "Final N=" << N_<<std::endl;
 }
 
 MotifSet::~MotifSet(){
