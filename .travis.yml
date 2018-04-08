@@ -7,11 +7,12 @@ dist: trusty
 install:
     - pip install flake8
     - sudo apt-get install libboost-dev
-    - sudo apt-get install libomp-dev
+
 addons:
   apt:
     packages: &default_packages
     - cmake
+    - libopenmpi-dev
 
 script:
   - mkdir build
