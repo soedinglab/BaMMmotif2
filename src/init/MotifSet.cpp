@@ -134,7 +134,11 @@ MotifSet::MotifSet( char* indir,
                     if( N_ >= maxPWM ){
                         break;
                     }
-				}
+				} else {
+                    std::cout << "Error: Cannot find any PWM in the MEME-format file: " << indir
+                              << "\nPlease check the content of your input MEME file." << std::endl;
+                    exit( 1 );
+                }
 			}
 		}
 
