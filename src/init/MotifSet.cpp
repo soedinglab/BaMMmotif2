@@ -192,7 +192,6 @@ MotifSet::MotifSet( char* indir,
 			N_ = 1;
 		}
 	}
-    std::cout << "Final N=" << N_<<std::endl;
 }
 
 MotifSet::~MotifSet(){

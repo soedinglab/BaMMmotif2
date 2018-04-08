@@ -149,8 +149,8 @@ def motif_search(model):
         shuffle_model['H_model_bg'] = calculate_H_model_bg(shuffle_model['pwm'], bg_freq)
 
         for db_model in db_models_g:
-            suffle_sim, *_ = model_sim(shuffle_model, db_model, min_overlap_g)
-            shuffled_dists.append(suffle_sim)
+            shuffle_sim, *_ = model_sim(shuffle_model, db_model, min_overlap_g)
+            shuffled_dists.append(shuffle_sim)
 
     # we are fitting only the tail of the null scores with an exponential
     # distribution
