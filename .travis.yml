@@ -70,7 +70,6 @@ matrix:
             - clang-3.6
             - util-linux
             - libc++-dev
-            - libiomp-dev
       env: CXX=clang++-3.6 CXXFLAGS="-stdlib=libc++"
     - compiler: clang
       addons:
@@ -83,7 +82,6 @@ matrix:
             - clang-3.7
             - util-linux
             - libc++-dev
-            - libiomp-dev
       env: CXX=clang++-3.7 CXXFLAGS="-stdlib=libc++"
     - compiler: clang
       addons:
@@ -96,7 +94,6 @@ matrix:
             - clang-3.8
             - util-linux
             - libc++-dev
-            - libiomp-dev
       env: CXX=clang++-3.8 CXXFLAGS="-stdlib=libc++"
     - compiler: clang
       addons:
@@ -109,7 +106,6 @@ matrix:
             - clang-3.9
             - util-linux
             - libc++-dev
-            - libiomp-dev
       env: CXX=clang++-3.9 CXXFLAGS="-stdlib=libc++"
 
     - compiler: clang
@@ -123,5 +119,4 @@ matrix:
             - util-linux
             - clang-4.0
             - libc++-dev
-            - libiomp-dev
       env: CXX=clang++-4.0 CXXFLAGS="-stdlib=libc++"

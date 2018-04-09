@@ -7,5 +7,3 @@ target_link_libraries (BaMMmotif LINK_PUBLIC init)
 target_link_libraries (BaMMmotif LINK_PUBLIC evaluation)
 target_link_libraries (BaMMmotif LINK_PUBLIC seq_scoring)
 target_link_libraries (BaMMmotif LINK_PUBLIC seq_generator)
-
-add_library (bamm ${SOURCES})
