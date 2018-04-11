@@ -587,7 +587,8 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
     fdr	    <- result_fdrtool$qval
     eta0 	<- result_fdrtool$param[3]
 
-    if(max(fdr) <= 0) eta0 = 1  # for the case where only a few data points are given
+    # plot p-value density plot
+    if(plots) plotPvalStat(pvalues, filename=pn_pval, eta0=eta0, data_eta0=data_eta0)
 
     # calculate recall
     len 	= length(fdr)
@@ -608,14 +609,14 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
     # set FP / TP ratio to 1:1
     mfold  = eta0 / (1-eta0)
     tfr <- numeric(length(fdr))
+
     if(max(fdr)>0){
         tfr <- (1-fdr)/ fdr * mfold
     } else {
         tfr = 1
     }
 
-    # plot p-value density plot
-    if(plots) plotPvalStat(pvalues, filename=pn_pval, eta0=eta0, data_eta0=data_eta0)
+    if(eta0 < data_eta0) eta0 = data_eta0
 
     # plot TP/FP vs. recall plot
     rrc     = plotRRC(pn_rrc, recall, tfr, rerank)
