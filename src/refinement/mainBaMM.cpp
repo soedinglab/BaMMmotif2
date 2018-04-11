@@ -17,7 +17,6 @@ int main( int nargs, char* args[] ){
               << "=  http://www.mpibpc.mpg.de/soeding  =" << std::endl
               << "======================================" << std::endl;
 
-
 	// seed random number
 	srand( 42 );
 	Global::rngx.seed( 42 );
@@ -190,9 +189,11 @@ int main( int nargs, char* args[] ){
             // calculate p-values based on positive and negative scores
             ScoreSeqSet scorePosSet( motif, bg, Global::posSequenceSet->getSequences() );
             scorePosSet.calcLogOdds();
-            scorePosSet.writeLogOdds(Global::outputDirectory,
-                                     Global::outputFileBasename + "_motif_" + std::to_string( n+1 ),
-                                     Global::ss );
+            if( Global::saveLogOdds ){
+                scorePosSet.writeLogOdds(Global::outputDirectory,
+                                         Global::outputFileBasename + "_motif_" + std::to_string( n+1 ),
+                                         Global::ss );
+            }
             std::vector<std::vector<float>> posScores = scorePosSet.getMopsScores();
             scorePosSet.calcPvalues( posScores, negScores );
 
