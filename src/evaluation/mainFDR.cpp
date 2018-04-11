@@ -62,7 +62,7 @@ int main( int nargs, char* args[] ){
         // from positive training sequence set
         std::vector<std::unique_ptr<Sequence>> negSeqs;
         SeqGenerator negseq(GFdr::posSequenceSet->getSequences(), NULL, GFdr::sOrder);
-        if( !GFdr::fixedNegN ){
+        if( !GFdr::fixedNegN and  GFdr::posSequenceSet->getSequences().size() >= 5000 ){
             negSeqs = negseq.sample_bgseqset_by_fold(GFdr::mFold);
         } else {
             negSeqs = negseq.sample_bgseqset_by_num(GFdr::negN, GFdr::posSequenceSet->getMaxL());

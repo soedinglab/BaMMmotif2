@@ -71,6 +71,23 @@ int main( int nargs, char* args[] ){
                   << "*********************" << std::endl;
 	}
 
+    // sample negative sequence set B1set based on s-mer frequencies
+    // from positive training sequence set
+    std::vector<Sequence*>  negset;
+    std::vector<std::unique_ptr<Sequence>> negSeqs;
+    size_t minSeqN = 5000;
+    SeqGenerator negseq( Global::posSequenceSet->getSequences() );
+    if( Global::posSequenceSet->getSequences().size() >= minSeqN ){
+        negSeqs = negseq.sample_bgseqset_by_fold( Global::mFold );
+    } else {
+        negSeqs = negseq.sample_bgseqset_by_num( minSeqN, Global::posSequenceSet->getMaxL());
+    }
+    // convert unique_ptr to regular pointer
+    for( size_t n = 0; n < negSeqs.size(); n++ ) {
+        negset.push_back( negSeqs[n].release() );
+        negSeqs[n].get_deleter();
+    }
+
 #pragma omp parallel for
     for( size_t n = 0; n < motif_set.getN(); n++ ){
 		// deep copy each motif in the motif set
@@ -160,17 +177,6 @@ int main( int nargs, char* args[] ){
                 }
             }
 
-            std::vector<Sequence*>  negset;
-            // sample negative sequence set B1set based on s-mer frequencies
-            // from positive training sequence set
-            std::vector<std::unique_ptr<Sequence>> negSeqs;
-            SeqGenerator generateNegSeqs( Global::posSequenceSet->getSequences() );
-            negSeqs = generateNegSeqs.sample_bgseqset_by_fold(Global::mFold);
-            // convert unique_ptr to regular pointer
-            for( size_t n = 0; n < negSeqs.size(); n++ ) {
-                negset.push_back( negSeqs[n].release() );
-                negSeqs[n].get_deleter();
-            }
             ScoreSeqSet scoreNegSet( motif, bgModel, negset );
             scoreNegSet.calcLogOdds();
             std::vector<std::vector<float>> negAllScores = scoreNegSet.getMopsScores();
@@ -209,51 +215,6 @@ int main( int nargs, char* args[] ){
 		}
 
         /**
-         * Generate negative sequence set for cross-validation
-         */
-        std::vector<Sequence*>  negset;
-
-        if( Global::B2 ) {
-            // sample negative sequence set B2set based on s-mer frequencies
-            // from the given sampled negative sequence set
-            std::vector<std::unique_ptr<Sequence>> B2Seqs;
-            SeqGenerator b2seqs( Global::negSequenceSet->getSequences() );
-            B2Seqs = b2seqs.sample_bgseqset_by_fold(1);
-            // convert unique_ptr to regular pointer
-            for( size_t n = 0; n < B2Seqs.size(); n++ ) {
-                negset.push_back( B2Seqs[n].release() );
-                B2Seqs[n].get_deleter();
-            }
-        } else if( Global::B3 ) {
-            // take negative seqset as B3set
-            negset = Global::negSequenceSet->getSequences();
-        } else if( Global::B3prime ) {
-            // generate sequences from positive sequences with masked motif
-            Motif *motif_opti = new Motif( *motif_set.getMotifs()[0] );
-            SeqGenerator artificial_set( Global::negSequenceSet->getSequences(), motif_opti );
-            EM model_opti( motif_opti, bgModel, Global::posSequenceSet->getSequences(), Global::q, Global::f );
-            // run one E-step to estimate r
-            model_opti.EStep();
-            std::vector<std::unique_ptr<Sequence>> B1SeqSetPrime;
-            B1SeqSetPrime = artificial_set.seqset_with_motif_masked(model_opti.getR());
-            if ( motif_opti ) delete motif_opti;
-            // draw B1setPrime from the positive sequence set with masked motifs
-            for( size_t n = 0; n < B1SeqSetPrime.size(); n++ ){
-                negset.push_back(B1SeqSetPrime[n].release());
-            }
-        } else {
-            // sample negative sequence set B1set based on s-mer frequencies
-            // from positive training sequence set
-            std::vector<std::unique_ptr<Sequence>> B1Seqs;
-            SeqGenerator b1seqs( Global::posSequenceSet->getSequences() );
-            B1Seqs = b1seqs.sample_bgseqset_by_fold(Global::mFold);
-            // convert unique_ptr to regular pointer
-            for( size_t n = 0; n < B1Seqs.size(); n++ ) {
-                negset.push_back( B1Seqs[n].release() );
-            }
-        }
-
-        /**
          * cross-validate the motif model
          */
 #pragma omp parallel for
@@ -270,6 +231,7 @@ int main( int nargs, char* args[] ){
 		}
 
     }
+
     std::cout << std::endl
               << "******************" << std::endl
               << "*   Statistics   *" << std::endl
