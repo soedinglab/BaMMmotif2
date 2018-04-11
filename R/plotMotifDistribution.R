@@ -85,7 +85,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
         # read in the data
         table <- try(read.table(filename,
                             fileEncoding="latin1", as.is=TRUE, na.strings = "NA",
-                            fill = TRUE, strip.white = TRUE, skip=1, sep = '\t') )
+                            fill = TRUE, strip.white = TRUE, skip=1, sep = '\t'))
 
         strand_length = c(table$V2)
         strand_ind = c(table$V3)
@@ -107,16 +107,21 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
         }
 
         interval = max(max(pos_positions)-strand_center, strand_center-min(pos_positions))
-        interval = as.integer( interval / 10 ) * 10
+        interval = (as.integer( interval / 10 ) +1)* 10
         picname <- paste0( maindir, file_prefix, motif_id, "_distribution.png")
 
         png( filename = picname, width = 800, height = 800 )
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
 
-        pos.strand = density(pos_positions)
+        # calculate weights for kernel density estimation
+        ## use 'counts / n' as weights:
+        pos.strand = density(unique(pos_positions),
+                            weights=table(pos_positions)/length(pos_positions))
 
         if(length(neg_positions) != 0){
-            neg.strand = density(neg_positions)
+            ## use 'counts / n' as weights:
+            neg.strand = density(unique(neg_positions),
+                                weights=table(neg_positions)/length(neg_positions))
             # turn neg strand upside down
             neg.strand$y <- neg.strand$y*-1
 

@@ -506,8 +506,8 @@ plotRRC = function(picname, recall, TFR, rerank){
         mtext("TP/FP Ratio", side=2, line=4, cex = 3.0)
         axis(1, at=c(0,0.5,1), labels = c(0,0.5,1), tick =TRUE, cex.axis=2.5, line=0)
         axis(2, at=c(y_lower,10,y_upper), labels = expression(10^0, 10^1, 10^2), tick=TRUE, cex.axis=2.5, line=0, las=1)
-        text(x = 0.05,y = min(max(TFR+10), 90), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
-        if(max(TFR)>10) text(x = 0.05,y = min(max(TFR/10+1), 90), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
+        text(x = 0.05,y = min(max(TFR)*1.1, 90), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
+        if(max(TFR)>10) text(x = 0.05,y = min(max(TFR/10)*1.1, 70), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
         box(lwd=2.5)
         invisible(dev.off())
 
@@ -545,8 +545,9 @@ plotRRC = function(picname, recall, TFR, rerank){
         mtext("TP/FP Ratio", side=2, line=4, cex = 3.0)
         axis(1, at=c(0,0.5,1), labels = c(0,0.5,1), tick =TRUE, cex.axis=2.5, line=0)
         axis(2, at=c(y_lower,10,y_upper), labels = expression(10^0, 10^1, 10^2), tick=TRUE, cex.axis=2.5, line=0, las=1)
-        text(x = 0.05,y = min(max(TFR+10), 90), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
-        if(max(TFR)>10) text(x = 0.05,y = min(max(TFR/10+1), 90), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
+        text(x = 0.05,y = min(max(TFR)*1.1, 90), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
+        if(max(TFR)>10) text(x = 0.05,y = min(max(TFR/10)*1.1, 70), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
+
         box(lwd=2.5)
         invisible(dev.off())
     }

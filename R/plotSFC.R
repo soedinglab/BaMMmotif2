@@ -465,6 +465,7 @@ plotROC = function( filename, TP, FP, mfold){
     numNeg = numPos * mfold
     TPR <- TP / numPos      # assume all input sequences as positives
     FPR <- FP / numNeg      # assume all background sequences as negatives
+    rbound_refined = rbound
     for(i in seq(1,numNeg)){
         if( FPR[i] >= rbound ){
             rbound_refined = i
