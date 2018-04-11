@@ -352,15 +352,16 @@ pvt.plotlabels <- function(statistic, scale.param, eta0)
 # plot p-value statistics using fdrtool
 plotPvalStat = function(pvalues, filename, eta0, data_eta0){
     png( filename = paste0(filename,".png"), width = 800, height = 800 )
-    histRes <- hist(pvalues,plot=FALSE, breaks=30)
+    histRes <- hist(pvalues, plot=FALSE, breaks=30)
     xvals <- histRes$breaks
     yvals <- histRes$density
-    length(xvals)
-    length(yvals)
+
     xvals <- c(xvals, 0)
     yvals <- c(0, yvals, 0)
 
     par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
+
+    rbound = max(xvals)
 
     plot(xvals,yvals,
     type="S",
@@ -371,10 +372,11 @@ plotPvalStat = function(pvalues, filename, eta0, data_eta0){
     mtext("P-values", side=1, line=4.5, cex = 3)
     mtext("Density", side=2, line=4, cex = 3)
 
-    axis(1,tick =FALSE, cex.axis=2.5, line=1)
+    #axis(1,tick =FALSE, cex.axis=2.5, line=1)
+    axis(1, at=c(0,0.5,1), labels = c(0,0.5,1), tick =FALSE, cex.axis=2.5, line=1)
 
     # mark the negative regions from background sequences
-    rect(0, 0, 1, data_eta0,
+    rect(0, 0, rbound, data_eta0,
         col="grey", angle=45, density=4, lty=NULL, lwd=2, xpd=FALSE)
         lines(xvals,yvals,type="S")
 
@@ -419,7 +421,7 @@ plotPvalStat = function(pvalues, filename, eta0, data_eta0){
     text(cutoff - v_spacer, eta0 - h_spacer, "FP", col="darkred", font=font, cex=text_cex)
     text(cutoff + v_spacer, eta0 + h_spacer, "FN", col="black", font=font, cex=text_cex)
 
-    text(0.5, data_eta0 / 2, "background sequences", font=font, cex=text_cex, col="gray30")
+    text(rbound/2, data_eta0 / 2, "background sequences", font=font, cex=text_cex, col="gray30")
 
     box(lwd=2.5)
 
@@ -438,6 +440,7 @@ plotRRC = function(picname, recall, TFR, rerank){
     sum_area = log10(y_upper)-log10(y_lower)    # the total area
     # make sure TFR does not exceed y_upper
     TFR_modified = c()
+
     for( i in seq(1, length(TFR))) {
         if( TFR[i] > y_upper){
             TFR_modified[i] <- y_upper
@@ -584,6 +587,8 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
     fdr	    <- result_fdrtool$qval
     eta0 	<- result_fdrtool$param[3]
 
+    if(max(fdr) <= 0) eta0 = 1  # for the case where only a few data points are given
+
     # calculate recall
     len 	= length(fdr)
     list 	<- seq(1, len)
@@ -602,7 +607,12 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
 
     # set FP / TP ratio to 1:1
     mfold  = eta0 / (1-eta0)
-    tfr <- (1-fdr)/fdr * mfold
+    tfr <- numeric(length(fdr))
+    if(max(fdr)>0){
+        tfr <- (1-fdr)/ fdr * mfold
+    } else {
+        tfr = 1
+    }
 
     # plot p-value density plot
     if(plots) plotPvalStat(pvalues, filename=pn_pval, eta0=eta0, data_eta0=data_eta0)
