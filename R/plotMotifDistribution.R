@@ -41,10 +41,6 @@ file_suffix = ".occurrence"
 
 for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), collapse="")) ){
 
-    if(!file.exists(file)){
-        print("file does not exist.")
-    }
-
     # get motif number from the filename
     motif_id <- sub(paste(c(maindir, '/', file_prefix), collapse=""), "", file)
     motif_id <- sub(file_suffix, "", motif_id)
@@ -56,7 +52,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
     if( line_number < 3 ){
         print("The input file is empty. No query motif is found in the sequence set.")
         # print out an empty image
-        picname <- paste0( maindir, file_prefix, motif_id, "_distribution.png")
+        picname <- paste0(maindir, file_prefix, motif_id, "_distribution.png")
         png(filename=picname, width=800, height=800)
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
         plot(y=0,
@@ -87,30 +83,41 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
                             fileEncoding="latin1", as.is=TRUE, na.strings = "NA",
                             fill = TRUE, strip.white = TRUE, skip=1, sep = '\t'))
 
-        strand_length = c(table$V2)
-        strand_ind = c(table$V3)
-        pattern_range = c(table$V4)
-        max_strand_length = max(strand_length)
-        strand_center = max_strand_length / 2
-        pos_positions = c()
-        neg_positions = c()
+        seqCount            = line_number - 1
+        strand_length       = c(table$V2)
+        max_strand_length   = max(strand_length)
+        strand_center       = max_strand_length / 2
+        strand_ind          = c(table$V3)
+        negCount            = length(grep('-', strand_ind)) # count negative strands
+        posCount            = seqCount - negCount           # count positive strands
+        start               = as.numeric(lapply(strsplit(table$V4, split='..', fixed=TRUE), `[`, 1))
+        end                 = as.numeric(lapply(strsplit(table$V4, split='..', fixed=TRUE), `[`, 2))
+        motif_pos           = as.integer(( start+end ) / 2) - strand_length / 2 + strand_center
 
-        for( i in seq(1, length(pattern_range)) ){
-            x <- unlist( regmatches(pattern_range[i], gregexpr('\\(?[0-9,]+', pattern_range[i])))
-            x <- as.numeric(gsub('\\(', '-', gsub(',', '', x)))
-            motif_pos = as.integer(( x[2]+x[1] ) / 2) - strand_length[i] / 2 + strand_center
-            if( strand_ind[i] == '+' ){
-                pos_positions = c(pos_positions, na.omit(motif_pos))
-            } else {
-                neg_positions = c(neg_positions, na.omit(motif_pos) - strand_length[i])
+        pos_positions       <- rep(NA, posCount)
+        neg_positions       <- rep(NA, negCount)
+
+        if( negCount!= 0 ){
+            pos_idx = 1
+            neg_idx = 1
+            for( i in seq(1, seqCount) ){
+                if( strand_ind[i] == '+' ){
+                    pos_positions[pos_idx] = motif_pos[i]
+                    pos_idx = pos_idx + 1
+                } else {
+                    neg_positions[neg_idx] = motif_pos[i] - strand_length[i]
+                    neg_idx = neg_idx + 1
+                }
             }
+        } else {
+            pos_positions = motif_pos
         }
 
         interval = max(max(pos_positions)-strand_center, strand_center-min(pos_positions))
-        interval = (as.integer( interval / 10 ) +1)* 10
+        interval = (as.integer(interval/10)+1) * 10
         picname <- paste0( maindir, file_prefix, motif_id, "_distribution.png")
 
-        png( filename = picname, width = 800, height = 800 )
+        png(filename = picname, width = 800, height = 800)
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
 
         # calculate weights for kernel density estimation
@@ -118,7 +125,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
         pos.strand = density(unique(pos_positions),
                             weights=table(pos_positions)/length(pos_positions))
 
-        if(length(neg_positions) != 0){
+        if(negCount!= 0){
             ## use 'counts / n' as weights:
             neg.strand = density(unique(neg_positions),
                                 weights=table(neg_positions)/length(neg_positions))
@@ -131,7 +138,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
                 xlab="", ylab="",
                 type="l", lwd=7.5,
                 col="darkblue",
-                axes=FALSE, cex.axis=3.0, 3.0, cex.main=3.0,
+                axes=FALSE, cex.axis=3.0, cex.main=3.0,
                 xlim = c(strand_center - interval, strand_center + interval),
                 ylim = c(min(neg.strand$y), max(pos.strand$y)
                 )
@@ -148,7 +155,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
             xlab="", ylab="",
             type="l", lwd=7.5,
             col="darkblue",
-            axes=FALSE, cex.axis=3.0, 3.0, cex.main=3.0,
+            axes=FALSE, cex.axis=3.0, cex.main=3.0,
             xlim = c(strand_center - interval, strand_center + interval)
             )
         }
