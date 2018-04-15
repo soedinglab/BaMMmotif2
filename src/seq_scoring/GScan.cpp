@@ -3,7 +3,7 @@
 //
 
 #include "GScan.h"
-
+#include <omp.h>
 char*               GScan::outputDirectory = NULL;		// output directory
 std::string         GScan::outputFileBasename;
 
@@ -15,6 +15,7 @@ bool                GScan::ss = false;					// only search on single strand seque
 
 char*               GScan::negSequenceFilename = NULL;	// filename of negative sequence FASTA file
 SequenceSet*        GScan::negSequenceSet = NULL;		// negative sequence set
+size_t              GScan::mFold = 1;                   // number of negative sequences as multiple of positive sequences
 
 // alphabet options
 char*			    GScan::alphabetType = NULL;			// alphabet type is defaulted to standard which is ACGT
@@ -40,6 +41,9 @@ size_t			    GScan::bgModelOrder = 2;			// background model order, defaults to 2
 std::vector<float>  GScan::bgModelAlpha( bgModelOrder+1, 1.f );// background model alpha
 
 float               GScan::pvalCutoff = 0.0001f;        // cutoff of p-value
+
+// for openMP
+size_t              GScan::threads = 4;
 
 void GScan::init( int nargs, char* args[] ){
 
@@ -92,6 +96,13 @@ int GScan::readArguments( int nargs, char* args[] ){
                 exit( 2 );
             }
             q = std::stof( args[i] );
+        } else if( !strcmp( args[i], "-m" ) or !strcmp( args[i], "--mFold" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following -m/--mFold" << std::endl;
+                exit( 2 );
+            }
+            mFold = std::stoi( args[i] );
         } else if( !strcmp( args[i], "--ss" ) ){
             ss = true;
         } else if( !strcmp( args[i], "--negSeqFile" ) ){
@@ -194,6 +205,13 @@ int GScan::readArguments( int nargs, char* args[] ){
                 exit( 2 );
             }
             pvalCutoff = std::stof( args[i] );
+        } else if( !strcmp( args[i], "--threads" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following --threads" << std::endl;
+                exit( 2 );
+            }
+            threads = std::stoi( args[i] );
         } else {
             std::cerr << "Ignoring unknown option " << args[i] << std::endl;
         }
@@ -229,6 +247,9 @@ int GScan::readArguments( int nargs, char* args[] ){
     }
 
     fileExtension = concatenate2strings( outputFileBasename, baseName( initialModelFilename ) );
+
+    // option for openMP
+    omp_set_num_threads( threads );
 
     return 0;
 }

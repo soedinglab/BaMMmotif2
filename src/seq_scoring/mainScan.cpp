@@ -63,21 +63,20 @@ int main( int nargs, char* args[] ) {
      */
 
     std::vector<Sequence*>  negset;
-    size_t mFold = 10;
     size_t minSeqN = 5000;
     // sample negative sequence set B1set based on s-mer frequencies
     // from positive training sequence set
     std::vector<std::unique_ptr<Sequence>> negSeqs;
     SeqGenerator negseq( GScan::posSequenceSet->getSequences() );
-    negSeqs = negseq.sample_bgseqset_by_fold(mFold);
     if( GScan::posSequenceSet->getSequences().size() >= minSeqN ){
-        negSeqs = negseq.sample_bgseqset_by_fold( mFold);
+        negSeqs = negseq.sample_bgseqset_by_fold( GScan::mFold );
     } else {
         negSeqs = negseq.sample_bgseqset_by_num( minSeqN, GScan::posSequenceSet->getMaxL());
     }
     // convert unique_ptr to regular pointer
     for( size_t n = 0; n < negSeqs.size(); n++ ) {
         negset.push_back( negSeqs[n].release() );
+        negSeqs[n].get_deleter();
     }
 
 #pragma omp parallel for
@@ -129,8 +128,10 @@ int main( int nargs, char* args[] ) {
 
         delete motif;
     }
+
     if( bgModel ) delete bgModel;
     GScan::destruct();
+
     return 0;
 }
 
