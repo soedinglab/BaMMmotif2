@@ -2,6 +2,10 @@ cmake_minimum_required (VERSION 2.8.11 FATAL_ERROR)
 
 project (BaMMmotif-v2)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+include(FindASan)
+
 # link to Boost library
 set (Boost_USE_STATIC_LIBS ON CACHE BOOL "use static libraries from Boost")
 set (Boost_USE_MULTITHREADED ON)
