@@ -226,13 +226,14 @@ void EM::MStep(){
 //            if (y % total == thread_idx) {
                 for (size_t j = 0; j < W_; j++) {
 //                __sync_fetch_and_add(n_[K_][y] + j, r_[n][L-W_-ij+j]);
+//#pragma omp atomic
                     n_[K_][y][j] += r_[n][L - W_ - ij + j];
                 }
 //            }
-        }
+//        }
 
     }
-//    };
+    };
 
     // compute fractional occurrence counts from higher to lower order
     // k runs over all lower orders
@@ -245,8 +246,7 @@ void EM::MStep(){
         }
     }
 
-
-    // update model parameters v[k][y][j] with updated kmer counts, alphas and model order
+    // update model parameters v[k][y][j] with updated k-mer counts, alphas and model order
     motif_->updateV( n_, A_, K_ );
 }
 

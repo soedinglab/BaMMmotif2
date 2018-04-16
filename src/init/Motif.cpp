@@ -226,7 +226,8 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, floa
 	std::vector<Sequence*> posSet = posSeqset->getSequences();
 	std::mt19937 rngx;
 
-#pragma omp parallel for
+//#pragma omp parallel for
+
 	for( size_t n = 0; n < posSet.size(); n++ ){
 
 		size_t LW1 = posSet[n]->getL() - W_ + 1;

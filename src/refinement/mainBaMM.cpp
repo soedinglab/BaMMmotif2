@@ -141,9 +141,9 @@ int main( int nargs, char* args[] ){
             std::cout << "optimized q = " << model.getQ() << std::endl;
 
 		} else {
-
 			std::cout << "Note: the model is not optimized!\n";
 		}
+
         // write out the learned model
         motif->write( Global::outputDirectory,
                       Global::outputFileBasename + "_motif_" + std::to_string( n+1 ) );
@@ -203,6 +203,7 @@ int main( int nargs, char* args[] ){
                                Global::ss );
 
         }
+
         if( motif )		delete motif;
 	}
 

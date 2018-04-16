@@ -1,5 +1,7 @@
 #include "Global.h"
+#ifdef OPENMP
 #include <omp.h>
+#endif
 
 char*               Global::outputDirectory = NULL;			// output directory
 std::string			Global::outputFileBasename;
@@ -317,8 +319,10 @@ int Global::readArguments( int nargs, char* args[] ){
 
     // option for openMP
     opt >> GetOpt::Option( "threads", threads );
+#ifdef OPENMP
     omp_set_num_threads( threads );
-
+#endif
+    
 	// for remaining unknown options
 	if( opt.options_remain() ){
 		printHelp();

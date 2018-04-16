@@ -3,8 +3,7 @@
 
 SequenceSet::SequenceSet( std::string sequenceFilepath,
 							bool singleStrand,
-							std::string intensityFilepath,
-							float q ){
+							std::string intensityFilepath ){
 
 	if( Alphabet::getSize() == 0 ){
 		std::cerr << "Error: Initialize Alphabet before "
@@ -26,8 +25,6 @@ SequenceSet::SequenceSet( std::string sequenceFilepath,
 		intensityFilepath_ = intensityFilepath;
 		readIntensities();
 	}
-
-	q_ = q;
 
 }
 
@@ -56,10 +53,6 @@ size_t SequenceSet::getMinL(){
 
 size_t SequenceSet::getMaxL(){
 	return maxL_;
-}
-
-float SequenceSet::getQ(){
-	return q_;
 }
 
 float* SequenceSet::getBaseFrequencies(){

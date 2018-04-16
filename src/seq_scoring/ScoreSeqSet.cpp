@@ -37,7 +37,7 @@ void ScoreSeqSet::calcLogOdds(){
 
 	mops_scores_.resize( seqSet_.size() );
 
-#pragma omp parallel for
+//#pragma omp parallel for
 	for( size_t n = 0; n < seqSet_.size(); n++ ){
 
 		size_t 	LW1 = seqSet_[n]->getL() - W + 1;
