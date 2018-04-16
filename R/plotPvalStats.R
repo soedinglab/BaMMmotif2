@@ -7,7 +7,7 @@
 # based on the output of BaMM FDR function (.stats file):
 # 1. p-value statistics from FDR for both motif itself and motif tested on the dataset
 # 2. plot Recall-TP/FP ratio curves for both motif itself and motif tested on the dataset
-# 3. output the AURRC and motif occurrence in a .aucscore file
+# 3. output the AURRC and motif occurrence in a .bmscore file
 
 # command for executing this script:
 # ./plotPvalStat.R INPUT_DIR FILE_PREFIX [options]
@@ -56,7 +56,7 @@ web     <- args$web
 plots   <- args$plots
 
 # preset variables
-ofile   <- paste(dir, '/', prefix, ".aucscore", sep = "" )
+ofile   <- paste(dir, '/', prefix, ".bmscore", sep = "" )
 
 ###########################
 ## For this script we need a slightly modified version of the fdrtool function.
