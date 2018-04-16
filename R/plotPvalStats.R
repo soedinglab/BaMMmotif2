@@ -350,7 +350,8 @@ pvt.plotlabels <- function(statistic, scale.param, eta0)
 #-----------------------------------------
 
 # plot p-value statistics using fdrtool
-plotPvalStat = function(pvalues, filename, eta0, data_eta0){
+plotPvalStat = function(pvalues, filename, eta0, data_eta0, rerank){
+
     png( filename = paste0(filename,".png"), width = 800, height = 800 )
     histRes <- hist(pvalues, plot=FALSE, breaks=30)
     xvals <- histRes$breaks
@@ -359,13 +360,19 @@ plotPvalStat = function(pvalues, filename, eta0, data_eta0){
     xvals <- c(xvals, 0)
     yvals <- c(0, yvals, 0)
 
+    if(rerank){
+        mainname = "Motif P-value statistics"
+    } else{
+        mainname = "Dataset P-value statistics"
+    }
+
     par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
 
     rbound = max(xvals)
 
     plot(xvals,yvals,
     type="S",
-    main="P-value statistics",
+    main=mainname,
     xlab="", ylab="",
     lwd=3, axes=FALSE, frame.plot=TRUE, cex.main = 3.0, cex.axis=2.5)
 
@@ -383,9 +390,8 @@ plotPvalStat = function(pvalues, filename, eta0, data_eta0){
     cutoff=0.1      # cutoff for p-values
     abline(v=cutoff, col="red", lwd=4)
 
-    if(eta0 != data_eta0){
-        abline(h=eta0, col="orange", lwd=3, lty=2)
-        #text(0.9, eta0 + 0.05, round(eta0, digits=2)) # label et0 line
+    if(rerank){
+        abline(h=eta0, col="orange", lwd=5, lty=2)
     }
 
     # color FP region
@@ -414,14 +420,14 @@ plotPvalStat = function(pvalues, filename, eta0, data_eta0){
     text_cex = 2
     font = 2
     v_spacer = 0.05
-    h_spacer = 0.06
+    h_spacer = 0.08 / (max(ypoly)-min(ypoly))  # scale the spacer due to the range of y-axis
 
     text(cutoff - v_spacer, eta0 + h_spacer, "TP", col="darkgreen", font=font, cex=text_cex)
     text(cutoff + v_spacer, eta0 - h_spacer, "TN", col="black", font=font, cex=text_cex)
     text(cutoff - v_spacer, eta0 - h_spacer, "FP", col="darkred", font=font, cex=text_cex)
     text(cutoff + v_spacer, eta0 + h_spacer, "FN", col="black", font=font, cex=text_cex)
 
-    text(rbound/2, data_eta0 / 2, "background sequences", font=font, cex=text_cex, col="gray30")
+    text(rbound/2, data_eta0/2, "background sequences", font=font, cex=text_cex, col="gray30")
 
     box(lwd=2.5)
 
@@ -449,14 +455,14 @@ plotRRC = function(picname, recall, TFR, rerank){
         }
     }
 
-    aurrc = sum(diff(recall)*rollmean(log10(TFR_modified),2)) / sum_area
-    aurrc = round(aurrc, digits=3)
+    avrec = sum(diff(recall)*rollmean(log10(TFR_modified),2)) / sum_area
+    avrec = round(avrec, digits=3)
 
     if(rerank){
-        mainname = paste0("Motif Performance, AURRC=", aurrc)
-        unicolor = "darkgreen"
+        mainname = paste0("Motif Performance, AvRec=", avrec)
+        unicolor = "darkblue"
     } else{
-        mainname = paste0("Dataset Performance, AURRC=", aurrc)
+        mainname = paste0("Dataset Performance, AvRec=", avrec)
         unicolor = "darkblue"
     }
 
@@ -505,12 +511,26 @@ plotRRC = function(picname, recall, TFR, rerank){
             col=convertcolor(unicolor,50),
             axes = FALSE, cex.main = 3.0
         )
+        # plot the line when positives:negatives = 1:100
+        par(new=T)
+        plot(recall_low, TFR_low/100,
+        main=mainname,
+        log="y",
+        xlim=c(0,1),ylim=c(y_lower,y_upper),
+        xlab="", ylab="",
+        type="l", lty=3, lwd=7.5,
+        col=convertcolor(unicolor,50),
+        axes = FALSE, cex.main = 3.0
+        )
+
         mtext("Recall = TP/(TP+FN)", side=1, line=4.5, cex = 3.0)
         mtext("TP/FP Ratio", side=2, line=4, cex = 3.0)
         axis(1, at=c(0,0.5,1), labels = c(0,0.5,1), tick =TRUE, cex.axis=2.5, line=0)
         axis(2, at=c(y_lower,10,y_upper), labels = expression(10^0, 10^1, 10^2), tick=TRUE, cex.axis=2.5, line=0, las=1)
         text(x = 0.05,y = min(max(TFR)*1.1, 90), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
-        if(max(TFR)>10) text(x = 0.05,y = min(max(TFR/10)*1.1, 70), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
+        if(max(TFR)>10)     text(x = 0.05, y = min(max(TFR/10)*1.1, 70), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
+        if(max(TFR)>100)    text(x = 0.05, y = min(max(TFR/100)*1.1, 70), cex = 2.0, locator(), labels = c("1:100"), col=unicolor)
+
         box(lwd=2.5)
         invisible(dev.off())
 
@@ -533,6 +553,7 @@ plotRRC = function(picname, recall, TFR, rerank){
         col = convertcolor(unicolor,30),
         border = NA
         )
+
         # plot the line when positives:negatives = 1:10
         par(new=T)
         plot(recall_low, TFR_low/10,
@@ -544,18 +565,32 @@ plotRRC = function(picname, recall, TFR, rerank){
         col=convertcolor(unicolor,50),
         axes = FALSE, cex.main = 3.0
         )
+
+        # plot the line when positives:negatives = 1:100
+        par(new=T)
+        plot(recall_low, TFR_low/100,
+        main=mainname,
+        log="y",
+        xlim=c(0,1),ylim=c(y_lower,y_upper),
+        xlab="", ylab="",
+        type="l", lty=3, lwd=7.5,
+        col=convertcolor(unicolor,50),
+        axes = FALSE, cex.main = 3.0
+        )
+
         mtext("Recall = TP/(TP+FN)", side=1, line=4.5, cex = 3.0)
         mtext("TP/FP Ratio", side=2, line=4, cex = 3.0)
         axis(1, at=c(0,0.5,1), labels = c(0,0.5,1), tick =TRUE, cex.axis=2.5, line=0)
         axis(2, at=c(y_lower,10,y_upper), labels = expression(10^0, 10^1, 10^2), tick=TRUE, cex.axis=2.5, line=0, las=1)
         text(x = 0.05,y = min(max(TFR)*1.1, 90), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
-        if(max(TFR)>10) text(x = 0.05,y = min(max(TFR/10)*1.1, 70), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
+        if(max(TFR)>10)     text(x = 0.05, y = min(max(TFR/10)*1.1, 70), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
+        if(max(TFR)>100)    text(x = 0.05, y = min(max(TFR/100)*1.1, 70), cex = 2.0, locator(), labels = c("1:100"), col=unicolor)
 
         box(lwd=2.5)
         invisible(dev.off())
     }
-    # access the aurrc value
-    return( list(aurrc=aurrc) )
+    # access the avrec value
+    return( list(avrec=avrec) )
 }
 
 #--------------------------
@@ -588,7 +623,7 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
     eta0 	<- result_fdrtool$param[3]
 
     # plot p-value density plot
-    if(plots) plotPvalStat(pvalues, filename=pn_pval, eta0=eta0, data_eta0=data_eta0)
+    if(plots) plotPvalStat(pvalues, filename=pn_pval, eta0=eta0, data_eta0=data_eta0, rerank)
 
     # calculate recall
     len 	= length(fdr)
@@ -611,19 +646,21 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
     tfr <- numeric(length(fdr))
 
     if(max(fdr)>0){
-        tfr <- (1-fdr)/ fdr * mfold
+        tfr <- (1-fdr)/fdr * mfold
     } else {
         tfr = 1
     }
+    recall[cutoff] = 1
+    tfr[cutoff] = 1
 
     if(eta0 < data_eta0) eta0 = data_eta0
 
     # plot TP/FP vs. recall plot
     rrc     = plotRRC(pn_rrc, recall, tfr, rerank)
-    aurrc   = rrc$aurrc     # get AURRC score
+    avrec   = rrc$avrec     # get AURRC score
 
     # return to the results
-    return( list(aurrc=aurrc, eta0=eta0) )
+    return( list(avrec=avrec, eta0=eta0) )
 
 }
 
@@ -634,7 +671,7 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
 #--------------
 
 results = c()
-resultTitle = paste0(c("TF", "#", "d_aurrc", "d_occur", "m_aurrc", "m_occur"), collapse="\t")
+resultTitle = paste0(c("TF", "#", "d_avrec", "d_occur", "m_avrec", "m_occur"), collapse="\t")
 results = c(results, resultTitle)
 
 for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))) {
@@ -671,16 +708,16 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     # evaluate motif on the dataset
     eval_dataset    = evaluateMotif(pvalues, filename = filename, rerank=FALSE, data_eta0=data_eta0)
     data_occur      = occurrence                             # acquire motif occurrence
-    data_aurrc      = eval_dataset$aurrc                     # acquire AURRC score
+    data_avrec      = eval_dataset$avrec                     # acquire AURRC score
 
     # evaluate motif indenpendent from dataset
     eval_motif      = evaluateMotif(pvalues, filename = filename, rerank=TRUE, data_eta0=data_eta0)
     motif_eta0      = eval_motif$eta0
     motif_occur     = round((1-motif_eta0)*(1+mfold), digits=3) # acquire motif occurrence
-    motif_aurrc     = eval_motif$aurrc                      # acquire AURRC score
+    motif_avrec     = eval_motif$avrec                      # acquire AURRC score
 
     # output the result
-    resultString = paste0(c(prefix, motif_num, data_aurrc, data_occur, motif_aurrc, motif_occur), collapse="\t")
+    resultString = paste0(c(prefix, motif_num, data_avrec, data_occur, motif_avrec, motif_occur), collapse="\t")
 
     if(web){
         message(motif_occur)
