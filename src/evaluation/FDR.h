@@ -24,9 +24,9 @@ class FDR {
 
 public:
 
-	FDR( std::vector<Sequence*> posSeqs, std::vector<Sequence*> negSeqs, float q = 0.9f,
+	FDR( std::vector<Sequence*> posSeqs, std::vector<Sequence*> negSeqs,
          Motif* motif = NULL, BackgroundModel* bgmodel = NULL,
-         size_t cvFold = 5, bool mops = false, bool zoops = true,
+         size_t cvFold = 4, bool mops = false, bool zoops = true,
          bool savePRs = true, bool savePvalues = false, bool saveLogOdds = false
         );
 	~FDR();

@@ -61,7 +61,8 @@ int main( int nargs, char* args[] ){
                         Global::posSequenceSet->getBaseFrequencies(),
                         Global::modelOrder,
                         Global::modelAlpha,
-                        Global::maxPWM);
+                        Global::maxPWM,
+                        Global::q );
 
 	if( Global::verbose ){
         std::cout << std::endl
@@ -87,7 +88,7 @@ int main( int nargs, char* args[] ){
         negSeqs[n].get_deleter();
     }
 
-#pragma omp parallel for
+//#pragma omp parallel for
     for( size_t n = 0; n < motif_set.getN(); n++ ){
 		// deep copy each motif in the motif set
 		Motif* motif = new Motif( *motif_set.getMotifs()[n] );
@@ -106,9 +107,8 @@ int main( int nargs, char* args[] ){
 
 		// optimize the model with either EM or Gibbs sampling
 		if( Global::EM ){
-			EM model( motif, bgModel, Global::posSequenceSet->getSequences(),
-                      Global::q, Global::optimizeQ, Global::verbose, Global::f );
-			// learn motifs by EM
+			EM model( motif, bgModel, Global::posSequenceSet->getSequences(),Global::optimizeQ, Global::verbose, Global::f );
+			// learn motifs by EMq
 			if( !Global::advanceEM ) {
                 model.optimize();
             } else {
@@ -127,7 +127,7 @@ int main( int nargs, char* args[] ){
 
 		} else if ( Global::CGS ){
 			GibbsSampling model( motif, bgModel, Global::posSequenceSet->getSequences(),
-                                 Global::q, !Global::noQSampling, Global::verbose );
+                                 !Global::noQSampling, Global::verbose );
 			// learn motifs by collapsed Gibbs sampling
 			model.optimize();
 			// write model parameters on the disc
@@ -218,11 +218,11 @@ int main( int nargs, char* args[] ){
         /**
          * cross-validate the motif model
          */
-#pragma omp parallel for
+//#pragma omp parallel for
         for( size_t n = 0; n < motif_set.getN(); n++ ){
 			Motif* motif = new Motif( *motif_set.getMotifs()[n] );
 			FDR fdr( Global::posSequenceSet->getSequences(), negset,
-                     Global::q, motif, bgModel, Global::cvFold,
+                     motif, bgModel, Global::cvFold,
                      Global::mops, Global::zoops,
                      Global::savePRs, Global::savePvalues, Global::saveLogOdds );
 			fdr.evaluateMotif( Global::EM, Global::CGS, Global::optimizeQ, Global::advanceEM, Global::f );

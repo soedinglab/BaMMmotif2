@@ -46,7 +46,8 @@ int main( int nargs, char* args[] ){
                         GFdr::negSequenceSet->getBaseFrequencies(),
                         GFdr::modelOrder,
                         GFdr::modelAlpha,
-                        GFdr::maxPWM );
+                        GFdr::maxPWM,
+                        GFdr::q );
 
     /**
      * Generate negative sequence set for cross-validation
@@ -70,6 +71,7 @@ int main( int nargs, char* args[] ){
         // convert unique_ptr to regular pointer
         for (size_t n = 0; n < negSeqs.size(); n++) {
             negset.push_back(negSeqs[n].release());
+            negSeqs[n].get_deleter();
         }
     }
 
@@ -103,7 +105,7 @@ int main( int nargs, char* args[] ){
         assert( motif->getW() <= minPosL );
         assert( motif->getW() <= minNegL );
 
-        FDR fdr( posset, negset, GFdr::q,
+        FDR fdr( posset, negset,
                  motif, bgModel,
                  GFdr::cvFold, GFdr::mops, GFdr::zoops,
                  true, GFdr::savePvalues, GFdr::saveLogOdds );

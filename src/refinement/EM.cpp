@@ -2,14 +2,14 @@
 // Created by wanwan on 16.08.17.
 //
 #include "EM.h"
+#include <omp.h>
 
 EM::EM( Motif* motif, BackgroundModel* bgModel,
-        std::vector<Sequence*> seqs,
-        float q, bool optimizeQ, bool verbose, float f ){
+        std::vector<Sequence*> seqs, bool optimizeQ, bool verbose, float f ){
 
     motif_      = motif;
 	bgModel_    = bgModel;
-	q_          = q;
+	q_          = motif->getQ();    // get fractional prior q from initial motifs
     f_          = f;
 	seqs_       = seqs;
     optimizeQ_  = optimizeQ;
@@ -210,7 +210,12 @@ void EM::MStep(){
 
     // compute fractional occurrence counts for the highest order K
     // n runs over all sequences
-//#pragma omp parallel for
+//#pragma omp parallel
+//    {
+//        int thread_idx = omp_get_thread_num();
+//        int total = omp_get_num_threads();
+//
+//#pragma omp for
     for( size_t n = 0; n < seqs_.size(); n++ ){
         size_t L = seqs_[n]->getL();
         size_t* kmer = seqs_[n]->getKmer();
@@ -218,13 +223,16 @@ void EM::MStep(){
         // ij = i+j runs over all positions i on sequence n
         for( size_t ij = 0; ij < L-W_+1; ij++ ){
             size_t y = kmer[ij] % Y_[K_+1];
-            for( size_t j = 0; j < W_; j++ ){
+//            if (y % total == thread_idx) {
+                for (size_t j = 0; j < W_; j++) {
 //                __sync_fetch_and_add(n_[K_][y] + j, r_[n][L-W_-ij+j]);
-                n_[K_][y][j] += r_[n][L-W_-ij+j];
-            }
+                    n_[K_][y][j] += r_[n][L - W_ - ij + j];
+                }
+//            }
         }
 
     }
+//    };
 
     // compute fractional occurrence counts from higher to lower order
     // k runs over all lower orders

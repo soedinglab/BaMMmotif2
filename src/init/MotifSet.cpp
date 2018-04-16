@@ -8,7 +8,8 @@ MotifSet::MotifSet( char* indir,
                     float* f_bg,
                     size_t K,
                     std::vector<float> alphas,
-                    size_t maxPWM ){
+                    size_t maxPWM,
+                    float glob_q ){
 	N_ = 0;
 
 	if( tag.compare( "bindingsites" ) == 0 ){
@@ -29,7 +30,7 @@ MotifSet::MotifSet( char* indir,
 
 		length += l_flank + r_flank;
 
-		Motif* motif = new Motif( length, K, alphas, f_bg );
+		Motif* motif = new Motif( length, K, alphas, f_bg, glob_q );
 
 		motif->initFromBindingSites( indir, l_flank, r_flank );
 
@@ -83,11 +84,11 @@ MotifSet::MotifSet( char* indir,
                         std::stringstream Q(line.substr(line.find("occur=") + 7) );
                         Q >> q;
                     } else {
-                        q = posSet->getQ();
+                        q = glob_q;
                     }
 
 					// construct an initial motif
-					Motif* motif = new Motif( length, K, alphas, f_bg );
+					Motif* motif = new Motif( length, K, alphas, f_bg, q );
 
 					// parse PWM for each motif
 					float** PWM = new float*[asize];
@@ -182,7 +183,7 @@ MotifSet::MotifSet( char* indir,
 			model_order -= 1;
 
 			// construct an initial motif
-			Motif* motif = new Motif( model_length, K, alphas, f_bg );
+			Motif* motif = new Motif( model_length, K, alphas, f_bg, glob_q );
 
 			// initialize motif from file
 			motif->initFromBaMM( indir, l_flank, r_flank );

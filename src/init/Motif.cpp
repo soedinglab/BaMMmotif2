@@ -2,11 +2,12 @@
 #include <random>       // std::mt19937, std::discrete_distribution
 #include "Motif.h"
 
-Motif::Motif( size_t length, size_t K, std::vector<float> alpha, float* f_bg ){
+Motif::Motif( size_t length, size_t K, std::vector<float> alpha, float* f_bg, float glob_q ){
 
 	W_ = length;
 	K_ = K;
 	C_ = 0;
+    q_ = glob_q;
 
 	for( size_t k = 0; k < K_+5; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
@@ -22,16 +23,16 @@ Motif::Motif( size_t length, size_t K, std::vector<float> alpha, float* f_bg ){
 	}
 
 	v_ = ( float*** )calloc( K_+1, sizeof( float** ) );
-	n_ = ( float*** )calloc( K_+1, sizeof( float** ) );
+	n_ = ( int*** )calloc( K_+1, sizeof( int** ) );
 	p_ = ( float*** )calloc( K_+1, sizeof( float** ) );
 	A_ = ( float** )calloc( K_+1, sizeof( float* ) );
 	for( size_t k = 0; k < K_+1; k++ ){
 		v_[k] = ( float** )calloc( Y_[k+1], sizeof( float* ) );
-		n_[k] = ( float** )calloc( Y_[k+1], sizeof( float* ) );
+		n_[k] = ( int** )calloc( Y_[k+1], sizeof( int* ) );
 		p_[k] = ( float** )calloc( Y_[k+1], sizeof( float* ) );
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
 			v_[k][y] = ( float* )calloc( W_, sizeof( float ) );
-			n_[k][y] = ( float* )calloc( W_, sizeof( float ) );
+			n_[k][y] = ( int* )calloc( W_, sizeof( int ) );
 			p_[k][y] = ( float* )calloc( W_, sizeof( float ) );
 		}
 		A_[k] = ( float* )calloc( W_, sizeof( float ) );
@@ -54,18 +55,19 @@ Motif::Motif( const Motif& other ){ 		// copy constructor
 	A_ = other.A_;
 	Y_ = other.Y_;
 	C_ = other.C_;
+    q_ = other.q_;
 
 	v_ = ( float*** )malloc( ( K_+1 ) * sizeof( float** ) );
-	n_ = ( float*** )malloc( ( K_+1 ) * sizeof( float** ) );
+	n_ = ( int*** )malloc( ( K_+1 ) * sizeof( int** ) );
 	p_ = ( float*** )malloc( ( K_+1 ) * sizeof( float** ) );
 	A_ = ( float** )malloc( ( K_+1 ) * sizeof( float* ) );
 	for( size_t k = 0; k < K_+1; k++ ){
 		v_[k] = ( float** )malloc( Y_[k+1] * sizeof( float* ) );
-		n_[k] = ( float** )malloc( Y_[k+1] * sizeof( float* ) );
+		n_[k] = ( int** )malloc( Y_[k+1] * sizeof( int* ) );
 		p_[k] = ( float** )malloc( Y_[k+1] * sizeof( float* ) );
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
 			v_[k][y] = ( float* )malloc( W_ * sizeof( float ) );
-			n_[k][y] = ( float* )malloc( W_ * sizeof( float ) );
+			n_[k][y] = ( int* )malloc( W_ * sizeof( int ) );
 			p_[k][y] = ( float* )malloc( W_ * sizeof( float ) );
 			for( size_t j = 0; j < W_; j++ ){
 				v_[k][y][j] = other.v_[k][y][j];
@@ -85,7 +87,6 @@ Motif::Motif( const Motif& other ){ 		// copy constructor
 		for( size_t j = 0; j < W_; j++ ){
 			s_[y][j] = other.s_[y][j];
 		}
-
 	}
 
 	f_bg_ = other.f_bg_;
@@ -180,11 +181,13 @@ void Motif::initFromBindingSites( char* indir, size_t l_flank, size_t r_flank ){
 // initialize v from PWM file
 void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, float q ){
 
+    q_ = q;
+
 	// set k-mer counts to zero
 	for( size_t k = 0; k < K_+1; k++ ){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
 			for( size_t j = 0; j < W_; j++ ){
-				n_[k][y][j] = 0.0f;
+				n_[k][y][j] = 0;
 			}
 		}
 	}
@@ -223,6 +226,7 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, floa
 	std::vector<Sequence*> posSet = posSeqset->getSequences();
 	std::mt19937 rngx;
 
+#pragma omp parallel for
 	for( size_t n = 0; n < posSet.size(); n++ ){
 
 		size_t LW1 = posSet[n]->getL() - W_ + 1;
@@ -274,7 +278,8 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, floa
 			for( size_t k = 0; k < K_+1; k++ ){
 				for( size_t j = 0; j < W_; j++ ){
 					size_t y = kmer[z-1+j] % Y_[k+1];
-					n_[k][y][j]++;
+                    __sync_fetch_and_add(&(n_[k][y][j]), 1);
+					//n_[k][y][j]++;
 				}
 			}
 		}
@@ -370,7 +375,7 @@ float** Motif::getS(){
 	return s_;
 }
 
-void Motif::calculateV( float*** n ){
+void Motif::calculateV( int*** n ){
 	// Note: This function is written for reading in bindingsite files.
 
     // for k = 0, v_ = freqs:

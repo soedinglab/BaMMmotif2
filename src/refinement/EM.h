@@ -18,11 +18,11 @@ class EM {
 public:
 
     EM( Motif* motif, BackgroundModel* bgModel, std::vector<Sequence*> seqs,
-        float q, bool optimizeQ = true, bool verbose = false, float f = 0.2f );
+        bool optimizeQ = true, bool verbose = false, float f = 0.2f );
     ~EM();
 
     int                     optimize();         // run EM optimization
-    int                     mask();          // improve the EM optimization
+    int                     mask();             // improve the EM optimization
     void                    print();            // print out optimized model v
     void					write( char* odir, std::string basename, bool ss );
                                                 // write out the EM parameters such as n, pos, r
@@ -59,7 +59,7 @@ private:
 
     float 					llikelihood_        = 0.0f;     // log likelihood for each iteration
     float					epsilon_            = 0.01f;	// threshold for parameter v convergence
-    size_t					maxEMIterations_    = std::numeric_limits<size_t>::max();
+    size_t					maxEMIterations_    = 1000;
     bool                    optimizeQ_;
 
     bool                    verbose_;           // show the output of each EM iteration
