@@ -71,7 +71,7 @@ int main( int nargs, char* args[] ) {
     if( GScan::posSequenceSet->getSequences().size() >= minSeqN ){
         negSeqs = negseq.sample_bgseqset_by_fold( GScan::mFold );
     } else {
-        negSeqs = negseq.sample_bgseqset_by_num( minSeqN, GScan::posSequenceSet->getMaxL());
+        negSeqs = negseq.sample_bgseqset_by_num( minSeqN, GScan::posSequenceSet->getMaxL() );
     }
     // convert unique_ptr to regular pointer
     for( size_t n = 0; n < negSeqs.size(); n++ ) {

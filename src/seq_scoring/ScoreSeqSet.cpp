@@ -6,7 +6,6 @@
  */
 
 #include "ScoreSeqSet.h"
-
 #include <float.h>		// -FLT_MAX
 
 ScoreSeqSet::ScoreSeqSet( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqSet ){

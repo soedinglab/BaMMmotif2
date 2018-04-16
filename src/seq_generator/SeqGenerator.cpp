@@ -74,7 +74,7 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_bgseqset_by_fold(siz
 	std::vector<std::unique_ptr<Sequence>> negset;
 
 	calculate_kmer_frequency();
-
+    // todo: can be parallised
 	for( size_t i = 0; i < seqs_.size(); i++ ){
 		size_t L = seqs_[i]->getL();
 		for( size_t n = 0; n < fold; n++ ){
@@ -93,6 +93,7 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_bgseqset_by_num(size
 
     calculate_kmer_frequency();
 
+    // todo: can be parallised
     for( size_t n = 0; n < negN; n++ ){
         negset.push_back( bg_sequence(maxL) );
     }

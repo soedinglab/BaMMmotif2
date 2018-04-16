@@ -3,7 +3,10 @@
 //
 
 #include "GScan.h"
+#ifdef OPENMP
 #include <omp.h>
+#endif
+
 char*               GScan::outputDirectory = NULL;		// output directory
 std::string         GScan::outputFileBasename;
 
@@ -249,7 +252,9 @@ int GScan::readArguments( int nargs, char* args[] ){
     fileExtension = concatenate2strings( outputFileBasename, baseName( initialModelFilename ) );
 
     // option for openMP
+#ifdef OPENMP
     omp_set_num_threads( threads );
+#endif
 
     return 0;
 }
