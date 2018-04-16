@@ -2,7 +2,6 @@
 // Created by wanwan on 16.08.17.
 //
 #include "EM.h"
-#include <omp.h>
 
 EM::EM( Motif* motif, BackgroundModel* bgModel,
         std::vector<Sequence*> seqs, bool optimizeQ, bool verbose, float f ){
