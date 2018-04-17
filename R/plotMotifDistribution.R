@@ -53,6 +53,8 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
     filename = paste0(c(maindir, file_prefix, motif_id, file_suffix), collapse="")
     line_number = as.integer(system2("wc", args=c("-l", filename, " | awk '{print $1}'" ), stdout = TRUE))
 
+    label_size = 2
+    main_title = "Motif Distribution"
     if( line_number < 3 ){
         print("The input file is empty. No query motif is found in the sequence set.")
         # print out an empty image
@@ -60,24 +62,24 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
         png(filename=picname, width=1000, height=400)
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
         plot(y=0,
-            main="Motif Positions",
+            main=main_title,
             xlab="", ylab="",
             type="l", lwd=7.5,
             col="darkblue",
-            axes=FALSE, cex.axis=3.0, cex.main=3.0,
+            axes=FALSE, cex.axis=label_size, cex.main=label_size+0.5,
             xlim = c(-100, 100)
         )
         abline(v=0, col="grey", lwd=3)
         abline(h=0, col="grey", lwd=3)
-        mtext("Position relative to peak summit", side=1, line=4.5, cex=3.5)
-        mtext("Density", side=2, line=4, cex = 3.5)
+        mtext("Position relative to peak summit", side=1, line=4.5, cex=label_size)
+        mtext("Density", side=2, line=4, cex=label_size)
 
         axis(1, at = c(-100, 0, 100),
             labels = c(-100, 0, 100),
-            tick = FALSE, cex.axis=3.0, line=1)
-            axis(2, tick = FALSE, cex.axis=3.0, line=0.5)
+            tick = FALSE, cex.axis=label_size, line=1)
+            axis(2, tick = FALSE, cex.axis=label_size, line=0.5)
 
-        legend("topright",legend="no motif found", col="darkblue", cex=2.5, bty="n", text.col="darkblue")
+        legend("topright",legend="no motif found", col="darkblue", cex=label_size, bty="n", text.col="darkblue")
         box(lwd=2.5)
         invisible(dev.off())
 
@@ -101,7 +103,6 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
         pos_positions       <- rep(NA, posCount)
         neg_positions       <- rep(NA, negCount)
 
-        label_size          = 2
         if( negCount!= 0 ){
             pos_idx = 1
             neg_idx = 1
@@ -122,24 +123,25 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
         interval = (as.integer(interval/10)+1) * 10
         picname <- paste0( maindir, file_prefix, motif_id, "_distribution.png")
 
-        png(filename = picname, width = 1000, height = 400)
+        png(filename = picname, width = 800, height = 800)
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
 
         # calculate weights for kernel density estimation
         ## use 'counts / n' as weights:
-        pos.strand = density(unique(pos_positions),
-                            weights=table(pos_positions)/length(pos_positions))
+        #pos.strand = density(unique(pos_positions), weights=table(pos_positions)/length(pos_positions))
 
+        pos.strand = density((pos_positions))
         if(negCount!= 0){
             ## use 'counts / n' as weights:
-            neg.strand = density(unique(neg_positions),
-                                weights=table(neg_positions)/length(neg_positions))
+            #neg.strand = density(unique(neg_positions), weights=table(neg_positions)/length(neg_positions))
+
+            neg.strand = density((neg_positions))
             # turn neg strand upside down
             neg.strand$y <- neg.strand$y*-1
 
             # for plotting distribution on postive strand
             plot(pos.strand,
-                main="Motif Positions",
+                main=main_title,
                 xlab="", ylab="",
                 type="l", lwd=7.5,
                 col="darkblue",
@@ -156,7 +158,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
 
         } else {
             plot(pos.strand,
-            main="Motif Positions",
+            main=main_title,
             xlab="", ylab="",
             type="l", lwd=7.5,
             col="darkblue",

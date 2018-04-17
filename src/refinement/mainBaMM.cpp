@@ -7,7 +7,7 @@
 #include "../evaluation/FDR.h"
 
 int main( int nargs, char* args[] ){
-    
+
     auto t0_wall = std::chrono::high_resolution_clock::now();
 
     std::cout << std::endl
