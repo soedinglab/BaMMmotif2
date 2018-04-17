@@ -1,4 +1,5 @@
 #include <iomanip>
+#include <omp.h>
 
 #include "Global.h"
 #include "EM.h"
@@ -7,8 +8,9 @@
 
 int main( int nargs, char* args[] ){
 
-	clock_t t0 = clock();
+	double t0_omp = omp_get_wtime();
 
+    clock_t t0 = clock();
     std::cout << std::endl
               << "======================================" << std::endl
               << "=      Welcome to use BaMM!motif     =" << std::endl
@@ -241,9 +243,11 @@ int main( int nargs, char* args[] ){
               << "******************" << std::endl;
 	Global::printStat();
 
-	fprintf( stdout, "\n------ Runtime: %.2f seconds (%0.2f minutes) -------\n",
-			( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC,
-			( ( float )( clock() - t0 ) ) / ( CLOCKS_PER_SEC * 60.0f ) );
+    std::cout << std::endl << "------ Walltime: " << omp_get_wtime() - t0_omp <<" seconds -------" << std::endl;
+
+	fprintf( stdout, "------ CPU time: %.2f seconds (%0.2f minutes) -------\n",
+			( (float)( clock() - t0 ) ) / CLOCKS_PER_SEC,
+			( (float)( clock() - t0 ) ) / ( CLOCKS_PER_SEC * 60.0 ) );
 
 	// free memory
 	if( bgModel ) delete bgModel;

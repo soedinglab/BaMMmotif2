@@ -196,6 +196,21 @@ void EM::EStep(){
 
 }
 
+// for parallelizing MStep()
+inline void atomic_float_add(float *source, const float operand) {
+    union {
+        unsigned int intVal;
+        float floatVal;
+    } newVal, prevVal;
+
+    do {
+        prevVal.floatVal = *source;
+        newVal.floatVal = prevVal.floatVal + operand;
+    } while (__atomic_compare_exchange_n( (volatile unsigned int *)source,
+                                          &prevVal.intVal, newVal.intVal, 0,
+                                          __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST) == false );
+}
+
 void EM::MStep(){
 
     // reset the fractional counts n
@@ -209,29 +224,19 @@ void EM::MStep(){
 
     // compute fractional occurrence counts for the highest order K
     // n runs over all sequences
-//#pragma omp parallel
-//    {
-//        int thread_idx = omp_get_thread_num();
-//        int total = omp_get_num_threads();
-//
-//#pragma omp for
+#pragma omp parallel for
     for( size_t n = 0; n < seqs_.size(); n++ ){
         size_t L = seqs_[n]->getL();
         size_t* kmer = seqs_[n]->getKmer();
 
         // ij = i+j runs over all positions i on sequence n
         for( size_t ij = 0; ij < L-W_+1; ij++ ){
-            size_t y = kmer[ij] % Y_[K_+1];
-//            if (y % total == thread_idx) {
-                for (size_t j = 0; j < W_; j++) {
-//                __sync_fetch_and_add(n_[K_][y] + j, r_[n][L-W_-ij+j]);
-//#pragma omp atomic
-                    n_[K_][y][j] += r_[n][L - W_ - ij + j];
-                }
-//            }
-//        }
-
-    }
+            size_t y = kmer[ij] % Y_[K_+1]; // todo: time-consuming
+            for (size_t j = 0; j < W_; j++) {
+                // parallize for: n_[K_][y][j] += r_[n][L - W_ - ij + j];
+                atomic_float_add(&(n_[K_][y][j]), r_[n][L - W_ - ij + j]);
+            }
+        }
     };
 
     // compute fractional occurrence counts from higher to lower order
