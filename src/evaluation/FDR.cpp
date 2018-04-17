@@ -257,7 +257,7 @@ void FDR::calculatePR(){
                 // p-value is calculated by relying on a parametric fit of the exponentially cumulative distribution
                 p_value = n_top * expf( ( negScoreMax_[n_top] - Sl ) / lambda ) / negN;
             }
-            
+
 			PN_Pvalue_.push_back( p_value );
 
 			// take the faction of q sequences as real positives

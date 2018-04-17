@@ -53,14 +53,14 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
         print("The input file is empty. No query motif is found in the sequence set.")
         # print out an empty image
         picname <- paste0(maindir, file_prefix, motif_id, "_distribution.png")
-        png(filename=picname, width=800, height=800)
+        png(filename=picname, width=1000, height=400)
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
         plot(y=0,
             main="Motif Positions",
             xlab="", ylab="",
             type="l", lwd=7.5,
             col="darkblue",
-            axes=FALSE, cex.axis=3.0, 3.0, cex.main=3.0,
+            axes=FALSE, cex.axis=3.0, cex.main=3.0,
             xlim = c(-100, 100)
         )
         abline(v=0, col="grey", lwd=3)
@@ -97,6 +97,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
         pos_positions       <- rep(NA, posCount)
         neg_positions       <- rep(NA, negCount)
 
+        label_size          = 2
         if( negCount!= 0 ){
             pos_idx = 1
             neg_idx = 1
@@ -117,7 +118,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
         interval = (as.integer(interval/10)+1) * 10
         picname <- paste0( maindir, file_prefix, motif_id, "_distribution.png")
 
-        png(filename = picname, width = 800, height = 800)
+        png(filename = picname, width = 1000, height = 400)
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
 
         # calculate weights for kernel density estimation
@@ -138,7 +139,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
                 xlab="", ylab="",
                 type="l", lwd=7.5,
                 col="darkblue",
-                axes=FALSE, cex.axis=3.0, cex.main=3.0,
+                axes=FALSE, cex.axis=label_size, cex.main=label_size+0.5,
                 xlim = c(strand_center - interval, strand_center + interval),
                 ylim = c(min(neg.strand$y), max(pos.strand$y)
                 )
@@ -147,7 +148,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
             # for plotting distribution on negative strand
             lines(neg.strand, type="l", lwd=7.5, col="darkred")
             polygon(neg.strand, col=convertcolor("darkred",30), border = NA)
-            legend("bottomright",legend="- strand", col="darkred", cex=2.5, bty="n", text.col="darkred")
+            legend("bottomright",legend="- strand", col="darkred", cex=label_size, bty="n", text.col="darkred")
 
         } else {
             plot(pos.strand,
@@ -155,20 +156,20 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
             xlab="", ylab="",
             type="l", lwd=7.5,
             col="darkblue",
-            axes=FALSE, cex.axis=3.0, cex.main=3.0,
+            axes=FALSE, cex.axis=label_size, cex.main=label_size+0.5,
             xlim = c(strand_center - interval, strand_center + interval)
             )
         }
 
         abline(h=0, v=strand_center, col="grey", lwd=3)
-        mtext("Position relative to peak summit", side=1, line=4.5, cex=3.5)
-        mtext("Density", side=2, line=4, cex = 3.5)
+        mtext("Position relative to peak summit", side=1, line=4.5, cex=label_size)
+        mtext("Density", side=2, line=4, cex=label_size)
         axis(1, at=c(strand_center - interval, strand_center, strand_center + interval),
             labels = c(-interval, 0, interval),
-            tick = FALSE, cex.axis=3.0, line=1)
-        axis(2, tick = FALSE, cex.axis=3.0, line=0.5)
+            tick = FALSE, cex.axis=label_size, line=1)
+        axis(2, tick = FALSE, cex.axis=label_size, line=0.5)
         polygon(pos.strand, col=convertcolor("darkblue", 30), border = NA)
-        legend("topright",legend="+ strand", col="darkblue", cex=2.5, bty="n", text.col="darkblue")
+        legend("topright",legend="+ strand", col="darkblue", cex=label_size, bty="n", text.col="darkblue")
         box(lwd=2.5)
 
         invisible(dev.off())
