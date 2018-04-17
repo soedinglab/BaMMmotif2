@@ -1,5 +1,5 @@
 #include <iomanip>
-#include <omp.h>
+#include <chrono>
 
 #include "Global.h"
 #include "EM.h"
@@ -7,10 +7,9 @@
 #include "../evaluation/FDR.h"
 
 int main( int nargs, char* args[] ){
+    
+    auto t0_wall = std::chrono::high_resolution_clock::now();
 
-	double t0_omp = omp_get_wtime();
-
-    clock_t t0 = clock();
     std::cout << std::endl
               << "======================================" << std::endl
               << "=      Welcome to use BaMM!motif     =" << std::endl
@@ -243,11 +242,9 @@ int main( int nargs, char* args[] ){
               << "******************" << std::endl;
 	Global::printStat();
 
-    std::cout << std::endl << "------ Walltime: " << omp_get_wtime() - t0_omp <<" seconds -------" << std::endl;
-
-	fprintf( stdout, "------ CPU time: %.2f seconds (%0.2f minutes) -------\n",
-			( (float)( clock() - t0 ) ) / CLOCKS_PER_SEC,
-			( (float)( clock() - t0 ) ) / ( CLOCKS_PER_SEC * 60.0 ) );
+    auto t1_wall = std::chrono::high_resolution_clock::now();
+    auto t_diff = std::chrono::duration_cast<std::chrono::duration<double>>(t1_wall-t0_wall);
+    std::cout << std::endl << "------ Runtime: " << t_diff.count() <<" seconds -------" << std::endl;
 
 	// free memory
 	if( bgModel ) delete bgModel;
