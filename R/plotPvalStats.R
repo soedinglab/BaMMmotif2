@@ -669,12 +669,17 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
 # main function
 #
 #--------------
+file_suffix = ".zoops.stats"
 
 results = c()
 resultTitle = paste0(c("TF", "#", "d_avrec", "d_occur", "m_avrec", "m_occur"), collapse="\t")
 results = c(results, resultTitle)
 
-for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))) {
+if( length(Sys.glob(paste(c(dir, "/", prefix, "*", file_suffix), collapse=""))) ==0 ){
+    stop("no input file exists in the folder!")
+}
+
+for (f in Sys.glob(paste(c(dir, "/", prefix, "*", file_suffix), collapse=""))) {
 
     # get motif number from the filename; Note: important for motif reranking
     motif_id <- sub(paste(c(dir, "/", prefix), collapse=""), "", f)
@@ -694,6 +699,19 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))
     pvalues     <- stats$V5
     mfold       <- as.numeric(first_row[6])
     occurrence  <- as.numeric(first_row[7])
+
+    # check if any p-values are missing
+    if( sum(is.na(pvalues)) > 0 ){
+        stop("Some of the input p-values are missing!")
+    }
+
+    if( is.na(mfold) ){
+        stop("mfold value is missing in the inpt file!")
+    }
+
+    if( is.na(occurrence) ){
+        stop("occurrence value is missing in the inpt file!")
+    }
 
     # avoid the rounding errors when p-value = 0 or p-value > 1
     for(i in seq(1, length(pvalues))){

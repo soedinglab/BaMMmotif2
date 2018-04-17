@@ -39,6 +39,10 @@ file_prefix <- args$prefix
 #-----------------------------
 file_suffix = ".occurrence"
 
+if( length(Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), collapse=""))) == 0 ){
+    stop("no input file exists in the folder!")
+}
+
 for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), collapse="")) ){
 
     # get motif number from the filename

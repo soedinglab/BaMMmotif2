@@ -654,6 +654,10 @@ results = c()
 resultTitle = paste0(c("TF", "#", "d_ausfc", "d_occur", "m_ausfc", "m_occur", "auc5", "auprc"), collapse="\t")
 results = c(results, resultTitle)
 
+if( length(Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats")))) == 0 ){
+    stop("no input file exists in the folder!")
+}
+
 for (f in Sys.glob(paste(c(dir, "/", prefix, "*", ".zoops.stats"), collapse=""))) {
 
     # get motif number from the filename; Note: important for motif reranking

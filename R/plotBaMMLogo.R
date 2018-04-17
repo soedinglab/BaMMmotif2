@@ -1951,6 +1951,11 @@ height <- 800
 #
 #...............................................................................
 file_suffix = ".ihbcp"
+
+if( length(Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), collapse=""))) == 0 ){
+    stop("no input file exists in the folder!")
+}
+
 for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), collapse="")) ){
     # add title to the logo
     plot_title = TRUE
