@@ -148,6 +148,8 @@ void FDR::calculatePR(){
 	size_t negN = negSeqs_.size();
 	float mFold = ( float )negN / ( float )posN;
 
+    srand(42);
+
 	// for MOPS model:
 	if( mops_ ){
 		// Sort log odds scores in descending order
@@ -225,6 +227,9 @@ void FDR::calculatePR(){
                 if( posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] or idx_negMax == posN+negN-1){
                     Sl = posScoreMax_[idx_posMax];
                     idx_posMax++;
+                } else if( posScoreMax_[idx_posMax] == negScoreMax_[idx_negMax] && rand() % 2 == 0){
+                    Sl = posScoreMax_[idx_posMax];
+                    idx_posMax++;
                 } else {
                     Sl = negScoreMax_[idx_negMax];
                     idx_negMax++;
@@ -245,14 +250,14 @@ void FDR::calculatePR(){
             float p_value;
 
             // calculate p-values in two different ways:
-            if( Sl < negScoreMax_[n_top] ){
+            if( Sl <= negScoreMax_[n_top] ){
                 p_value = ( ( float )idx_negMax + 0.5f ) / ( ( float )negN + 1.0f );
 
             } else {
                 // p-value is calculated by relying on a parametric fit of the exponentially cumulative distribution
                 p_value = n_top * expf( ( negScoreMax_[n_top] - Sl ) / lambda ) / negN;
             }
-
+            
 			PN_Pvalue_.push_back( p_value );
 
 			// take the faction of q sequences as real positives

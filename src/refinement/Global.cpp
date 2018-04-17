@@ -322,7 +322,7 @@ int Global::readArguments( int nargs, char* args[] ){
 #ifdef OPENMP
     omp_set_num_threads( threads );
 #endif
-    
+
 	// for remaining unknown options
 	if( opt.options_remain() ){
 		printHelp();
@@ -357,8 +357,6 @@ void Global::printStat(){
 		std::cout << ' ' << Global::posSequenceSet->getBaseFrequencies()[i]
 		          << "(" << Alphabet::getAlphabet()[i] << ")";
 	}
-	std::cout << "\n	" << Global::q * 100 << "% of the sequences "
-              << "contain the optimized motif.";
     if( Global::advanceEM ){
         std::cout << "\n    " << Global::f * 100 << "% of the sequences are used for EM after masking.";
     }

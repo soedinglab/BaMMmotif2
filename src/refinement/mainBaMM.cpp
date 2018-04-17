@@ -88,14 +88,15 @@ int main( int nargs, char* args[] ){
         negSeqs[n].get_deleter();
     }
 
+    size_t minPosL = ( Global::ss ) ? Global::posSequenceSet->getMinL() : Global::posSequenceSet->getMinL() * 2;
+    size_t minNegL = ( Global::ss ) ? Global::negSequenceSet->getMinL() : Global::negSequenceSet->getMinL() * 2;
+
 //#pragma omp parallel for
     for( size_t n = 0; n < motif_set.getN(); n++ ){
 		// deep copy each motif in the motif set
 		Motif* motif = new Motif( *motif_set.getMotifs()[n] );
 
         // make sure the motif length does not exceed the sequence length
-        size_t minPosL = ( Global::ss ) ? Global::posSequenceSet->getMinL() : Global::posSequenceSet->getMinL() * 2;
-        size_t minNegL = ( Global::ss ) ? Global::negSequenceSet->getMinL() : Global::negSequenceSet->getMinL() * 2;
         assert( motif->getW() <= minPosL );
         assert( motif->getW() <= minNegL );
 
