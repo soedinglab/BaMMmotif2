@@ -32,7 +32,8 @@ SequenceSet::~SequenceSet(){
     for( size_t i = 0; i < sequences_.size(); i++ ){
 		delete sequences_[i];
 	}
-    if( !baseFrequencies_ ) delete baseFrequencies_;
+    
+    delete[] baseFrequencies_;
 }
 
 std::string SequenceSet::getSequenceFilepath(){

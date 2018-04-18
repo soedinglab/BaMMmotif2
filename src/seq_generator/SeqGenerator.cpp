@@ -165,8 +165,8 @@ std::unique_ptr<Sequence> SeqGenerator::bg_sequence(size_t L){
 		}
 	}
 
-	std::unique_ptr<Sequence> arti_seq( new Sequence( sequence, L, header, Y_, true ) );
-
+	// std::unique_ptr<Sequence> arti_seq( new Sequence( sequence, L, header, Y_, true ) );
+    std::unique_ptr<Sequence> arti_seq = util::make_unique<Sequence>( sequence, L, header, Y_, true );
 	if( sequence ) free( sequence );
 
 	return arti_seq;
@@ -185,7 +185,7 @@ std::unique_ptr<Sequence> SeqGenerator::raw_sequence( Sequence* seq ){
         sequence[i] = seq->getSequence()[i];
     }
 
-    std::unique_ptr<Sequence> raw_seq( new Sequence( sequence, L, header, Y_, true ) );
+    std::unique_ptr<Sequence> raw_seq = util::make_unique<Sequence>( sequence, L, header, Y_, true );
 
     if( sequence ) free( sequence );
 
@@ -265,7 +265,7 @@ std::unique_ptr<Sequence> SeqGenerator::posseq_motif_embedded( Sequence* seq, si
         sequence[i] = seq->getSequence()[i-W];
     }
 
-    std::unique_ptr<Sequence> seq_with_motif( new Sequence( sequence, L, header, Y_, true ) );
+    std::unique_ptr<Sequence> seq_with_motif = util::make_unique<Sequence>( sequence, L, header, Y_, true );
 
     return seq_with_motif;
 
@@ -278,7 +278,7 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::seqset_with_motif_masked(fl
 
 	for( size_t n = 0; n < seqs_.size(); n++ ){
 
-		seqset.push_back(sequence_with_motif_masked(seqs_[n], W, r[n]) );
+		seqset.push_back(sequence_with_motif_masked( seqs_[n], W, r[n]) );
 	}
 
 	return seqset;
@@ -306,7 +306,7 @@ std::unique_ptr<Sequence> SeqGenerator::sequence_with_motif_masked(Sequence *pos
 
 	std::string header = ">seq with motif masked";
 
-    std::unique_ptr<Sequence> seq_mask_motif( new Sequence( masked_seq, L, header, Y_, true ) );
+    std::unique_ptr<Sequence> seq_mask_motif = util::make_unique<Sequence>( masked_seq, L, header, Y_, true );
 
 	return seq_mask_motif;
 }
