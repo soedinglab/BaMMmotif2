@@ -420,8 +420,8 @@ plotPvalStat = function(pvalues, filename, eta0, data_eta0, rerank){
     text_cex = 2
     font = 2
     v_spacer = 0.05
-    h_spacer = 0.08 / (max(ypoly)-min(ypoly))  # scale the spacer due to the range of y-axis
-
+    h_spacer = 0.2 / (max(ypoly)-min(ypoly))  # scale the spacer due to the range of y-axis
+    print(h_spacer)
     text(cutoff - v_spacer, eta0 + h_spacer, "TP", col="darkgreen", font=font, cex=text_cex)
     text(cutoff + v_spacer, eta0 - h_spacer, "TN", col="black", font=font, cex=text_cex)
     text(cutoff - v_spacer, eta0 - h_spacer, "FP", col="darkred", font=font, cex=text_cex)
@@ -466,21 +466,12 @@ plotRRC = function(picname, recall, TFR, rerank){
         unicolor = "darkblue"
     }
 
-    # make sure that the upper border does not exceed y_upper
-    mask_upper = TFR <= y_upper
-    TFR_maskup = TFR[mask_upper]
-    recall_maskup = recall[mask_upper]
-
-    # calculate for the case when positives: negatives = 1:10
-    # make sure that the lower border does not exceed y_lower
-    mask_lower = TFR <= y_lower*10
-    TFR_low = TFR[!mask_lower]
-    recall_low = recall[!mask_lower]
-    mask_2upper = TFR_low <= y_upper*10
-    TFR_low = TFR_low[mask_2upper]
-    recall_low = recall_low[mask_2upper]
-
     if(plots){
+
+        # make sure that the upper border does not exceed y_upper
+        mask_upper = TFR <= y_upper
+        TFR_maskup = TFR[mask_upper]
+        recall_maskup = recall[mask_upper]
         # plot the line when positives:negatives = 1:1
         png( filename = paste0(picname, ".png"), width = 800, height = 800 )
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
@@ -500,9 +491,25 @@ plotRRC = function(picname, recall, TFR, rerank){
             col = convertcolor(unicolor,30),
             border = NA
         )
-        # plot the line when positives:negatives = 1:10
-        par(new=T)
-        plot(recall_low, TFR_low/10,
+
+        mtext("Recall = TP/(TP+FN)", side=1, line=4.5, cex = 3.0)
+        mtext("TP/FP Ratio", side=2, line=4, cex = 3.0)
+        axis(1, at=c(0,0.5,1), labels = c(0,0.5,1), tick =TRUE, cex.axis=2.5, line=0)
+        axis(2, at=c(y_lower,10,y_upper), labels = expression(10^0, 10^1, 10^2), tick=TRUE, cex.axis=2.5, line=0, las=1)
+        text(x = 0.05,y = min(max(TFR)*1.1, 90), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
+
+        if(max(TFR)>10){
+            # calculate for the case when positives: negatives = 1:10
+            # make sure that the lower border does not exceed y_lower
+            mask_lower = TFR <= y_lower*10
+            TFR_low = TFR[!mask_lower]
+            recall_low = recall[!mask_lower]
+            mask_2upper = TFR_low <= y_upper*10
+            TFR_low = TFR_low[mask_2upper]
+            recall_low = recall_low[mask_2upper]
+            # plot the line when positives:negatives = 1:10
+            par(new=T)
+            plot(recall_low, TFR_low/10,
             main=mainname,
             log="y",
             xlim=c(0,1),ylim=c(y_lower,y_upper),
@@ -510,26 +517,35 @@ plotRRC = function(picname, recall, TFR, rerank){
             type="l", lty=2, lwd=7.5,
             col=convertcolor(unicolor,50),
             axes = FALSE, cex.main = 3.0
-        )
-        # plot the line when positives:negatives = 1:100
-        par(new=T)
-        plot(recall_low, TFR_low/100,
-        main=mainname,
-        log="y",
-        xlim=c(0,1),ylim=c(y_lower,y_upper),
-        xlab="", ylab="",
-        type="l", lty=3, lwd=7.5,
-        col=convertcolor(unicolor,50),
-        axes = FALSE, cex.main = 3.0
-        )
+            )
+            # add label text
+            text(x = 0.05, y = min(max(TFR/10)*1.1, 70), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
+        }
 
-        mtext("Recall = TP/(TP+FN)", side=1, line=4.5, cex = 3.0)
-        mtext("TP/FP Ratio", side=2, line=4, cex = 3.0)
-        axis(1, at=c(0,0.5,1), labels = c(0,0.5,1), tick =TRUE, cex.axis=2.5, line=0)
-        axis(2, at=c(y_lower,10,y_upper), labels = expression(10^0, 10^1, 10^2), tick=TRUE, cex.axis=2.5, line=0, las=1)
-        text(x = 0.05,y = min(max(TFR)*1.1, 90), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
-        if(max(TFR)>10)     text(x = 0.05, y = min(max(TFR/10)*1.1, 70), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
-        if(max(TFR)>100)    text(x = 0.05, y = min(max(TFR/100)*1.1, 70), cex = 2.0, locator(), labels = c("1:100"), col=unicolor)
+        if(max(TFR)>100){
+            # calculate for the case when positives: negatives = 1:100
+            # make sure that the lower border does not exceed y_lower
+            mask_lower2 = TFR <= y_lower*100
+            TFR_low2 = TFR[!mask_lower2]
+            recall_low2 = recall[!mask_lower2]
+            mask_2upper2 = TFR_low2 <= y_upper*100
+            TFR_low2 = TFR_low2[mask_2upper2]
+            recall_low2 = recall_low2[mask_2upper2]
+
+            # plot the line when positives:negatives = 1:100
+            par(new=T)
+            plot(recall_low2, TFR_low2/100,
+            main=mainname,
+            log="y",
+            xlim=c(0,1),ylim=c(y_lower,y_upper),
+            xlab="", ylab="",
+            type="l", lty=3, lwd=7.5,
+            col=convertcolor(unicolor,50),
+            axes = FALSE, cex.main = 3.0
+            )
+            # add labels
+            text(x = 0.05, y = min(max(TFR/100)*1.1, 70), cex = 2.0, locator(), labels = c("1:100"), col=unicolor)
+        }
 
         box(lwd=2.5)
         invisible(dev.off())
@@ -554,37 +570,44 @@ plotRRC = function(picname, recall, TFR, rerank){
         border = NA
         )
 
-        # plot the line when positives:negatives = 1:10
-        par(new=T)
-        plot(recall_low, TFR_low/10,
-        main=mainname,
-        log="y",
-        xlim=c(0,1),ylim=c(y_lower,y_upper),
-        xlab="", ylab="",
-        type="l", lty=2, lwd=7.5,
-        col=convertcolor(unicolor,50),
-        axes = FALSE, cex.main = 3.0
-        )
-
-        # plot the line when positives:negatives = 1:100
-        par(new=T)
-        plot(recall_low, TFR_low/100,
-        main=mainname,
-        log="y",
-        xlim=c(0,1),ylim=c(y_lower,y_upper),
-        xlab="", ylab="",
-        type="l", lty=3, lwd=7.5,
-        col=convertcolor(unicolor,50),
-        axes = FALSE, cex.main = 3.0
-        )
-
         mtext("Recall = TP/(TP+FN)", side=1, line=4.5, cex = 3.0)
         mtext("TP/FP Ratio", side=2, line=4, cex = 3.0)
         axis(1, at=c(0,0.5,1), labels = c(0,0.5,1), tick =TRUE, cex.axis=2.5, line=0)
         axis(2, at=c(y_lower,10,y_upper), labels = expression(10^0, 10^1, 10^2), tick=TRUE, cex.axis=2.5, line=0, las=1)
         text(x = 0.05,y = min(max(TFR)*1.1, 90), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
-        if(max(TFR)>10)     text(x = 0.05, y = min(max(TFR/10)*1.1, 70), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
-        if(max(TFR)>100)    text(x = 0.05, y = min(max(TFR/100)*1.1, 70), cex = 2.0, locator(), labels = c("1:100"), col=unicolor)
+
+        if(max(TFR)>10){
+
+            # plot the line when positives:negatives = 1:10
+            par(new=T)
+            plot(recall_low, TFR_low/10,
+            main=mainname,
+            log="y",
+            xlim=c(0,1),ylim=c(y_lower,y_upper),
+            xlab="", ylab="",
+            type="l", lty=2, lwd=7.5,
+            col=convertcolor(unicolor,50),
+            axes = FALSE, cex.main = 3.0
+            )
+            # add label text
+            text(x = 0.05, y = min(max(TFR/10)*1.1, 70), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
+        }
+
+        if(max(TFR)>100){
+            # plot the line when positives:negatives = 1:100
+            par(new=T)
+            plot(recall_low2, TFR_low2/100,
+            main=mainname,
+            log="y",
+            xlim=c(0,1),ylim=c(y_lower,y_upper),
+            xlab="", ylab="",
+            type="l", lty=3, lwd=7.5,
+            col=convertcolor(unicolor,50),
+            axes = FALSE, cex.main = 3.0
+            )
+            # add labels
+            text(x = 0.05, y = min(max(TFR/100)*1.1, 70), cex = 2.0, locator(), labels = c("1:100"), col=unicolor)
+        }
 
         box(lwd=2.5)
         invisible(dev.off())
