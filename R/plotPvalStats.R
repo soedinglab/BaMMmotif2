@@ -7,7 +7,7 @@
 # based on the output of BaMM FDR function (.stats file):
 # 1. p-value statistics from FDR for both motif itself and motif tested on the dataset
 # 2. plot Recall-TP/FP ratio curves for both motif itself and motif tested on the dataset
-# 3. output the AURRC and motif occurrence in a .bmscore file
+# 3. output the AvRec score and motif occurrence in a .bmscore file
 
 # command for executing this script:
 # ./plotPvalStat.R INPUT_DIR FILE_PREFIX [options]
@@ -40,7 +40,7 @@ parser$add_argument('target_directory', help="directory that contains the target
 parser$add_argument('prefix', help="prefix of the target file")
 # optional arguments
 parser$add_argument("--plots", type="logical", default=FALSE, help="flag for printing out plots" )
-parser$add_argument("--web", type="logical", default=FALSE, help="flag for printing out ausfc score on the screen" )
+parser$add_argument("--web", type="logical", default=FALSE, help="flag for printing out AvRec score on the screen" )
 
 # parse the arguments
 args    <- parser$parse_args()
