@@ -421,7 +421,7 @@ plotPvalStat = function(pvalues, filename, eta0, data_eta0, rerank){
     font = 2
     v_spacer = 0.05
     h_spacer = 0.2 / (max(ypoly)-min(ypoly))  # scale the spacer due to the range of y-axis
-    print(h_spacer)
+
     text(cutoff - v_spacer, eta0 + h_spacer, "TP", col="darkgreen", font=font, cex=text_cex)
     text(cutoff + v_spacer, eta0 - h_spacer, "TN", col="black", font=font, cex=text_cex)
     text(cutoff - v_spacer, eta0 - h_spacer, "FP", col="darkred", font=font, cex=text_cex)
@@ -544,7 +544,7 @@ plotRRC = function(picname, recall, TFR, rerank){
             axes = FALSE, cex.main = 3.0
             )
             # add labels
-            text(x = 0.05, y = min(max(TFR/100)*1.1, 70), cex = 2.0, locator(), labels = c("1:100"), col=unicolor)
+            text(x = 0.05, y = min(max(TFR/100)*1.1, 55), cex = 2.0, locator(), labels = c("1:100"), col=unicolor)
         }
 
         box(lwd=2.5)
@@ -606,7 +606,7 @@ plotRRC = function(picname, recall, TFR, rerank){
             axes = FALSE, cex.main = 3.0
             )
             # add labels
-            text(x = 0.05, y = min(max(TFR/100)*1.1, 70), cex = 2.0, locator(), labels = c("1:100"), col=unicolor)
+            text(x = 0.05, y = min(max(TFR/100)*1.1, 55), cex = 2.0, locator(), labels = c("1:100"), col=unicolor)
         }
 
         box(lwd=2.5)
