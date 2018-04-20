@@ -403,12 +403,14 @@ plotSFC = function(filename, fdr, recall){
     cex_axis_size = 2.5
     cex_main_size = 3.5
     unicolor = "orange"
+    #unicolor = "black"
+    main_title = "Recall-Sensitivity Curve"
     # plot fdr vs. recall curve in .png. Note that x-axis is in log scale
     png( filename = paste0(filename,".png"), width = 800, height = 800 )
     par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
     plot(fdr[range], recall[range],
         log="x",
-        main="Motif Performance",
+        main=main_title,
         xlim=c(l_range,r_range), ylim=c(0,1),
         xlab="", ylab="",
         type="l", lwd=7.5,
@@ -433,7 +435,7 @@ plotSFC = function(filename, fdr, recall){
     par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
     plot(fdr[range], recall[range],
     log="x",
-    main="Motif Performance",
+    main=main_title,
     xlim=c(l_range,r_range), ylim=c(0,1),
     xlab="", ylab="",
     type="l", lwd=7.5,
@@ -478,11 +480,12 @@ plotROC = function( filename, TP, FP, mfold){
     cex_axis_size = 2.5
     cex_main_size = 3.5
     unicolor = "darkgreen"
-
+    #unicolor = "black"
+    main_title = "Partial ROC Curve"
     png( filename = paste0(filename, "_ROC5.png"), width = 800, height = 800 )
     par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
     plot(FPR[1:rbound_refined], TPR[1:rbound_refined],
-        main="partial ROC",
+        main=main_title,
         xlim=range(0,rbound), ylim=range(0,1),
         xlab="", ylab="",
         type="l", lwd=7.5,
@@ -508,7 +511,7 @@ plotROC = function( filename, TP, FP, mfold){
     pdf( file = paste0(filename, "_ROC5.pdf"), width = 10, height = 10 )
     par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
     plot(FPR[1:rbound_refined], TPR[1:rbound_refined],
-        main="partial ROC",
+        main=main_title,
         xlim=range(0,rbound), ylim=range(0,1),
         xlab="", ylab="",
         type="l", lwd=7.5,
@@ -534,6 +537,7 @@ plotROC = function( filename, TP, FP, mfold){
 
 ### plot precision-recall curve
 plotPRC = function(filename, precision, recall){
+
     # solve numeric issue
     # reset recall to 1 when it is larger than 1
     for(i in seq(1,length(recall))){
@@ -550,15 +554,17 @@ plotPRC = function(filename, precision, recall){
     cex_axis_size = 2.5
     cex_main_size = 3.5
     unicolor = "darkblue"
+    #unicolor = "black"
+    main_title = "Precision-Recall Curve"
     png( filename=paste0(filename, "_PRC.png"), width=800, height=800 )
     par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
     plot(recall, precision,
-    main="Motif Performance",
-    xlim=range(0,1), ylim=range(0,1),
-    xlab="", ylab="",
-    type="l", lwd=7.5,
-    col=unicolor,
-    axes = FALSE, cex.main=cex_main_size
+        main=main_title,
+        xlim=range(0,1), ylim=range(0,1),
+        xlab="", ylab="",
+        type="l", lwd=7.5,
+        col=unicolor,
+        axes = FALSE, cex.main=cex_main_size
     )
     mtext("Recall", side=1, line=4.5, cex = cex_main_size)
     mtext("Precision", side=2, line=4, cex = cex_main_size)
@@ -568,8 +574,8 @@ plotPRC = function(filename, precision, recall){
     c(0, precision, 0),
     col = convertcolor(unicolor,30),
     border = NA)
-    text(x = 0.5,y = 0.3,labels = paste0("AUPRC = ", auprc), cex = cex_main_size)
-    text(x = min(max(recall), 0.9),y = min(precision+0.03), cex = 2.0, locator(), labels = paste0(c("1:"), round(mfold, digits=1)), col=unicolor)
+    text(x = 0.5,y = 0.1,labels = paste0("AUPRC = ", auprc), cex = cex_main_size)
+    text(x = min(max(recall), 0.9),y = min(precision-0.03), cex = 2.0, locator(), labels = paste0(c("1:"), round(mfold, digits=1)), col=unicolor)
     box(lwd=2.5)
     invisible(dev.off())
 
@@ -577,7 +583,7 @@ plotPRC = function(filename, precision, recall){
     pdf( file=paste0(filename, "_PRC.pdf"), width=10, height=10 )
     par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
     plot(recall, precision,
-    main="Motif Performance",
+    main=main_title,
     xlim=range(0,1), ylim=range(0,1),
     xlab="", ylab="",
     type="l", lwd=7.5,
@@ -592,7 +598,7 @@ plotPRC = function(filename, precision, recall){
     c(0, precision, 0),
     col = convertcolor(unicolor,30),
     border = NA)
-    text(x = 0.5,y = 0.3,labels = paste0("AUPRC = ", auprc), cex = cex_main_size)
+    text(x = 0.5,y = 0.1,labels = paste0("AUPRC = ", auprc), cex = cex_main_size)
     text(x = min(max(recall), 0.9),y = min(precision+0.03), cex = 2.0, locator(), labels = paste0(c("1:"), round(mfold, digits=1)), col=unicolor)
     box(lwd=2.5)
     invisible(dev.off())

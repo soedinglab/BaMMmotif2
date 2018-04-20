@@ -39,6 +39,14 @@ file_prefix <- args$prefix
 #-----------------------------
 file_suffix = ".occurrence"
 
+# plot parameters
+png_width   <- 1000
+png_height  <- 400
+label_size  <- 2
+lwd_size    <- 1.5
+
+main_title  = "Motif Distribution"
+
 if( length(Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), collapse=""))) == 0 ){
     stop("no input file exists in the folder!")
 }
@@ -53,24 +61,22 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
     filename = paste0(c(maindir, file_prefix, motif_id, file_suffix), collapse="")
     line_number = as.integer(system2("wc", args=c("-l", filename, " | awk '{print $1}'" ), stdout = TRUE))
 
-    label_size = 2
-    main_title = "Motif Distribution"
     if( line_number < 3 ){
         print("The input file is empty. No query motif is found in the sequence set.")
         # print out an empty image
         picname <- paste0(maindir, file_prefix, motif_id, "_distribution.png")
-        png(filename=picname, width=1000, height=400)
+        png(filename=picname, width=png_width, height=png_height)
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
         plot(y=0,
             main=main_title,
             xlab="", ylab="",
-            type="l", lwd=7.5,
+            type="l", lwd=lwd_size*3,
             col="darkblue",
-            axes=FALSE, cex.axis=label_size, cex.main=label_size+0.5,
+            axes=FALSE, cex.axis=label_size, cex.main=label_size,
             xlim = c(-100, 100)
         )
-        abline(v=0, col="grey", lwd=3)
-        abline(h=0, col="grey", lwd=3)
+        abline(v=0, col="grey", lwd=lwd_size)
+        abline(h=0, col="grey", lwd=lwd_size)
         mtext("Position relative to peak summit", side=1, line=4.5, cex=label_size)
         mtext("Density", side=2, line=4, cex=label_size)
 
@@ -80,7 +86,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
             axis(2, tick = FALSE, cex.axis=label_size, line=0.5)
 
         legend("topright",legend="no motif found", col="darkblue", cex=label_size, bty="n", text.col="darkblue")
-        box(lwd=2.5)
+        box(lwd=lwd_size)
         invisible(dev.off())
 
     } else {
@@ -122,8 +128,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
         interval = max(max(pos_positions)-strand_center, strand_center-min(pos_positions))
         interval = (as.integer(interval/10)+1) * 10
         picname <- paste0( maindir, file_prefix, motif_id, "_distribution.png")
-
-        png(filename = picname, width = 800, height = 800)
+        png(filename = picname, width=png_width, height=png_height)
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
 
         # calculate weights for kernel density estimation
@@ -143,16 +148,16 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
             plot(pos.strand,
                 main=main_title,
                 xlab="", ylab="",
-                type="l", lwd=7.5,
+                type="l", lwd=lwd_size*3,
                 col="darkblue",
-                axes=FALSE, cex.axis=label_size, cex.main=label_size+0.5,
+                axes=FALSE, cex.axis=label_size, cex.main=label_size,
                 xlim = c(strand_center - interval, strand_center + interval),
                 ylim = c(min(neg.strand$y), max(pos.strand$y)
                 )
             )
 
             # for plotting distribution on negative strand
-            lines(neg.strand, type="l", lwd=7.5, col="darkred")
+            lines(neg.strand, type="l", lwd=lwd_size*3, col="darkred")
             polygon(neg.strand, col=convertcolor("darkred",30), border = NA)
             legend("bottomright",legend="- strand", col="darkred", cex=label_size, bty="n", text.col="darkred")
 
@@ -160,14 +165,14 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
             plot(pos.strand,
             main=main_title,
             xlab="", ylab="",
-            type="l", lwd=7.5,
+            type="l", lwd=lwd_size*3,
             col="darkblue",
-            axes=FALSE, cex.axis=label_size, cex.main=label_size+0.5,
+            axes=FALSE, cex.axis=label_size, cex.main=label_size,
             xlim = c(strand_center - interval, strand_center + interval)
             )
         }
 
-        abline(h=0, v=strand_center, col="grey", lwd=3)
+        abline(h=0, v=strand_center, col="grey", lwd=lwd_size*2)
         mtext("Position relative to peak summit", side=1, line=4.5, cex=label_size)
         mtext("Density", side=2, line=4, cex=label_size)
         axis(1, at=c(strand_center - interval, strand_center, strand_center + interval),
@@ -176,7 +181,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
         axis(2, tick = FALSE, cex.axis=label_size, line=0.5)
         polygon(pos.strand, col=convertcolor("darkblue", 30), border = NA)
         legend("topright",legend="+ strand", col="darkblue", cex=label_size, bty="n", text.col="darkblue")
-        box(lwd=2.5)
+        box(lwd=lwd_size)
 
         invisible(dev.off())
     }

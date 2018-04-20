@@ -67,7 +67,7 @@ def main():
 
     if not os.path.exists(dir):
         os.makedirs(dir)
-    basename = os.path.splitext(os.path.basename(ipath))[0] # note this needs to be change.
+    basename = os.path.splitext(os.path.basename(ipath))[0] # note this needs to be changed.
     ofile = os.path.join(dir, basename + ".bed")
     occurs = parse_occur(ipath)
 

@@ -420,7 +420,7 @@ plotPvalStat = function(pvalues, filename, eta0, data_eta0, rerank){
     text_cex = 2
     font = 2
     v_spacer = 0.05
-    h_spacer = 0.2 / (max(ypoly)-min(ypoly))  # scale the spacer due to the range of y-axis
+    h_spacer = (max(ypoly)-min(ypoly)) * 0.08  # scale the spacer due to the range of y-axis
 
     text(cutoff - v_spacer, eta0 + h_spacer, "TP", col="darkgreen", font=font, cex=text_cex)
     text(cutoff + v_spacer, eta0 - h_spacer, "TN", col="black", font=font, cex=text_cex)
@@ -458,12 +458,15 @@ plotRRC = function(picname, recall, TFR, rerank){
     avrec = sum(diff(recall)*rollmean(log10(TFR_modified),2)) / sum_area
     avrec = round(avrec, digits=3)
 
+    unicolor = "darkblue"
+    #unicolor = "black"
+    #cex_main_size = 3.5
+    cex_main_size = 3.0
     if(rerank){
         mainname = paste0("Motif Performance, AvRec=", avrec)
-        unicolor = "darkblue"
     } else{
         mainname = paste0("Dataset Performance, AvRec=", avrec)
-        unicolor = "darkblue"
+        #mainname = paste0("Averaged Recall curve, AvRec=", avrec)
     }
 
     if(plots){
@@ -482,7 +485,7 @@ plotRRC = function(picname, recall, TFR, rerank){
             xlab="", ylab="",
             type="l", lwd=7.5,
             col=unicolor,
-            axes = FALSE, cex.main = 3.0
+            axes = FALSE, cex.main = cex_main_size
         )
         # color the area under the curve
         polygon(
@@ -492,11 +495,11 @@ plotRRC = function(picname, recall, TFR, rerank){
             border = NA
         )
 
-        mtext("Recall = TP/(TP+FN)", side=1, line=4.5, cex = 3.0)
-        mtext("TP/FP Ratio", side=2, line=4, cex = 3.0)
+        mtext("Recall = TP/(TP+FN)", side=1, line=4.5, cex = cex_main_size)
+        mtext("TP/FP Ratio", side=2, line=4, cex = cex_main_size)
         axis(1, at=c(0,0.5,1), labels = c(0,0.5,1), tick =TRUE, cex.axis=2.5, line=0)
         axis(2, at=c(y_lower,10,y_upper), labels = expression(10^0, 10^1, 10^2), tick=TRUE, cex.axis=2.5, line=0, las=1)
-        text(x = 0.05,y = min(max(TFR)*1.1, 90), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
+        text(x = 0.05,y = min(max(TFR)*1.1, 80), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
 
         if(max(TFR)>10){
             # calculate for the case when positives: negatives = 1:10
@@ -516,7 +519,7 @@ plotRRC = function(picname, recall, TFR, rerank){
             xlab="", ylab="",
             type="l", lty=2, lwd=7.5,
             col=convertcolor(unicolor,50),
-            axes = FALSE, cex.main = 3.0
+            axes = FALSE, cex.main = cex_main_size
             )
             # add label text
             text(x = 0.05, y = min(max(TFR/10)*1.1, 70), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
@@ -541,7 +544,7 @@ plotRRC = function(picname, recall, TFR, rerank){
             xlab="", ylab="",
             type="l", lty=3, lwd=7.5,
             col=convertcolor(unicolor,50),
-            axes = FALSE, cex.main = 3.0
+            axes = FALSE, cex.main = cex_main_size
             )
             # add labels
             text(x = 0.05, y = min(max(TFR/100)*1.1, 55), cex = 2.0, locator(), labels = c("1:100"), col=unicolor)
@@ -560,7 +563,7 @@ plotRRC = function(picname, recall, TFR, rerank){
         xlab="", ylab="",
         type="l", lwd=7.5,
         col=unicolor,
-        axes = FALSE, cex.main = 3.0
+        axes = FALSE, cex.main = cex_main_size
         )
         # color the area under the curve
         polygon(
@@ -571,7 +574,7 @@ plotRRC = function(picname, recall, TFR, rerank){
         )
 
         mtext("Recall = TP/(TP+FN)", side=1, line=4.5, cex = 3.0)
-        mtext("TP/FP Ratio", side=2, line=4, cex = 3.0)
+        mtext("TP/FP Ratio", side=2, line=4, cex = cex_main_size)
         axis(1, at=c(0,0.5,1), labels = c(0,0.5,1), tick =TRUE, cex.axis=2.5, line=0)
         axis(2, at=c(y_lower,10,y_upper), labels = expression(10^0, 10^1, 10^2), tick=TRUE, cex.axis=2.5, line=0, las=1)
         text(x = 0.05,y = min(max(TFR)*1.1, 90), cex = 2.0, locator(), labels = c("1:1"), col=unicolor)
@@ -587,7 +590,7 @@ plotRRC = function(picname, recall, TFR, rerank){
             xlab="", ylab="",
             type="l", lty=2, lwd=7.5,
             col=convertcolor(unicolor,50),
-            axes = FALSE, cex.main = 3.0
+            axes = FALSE, cex.main = cex_main_size
             )
             # add label text
             text(x = 0.05, y = min(max(TFR/10)*1.1, 70), cex = 2.0, locator(), labels = c("1:10"), col=unicolor)
@@ -603,7 +606,7 @@ plotRRC = function(picname, recall, TFR, rerank){
             xlab="", ylab="",
             type="l", lty=3, lwd=7.5,
             col=convertcolor(unicolor,50),
-            axes = FALSE, cex.main = 3.0
+            axes = FALSE, cex.main = cex_main_size
             )
             # add labels
             text(x = 0.05, y = min(max(TFR/100)*1.1, 55), cex = 2.0, locator(), labels = c("1:100"), col=unicolor)
