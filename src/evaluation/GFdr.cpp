@@ -76,10 +76,10 @@ void GFdr::init( int nargs, char* args[] ){
     posSequenceSet = new SequenceSet( posSequenceFilename, ss );
     negSequenceSet = new SequenceSet( negSequenceFilename, ss );
 
-//    // set mFold to 1 when input sequence set is large
-//    if(posSequenceSet->getSequences().size() > 1e4 and mFold > 1){
-//        mFold =1;
-//    }
+    // set mFold to 1 when input sequence set is to large
+    if(posSequenceSet->getSequences().size() > 5e3 and mFold > 1){
+        mFold =1;
+    }
 
 }
 
