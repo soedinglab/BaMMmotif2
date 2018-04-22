@@ -77,7 +77,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
         )
         abline(v=0, col="grey", lwd=lwd_size)
         abline(h=0, col="grey", lwd=lwd_size)
-        mtext("Position relative to peak summit", side=1, line=4.5, cex=label_size)
+        mtext("Position relative to sequence center", side=1, line=4.5, cex=label_size)
         mtext("Density", side=2, line=4, cex=label_size)
 
         axis(1, at = c(-100, 0, 100),
@@ -173,7 +173,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
         }
 
         abline(h=0, v=strand_center, col="grey", lwd=lwd_size*2)
-        mtext("Position relative to peak summit", side=1, line=4.5, cex=label_size)
+        mtext("Position relative to sequence center", side=1, line=4.5, cex=label_size)
         mtext("Density", side=2, line=4, cex=label_size)
         axis(1, at=c(strand_center - interval, strand_center, strand_center + interval),
             labels = c(-interval, 0, interval),

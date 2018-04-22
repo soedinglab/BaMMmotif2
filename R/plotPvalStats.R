@@ -420,7 +420,7 @@ plotPvalStat = function(pvalues, filename, eta0, data_eta0, rerank){
     text_cex = 2
     font = 2
     v_spacer = 0.05
-    h_spacer = (max(ypoly)-min(ypoly)) * 0.08  # scale the spacer due to the range of y-axis
+    h_spacer = (max(ypoly)-min(ypoly)) * 0.06  # scale the spacer due to the range of y-axis
 
     text(cutoff - v_spacer, eta0 + h_spacer, "TP", col="darkgreen", font=font, cex=text_cex)
     text(cutoff + v_spacer, eta0 - h_spacer, "TN", col="black", font=font, cex=text_cex)
@@ -458,18 +458,18 @@ plotRRC = function(picname, recall, TFR, rerank){
     avrec = sum(diff(recall)*rollmean(log10(TFR_modified),2)) / sum_area
     avrec = round(avrec, digits=3)
 
-    unicolor = "darkblue"
-    #unicolor = "black"
-    #cex_main_size = 3.5
-    cex_main_size = 3.0
-    if(rerank){
-        mainname = paste0("Motif Performance, AvRec=", avrec)
-    } else{
-        mainname = paste0("Dataset Performance, AvRec=", avrec)
-        #mainname = paste0("Averaged Recall curve, AvRec=", avrec)
-    }
-
     if(plots){
+
+        unicolor = "darkblue"
+        #unicolor = "black"
+        #cex_main_size = 3.5
+        cex_main_size = 3.0
+        if(rerank){
+            mainname = paste0("Motif Performance, AvRec=", avrec)
+        } else{
+            mainname = paste0("Dataset Performance, AvRec=", avrec)
+            #mainname = paste0("Averaged Recall curve, AvRec=", avrec)
+        }
 
         # make sure that the upper border does not exceed y_upper
         mask_upper = TFR <= y_upper
