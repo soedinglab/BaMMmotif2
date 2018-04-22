@@ -223,8 +223,8 @@ void FDR::calculatePR(){
 
 		for( size_t i = 0; i < posN + negN; i++ ){
 
-            if( idx_posMax < posN and idx_negMax < negN ){
-                if( posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] ){
+            //if( idx_posMax < posN and idx_negMax < negN ){
+                if( (posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] or idx_negMax == negN ) and idx_posMax < posN ){
                     Sl = posScoreMax_[idx_posMax];
                     idx_posMax++;
                 }/* else if( posScoreMax_[idx_posMax] == negScoreMax_[idx_negMax] && rand() % 2 == 0){
@@ -233,7 +233,7 @@ void FDR::calculatePR(){
                 } */else {
                     Sl = negScoreMax_[idx_negMax];
                     idx_negMax++;
-                }
+              //  }
             }
 
             float TP = ( float )idx_posMax;
@@ -249,7 +249,7 @@ void FDR::calculatePR(){
                 float Sl_upper = *(std::lower_bound( negScoreMax_.begin(), negScoreMax_.end(), Sl, std::greater<float>() )-1);
                 float Sl_lower = *std::upper_bound( negScoreMax_.begin(), negScoreMax_.end(), Sl, std::greater<float>() );
                 p_value = (idx_negMax + ( Sl_upper- Sl) / (Sl_upper - Sl_lower + 1e-5)) / negN;
-                //p_value = ( ( float )idx_negMax + 0.5f ) / ( ( float )negN + 1.0f );
+//                p_value = ( ( float )idx_negMax + 0.5f ) / ( ( float )negN + 1.0f );
 
             } else {
                 // p-value is calculated by relying on a parametric fit of the exponentially cumulative distribution
