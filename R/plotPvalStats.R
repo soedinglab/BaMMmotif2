@@ -422,10 +422,10 @@ plotPvalStat = function(pvalues, filename, eta0, data_eta0, rerank){
     v_spacer = 0.05
     h_spacer = (max(ypoly)-min(ypoly)) * 0.06  # scale the spacer due to the range of y-axis
 
-    text(cutoff - v_spacer, eta0 + h_spacer, "TP", col="darkgreen", font=font, cex=text_cex)
-    text(cutoff + v_spacer, eta0 - h_spacer, "TN", col="black", font=font, cex=text_cex)
-    text(cutoff - v_spacer, eta0 - h_spacer, "FP", col="darkred", font=font, cex=text_cex)
-    text(cutoff + v_spacer, eta0 + h_spacer, "FN", col="black", font=font, cex=text_cex)
+    text(cutoff - v_spacer, min(eta0 + h_spacer, max(ypoly)), "TP", col="darkgreen", font=font, cex=text_cex)
+    text(cutoff + v_spacer, max(eta0 - h_spacer, min(ypoly)), "TN", col="black", font=font, cex=text_cex)
+    text(cutoff - v_spacer, max(eta0 - h_spacer, min(ypoly)), "FP", col="darkred", font=font, cex=text_cex)
+    text(cutoff + v_spacer, min(eta0 + h_spacer, max(ypoly)), "FN", col="black", font=font, cex=text_cex)
 
     text(rbound/2, data_eta0/2, "background sequences", font=font, cex=text_cex, col="gray30")
 
