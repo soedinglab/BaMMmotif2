@@ -96,7 +96,7 @@ int main( int nargs, char* args[] ){
     /**
      * Cross-validate the motif model
      */
-#pragma omp parallel for
+//#pragma omp parallel for
     for( size_t n = 0; n < motif_set.getN(); n++ ){
 
         Motif* motif = new Motif( *motif_set.getMotifs()[n] );
@@ -133,6 +133,9 @@ int main( int nargs, char* args[] ){
     for (size_t n = 0; n < negset.size(); n++) {
         if( !GFdr::B3 and negset[n] ) delete negset[n];
     }
+
+    // free memory
+    if( bgModel ) delete bgModel;
 
     GFdr::destruct();
 
