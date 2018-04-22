@@ -96,7 +96,7 @@ int main( int nargs, char* args[] ){
     /**
      * Cross-validate the motif model
      */
-//#pragma omp parallel for
+#pragma omp parallel for
     for( size_t n = 0; n < motif_set.getN(); n++ ){
 
         Motif* motif = new Motif( *motif_set.getMotifs()[n] );
