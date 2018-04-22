@@ -223,25 +223,19 @@ void FDR::calculatePR(){
 
 		for( size_t i = 0; i < posN + negN; i++ ){
 
-            if( idx_posMax <= posN-cvFold_ and idx_negMax <= negN-cvFold_ ){
-                if( posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] or idx_negMax == posN+negN-1){
+            if( idx_posMax < posN and idx_negMax < negN ){
+                if( posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] ){
                     Sl = posScoreMax_[idx_posMax];
                     idx_posMax++;
-                } else if( posScoreMax_[idx_posMax] == negScoreMax_[idx_negMax] && rand() % 2 == 0){
+                }/* else if( posScoreMax_[idx_posMax] == negScoreMax_[idx_negMax] && rand() % 2 == 0){
                     Sl = posScoreMax_[idx_posMax];
                     idx_posMax++;
-                } else {
+                } */else {
                     Sl = negScoreMax_[idx_negMax];
                     idx_negMax++;
                 }
             }
 
-/*
-            // stops when TP = FP
-            if( ( float )idx_posMax <= ( float )idx_negMax / mFold and i > posN ){
-                break;
-            }
-*/
             float TP = ( float )idx_posMax;
             float FP = ( float )idx_negMax / mFold;
 			ZOOPS_TP_.push_back( TP );
@@ -251,7 +245,11 @@ void FDR::calculatePR(){
 
             // calculate p-values in two different ways:
             if( Sl <= negScoreMax_[n_top] ){
-                p_value = ( ( float )idx_negMax + 0.5f ) / ( ( float )negN + 1.0f );
+
+                float Sl_upper = *(std::lower_bound( negScoreMax_.begin(), negScoreMax_.end(), Sl, std::greater<float>() )-1);
+                float Sl_lower = *std::upper_bound( negScoreMax_.begin(), negScoreMax_.end(), Sl, std::greater<float>() );
+                p_value = (idx_negMax + ( Sl_upper- Sl) / (Sl_upper - Sl_lower + 1e-5)) / negN;
+                //p_value = ( ( float )idx_negMax + 0.5f ) / ( ( float )negN + 1.0f );
 
             } else {
                 // p-value is calculated by relying on a parametric fit of the exponentially cumulative distribution

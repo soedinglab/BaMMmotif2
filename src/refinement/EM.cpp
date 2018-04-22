@@ -2,6 +2,7 @@
 // Created by wanwan on 16.08.17.
 //
 #include "EM.h"
+#include <chrono>
 
 EM::EM( Motif* motif, BackgroundModel* bgModel,
         std::vector<Sequence*> seqs, bool optimizeQ, bool verbose, float f ){
@@ -60,7 +61,7 @@ EM::~EM(){
 
 int EM::optimize(){
 
-    clock_t t0 = clock();
+    auto t0_wall = std::chrono::high_resolution_clock::now();
 
     bool 	iterate = true;
 
@@ -128,9 +129,10 @@ int EM::optimize(){
 
     // calculate probabilities
     motif_->calculateP();
+    auto t1_wall = std::chrono::high_resolution_clock::now();
+    auto t_diff = std::chrono::duration_cast<std::chrono::duration<double>>(t1_wall-t0_wall);
+    std::cout << "\n--- Runtime for EM: " << t_diff.count() << " seconds ---\n";
 
-    fprintf( stdout, "\n--- Runtime for EM: %.4f seconds ---\n",
-             ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );
     return 0;
 }
 
@@ -258,7 +260,7 @@ int EM::mask() {
     /**
      * upgraded version of EM to eliminate the effect of unrelated motifs
      */
-    clock_t t0 = clock();
+    auto t0_wall = std::chrono::high_resolution_clock::now();
 
     /**
      * E-step for k = 0 to estimate weights r
@@ -491,8 +493,10 @@ int EM::mask() {
     // calculate probabilities
     motif_->calculateP();
 
-    fprintf( stdout, "\n--- Runtime for EM: %.4f seconds ---\n",
-             ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );
+    auto t1_wall = std::chrono::high_resolution_clock::now();
+    auto t_diff = std::chrono::duration_cast<std::chrono::duration<double>>(t1_wall-t0_wall);
+    std::cout << "\n--- Runtime for EM: " << t_diff.count() << " seconds ---\n";
+
     return 0;
 }
 

@@ -20,7 +20,7 @@ int main( int nargs, char* args[] ){
 
 	BackgroundModel* bgModel;
     if( GFdr::bgModelFilename == NULL ) {
-        bgModel = new BackgroundModel(GFdr::negSequenceSet->getSequences(),
+        bgModel = new BackgroundModel(GFdr::posSequenceSet->getSequences(),
                                       GFdr::bgModelOrder,
                                       GFdr::bgModelAlpha,
                                       GFdr::interpolateBG,
@@ -52,8 +52,8 @@ int main( int nargs, char* args[] ){
     /**
      * Generate negative sequence set for cross-validation
      */
-
     std::vector<Sequence*>  negset;
+    size_t posN = GFdr::posSequenceSet->getSequences().size();
     if( GFdr::B3 ){
         // take the given negative sequence set
         negset = GFdr::negSequenceSet->getSequences();
@@ -63,10 +63,12 @@ int main( int nargs, char* args[] ){
         // from positive training sequence set
         std::vector<std::unique_ptr<Sequence>> negSeqs;
         SeqGenerator negseq(GFdr::posSequenceSet->getSequences(), NULL, GFdr::sOrder);
-        if( !GFdr::fixedNegN and  GFdr::posSequenceSet->getSequences().size() >= 5000 ){
+        if( !GFdr::fixedNegN and posN >= 5000 ){
             negSeqs = negseq.sample_bgseqset_by_fold(GFdr::mFold);
+            std::cout << posN * GFdr::mFold << " background sequences are generated." << std::endl;
         } else {
             negSeqs = negseq.sample_bgseqset_by_num(GFdr::negN, GFdr::posSequenceSet->getMaxL());
+            std::cout << GFdr::negN << " background sequences are generated." << std::endl;
         }
         // convert unique_ptr to regular pointer
         for (size_t n = 0; n < negSeqs.size(); n++) {
@@ -76,14 +78,14 @@ int main( int nargs, char* args[] ){
     }
 
     /**
-     * Optional: subsample input sequence set
+     * Optional: subsample input sequence set when it is two large
      */
     std::vector<Sequence*> posset;
     if(!GFdr::fixedPosN){
         posset = GFdr::posSequenceSet->getSequences();
     } else {
-        size_t posN = std::min( GFdr::maxPosN,  GFdr::posSequenceSet->getSequences().size() );
-        std::vector<size_t> indices(GFdr::posSequenceSet->getSequences().size());
+        size_t posN = std::min( GFdr::maxPosN, posN );
+        std::vector<size_t> indices(posN);
         std::iota(indices.begin(), indices.end(), 0);
         std::random_shuffle(indices.begin(), indices.end());
         for(size_t n = 0; n < posN; n++){

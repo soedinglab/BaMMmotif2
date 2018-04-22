@@ -14,7 +14,7 @@ std::string         GFdr::outputFileBasename;
 char*               GFdr::posSequenceFilename = NULL;	// filename of positive sequence FASTA file
 std::string         GFdr::posSequenceBasename;			// basename of positive sequence FASTA file
 SequenceSet*        GFdr::posSequenceSet = NULL;		// positive sequence set
-size_t              GFdr::maxPosN = 1e5;               // set maximal number of input sequences used for training model
+size_t              GFdr::maxPosN = 1e5;                // set maximal number of input sequences used for training model
 bool                GFdr::fixedPosN = false;            // flag for using fixed number of input sequences
 float               GFdr::q = 0.3f;						// prior probability for a positive sequence to contain a motif
 bool                GFdr::ss = false;					// only search on single strand sequences
@@ -55,7 +55,7 @@ bool			    GFdr::CGS = false;					// flag to trigger Collapsed Gibbs sampling
 // FDR options
 size_t		        GFdr::mFold = 1;					// number of negative sequences as multiple of positive sequences
 size_t              GFdr::negN = 5000;                  // number of negative sequences to be generated
-bool                GFdr::fixedNegN = false;              // flag for using fixed number of negative sequences
+bool                GFdr::fixedNegN = false;            // flag for using fixed number of negative sequences
 size_t		        GFdr::cvFold = 4;					// number of cross-validation (cv) folds
 size_t		        GFdr::sOrder = 2;					// k-mer order for sampling negative sequence set
 
@@ -75,6 +75,12 @@ void GFdr::init( int nargs, char* args[] ){
     // read in positive, negative and background sequence set
     posSequenceSet = new SequenceSet( posSequenceFilename, ss );
     negSequenceSet = new SequenceSet( negSequenceFilename, ss );
+
+//    // set mFold to 1 when input sequence set is large
+//    if(posSequenceSet->getSequences().size() > 1e4 and mFold > 1){
+//        mFold =1;
+//    }
+
 }
 
 int GFdr::readArguments( int nargs, char* args[] ){
