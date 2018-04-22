@@ -1,4 +1,7 @@
 #include "Global.h"
+#ifdef OPENMP
+#include <omp.h>
+#endif
 
 char*               Global::outputDirectory = NULL;			// output directory
 std::string			Global::outputFileBasename;
@@ -60,8 +63,8 @@ bool				Global::debugAlphas = false;
 
 // FDR options
 bool				Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
-size_t				Global::mFold = 10;						// number of negative sequences as multiple of positive sequences
-size_t				Global::cvFold = 5;						// size of cross-validation folds
+size_t				Global::mFold = 1;						// number of negative sequences as multiple of positive sequences
+size_t				Global::cvFold = 4;						// size of cross-validation folds
 size_t				Global::sOrder = 2;						// the k-mer order for sampling negative sequence set
 
 // motif occurrence options
@@ -86,6 +89,9 @@ bool 				Global::B2 = false;
 bool 				Global::B3 = false;
 bool 				Global::B3prime = false;
 bool                Global::advanceEM = false;
+
+// option for openMP
+size_t              Global::threads = 4;                   // number of threads to use
 
 void Global::init( int nargs, char* args[] ){
 
@@ -311,6 +317,12 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "B3prime", B3prime );
     opt >> GetOpt::OptionPresent( "advanceEM", advanceEM );
 
+    // option for openMP
+    opt >> GetOpt::Option( "threads", threads );
+#ifdef OPENMP
+    omp_set_num_threads( threads );
+#endif
+
 	// for remaining unknown options
 	if( opt.options_remain() ){
 		printHelp();
@@ -345,8 +357,6 @@ void Global::printStat(){
 		std::cout << ' ' << Global::posSequenceSet->getBaseFrequencies()[i]
 		          << "(" << Alphabet::getAlphabet()[i] << ")";
 	}
-	std::cout << "\n	" << Global::q * 100 << "% of the sequences "
-              << "contain the optimized motif.";
     if( Global::advanceEM ){
         std::cout << "\n    " << Global::f * 100 << "% of the sequences are used for EM after masking.";
     }

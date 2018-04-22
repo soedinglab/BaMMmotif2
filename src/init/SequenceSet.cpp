@@ -1,9 +1,9 @@
 #include "SequenceSet.h"
+#include <boost/algorithm/string.hpp>
 
 SequenceSet::SequenceSet( std::string sequenceFilepath,
 							bool singleStrand,
-							std::string intensityFilepath,
-							float q ){
+							std::string intensityFilepath ){
 
 	if( Alphabet::getSize() == 0 ){
 		std::cerr << "Error: Initialize Alphabet before "
@@ -26,15 +26,14 @@ SequenceSet::SequenceSet( std::string sequenceFilepath,
 		readIntensities();
 	}
 
-	q_ = q;
-
 }
 
 SequenceSet::~SequenceSet(){
     for( size_t i = 0; i < sequences_.size(); i++ ){
 		delete sequences_[i];
 	}
-    if( !baseFrequencies_ ) delete baseFrequencies_;
+    
+    delete[] baseFrequencies_;
 }
 
 std::string SequenceSet::getSequenceFilepath(){
@@ -55,10 +54,6 @@ size_t SequenceSet::getMinL(){
 
 size_t SequenceSet::getMaxL(){
 	return maxL_;
-}
-
-float SequenceSet::getQ(){
-	return q_;
 }
 
 float* SequenceSet::getBaseFrequencies(){
@@ -142,8 +137,10 @@ int SequenceSet::readFASTA( bool singleStrand ){
 						// set header to sequence counter
 						header = '>';
 					} else {
-						header = line.substr( 1 );  // fetch header
-					}
+						// fetch header till the first tab
+                        std::vector<std::string> strs;
+                        header = boost::split(strs, line ,boost::is_any_of("\t"))[0];
+                    }
 
 				} else if( !( header.empty() ) ){
 

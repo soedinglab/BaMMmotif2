@@ -25,7 +25,7 @@ def create_parser():
                         help="declare input format: PWM or BaMM. This needs to be consistent with your input model! "
                              "Default: PWM")
 
-    parser.add_argument('--n_neg_perm', type=int, default=10)
+    parser.add_argument('--n_neg_perm', type=int, default=10, help="number of negative permutations. Default: 10")
     parser.add_argument('--highscore_fraction', type=float, default=0.1)
     parser.add_argument('--pvalue_threshold', type=float, default=0.01,
                         help="p-value threshold for output models. Default: 0.01")
@@ -149,8 +149,8 @@ def motif_search(model):
         shuffle_model['H_model_bg'] = calculate_H_model_bg(shuffle_model['pwm'], bg_freq)
 
         for db_model in db_models_g:
-            suffle_sim, *_ = model_sim(shuffle_model, db_model, min_overlap_g)
-            shuffled_dists.append(suffle_sim)
+            shuffle_sim, *_ = model_sim(shuffle_model, db_model, min_overlap_g)
+            shuffled_dists.append(shuffle_sim)
 
     # we are fitting only the tail of the null scores with an exponential
     # distribution

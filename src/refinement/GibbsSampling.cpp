@@ -7,7 +7,8 @@
 #include <boost/math/special_functions.hpp>			/* gamma and digamma function */
 #include <boost/math/distributions/beta.hpp>		/* beta distribution */
 
-GibbsSampling::GibbsSampling( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqs, float q,
+GibbsSampling::GibbsSampling( Motif* motif, BackgroundModel* bg,
+                              std::vector<Sequence*> seqs,
                               bool samplingQ,
                               float beta, float gamma,
                               bool initializeZ, bool samplingZ,
@@ -15,7 +16,7 @@ GibbsSampling::GibbsSampling( Motif* motif, BackgroundModel* bg, std::vector<Seq
 
     motif_              = motif;
     bg_                 = bg;
-    q_                  = q;
+    q_                  = motif->getQ();
     seqs_               = seqs;
     beta_               = beta;
     gamma_              = gamma;

@@ -55,29 +55,40 @@ int main( int nargs, char* args[] ) {
                         GScan::posSequenceSet,
                         GScan::posSequenceSet->getBaseFrequencies(),
                         GScan::modelOrder,
-                        GScan::modelAlpha );
-
-	size_t motifNum = ( GScan::maxPWM > motif_set.getN() ) ? motif_set.getN() : GScan::maxPWM;
+                        GScan::modelAlpha,
+                        GScan::maxPWM);
 
     /**
      * Sample negative sequence set based on s-mer frequencies
      */
 
     std::vector<Sequence*>  negset;
-    size_t mFold = 10;
+    size_t minSeqN = 5000;
     // sample negative sequence set B1set based on s-mer frequencies
     // from positive training sequence set
-    std::vector<std::unique_ptr<Sequence, deleter>> negSeqs;
-    SeqGenerator generateNegSeqs( GScan::posSequenceSet->getSequences() );
-    negSeqs = generateNegSeqs.arti_bgseqset( mFold );
+    std::vector<std::unique_ptr<Sequence>> negSeqs;
+    SeqGenerator negseq( GScan::posSequenceSet->getSequences() );
+    if( GScan::posSequenceSet->getSequences().size() >= minSeqN ){
+        negSeqs = negseq.sample_bgseqset_by_fold( GScan::mFold );
+    } else {
+        negSeqs = negseq.sample_bgseqset_by_num( minSeqN, GScan::posSequenceSet->getMaxL() );
+    }
     // convert unique_ptr to regular pointer
     for( size_t n = 0; n < negSeqs.size(); n++ ) {
         negset.push_back( negSeqs[n].release() );
+        negSeqs[n].get_deleter();
     }
 
-    for( size_t n = 0; n < motifNum; n++ ) {
+#pragma omp parallel for
+    for( size_t n = 0; n < motif_set.getN(); n++ ) {
         // deep copy each motif in the motif set
         Motif *motif = new Motif( *motif_set.getMotifs()[n] );
+
+        // make sure the motif length does not exceed the sequence length
+        size_t minPosL = ( GScan::ss ) ? GScan::posSequenceSet->getMinL() : GScan::posSequenceSet->getMinL() * 2;
+        size_t minNegL = ( GScan::ss ) ? GScan::negSequenceSet->getMinL() : GScan::negSequenceSet->getMinL() * 2;
+        assert( motif->getW() <= minPosL );
+        assert( motif->getW() <= minNegL );
 
         if(GScan::saveInitialModel){
             // write out the foreground model
@@ -95,20 +106,19 @@ int main( int nargs, char* args[] ) {
             negScores.insert( std::end( negScores ),
                               std::begin( negAllScores[n] ),
                               std::end( negAllScores[n] ) );
-            // free the memory
-            delete negset[n];
         }
 
         // score positive sequence set
         // calculate p-values based on positive and negative scores
         ScoreSeqSet scorePosSet( motif, bgModel, GScan::posSequenceSet->getSequences() );
         scorePosSet.calcLogOdds();
+        //scorePosSet.writeLogOdds( GScan::outputDirectory, GScan::outputFileBasename + std::to_string( n+1 ), GScan::ss );
         std::vector<std::vector<float>> posScores = scorePosSet.getMopsScores();
         scorePosSet.calcPvalues( posScores, negScores );
 
         std::string fileExtension;
         if( GScan::initialModelTag == "PWM"){
-            fileExtension = "_motif_" + std::to_string( n+1 );
+            fileExtension = "_init_motif_" + std::to_string( n+1 );
         }
         
         scorePosSet.write( GScan::outputDirectory,
@@ -118,8 +128,10 @@ int main( int nargs, char* args[] ) {
 
         delete motif;
     }
+
     if( bgModel ) delete bgModel;
     GScan::destruct();
+
     return 0;
 }
 

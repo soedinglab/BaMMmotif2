@@ -2,14 +2,14 @@
 // Created by wanwan on 16.08.17.
 //
 #include "EM.h"
+#include <chrono>
 
 EM::EM( Motif* motif, BackgroundModel* bgModel,
-        std::vector<Sequence*> seqs,
-        float q, bool optimizeQ, bool verbose, float f ){
+        std::vector<Sequence*> seqs, bool optimizeQ, bool verbose, float f ){
 
     motif_      = motif;
 	bgModel_    = bgModel;
-	q_          = q;
+	q_          = motif->getQ();    // get fractional prior q from initial motifs
     f_          = f;
 	seqs_       = seqs;
     optimizeQ_  = optimizeQ;
@@ -61,7 +61,7 @@ EM::~EM(){
 
 int EM::optimize(){
 
-    clock_t t0 = clock();
+    auto t0_wall = std::chrono::high_resolution_clock::now();
 
     bool 	iterate = true;
 
@@ -129,23 +129,23 @@ int EM::optimize(){
 
     // calculate probabilities
     motif_->calculateP();
+    auto t1_wall = std::chrono::high_resolution_clock::now();
+    auto t_diff = std::chrono::duration_cast<std::chrono::duration<double>>(t1_wall-t0_wall);
+    std::cout << "\n--- Runtime for EM: " << t_diff.count() << " seconds ---\n";
 
-    fprintf( stdout, "\n--- Runtime for EM: %.4f seconds ---\n",
-             ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );
     return 0;
 }
 
 void EM::EStep(){
 
-    llikelihood_ = 0.0f;
+    float llikelihood = 0.0f;
 
     motif_->calculateLinearS( bgModel_->getV(), K_bg_ );
 
-    // todo: parallelize the code
-//	#pragma omp parallel for
-
     // calculate responsibilities r at all LW1 positions on sequence n
     // n runs over all sequences
+
+#pragma omp parallel for reduction(+:llikelihood)
     for( size_t n = 0; n < seqs_.size(); n++ ){
 
         size_t 	L = seqs_[n]->getL();
@@ -191,9 +191,26 @@ void EM::EStep(){
             r_[n][i] = 0.0f;
        }
         // calculate log likelihood over all sequences
-        llikelihood_ += logf( normFactor );
+        llikelihood += logf( normFactor );
     }
 
+    llikelihood_ = llikelihood;
+
+}
+
+// for parallelizing MStep()
+inline void atomic_float_add(float *source, const float operand) {
+    union {
+        unsigned int intVal;
+        float floatVal;
+    } newVal, prevVal;
+
+    do {
+        prevVal.floatVal = *source;
+        newVal.floatVal = prevVal.floatVal + operand;
+    } while (__atomic_compare_exchange_n( (volatile unsigned int *)source,
+                                          &prevVal.intVal, newVal.intVal, 0,
+                                          __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST) == false );
 }
 
 void EM::MStep(){
@@ -209,19 +226,20 @@ void EM::MStep(){
 
     // compute fractional occurrence counts for the highest order K
     // n runs over all sequences
+#pragma omp parallel for
     for( size_t n = 0; n < seqs_.size(); n++ ){
         size_t L = seqs_[n]->getL();
         size_t* kmer = seqs_[n]->getKmer();
 
         // ij = i+j runs over all positions i on sequence n
         for( size_t ij = 0; ij < L-W_+1; ij++ ){
-            size_t y = kmer[ij] % Y_[K_+1];
-            for( size_t j = 0; j < W_; j++ ){
-                n_[K_][y][j] += r_[n][L-W_-ij+j];
+            size_t y = kmer[ij] % Y_[K_+1]; // todo: time-consuming
+            for (size_t j = 0; j < W_; j++) {
+                // parallize for: n_[K_][y][j] += r_[n][L - W_ - ij + j];
+                atomic_float_add(&(n_[K_][y][j]), r_[n][L - W_ - ij + j]);
             }
         }
-
-    }
+    };
 
     // compute fractional occurrence counts from higher to lower order
     // k runs over all lower orders
@@ -234,107 +252,66 @@ void EM::MStep(){
         }
     }
 
-
-    // update model parameters v[k][y][j] with updated kmer counts, alphas and model order
+    // update model parameters v[k][y][j] with updated k-mer counts, alphas and model order
     motif_->updateV( n_, A_, K_ );
 }
 
-int EM::advance() {
+int EM::mask() {
     /**
      * upgraded version of EM to eliminate the effect of unrelated motifs
      */
-    clock_t t0 = clock();
+    auto t0_wall = std::chrono::high_resolution_clock::now();
 
     /**
-     * run 5 steps of EM for k=0 and optimize q in the meantime
+     * E-step for k = 0 to estimate weights r
      */
-    for( size_t it = 0; it < 5; it++ ){
+    // calculate the log odds ratio for k=0
+    for( size_t y = 0; y < Y_[1]; y++ ){
+        for( size_t j = 0; j < W_; j++ ){
+            s_[y][j] = motif_->getV()[0][y][j] / bgModel_->getV()[0][y];
+        }
+    }
 
-        llikelihood_ = 0.0f;
+    // todo: parallelize the code
+    // calculate responsibilities r at all LW1 positions on sequence n
+    // n runs over all sequences
+    for( size_t n = 0; n < seqs_.size(); n++ ) {
 
-        /**
-         * E-step for k = 0
-         */
-        // calculate the log odds ratio for k=0
-        for( size_t y = 0; y < Y_[1]; y++ ){
-            for( size_t j = 0; j < W_; j++ ){
-                s_[y][j] = motif_->getV()[0][y][j] / bgModel_->getV()[0][y];
+        size_t L = seqs_[n]->getL();
+        size_t LW1 = L - W_ + 1;
+        size_t *kmer = seqs_[n]->getKmer();
+        float normFactor = 1.0f - q_;
+
+        // initialize r_[n][i] and pos_[n][i]
+        float pos_i = q_ / static_cast<float>( LW1 );
+        for (size_t i = 0; i < LW1; i++) {
+            r_[n][i] = 1.0f;
+            pos_[n][i] = pos_i;
+        }
+
+
+        // when p(z_n > 0), ij = i+j runs over all positions in sequence
+        for (size_t ij = 0; ij < L; ij++) {
+
+            // extract monomer y at position i
+            size_t y = kmer[ij] % Y_[1];
+            // j runs over all motif positions
+            size_t padding = (static_cast<int>( ij - L + W_ ) > 0) * (ij - L + W_);
+            for (size_t j = padding; j < (W_ < ij ? W_ : ij ); j++) {
+                r_[n][L-W_-ij + j] *= s_[y][j];
             }
         }
 
-        // todo: parallelize the code
-        // calculate responsibilities r at all LW1 positions on sequence n
-        // n runs over all sequences
-        for( size_t n = 0; n < seqs_.size(); n++ ) {
-
-            size_t L = seqs_[n]->getL();
-            size_t LW1 = L - W_ + 1;
-            size_t *kmer = seqs_[n]->getKmer();
-            float normFactor = 1.0f - q_;
-
-            // initialize r_[n][i] and pos_[n][i]
-            float pos_i = q_ / static_cast<float>( LW1 );
-            for (size_t i = 0; i < LW1; i++) {
-                r_[n][i] = 1.0f;
-                pos_[n][i] = pos_i;
-            }
-
-
-            // when p(z_n > 0), ij = i+j runs over all positions in sequence
-            for (size_t ij = 0; ij < L; ij++) {
-
-                // extract monomer y at position i
-                size_t y = kmer[ij] % Y_[1];
-                // j runs over all motif positions
-                size_t padding = (static_cast<int>( ij - L + W_ ) > 0) * (ij - L + W_);
-                for (size_t j = padding; j < (W_ < ij ? W_ : ij ); j++) {
-                    r_[n][L-W_-ij + j] *= s_[y][j];
-                }
-            }
-
-            // calculate the responsibilities and sum them up
-            for (size_t i = 0; i < LW1; i++) {
-                r_[n][i] *= pos_[n][L-W_-i];
-                normFactor += r_[n][i];
-            }
-
-            // normalize responsibilities
-            for (size_t i = 0; i < LW1; i++) {
-                r_[n][i] /= normFactor;
-            }
-
-            // calculate log likelihood over all sequences
-            llikelihood_ += logf(normFactor);
+        // calculate the responsibilities and sum them up
+        for (size_t i = 0; i < LW1; i++) {
+            r_[n][i] *= pos_[n][L-W_-i];
+            normFactor += r_[n][i];
         }
 
-        /**
-         * M-Step for k=0
-         */
-        // reset the fractional counts n for k = 0
-        for( size_t y = 0; y < Y_[1]; y++ ){
-            for( size_t j = 0; j < W_; j++ ){
-                n_[0][y][j] = 0.0f;
-            }
+        // normalize responsibilities
+        for (size_t i = 0; i < LW1; i++) {
+            r_[n][i] /= normFactor;
         }
-
-        // compute fractional occurrence counts for k = 0
-        // n runs over all sequences
-        for( size_t n = 0; n < seqs_.size(); n++ ){
-            size_t L = seqs_[n]->getL();
-            size_t* kmer = seqs_[n]->getKmer();
-
-            // ij = i+j runs over all positions i on sequence n
-            for( size_t ij = 0; ij < L; ij++ ){
-                size_t y = kmer[ij] % Y_[1];
-                size_t padding = ( static_cast<int>( ij-L+W_ ) > 0 ) * ( ij-L+W_ );
-                for( size_t j = padding; j < ( W_ < (ij+1) ? W_ : ij+1 ); j++ ){
-                    n_[0][y][j] += r_[n][L-W_-ij+j];
-                }
-            }
-        }
-
-        // update model parameters v[k][y][j], due to the kmer counts, alphas and model order
-        motif_->updateV( n_, A_, 0 );
 
         /**
          * optimize fractional prior q
@@ -406,15 +383,13 @@ int EM::advance() {
         /**
          * E-step for f_% motif occurrences
          */
-        llikelihood_ = 0.0f;
+        float llikelihood = 0.0f;
 
         motif_->calculateLinearS( bgModel_->getV(), K_bg_ );
 
-        // todo: parallelize the code
-        //	#pragma omp parallel for
-
         // calculate responsibilities r at all LW1 positions on sequence n
         // n runs over all sequences
+#pragma omp parallel for reduction(+:llikelihood)
         for( size_t n = 0; n < seqs_.size(); n++ ){
 
             size_t 	L = seqs_[n]->getL();
@@ -452,9 +427,10 @@ int EM::advance() {
             }
 
             // calculate log likelihood over all sequences
-            llikelihood_ += logf( normFactor );
+            llikelihood += logf( normFactor );
         }
 
+        llikelihood_ = llikelihood;
         /**
          * M-step for f_% motif occurrences
          */
@@ -517,8 +493,10 @@ int EM::advance() {
     // calculate probabilities
     motif_->calculateP();
 
-    fprintf( stdout, "\n--- Runtime for EM: %.4f seconds ---\n",
-             ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );
+    auto t1_wall = std::chrono::high_resolution_clock::now();
+    auto t_diff = std::chrono::duration_cast<std::chrono::duration<double>>(t1_wall-t0_wall);
+    std::cout << "\n--- Runtime for EM: " << t_diff.count() << " seconds ---\n";
+
     return 0;
 }
 
@@ -598,7 +576,7 @@ void EM::write( char* odir, std::string basename, bool ss ){
         for( size_t i = 0; i < seqs_[n]->getL()-W_+1; i++ ){
 
             if( r_[n][seqs_[n]->getL() -W_-i] >= cutoff ){
-                ofile_pos << '>' << seqs_[n]->getHeader() << '\t' << L << '\t'
+                ofile_pos << seqs_[n]->getHeader() << '\t' << L << '\t'
                           << ( ( i < L ) ? '+' : '-' ) << '\t' << i + 1 << ".." << i+W_ << '\t';
                 for( size_t b = i; b < i+W_; b++ ){
                     ofile_pos << Alphabet::getBase( seqs_[n]->getSequence()[b] );

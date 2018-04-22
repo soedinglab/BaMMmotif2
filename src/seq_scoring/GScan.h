@@ -25,6 +25,7 @@ public:
     static bool			ss;						// only search on single strand sequences
     static char*		negSequenceFilename;	// filename of negative sequence FASTA file
     static SequenceSet*	negSequenceSet;			// negative sequence set
+    static size_t       mFold;                  // number of negative sequences as multiple of positive sequences
     static char* 		alphabetType;			// provide alphabet type
 
     // initial model(s) options
@@ -49,6 +50,9 @@ public:
     static std::vector<float> bgModelAlpha;		// background model alpha
 
     static float        pvalCutoff;             // cutoff of p-values for scanning motifs
+
+    // openMP option
+    static size_t       threads;
 
     static void         init( int nargs, char* args[] );
     static void         destruct();

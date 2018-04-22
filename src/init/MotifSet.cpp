@@ -7,7 +7,9 @@ MotifSet::MotifSet( char* indir,
                     SequenceSet* posSet,
                     float* f_bg,
                     size_t K,
-                    std::vector<float> alphas ){
+                    std::vector<float> alphas,
+                    size_t maxPWM,
+                    float glob_q ){
 	N_ = 0;
 
 	if( tag.compare( "bindingsites" ) == 0 ){
@@ -28,7 +30,7 @@ MotifSet::MotifSet( char* indir,
 
 		length += l_flank + r_flank;
 
-		Motif* motif = new Motif( length, K, alphas, f_bg );
+		Motif* motif = new Motif( length, K, alphas, f_bg, glob_q );
 
 		motif->initFromBindingSites( indir, l_flank, r_flank );
 
@@ -54,13 +56,17 @@ MotifSet::MotifSet( char* indir,
 
 			size_t length;						// length of motif
 			size_t asize;						// alphabet size
+            float  q;                           // fraction of sequences that contain a motif
 			std::string line;
 			std::string row;
 
 			while( getline( file, line ) ){
 
 				// search for the line starting with "letter-probability matrix"
-				if( line[0] == 'l' ){
+				if( line.find("letter-probability matrix") != std::string::npos ){
+
+                    // count the number of motifs
+                    N_++;
 
 					// get the size of alphabet after "alength= "
 					std::stringstream A( line.substr( line.find( "h=" ) + 2 ) );
@@ -73,8 +79,16 @@ MotifSet::MotifSet( char* indir,
 					// extend the length due to addColumns option
 					length += l_flank + r_flank;
 
+                    // get the q of motif after "occur= "
+                    if( line.find("occur=") != std::string::npos ) {
+                        std::stringstream Q(line.substr(line.find("occur=") + 7) );
+                        Q >> q;
+                    } else {
+                        q = glob_q;
+                    }
+
 					// construct an initial motif
-					Motif* motif = new Motif( length, K, alphas, f_bg );
+					Motif* motif = new Motif( length, K, alphas, f_bg, q );
 
 					// parse PWM for each motif
 					float** PWM = new float*[asize];
@@ -106,20 +120,29 @@ MotifSet::MotifSet( char* indir,
 					}
 
 					// initialize each motif with a PWM
-					motif->initFromPWM( PWM, asize, posSet );
+					motif->initFromPWM( PWM, asize, posSet, q );
 
 					motifs_.push_back( motif );
-
-					// count the number of motifs
-					N_++;
 
 					// free memory for PWM
 					for( size_t y = 0; y < asize; y++ ){
 						delete[] PWM[y];
 					}
 					delete[] PWM;
+
+                    // parse PWMs due to the maximal PWM counts
+                    if( N_ >= maxPWM ){
+                        break;
+                    }
 				}
 			}
+
+            // check if the MEME file is empty
+            if( N_ == 0 ) {
+                std::cout << "Error: Cannot find any PWM in the MEME-format file: " << indir
+                          << "\nPlease check the content of your input MEME file." << std::endl;
+                exit( 1 );
+           }
 		}
 
 	} else if( tag.compare( "BaMM" ) == 0 ){
@@ -160,7 +183,7 @@ MotifSet::MotifSet( char* indir,
 			model_order -= 1;
 
 			// construct an initial motif
-			Motif* motif = new Motif( model_length, K, alphas, f_bg );
+			Motif* motif = new Motif( model_length, K, alphas, f_bg, glob_q );
 
 			// initialize motif from file
 			motif->initFromBaMM( indir, l_flank, r_flank );

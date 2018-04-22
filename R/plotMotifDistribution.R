@@ -39,11 +39,19 @@ file_prefix <- args$prefix
 #-----------------------------
 file_suffix = ".occurrence"
 
-for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), collapse="")) ){
+# plot parameters
+png_width   <- 1000
+png_height  <- 400
+label_size  <- 2
+lwd_size    <- 1.5
 
-    if(!file.exists(file)){
-        print("file does not exist.")
-    }
+main_title  = "Motif Distribution"
+
+if( length(Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), collapse=""))) == 0 ){
+    stop("no input file exists in the folder!")
+}
+
+for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), collapse="")) ){
 
     # get motif number from the filename
     motif_id <- sub(paste(c(maindir, '/', file_prefix), collapse=""), "", file)
@@ -56,107 +64,124 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
     if( line_number < 3 ){
         print("The input file is empty. No query motif is found in the sequence set.")
         # print out an empty image
-        picname <- paste0( maindir, file_prefix, motif_id, "_distribution.jpeg")
-        jpeg(filename=picname, width=800, height=800, quality=100)
+        picname <- paste0(maindir, file_prefix, motif_id, "_distribution.png")
+        png(filename=picname, width=png_width, height=png_height)
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
         plot(y=0,
-            main="Motif Positions",
+            main=main_title,
             xlab="", ylab="",
-            type="l", lwd=7.5,
+            type="l", lwd=lwd_size*3,
             col="darkblue",
-            axes=FALSE, cex.axis=3.0, 3.0, cex.main=3.0,
+            axes=FALSE, cex.axis=label_size, cex.main=label_size,
             xlim = c(-100, 100)
         )
-        abline(v=0, col="grey", lwd=3)
-        abline(h=0, col="grey", lwd=3)
-        mtext("Position relative to peak summit", side=1, line=4.5, cex=3.5)
-        mtext("Density", side=2, line=4, cex = 3.5)
+        abline(v=0, col="grey", lwd=lwd_size)
+        abline(h=0, col="grey", lwd=lwd_size)
+        mtext("Position relative to sequence center", side=1, line=4.5, cex=label_size)
+        mtext("Density", side=2, line=4, cex=label_size)
 
         axis(1, at = c(-100, 0, 100),
             labels = c(-100, 0, 100),
-            tick = FALSE, cex.axis=3.0, line=1)
-            axis(2, tick = FALSE, cex.axis=3.0, line=0.5)
+            tick = FALSE, cex.axis=label_size, line=1)
+            axis(2, tick = FALSE, cex.axis=label_size, line=0.5)
 
-        legend("topright",legend="no motif found", col="darkblue", cex=2.5, bty="n", text.col="darkblue")
-        box(lwd=2.5)
+        legend("topright",legend="no motif found", col="darkblue", cex=label_size, bty="n", text.col="darkblue")
+        box(lwd=lwd_size)
         invisible(dev.off())
 
     } else {
         # read in the data
         table <- try(read.table(filename,
                             fileEncoding="latin1", as.is=TRUE, na.strings = "NA",
-                            fill = TRUE, strip.white = TRUE, skip=1, sep = '\t') )
+                            fill = TRUE, strip.white = TRUE, skip=1, sep = '\t'))
 
-        strand_length = c(table$V2)
-        strand_ind = c(table$V3)
-        pattern_range = c(table$V4)
-        max_strand_length = max(strand_length)
-        strand_center = max_strand_length / 2
-        pos_positions = c()
-        neg_positions = c()
+        seqCount            = line_number - 1
+        strand_length       = c(table$V2)
+        max_strand_length   = max(strand_length)
+        strand_center       = max_strand_length / 2
+        strand_ind          = c(table$V3)
+        negCount            = length(grep('-', strand_ind)) # count negative strands
+        posCount            = seqCount - negCount           # count positive strands
+        start               = as.numeric(lapply(strsplit(table$V4, split='..', fixed=TRUE), `[`, 1))
+        end                 = as.numeric(lapply(strsplit(table$V4, split='..', fixed=TRUE), `[`, 2))
+        motif_pos           = as.integer(( start+end ) / 2) - strand_length / 2 + strand_center
 
-        for( i in seq(1, length(pattern_range)) ){
-            x <- unlist( regmatches(pattern_range[i], gregexpr('\\(?[0-9,]+', pattern_range[i])))
-            x <- as.numeric(gsub('\\(', '-', gsub(',', '', x)))
-            motif_pos = as.integer(( x[2]+x[1] ) / 2) - strand_length[i] / 2 + strand_center
-            if( strand_ind[i] == '+' ){
-                pos_positions = c(pos_positions, na.omit(motif_pos))
-            } else {
-                neg_positions = c(neg_positions, na.omit(motif_pos) - strand_length[i])
+        pos_positions       <- rep(NA, posCount)
+        neg_positions       <- rep(NA, negCount)
+
+        if( negCount!= 0 ){
+            pos_idx = 1
+            neg_idx = 1
+            for( i in seq(1, seqCount) ){
+                if( strand_ind[i] == '+' ){
+                    pos_positions[pos_idx] = motif_pos[i]
+                    pos_idx = pos_idx + 1
+                } else {
+                    neg_positions[neg_idx] = motif_pos[i] - strand_length[i]
+                    neg_idx = neg_idx + 1
+                }
             }
+        } else {
+            pos_positions = motif_pos
         }
 
         interval = max(max(pos_positions)-strand_center, strand_center-min(pos_positions))
-        interval = as.integer( interval / 10 ) * 10
-        picname <- paste0( maindir, file_prefix, motif_id, "_distribution.jpeg")
-        jpeg(filename=picname, width=800, height=800, quality=100)
+        interval = (as.integer(interval/10)+1) * 10
+        picname <- paste0( maindir, file_prefix, motif_id, "_distribution.png")
+        png(filename = picname, width=png_width, height=png_height)
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
 
-        pos.strand = density(pos_positions)
+        # calculate weights for kernel density estimation
+        ## use 'counts / n' as weights:
+        #pos.strand = density(unique(pos_positions), weights=table(pos_positions)/length(pos_positions))
 
-        if(length(neg_positions) != 0){
-            neg.strand = density(neg_positions)
+        pos.strand = density((pos_positions))
+        if(negCount!= 0){
+            ## use 'counts / n' as weights:
+            #neg.strand = density(unique(neg_positions), weights=table(neg_positions)/length(neg_positions))
+
+            neg.strand = density((neg_positions))
             # turn neg strand upside down
             neg.strand$y <- neg.strand$y*-1
 
             # for plotting distribution on postive strand
             plot(pos.strand,
-                main="Motif Positions",
+                main=main_title,
                 xlab="", ylab="",
-                type="l", lwd=7.5,
+                type="l", lwd=lwd_size*3,
                 col="darkblue",
-                axes=FALSE, cex.axis=3.0, 3.0, cex.main=3.0,
+                axes=FALSE, cex.axis=label_size, cex.main=label_size,
                 xlim = c(strand_center - interval, strand_center + interval),
                 ylim = c(min(neg.strand$y), max(pos.strand$y)
                 )
             )
 
             # for plotting distribution on negative strand
-            lines(neg.strand, type="l", lwd=7.5, col="darkred")
+            lines(neg.strand, type="l", lwd=lwd_size*3, col="darkred")
             polygon(neg.strand, col=convertcolor("darkred",30), border = NA)
-            legend("bottomright",legend="- strand", col="darkred", cex=2.5, bty="n", text.col="darkred")
+            legend("bottomright",legend="- strand", col="darkred", cex=label_size, bty="n", text.col="darkred")
 
         } else {
             plot(pos.strand,
-            main="Motif Positions",
+            main=main_title,
             xlab="", ylab="",
-            type="l", lwd=7.5,
+            type="l", lwd=lwd_size*3,
             col="darkblue",
-            axes=FALSE, cex.axis=3.0, 3.0, cex.main=3.0,
+            axes=FALSE, cex.axis=label_size, cex.main=label_size,
             xlim = c(strand_center - interval, strand_center + interval)
             )
         }
 
-        abline(h=0, v=strand_center, col="grey", lwd=3)
-        mtext("Position relative to peak summit", side=1, line=4.5, cex=3.5)
-        mtext("Density", side=2, line=4, cex = 3.5)
+        abline(h=0, v=strand_center, col="grey", lwd=lwd_size*2)
+        mtext("Position relative to sequence center", side=1, line=4.5, cex=label_size)
+        mtext("Density", side=2, line=4, cex=label_size)
         axis(1, at=c(strand_center - interval, strand_center, strand_center + interval),
             labels = c(-interval, 0, interval),
-            tick = FALSE, cex.axis=3.0, line=1)
-        axis(2, tick = FALSE, cex.axis=3.0, line=0.5)
+            tick = FALSE, cex.axis=label_size, line=1)
+        axis(2, tick = FALSE, cex.axis=label_size, line=0.5)
         polygon(pos.strand, col=convertcolor("darkblue", 30), border = NA)
-        legend("topright",legend="+ strand", col="darkblue", cex=2.5, bty="n", text.col="darkblue")
-        box(lwd=2.5)
+        legend("topright",legend="+ strand", col="darkblue", cex=label_size, bty="n", text.col="darkblue")
+        box(lwd=lwd_size)
 
         invisible(dev.off())
     }

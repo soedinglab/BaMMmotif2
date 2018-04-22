@@ -33,6 +33,7 @@ public:
 	std::vector<float> 				getZoopsScores();
 
 	void write( char* odir, std::string basename, float pvalCutoff, bool ss );
+    void writeLogOdds( char* odir, std::string basename, bool ss );
 
 private:
 
@@ -44,6 +45,7 @@ private:
 	std::vector<std::vector<float>>	mops_scores_;
     std::vector<std::vector<float>> mops_p_values_;
     std::vector<std::vector<float>> mops_e_values_;
+    std::vector<size_t>             z_;
 
     bool                            pval_is_calulated_;
 	std::vector<size_t>				Y_;

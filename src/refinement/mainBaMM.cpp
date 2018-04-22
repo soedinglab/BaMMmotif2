@@ -1,4 +1,5 @@
 #include <iomanip>
+#include <chrono>
 
 #include "Global.h"
 #include "EM.h"
@@ -7,7 +8,7 @@
 
 int main( int nargs, char* args[] ){
 
-	clock_t t0 = clock();
+    auto t0_wall = std::chrono::high_resolution_clock::now();
 
     std::cout << std::endl
               << "======================================" << std::endl
@@ -16,7 +17,6 @@ int main( int nargs, char* args[] ){
               << "=              by Soeding Group      =" << std::endl
               << "=  http://www.mpibpc.mpg.de/soeding  =" << std::endl
               << "======================================" << std::endl;
-
 
 	// seed random number
 	srand( 42 );
@@ -61,9 +61,9 @@ int main( int nargs, char* args[] ){
                         Global::posSequenceSet,
                         Global::posSequenceSet->getBaseFrequencies(),
                         Global::modelOrder,
-                        Global::modelAlpha );
-
-	size_t motifNum = ( Global::maxPWM > motif_set.getN() ) ? motif_set.getN() : Global::maxPWM;
+                        Global::modelAlpha,
+                        Global::maxPWM,
+                        Global::q );
 
 	if( Global::verbose ){
         std::cout << std::endl
@@ -72,9 +72,34 @@ int main( int nargs, char* args[] ){
                   << "*********************" << std::endl;
 	}
 
-    for( size_t n = 0; n < motifNum; n++ ){
+    // sample negative sequence set B1set based on s-mer frequencies
+    // from positive training sequence set
+    std::vector<Sequence*>  negset;
+    std::vector<std::unique_ptr<Sequence>> negSeqs;
+    size_t minSeqN = 5000;
+    SeqGenerator negseq( Global::posSequenceSet->getSequences() );
+    if( Global::posSequenceSet->getSequences().size() >= minSeqN ){
+        negSeqs = negseq.sample_bgseqset_by_fold( Global::mFold );
+    } else {
+        negSeqs = negseq.sample_bgseqset_by_num( minSeqN, Global::posSequenceSet->getMaxL());
+    }
+    // convert unique_ptr to regular pointer
+    for( size_t n = 0; n < negSeqs.size(); n++ ) {
+        negset.push_back( negSeqs[n].release() );
+        negSeqs[n].get_deleter();
+    }
+
+    size_t minPosL = ( Global::ss ) ? Global::posSequenceSet->getMinL() : Global::posSequenceSet->getMinL() * 2;
+    size_t minNegL = ( Global::ss ) ? Global::negSequenceSet->getMinL() : Global::negSequenceSet->getMinL() * 2;
+
+//#pragma omp parallel for
+    for( size_t n = 0; n < motif_set.getN(); n++ ){
 		// deep copy each motif in the motif set
 		Motif* motif = new Motif( *motif_set.getMotifs()[n] );
+
+        // make sure the motif length does not exceed the sequence length
+        assert( motif->getW() <= minPosL );
+        assert( motif->getW() <= minNegL );
 
 		if( Global::saveInitialBaMMs ){
 			// optional: save initial model
@@ -84,13 +109,12 @@ int main( int nargs, char* args[] ){
 
 		// optimize the model with either EM or Gibbs sampling
 		if( Global::EM ){
-			EM model( motif, bgModel, Global::posSequenceSet->getSequences(),
-                      Global::q, Global::optimizeQ, Global::verbose, Global::f );
-			// learn motifs by EM
+			EM model( motif, bgModel, Global::posSequenceSet->getSequences(),Global::optimizeQ, Global::verbose, Global::f );
+			// learn motifs by EMq
 			if( !Global::advanceEM ) {
                 model.optimize();
             } else {
-                model.advance();
+                model.mask();
             }
 
             // write model parameters on the disc
@@ -105,7 +129,7 @@ int main( int nargs, char* args[] ){
 
 		} else if ( Global::CGS ){
 			GibbsSampling model( motif, bgModel, Global::posSequenceSet->getSequences(),
-                                 Global::q, !Global::noQSampling, Global::verbose );
+                                 !Global::noQSampling, Global::verbose );
 			// learn motifs by collapsed Gibbs sampling
 			model.optimize();
 			// write model parameters on the disc
@@ -119,9 +143,9 @@ int main( int nargs, char* args[] ){
             std::cout << "optimized q = " << model.getQ() << std::endl;
 
 		} else {
-
 			std::cout << "Note: the model is not optimized!\n";
 		}
+
         // write out the learned model
         motif->write( Global::outputDirectory,
                       Global::outputFileBasename + "_motif_" + std::to_string( n+1 ) );
@@ -154,17 +178,6 @@ int main( int nargs, char* args[] ){
                 }
             }
 
-            std::vector<Sequence*>  negset;
-            // sample negative sequence set B1set based on s-mer frequencies
-            // from positive training sequence set
-            std::vector<std::unique_ptr<Sequence, deleter>> negSeqs;
-            SeqGenerator generateNegSeqs( Global::posSequenceSet->getSequences() );
-            negSeqs = generateNegSeqs.arti_bgseqset( Global::mFold );
-            // convert unique_ptr to regular pointer
-            for( size_t n = 0; n < negSeqs.size(); n++ ) {
-                negset.push_back( negSeqs[n].release() );
-                negSeqs[n].get_deleter();
-            }
             ScoreSeqSet scoreNegSet( motif, bgModel, negset );
             scoreNegSet.calcLogOdds();
             std::vector<std::vector<float>> negAllScores = scoreNegSet.getMopsScores();
@@ -178,6 +191,11 @@ int main( int nargs, char* args[] ){
             // calculate p-values based on positive and negative scores
             ScoreSeqSet scorePosSet( motif, bg, Global::posSequenceSet->getSequences() );
             scorePosSet.calcLogOdds();
+            if( Global::saveLogOdds ){
+                scorePosSet.writeLogOdds(Global::outputDirectory,
+                                         Global::outputFileBasename + "_motif_" + std::to_string( n+1 ),
+                                         Global::ss );
+            }
             std::vector<std::vector<float>> posScores = scorePosSet.getMopsScores();
             scorePosSet.calcPvalues( posScores, negScores );
 
@@ -187,6 +205,7 @@ int main( int nargs, char* args[] ){
                                Global::ss );
 
         }
+
         if( motif )		delete motif;
 	}
 
@@ -200,57 +219,13 @@ int main( int nargs, char* args[] ){
 		}
 
         /**
-         * Generate negative sequence set for cross-validation
-         */
-        std::vector<Sequence*>  negset;
-
-        if( Global::B2 ) {
-            // sample negative sequence set B2set based on s-mer frequencies
-            // from the given sampled negative sequence set
-            std::vector<std::unique_ptr<Sequence, deleter>> B2Seqs;
-            SeqGenerator b2seqs( Global::negSequenceSet->getSequences() );
-            B2Seqs = b2seqs.arti_bgseqset(1);
-            // convert unique_ptr to regular pointer
-            for( size_t n = 0; n < B2Seqs.size(); n++ ) {
-                negset.push_back( B2Seqs[n].release() );
-                B2Seqs[n].get_deleter();
-            }
-        } else if( Global::B3 ) {
-            // take negative seqset as B3set
-            negset = Global::negSequenceSet->getSequences();
-        } else if( Global::B3prime ) {
-            // generate sequences from positive sequences with masked motif
-            Motif *motif_opti = new Motif( *motif_set.getMotifs()[0] );
-            SeqGenerator artificial_set( Global::negSequenceSet->getSequences(), motif_opti );
-            EM model_opti( motif_opti, bgModel, Global::posSequenceSet->getSequences(), Global::q, Global::f );
-            // run one E-step to estimate r
-            model_opti.EStep();
-            std::vector<std::unique_ptr<Sequence, deleter>> B1SeqSetPrime;
-            B1SeqSetPrime = artificial_set.seqset_with_motif_masked(model_opti.getR());
-            if ( motif_opti ) delete motif_opti;
-            // draw B1setPrime from the positive sequence set with masked motifs
-            for( size_t n = 0; n < B1SeqSetPrime.size(); n++ ){
-                negset.push_back(B1SeqSetPrime[n].release());
-            }
-        } else {
-            // sample negative sequence set B1set based on s-mer frequencies
-            // from positive training sequence set
-            std::vector<std::unique_ptr<Sequence, deleter>> B1Seqs;
-            SeqGenerator b1seqs( Global::posSequenceSet->getSequences() );
-            B1Seqs = b1seqs.arti_bgseqset( Global::mFold );
-            // convert unique_ptr to regular pointer
-            for( size_t n = 0; n < B1Seqs.size(); n++ ) {
-                negset.push_back( B1Seqs[n].release() );
-            }
-        }
-
-        /**
          * cross-validate the motif model
          */
-		for( size_t n = 0; n < motifNum; n++ ){
+//#pragma omp parallel for
+        for( size_t n = 0; n < motif_set.getN(); n++ ){
 			Motif* motif = new Motif( *motif_set.getMotifs()[n] );
 			FDR fdr( Global::posSequenceSet->getSequences(), negset,
-                     Global::q, motif, bgModel, Global::cvFold,
+                     motif, bgModel, Global::cvFold,
                      Global::mops, Global::zoops,
                      Global::savePRs, Global::savePvalues, Global::saveLogOdds );
 			fdr.evaluateMotif( Global::EM, Global::CGS, Global::optimizeQ, Global::advanceEM, Global::f );
@@ -260,15 +235,16 @@ int main( int nargs, char* args[] ){
 		}
 
     }
+
     std::cout << std::endl
               << "******************" << std::endl
               << "*   Statistics   *" << std::endl
               << "******************" << std::endl;
 	Global::printStat();
 
-	fprintf( stdout, "\n------ Runtime: %.2f seconds (%0.2f minutes) -------\n",
-			( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC,
-			( ( float )( clock() - t0 ) ) / ( CLOCKS_PER_SEC * 60.0f ) );
+    auto t1_wall = std::chrono::high_resolution_clock::now();
+    auto t_diff = std::chrono::duration_cast<std::chrono::duration<double>>(t1_wall-t0_wall);
+    std::cout << std::endl << "------ Runtime: " << t_diff.count() <<" seconds -------" << std::endl;
 
 	// free memory
 	if( bgModel ) delete bgModel;

@@ -1914,7 +1914,6 @@ if( length > 2 ){
   }
 }
 
-
 # background sequence logo
 bg <- FALSE
 
@@ -1941,9 +1940,9 @@ alpha <- .3 # icLetterScale only
 #width <- 7
 
 # .png parameters
-width <- 1200
-height <- 800
-
+png_width       <- 1000
+png_height      <- 800
+stamp_height    <- 500
 
 #...............................................................................
 #
@@ -1951,14 +1950,19 @@ height <- 800
 #
 #...............................................................................
 file_suffix = ".ihbcp"
+
+if( length(Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), collapse=""))) == 0 ){
+    stop("no input file exists in the folder!")
+}
+
 for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), collapse="")) ){
     # add title to the logo
     plot_title = TRUE
     xaxis <- TRUE
     yaxis <- TRUE
     # .png parameters
-    width <- 1200
-    height <- 800
+    width <- png_width
+    height <- png_height
 
     # get motif number from the filename
     motif_id <- sub(paste(c(maindir, '/', file_prefix), collapse=""), "", file)
@@ -1972,8 +1976,8 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
     plot_title <- FALSE
     xaxis      <- FALSE
     yaxis      <- FALSE
-    width      <- 1000
-    height     <- 500
+    width      <- png_width
+    height     <- stamp_height
     ending     <- paste0("_stamp",ending)
 
     }
@@ -2011,8 +2015,8 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
     plot_title <- FALSE
     xaxis      <- FALSE
     yaxis      <- FALSE
-    width      <- 1000
-    height     <- 500
+    width      <- png_width
+    height     <- stamp_height
     ending     <- paste0("_stamp",ending)
 
     ofilename = paste( maindir, file_prefix, motif_id, "-logo-order-", order, ending, sep="" )

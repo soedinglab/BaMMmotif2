@@ -6,11 +6,12 @@ dist: trusty
 
 install:
     - pip install flake8
-    - sudo apt-get install libboost-dev
+
 addons:
   apt:
     packages: &default_packages
     - cmake
+    - libboost-dev
 
 script:
   - mkdir build
@@ -18,6 +19,7 @@ script:
   - cmake .. && make
   - export PATH="$PATH:$PWD/bin"
   - bin/BaMMmotif /tmp/ ../example/JunD.fasta --PWMFile ../example/PWM_peng10.meme --EM -k 0 --FDR --scoreSeqset --maxPWM 1
+
 matrix:
   include:
     - compiler: gcc

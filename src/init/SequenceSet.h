@@ -18,8 +18,7 @@ public:
 
 	SequenceSet( std::string sequenceFilepath,
 			bool singleStrand = false,
-			std::string intensityFilepath = "",
-			float q = 0.9f );
+			std::string intensityFilepath = "" );
 	~SequenceSet();
 
 	std::string				getSequenceFilepath();
@@ -27,7 +26,6 @@ public:
 	std::vector<Sequence*> 	getSequences();
 	size_t 					getMinL();
 	size_t					getMaxL();
-	float					getQ();
 	float* 					getBaseFrequencies();
 
 	void					print();			// print sequences
@@ -40,8 +38,6 @@ private:
 	std::vector<Sequence*>	sequences_;			// sequences
 	size_t 					minL_;				// length of the shortest sequence
 	size_t 					maxL_;				// length of the longest sequence
-	float					q_;					// the presumed fraction of sequences
-												// that contain motifs
 	float*	 				baseFrequencies_;	// kmer frequencies
 
 	std::vector<size_t>		Y_;					// contains 1 at position 0

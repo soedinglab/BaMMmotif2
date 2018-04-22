@@ -6,7 +6,6 @@
  */
 
 #include "ScoreSeqSet.h"
-
 #include <float.h>		// -FLT_MAX
 
 ScoreSeqSet::ScoreSeqSet( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqSet ){
@@ -38,16 +37,16 @@ void ScoreSeqSet::calcLogOdds(){
 
 	mops_scores_.resize( seqSet_.size() );
 
+//#pragma omp parallel for
 	for( size_t n = 0; n < seqSet_.size(); n++ ){
 
 		size_t 	LW1 = seqSet_[n]->getL() - W + 1;
 		size_t* kmer = seqSet_[n]->getKmer();
 		float 	maxScore = -FLT_MAX;
 
+        size_t z_i = 0;
 		for( size_t i = 0; i < LW1; i++ ){
-
 			float logOdds = 0.0f;
-
 			for( size_t j = 0; j < W; j++ ){
 
 				size_t y = kmer[i+j] % Y_[K+1];
@@ -60,9 +59,13 @@ void ScoreSeqSet::calcLogOdds(){
 			mops_scores_[n].push_back( logOdds );
 
 			// take the largest log odds score for ZOOPS model:
-			maxScore = ( logOdds > maxScore ) ? logOdds : maxScore;
-		}
+            if( logOdds > maxScore ){
+                maxScore = logOdds;
+                z_i = i;
+            }
+        }
 		zoops_scores_.push_back( maxScore );
+        z_.push_back( z_i );
 	}
 }
 
@@ -94,6 +97,7 @@ void ScoreSeqSet::calcPvalues( std::vector<std::vector<float>> pos_scores, std::
 	}
 	lambda = lambda / ( float )nTop;
 
+#pragma omp parallel for
 	for( size_t n = 0; n < seqSet_.size(); n++ ){
 
 		size_t LW1 = seqSet_[n]->getL() - motif_->getW() + 1;
@@ -245,6 +249,9 @@ void ScoreSeqSet::write( char* odir, std::string basename, float pvalCutoff, boo
 
 	std::ofstream ofile( opath );
 
+    // add a header to the results
+    ofile << "seq\tlength\tstrand\tstart..end\tpattern\tp-value\te-value" << std::endl;
+
 	for( size_t n = 0; n < seqSet_.size(); n++ ){
 		size_t seqlen = seqSet_[n]->getL();
 		if( !ss ){
@@ -256,7 +263,7 @@ void ScoreSeqSet::write( char* odir, std::string basename, float pvalCutoff, boo
 
 			if( mops_p_values_[n][i] < pvalCutoff ){
                 // >header:sequence_length
-                ofile << '>' << seqSet_[n]->getHeader() << '\t' << seqlen << '\t';
+                ofile << seqSet_[n]->getHeader() << '\t' << seqlen << '\t';
 
 				// start:end:score:strand:sequence_matching
 				end = i + motif_->getW();
@@ -272,5 +279,45 @@ void ScoreSeqSet::write( char* odir, std::string basename, float pvalCutoff, boo
 			}
 		}
 	}
+
+}
+
+void ScoreSeqSet::writeLogOdds( char* odir, std::string basename, bool ss ){
+
+    /**
+	 * save log odds scores in one flat file:
+	 * basename.logOddsZoops
+	 */
+
+    size_t 	end; 				// end of motif match
+
+    std::string opath = std::string( odir )  + '/' + basename + ".logOddsZoops";
+
+    std::ofstream ofile( opath );
+
+    // add a header to the results
+    ofile << "seq\tlength\tstrand\tstart..end\tpattern\tzoops_score" << std::endl;
+
+    for( size_t n = 0; n < seqSet_.size(); n++ ){
+        size_t seqlen = seqSet_[n]->getL();
+        if( !ss ){
+            seqlen = ( seqlen - 1 ) / 2;
+        }
+
+        // >header:sequence_length
+        ofile << seqSet_[n]->getHeader() << '\t' << seqlen << '\t';
+
+        // start:end:score:strand:sequence_matching
+        end = z_[n] + motif_->getW();
+
+        ofile << ( ( z_[n] < seqlen ) ? '+' : '-' ) << '\t'
+              << z_[n]+1 << ".." << end << '\t';
+        for( size_t m = z_[n]; m < end; m++ ){
+            ofile << Alphabet::getBase( seqSet_[n]->getSequence()[m] );
+        }
+        ofile << '\t' << std::setprecision( 3 ) << zoops_scores_[n] << std::endl;
+
+
+    }
 
 }

@@ -20,7 +20,7 @@ int main( int nargs, char* args[] ){
 
 	BackgroundModel* bgModel;
     if( GFdr::bgModelFilename == NULL ) {
-        bgModel = new BackgroundModel(GFdr::negSequenceSet->getSequences(),
+        bgModel = new BackgroundModel(GFdr::posSequenceSet->getSequences(),
                                       GFdr::bgModelOrder,
                                       GFdr::bgModelAlpha,
                                       GFdr::interpolateBG,
@@ -45,15 +45,15 @@ int main( int nargs, char* args[] ){
                         GFdr::posSequenceSet,
                         GFdr::negSequenceSet->getBaseFrequencies(),
                         GFdr::modelOrder,
-                        GFdr::modelAlpha );
-
-	size_t motifNum = ( GFdr::num > motif_set.getN() ) ? motif_set.getN() : GFdr::num;
+                        GFdr::modelAlpha,
+                        GFdr::maxPWM,
+                        GFdr::q );
 
     /**
      * Generate negative sequence set for cross-validation
      */
-
     std::vector<Sequence*>  negset;
+    size_t posN = GFdr::posSequenceSet->getSequences().size();
     if( GFdr::B3 ){
         // take the given negative sequence set
         negset = GFdr::negSequenceSet->getSequences();
@@ -61,22 +61,53 @@ int main( int nargs, char* args[] ){
     } else {
         // generate negative sequence set based on s-mer frequencies
         // from positive training sequence set
-        std::vector<std::unique_ptr<Sequence, deleter>> negSeqs;
+        std::vector<std::unique_ptr<Sequence>> negSeqs;
         SeqGenerator negseq(GFdr::posSequenceSet->getSequences(), NULL, GFdr::sOrder);
-        negSeqs = negseq.arti_bgseqset(GFdr::mFold);
+        if( !GFdr::fixedNegN and posN >= 5000 ){
+            negSeqs = negseq.sample_bgseqset_by_fold(GFdr::mFold);
+            std::cout << posN * GFdr::mFold << " background sequences are generated." << std::endl;
+        } else {
+            negSeqs = negseq.sample_bgseqset_by_num(GFdr::negN, GFdr::posSequenceSet->getMaxL());
+            std::cout << GFdr::negN << " background sequences are generated." << std::endl;
+        }
         // convert unique_ptr to regular pointer
         for (size_t n = 0; n < negSeqs.size(); n++) {
             negset.push_back(negSeqs[n].release());
+            negSeqs[n].get_deleter();
         }
     }
+
+    /**
+     * Optional: subsample input sequence set when it is two large
+     */
+    std::vector<Sequence*> posset;
+    if(!GFdr::fixedPosN){
+        posset = GFdr::posSequenceSet->getSequences();
+    } else {
+        size_t posNsub = std::min( GFdr::maxPosN, posN );
+        std::vector<size_t> indices(posN);
+        std::iota(indices.begin(), indices.end(), 0);
+        std::random_shuffle(indices.begin(), indices.end());
+        for(size_t n = 0; n < posNsub; n++){
+            posset.push_back(GFdr::posSequenceSet->getSequences()[indices[n]]);
+        }
+    }
+
     /**
      * Cross-validate the motif model
      */
-
-    for( size_t n = 0; n < motifNum; n++ ){
+#pragma omp parallel for
+    for( size_t n = 0; n < motif_set.getN(); n++ ){
 
         Motif* motif = new Motif( *motif_set.getMotifs()[n] );
-        FDR fdr( GFdr::posSequenceSet->getSequences(), negset, GFdr::q,
+
+        // make sure the motif length does not exceed the sequence length
+        size_t minPosL = ( GFdr::ss ) ? GFdr::posSequenceSet->getMinL() : GFdr::posSequenceSet->getMinL() * 2;
+        size_t minNegL = ( GFdr::ss ) ? GFdr::negSequenceSet->getMinL() : GFdr::negSequenceSet->getMinL() * 2;
+        assert( motif->getW() <= minPosL );
+        assert( motif->getW() <= minNegL );
+
+        FDR fdr( posset, negset,
                  motif, bgModel,
                  GFdr::cvFold, GFdr::mops, GFdr::zoops,
                  true, GFdr::savePvalues, GFdr::saveLogOdds );
@@ -98,6 +129,13 @@ int main( int nargs, char* args[] ){
                    GFdr::outputFileBasename + fileExtension );
         if( motif )		delete motif;
     }
+
+    for (size_t n = 0; n < negset.size(); n++) {
+        if( !GFdr::B3 and negset[n] ) delete negset[n];
+    }
+
+    // free memory
+    if( bgModel ) delete bgModel;
 
     GFdr::destruct();
 

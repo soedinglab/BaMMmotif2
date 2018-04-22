@@ -21,6 +21,8 @@ public:
     static char*		posSequenceFilename;	// filename of positive sequence FASTA file
     static std::string	posSequenceBasename;	// basename of positive sequence FASTA file
     static SequenceSet*	posSequenceSet;			// positive sequence set
+    static size_t       maxPosN;                // maximal number of positive sequences to be used for training motif
+    static bool         fixedPosN;              // flag for using fixed number of input sequences
     static float		q;						// prior probability for a positive sequence to contain a motif
     static bool			ss;						// only search on single strand sequences
     static char*		negSequenceFilename;	// filename of negative sequence FASTA file
@@ -31,7 +33,7 @@ public:
     // initial model(s) options
     static char*		initialModelFilename;	// filename of initial model
     static std::string	initialModelTag;		// tag for initializing the model
-    static size_t		num;					// number of init that are to be optimized
+    static size_t		maxPWM;					// number of init that are to be optimized
     static bool			mops;					// learn MOPS model
     static bool			zoops;					// learn ZOOPS model
     static std::string  fileExtension;          // extended filename for output
@@ -57,12 +59,17 @@ public:
 
     // FDR options
     static size_t		mFold;					// number of negative sequences as multiple of positive sequences
+    static size_t       negN;                   // number of negative sequences to be generated
+    static bool         fixedNegN;              // flag for using fixed number of negative sequences
 	static size_t		cvFold;					// number of cross-validation (cv) folds
 	static size_t		sOrder;					// k-mer order for sampling negative sequence set
 
     // other options
     static bool			savePvalues;			// write p-values for each log odds score from sequence set
     static bool			saveLogOdds;			// write the log odds of positive and negative sets to disk
+
+    // option for openMP
+    static size_t       threads;                // number of threads to use
 
     static void         init( int nargs, char* args[] );
     static void         destruct();

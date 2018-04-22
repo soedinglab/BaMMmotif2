@@ -4,12 +4,18 @@
 
 #include "GFdr.h"
 
+#ifdef OPENMP
+#include <omp.h>
+#endif
+
 char*               GFdr::outputDirectory = NULL;		// output directory
 std::string         GFdr::outputFileBasename;
 
 char*               GFdr::posSequenceFilename = NULL;	// filename of positive sequence FASTA file
 std::string         GFdr::posSequenceBasename;			// basename of positive sequence FASTA file
 SequenceSet*        GFdr::posSequenceSet = NULL;		// positive sequence set
+size_t              GFdr::maxPosN = 1e5;                // set maximal number of input sequences used for training model
+bool                GFdr::fixedPosN = false;            // flag for using fixed number of input sequences
 float               GFdr::q = 0.3f;						// prior probability for a positive sequence to contain a motif
 bool                GFdr::ss = false;					// only search on single strand sequences
 
@@ -23,7 +29,7 @@ char*			    GFdr::alphabetType = NULL;			// alphabet type is defaulted to standa
 // initial model(s) options
 char*			    GFdr::initialModelFilename = NULL; 	// filename of initial model
 std::string         GFdr::initialModelTag;				// tag for initializing the model
-size_t              GFdr::num = std::numeric_limits<size_t>::max(); // number of init that are to be optimized
+size_t              GFdr::maxPWM = std::numeric_limits<size_t>::max(); // number of init that are to be optimized
 bool                GFdr::mops = false;					// learn MOPS model
 bool                GFdr::zoops = true;					// learn ZOOPS model
 std::string         GFdr::fileExtension;                // extended filename for output
@@ -47,14 +53,18 @@ bool                GFdr::EM = false;					// flag to trigger EM learning
 bool			    GFdr::CGS = false;					// flag to trigger Collapsed Gibbs sampling
 
 // FDR options
-size_t		        GFdr::mFold = 10;					// number of negative sequences as multiple of positive sequences
-size_t		        GFdr::cvFold = 5;					// number of cross-validation (cv) folds
+size_t		        GFdr::mFold = 1;					// number of negative sequences as multiple of positive sequences
+size_t              GFdr::negN = 5000;                  // number of negative sequences to be generated
+bool                GFdr::fixedNegN = false;            // flag for using fixed number of negative sequences
+size_t		        GFdr::cvFold = 4;					// number of cross-validation (cv) folds
 size_t		        GFdr::sOrder = 2;					// k-mer order for sampling negative sequence set
 
 // printout options
 bool			    GFdr::savePvalues = false;			// write p-values for each log odds score from sequence set
 bool			    GFdr::saveLogOdds = false;			// write the log odds of positive and negative sets to disk
 
+// option for openMP
+size_t              GFdr::threads = 4;                  // number of threads to use
 
 void GFdr::init( int nargs, char* args[] ){
 
@@ -65,6 +75,12 @@ void GFdr::init( int nargs, char* args[] ){
     // read in positive, negative and background sequence set
     posSequenceSet = new SequenceSet( posSequenceFilename, ss );
     negSequenceSet = new SequenceSet( negSequenceFilename, ss );
+
+    // set mFold to 1 when input sequence set is to large
+    if(posSequenceSet->getSequences().size() > 5e3 and mFold > 1){
+        mFold =1;
+    }
+
 }
 
 int GFdr::readArguments( int nargs, char* args[] ){
@@ -99,6 +115,14 @@ int GFdr::readArguments( int nargs, char* args[] ){
                 std::cerr << "No expression following --basename" << std::endl;
             }
             outputFileBasename = args[i];
+        }  else if( !strcmp( args[i], "--maxPosN" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following --maxPosN" << std::endl;
+                exit( 2 );
+            }
+            maxPosN = std::stoi( args[i] );
+            fixedPosN = true;
         } else if( !strcmp( args[i], "-q" ) ){
             if( ++i >= nargs ){
                 printHelp();
@@ -156,7 +180,7 @@ int GFdr::readArguments( int nargs, char* args[] ){
                 std::cerr << "No expression following --maxPWM" << std::endl;
                 exit( 2 );
             }
-            num = std::stoi( args[i] );
+            maxPWM = std::stoi( args[i] );
         } else if( !strcmp( args[i], "--mops" ) ){
             mops = true;
         } else if( !strcmp( args[i], "-k" ) or !strcmp( args[i], "--order" ) ){
@@ -216,6 +240,14 @@ int GFdr::readArguments( int nargs, char* args[] ){
                 exit( 2 );
             }
             mFold = std::stoi( args[i] );
+        } else if( !strcmp( args[i], "--negN" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following --negN" << std::endl;
+                exit( 2 );
+            }
+            negN = std::stoi( args[i] );
+            fixedNegN = true;
         } else if( !strcmp( args[i], "--cvFold" ) ){
             if( ++i >= nargs ){
                 printHelp();
@@ -234,6 +266,13 @@ int GFdr::readArguments( int nargs, char* args[] ){
             savePvalues = true;
         } else if( !strcmp( args[i], "--saveLogOdds" ) ){
             saveLogOdds = true;
+        } else if( !strcmp( args[i], "--threads" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following --threads" << std::endl;
+                exit( 2 );
+            }
+            threads = std::stoi( args[i] );
         } else {
             std::cerr << "Ignoring unknown option " << args[i] << std::endl;
         }
@@ -269,6 +308,11 @@ int GFdr::readArguments( int nargs, char* args[] ){
     }
 
     fileExtension = concatenate2strings( outputFileBasename, baseName( initialModelFilename ) );
+    // option for openMP
+#ifdef OPENMP
+    omp_set_num_threads( threads );
+#endif
+
 
     return 0;
 }

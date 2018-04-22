@@ -14,19 +14,21 @@ public:
 	Motif( size_t length,
 			size_t order,
 			std::vector<float> alpha,
-			float* f_bg );
+			float* f_bg,
+            float glob_q );
 
 	Motif( const Motif& other );					// copy constructor
 	~Motif();
 
 	void initFromBindingSites( char* indir, size_t l_flank, size_t r_flank );
 
-	void initFromPWM( float** PWM, size_t asize, SequenceSet* posSet );
+	void initFromPWM( float** PWM, size_t asize, SequenceSet* posSet, float q );
 
 	void initFromBaMM( char* indir, size_t l_flank, size_t r_flank );
 
 	size_t				getW(); 					// get motif length w
 	size_t				getK();						// get motif model order k
+    float               getQ();                     // get estimated motif fraction on the sequences q
 	float**				getA();						// get motif hyperparameter alpha
 	float***    		getV();						// get conditional probabilities v
 	float**				getS();						// get log odds scores for the highest order K at position j
@@ -48,17 +50,18 @@ private:
 	size_t				C_;							// count of the sequences
 	size_t 				W_;							// motif length
 	size_t				K_;							// motif model order
+    float_t             q_;                         // estimated motif fraction on the sequences
 	float**			 	A_;							// hyperparameter alphas
 	float***    		v_;				        	// conditional probabilities for (k+1)-mers y at motif position j
     float*	            f_bg_;			            // monomer frequencies from background model
 	float***			p_;							// probabilities for (k+1)-mers y at motif position j
 	float**				s_;							// log odds scores for (K+1)-mers y at motif position j
-	float***			n_;							// fractional counts of (k+1)-mer for all y at motif position j
+	int***			    n_;							// fractional counts of (k+1)-mer for all y at motif position j
 	std::vector<size_t>	Y_;							// contains 1 at position 0
 													// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
 													// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
 
-	void 				calculateV( float*** n );	// calculate v from k-mer counts n and global alphas
+	void 				calculateV( int*** n );	// calculate v from k-mer counts n and global alphas
 
 };
 
@@ -68,6 +71,10 @@ inline size_t Motif::getW(){
 
 inline size_t Motif::getK(){
 	return K_;
+}
+
+inline float Motif::getQ(){
+    return q_;
 }
 
 inline float** Motif::getA(){
