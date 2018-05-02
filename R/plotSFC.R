@@ -402,9 +402,9 @@ plotSFC = function(filename, fdr, recall){
 
     cex_axis_size = 2.5
     cex_main_size = 3.5
-    unicolor = "orange"
-    #unicolor = "black"
-    main_title = "Recall-Sensitivity Curve"
+    #unicolor = "orange"
+    unicolor = "black"
+    main_title = "Recall-False discovery rate Curve"
     # plot fdr vs. recall curve in .png. Note that x-axis is in log scale
     png( filename = paste0(filename,".png"), width = 800, height = 800 )
     par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
@@ -479,8 +479,8 @@ plotROC = function( filename, TP, FP, mfold){
     auc5 = round(sum(diff(FPR[1:rbound_refined])*rollmean(TPR[1:rbound_refined],2)) / rbound, digits=3)
     cex_axis_size = 2.5
     cex_main_size = 3.5
-    unicolor = "darkgreen"
-    #unicolor = "black"
+    #unicolor = "darkgreen"
+    unicolor = "black"
     main_title = "Partial ROC Curve"
     png( filename = paste0(filename, "_ROC5.png"), width = 800, height = 800 )
     par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))
@@ -553,8 +553,8 @@ plotPRC = function(filename, precision, recall){
     # plot the raw precision-recall curve
     cex_axis_size = 2.5
     cex_main_size = 3.5
-    unicolor = "darkblue"
-    #unicolor = "black"
+    #unicolor = "darkblue"
+    unicolor = "black"
     main_title = "Precision-Recall Curve"
     png( filename=paste0(filename, "_PRC.png"), width=800, height=800 )
     par(oma=c(0,0,0,0), mar=c(6,6.5,5,1))

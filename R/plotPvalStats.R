@@ -352,7 +352,8 @@ pvt.plotlabels <- function(statistic, scale.param, eta0)
 # plot p-value statistics using fdrtool
 plotPvalStat = function(pvalues, filename, eta0, data_eta0, rerank){
 
-    png( filename = paste0(filename,".png"), width = 800, height = 800 )
+    picname = paste0(filename,".png")
+    png( filename = picname, width = 800, height = 800 )
     histRes <- hist(pvalues, plot=FALSE, breaks=30)
     xvals <- histRes$breaks
     yvals <- histRes$density
@@ -407,31 +408,31 @@ plotPvalStat = function(pvalues, filename, eta0, data_eta0, rerank){
     xpoly = rep(xpoly[2:length(xpoly)], each=2)
     ypoly = c(rep(ypoly[2:length(ypoly)], each=2), rep(ypoly[length(ypoly)], each=2))
     xpoly = c(0, xpoly[1:length(xpoly) - 1], cutoff, cutoff)
-    ypoly = pmax(ypoly, data_eta0)
+    ypoly = pmax(ypoly, eta0)
 
     # color TP region
     polygon(
-        c(xpoly, rev(xpoly)),
-        c(ypoly, rev(rep(eta0, length(ypoly)))),
-        col =rgb(0, 1, 0, 0.1),
-        border = NA
+    c(xpoly, rev(xpoly)), c(ypoly, rev(rep(eta0, length(ypoly)))),
+    col =rgb(0, 1, 0, 0.1),
+    border = NA
     )
 
     text_cex = 2
     font = 2
     v_spacer = 0.05
-    h_spacer = max(ypoly) * 0.04  # scale the spacer due to the range of y-axis
+    #h_spacer = max(ypoly) * 0.04  # scale the spacer due to the range of y-axis
+    h_spacer = text_cex * 0.1
 
-    text(cutoff - v_spacer, min(eta0 + h_spacer, max(ypoly)), "TP", col="darkgreen", font=font, cex=text_cex)
-    text(cutoff + v_spacer, eta0 - h_spacer, "TN", col="black", font=font, cex=text_cex)
-    text(cutoff - v_spacer, eta0 - h_spacer, "FP", col="darkred", font=font, cex=text_cex)
-    text(cutoff + v_spacer, min(eta0 + h_spacer, max(ypoly)), "FN", col="black", font=font, cex=text_cex)
+    text(cutoff - v_spacer, eta0 + h_spacer, "TP", col="darkgreen", font=font, cex=text_cex)
+    text(cutoff + v_spacer, max(0, eta0 - h_spacer), "TN", col="black", font=font, cex=text_cex)
+    text(cutoff - v_spacer, max(0, eta0 - h_spacer), "FP", col="darkred", font=font, cex=text_cex)
+    text(cutoff + v_spacer, eta0 + h_spacer, "FN", col="black", font=font, cex=text_cex)
 
     text(rbound/2, data_eta0/2, "background sequences", font=font, cex=text_cex, col="gray30")
 
     box(lwd=2.5)
 
-    invisible(dev.off() )
+    invisible(dev.off())
 }
 
 
@@ -442,8 +443,9 @@ plotRRC = function(picname, recall, TFR, rerank){
     y_upper = 100
     y_lower = 1
 
-    # compute the area under the RRC curve (AURRC):
+    # compute the area under the RRC curve (AvRec):
     sum_area = log10(y_upper)-log10(y_lower)    # the total area
+
     # make sure TFR does not exceed y_upper
     TFR_modified = c()
 
@@ -461,14 +463,16 @@ plotRRC = function(picname, recall, TFR, rerank){
     if(plots){
 
         unicolor = "darkblue"
+        cex_main_size = 3.0
+
         #unicolor = "black"
         #cex_main_size = 3.5
-        cex_main_size = 3.0
+
         if(rerank){
             mainname = paste0("Motif Performance, AvRec=", avrec)
         } else{
             mainname = paste0("Dataset Performance, AvRec=", avrec)
-            #mainname = paste0("Averaged Recall curve, AvRec=", avrec)
+            #mainname = paste0("Average Recall Curve, AvRec=", avrec)
         }
 
         # make sure that the upper border does not exceed y_upper
@@ -647,29 +651,35 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
     # get the global fdr values and estimate of the weight eta0 of the null component
     fdr	    <- result_fdrtool$qval
     eta0 	<- result_fdrtool$param[3]
+    if( eta0 >= 1){
+        #stop("estimated eta0 >= 1. No positives in the input set.")
+        eta0 = 0.9999
+    }
 
     # plot p-value density plot
     if(plots) plotPvalStat(pvalues, filename=pn_pval, eta0=eta0, data_eta0=data_eta0, rerank)
 
     # calculate recall
-    len 	= length(fdr)
-    list 	<- seq(1, len)
+    len         = length(fdr)
+    list        <- seq(1, len)
+
     recall  <- ( 1 - fdr ) * list / ( 1 - eta0 ) / len
 
     # cut values when recall is larger than 1
-    cutoff = 1
+    cutoff = len
     for(i in list){
         if( recall[i] > 1 ){
-            cutoff = i
+            cutoff = i-1
             break
         }
     }
+
     recall=recall[1:cutoff]
     fdr=fdr[1:cutoff]
 
     # set FP / TP ratio to 1:1
     mfold  = eta0 / (1-eta0)
-    tfr <- numeric(length(fdr))
+    tfr <- numeric(len)
 
     if(max(fdr)>0){
         tfr <- (1-fdr)/fdr * mfold
@@ -707,10 +717,12 @@ if( length(Sys.glob(paste(c(dir, "/", prefix, "*", file_suffix), collapse=""))) 
 
 for (f in Sys.glob(paste(c(dir, "/", prefix, "*", file_suffix), collapse=""))) {
 
+    front_end=paste0(c(dir, "/", prefix), collapse="")
     # get motif number from the filename; Note: important for motif reranking
-    motif_id <- sub(paste(c(dir, "/", prefix), collapse=""), "", f)
-    motif_id <- sub(".zoops.stats", "", motif_id)
+    motif_id <- sub(front_end, "", f, fixed = TRUE)     # note: fixed=TRUE is very very important for recognizing special characters
+    motif_id <- sub(file_suffix, "", motif_id, fixed = TRUE)
     motif_num <- unlist(strsplit(motif_id, "_motif_"))[-1]
+
 
     if( length(motif_num) == 0){
         motif_num = "NaN"
@@ -726,6 +738,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", file_suffix), collapse=""))) {
     mfold       <- as.numeric(first_row[6])
     occurrence  <- as.numeric(first_row[7])
 
+    print(length(pvalues))
     # check if any p-values are missing
     if( sum(is.na(pvalues)) > 0 ){
         stop("Some of the input p-values are missing!")
@@ -751,14 +764,14 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", file_suffix), collapse=""))) {
 
     # evaluate motif on the dataset
     eval_dataset    = evaluateMotif(pvalues, filename = filename, rerank=FALSE, data_eta0=data_eta0)
-    data_occur      = occurrence                             # acquire motif occurrence
-    data_avrec      = eval_dataset$avrec                     # acquire AURRC score
+    data_occur      = occurrence                                # acquire motif occurrence
+    data_avrec      = eval_dataset$avrec                        # acquire AvRec score
 
     # evaluate motif indenpendent from dataset
     eval_motif      = evaluateMotif(pvalues, filename = filename, rerank=TRUE, data_eta0=data_eta0)
     motif_eta0      = eval_motif$eta0
-    motif_occur     = round((1-motif_eta0)*(1+mfold), digits=3) # acquire motif occurrence
-    motif_avrec     = eval_motif$avrec                      # acquire AURRC score
+    motif_occur     = round((1-motif_eta0)*(1+mfold), digits=3) # calculate motif occurrence
+    motif_avrec     = eval_motif$avrec                          # acquire AvRec score
 
     # output the result
     resultString = paste0(c(prefix, motif_num, data_avrec, data_occur, motif_avrec, motif_occur), collapse="\t")
