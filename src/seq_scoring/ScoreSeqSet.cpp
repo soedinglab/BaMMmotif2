@@ -43,18 +43,15 @@ void ScoreSeqSet::calcLogOdds(){
 		size_t 	LW1 = seqSet_[n]->getL() - W + 1;
 		size_t* kmer = seqSet_[n]->getKmer();
 		float 	maxScore = -FLT_MAX;
+        //float   maxScore = 0.f;
 
         size_t z_i = 0;
 		for( size_t i = 0; i < LW1; i++ ){
 			float logOdds = 0.0f;
 			for( size_t j = 0; j < W; j++ ){
-
 				size_t y = kmer[i+j] % Y_[K+1];
-
 				logOdds += s[y][j];
-
 			}
-
 			// take all the log odds scores for MOPS model:
 			mops_scores_[n].push_back( logOdds );
 

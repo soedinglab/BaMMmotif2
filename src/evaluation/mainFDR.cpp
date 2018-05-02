@@ -17,7 +17,6 @@ int main( int nargs, char* args[] ){
     /**
      * Build up the background model
      */
-
 	BackgroundModel* bgModel;
     if( GFdr::bgModelFilename == NULL ) {
         bgModel = new BackgroundModel(GFdr::posSequenceSet->getSequences(),
@@ -37,7 +36,6 @@ int main( int nargs, char* args[] ){
     /**
      * Initialize the model
      */
-
     MotifSet motif_set( GFdr::initialModelFilename,
                         GFdr::addColumns.at(0),
                         GFdr::addColumns.at(1),

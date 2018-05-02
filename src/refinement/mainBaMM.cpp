@@ -180,6 +180,11 @@ int main( int nargs, char* args[] ){
 
             ScoreSeqSet scoreNegSet( motif, bgModel, negset );
             scoreNegSet.calcLogOdds();
+            if( Global::saveLogOdds ){
+                scoreNegSet.writeLogOdds(Global::outputDirectory,
+                                         Global::outputFileBasename + ".negset",
+                                         Global::ss );
+            }
             std::vector<std::vector<float>> negAllScores = scoreNegSet.getMopsScores();
             std::vector<float> negScores;
             for( size_t n = 0; n < negset.size(); n++ ){

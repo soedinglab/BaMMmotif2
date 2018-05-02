@@ -138,8 +138,10 @@ int SequenceSet::readFASTA( bool singleStrand ){
 						header = '>';
 					} else {
 						// fetch header till the first tab
+                        // remove the '\r' terminator in the end of the line
                         std::vector<std::string> strs;
-                        header = boost::split(strs, line ,boost::is_any_of("\t"))[0];
+                        header = boost::split(strs, line, boost::is_any_of("\t"))[0];
+                        header = boost::split(strs, header, boost::is_any_of("\r"))[0];
                     }
 
 				} else if( !( header.empty() ) ){

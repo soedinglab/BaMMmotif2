@@ -103,6 +103,12 @@ void Global::init( int nargs, char* args[] ){
 	posSequenceSet = new SequenceSet( posSequenceFilename, ss );
 	negSequenceSet = new SequenceSet( negSequenceFilename, ss );
 
+    // check if the input sequences are too few
+    if( posSequenceSet->getSequences().size() < cvFold ){
+        std::cerr << "Error: Input sequences are too few for training! \n" << std::endl;
+        exit( 1 );
+    }
+
 	// optional: read in sequence intensities (header and intensity columns?)
 	if( intensityFilename != 0 ){
 		;// read in sequence intensity

@@ -38,6 +38,7 @@ public:
                            float f = 0.05f );
 	void 	print();
 	void	write( char* odir, std::string basename );
+    void    saveUnsortedLogOdds( std::string opath, std::vector<float> logOdds );
 
 private:
 

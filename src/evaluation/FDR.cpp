@@ -84,6 +84,10 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
 		ScoreSeqSet score_testset( motif, bgModel_, testSet );
         score_testset.calcLogOdds();
 
+        // score negative sequence set
+        ScoreSeqSet score_negset(motif, bgModel_, negSet);
+        score_negset.calcLogOdds();
+
 #pragma omp critical
         {
             if (mops_) {
@@ -94,19 +98,9 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
                                         std::begin(mops_scores[n]),
                                         std::end(mops_scores[n]));
                 }
-            }
 
-            if (zoops_) {
-                zoops_scores = score_testset.getZoopsScores();
-                posScoreMax_.insert(std::end(posScoreMax_),
-                                    std::begin(zoops_scores),
-                                    std::end(zoops_scores));
-            }
+                mops_scores.clear(); // reuse mops_scores vector
 
-            // score negative sequence set
-            ScoreSeqSet score_negset(motif, bgModel_, negSet);
-            score_negset.calcLogOdds();
-            if (mops_) {
                 mops_scores = score_negset.getMopsScores();
                 for (size_t n = 0; n < negSet.size(); n++) {
                     negScoreAll_.insert(std::end(negScoreAll_),
@@ -114,12 +108,20 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
                                         std::end(mops_scores[n]));
                 }
             }
+
             if (zoops_) {
+                zoops_scores = score_testset.getZoopsScores();
+                posScoreMax_.insert(std::end(posScoreMax_),
+                                    std::begin(zoops_scores),
+                                    std::end(zoops_scores));
+
+                zoops_scores.clear(); // reuse zoops_scores vector
                 zoops_scores = score_negset.getZoopsScores();
                 negScoreMax_.insert(std::end(negScoreMax_),
                                     std::begin(zoops_scores),
                                     std::end(zoops_scores));
             }
+
         }
 		if( motif ) 				delete motif;
 	}
@@ -211,7 +213,7 @@ void FDR::calculatePR(){
 		size_t posN_est = static_cast<size_t>( q_ * ( float )posN );
 
         // set limit for using the exponential extrapolation for p-value calculation
-        size_t n_top = std::fmax(200, negN / 10);
+        size_t n_top = std::fmin(100, negN / 10);
 
         float lambda = 0.f;
         for( size_t l = 0; l < n_top; l++ ){
@@ -223,17 +225,16 @@ void FDR::calculatePR(){
 
 		for( size_t i = 0; i < posN + negN; i++ ){
 
-            //if( idx_posMax < posN and idx_negMax < negN ){
-                if( (posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] or idx_negMax == negN ) and idx_posMax < posN ){
-                    Sl = posScoreMax_[idx_posMax];
-                    idx_posMax++;
-                }/* else if( posScoreMax_[idx_posMax] == negScoreMax_[idx_negMax] && rand() % 2 == 0){
-                    Sl = posScoreMax_[idx_posMax];
-                    idx_posMax++;
-                } */else {
-                    Sl = negScoreMax_[idx_negMax];
-                    idx_negMax++;
-              //  }
+            if( (posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] or idx_negMax == negN or idx_posMax == 0 )
+                and idx_posMax < posN ){
+                Sl = posScoreMax_[idx_posMax];
+                idx_posMax++;
+            } else if( posScoreMax_[idx_posMax] == negScoreMax_[idx_negMax] && rand() % 2 == 0){
+                Sl = posScoreMax_[idx_posMax];
+                idx_posMax++;
+            } else {
+                Sl = negScoreMax_[idx_negMax];
+                idx_negMax++;
             }
 
             float TP = ( float )idx_posMax;
@@ -254,6 +255,7 @@ void FDR::calculatePR(){
             } else {
                 // p-value is calculated by relying on a parametric fit of the exponentially cumulative distribution
                 p_value = n_top * expf( ( negScoreMax_[n_top] - Sl ) / lambda ) / negN;
+//                std::cout << i<<'\t'<< n_top << '\t' << negScoreMax_[n_top] << '\t' << Sl << '\t' << p_value << '\t'<< std::endl;
             }
 
 			PN_Pvalue_.push_back( p_value );
@@ -445,4 +447,13 @@ void FDR::write( char* odir, std::string basename ){
 			}
 		}
 	}
+}
+
+void FDR::saveUnsortedLogOdds( std::string opath, std::vector<float> logOdds ){
+
+    std::ofstream ofile( opath );
+
+    for( size_t i = 0; i < logOdds.size(); i++ ){
+        ofile << i+1 << '\t' << std::setprecision( 6 ) << logOdds[i] << std::endl;
+    }
 }

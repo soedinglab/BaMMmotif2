@@ -226,7 +226,7 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, floa
 	std::vector<Sequence*> posSet = posSeqset->getSequences();
 	std::mt19937 rngx;
 
-//#pragma omp parallel for
+#pragma omp parallel for
 
 	for( size_t n = 0; n < posSet.size(); n++ ){
 
@@ -280,7 +280,6 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, floa
 				for( size_t j = 0; j < W_; j++ ){
 					size_t y = kmer[z-1+j] % Y_[k+1];
                     __sync_fetch_and_add(&(n_[k][y][j]), 1);
-					//n_[k][y][j]++;
 				}
 			}
 		}
@@ -433,7 +432,10 @@ void Motif::calculateLogS( float** Vbg, size_t K_bg ){
 	for( size_t y = 0; y < Y_[K_+1]; y++ ){
 		size_t y_bg = y % Y_[K_bg+1];
 		for( size_t j = 0; j < W_; j++ ){
-			s_[y][j] = logf( v_[K_][y][j] + 0.000001f ) - logf( Vbg[K_bg][y_bg] );
+            // todo: randomize this value between
+            //float rand = ((float) rand() / (RAND_MAX))/ 1e6f;
+            float rand = 1e-5f;
+			s_[y][j] = logf( v_[K_][y][j] + rand ) - logf( Vbg[K_bg][y_bg] );
 		}
 	}
 

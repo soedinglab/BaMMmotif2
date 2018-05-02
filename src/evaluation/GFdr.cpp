@@ -76,9 +76,14 @@ void GFdr::init( int nargs, char* args[] ){
     posSequenceSet = new SequenceSet( posSequenceFilename, ss );
     negSequenceSet = new SequenceSet( negSequenceFilename, ss );
 
+    // check if the input sequences are too few
+    if( posSequenceSet->getSequences().size() < cvFold ){
+        std::cerr << "Error: Input sequences are too few for training! \n" << std::endl;
+        exit( 1 );
+    }
     // set mFold to 1 when input sequence set is to large
-    if(posSequenceSet->getSequences().size() > 5e3 and mFold > 1){
-        mFold =1;
+    if( posSequenceSet->getSequences().size() > 5e3 and mFold > 1 ){
+        mFold = 1;
     }
 
 }
@@ -313,6 +318,11 @@ int GFdr::readArguments( int nargs, char* args[] ){
     omp_set_num_threads( threads );
 #endif
 
+    // it makes no sense when cross-validation is applied but no optimization method is chosen.
+    if( cvFold > 1 and EM == 0 and CGS == 0 ){
+        std::cerr << "No optimization is applied to the cross-validation." << std::endl;
+        exit( 1 );
+    }
 
     return 0;
 }
