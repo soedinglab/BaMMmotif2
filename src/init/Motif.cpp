@@ -164,9 +164,7 @@ void Motif::initFromBindingSites( char* indir, size_t l_flank, size_t r_flank ){
 				}
 				n_[k][y][j]++;
 			}
-
 		}
-
 	}
 
 	// calculate v and p from k-mer counts n
@@ -365,8 +363,9 @@ void Motif::initFromBaMM( char* indir, size_t l_flank, size_t r_flank ){
 
         // set isInitialized
         isInitialized_ = true;
+
     } else {
-        std::cerr << "Input BaMM file cannot be opened!" << std::endl;
+        std::cerr << "Error: Input BaMM file cannot be opened!" << std::endl;
         exit( 1 );
     }
 }
@@ -376,7 +375,7 @@ float** Motif::getS(){
 }
 
 void Motif::calculateV( int*** n ){
-	// Note: This function is written for reading in bindingsite files.
+	// Note: This function is written for reading in binding site files.
 
     // for k = 0, v_ = freqs:
 	for( size_t y = 0; y < Y_[1]; y++ ){

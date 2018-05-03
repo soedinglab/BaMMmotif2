@@ -56,7 +56,7 @@ MotifSet::MotifSet( char* indir,
 
 			size_t length;						// length of motif
 			size_t asize;						// alphabet size
-            float  q;                           // fraction of sequences that contain a motif
+            float q;                            // fraction of sequences that contain a motif
 			std::string line;
 			std::string row;
 
@@ -64,9 +64,6 @@ MotifSet::MotifSet( char* indir,
 
 				// search for the line starting with "letter-probability matrix"
 				if( line.find("letter-probability matrix") != std::string::npos ){
-
-                    // count the number of motifs
-                    N_++;
 
 					// get the size of alphabet after "alength= "
 					std::stringstream A( line.substr( line.find( "h=" ) + 2 ) );
@@ -122,6 +119,9 @@ MotifSet::MotifSet( char* indir,
 					// initialize each motif with a PWM
 					motif->initFromPWM( PWM, asize, posSet, q );
 
+                    // count the number of motifs
+                    N_++;
+
 					motifs_.push_back( motif );
 
 					// free memory for PWM
@@ -139,10 +139,10 @@ MotifSet::MotifSet( char* indir,
 
             // check if the MEME file is empty
             if( N_ == 0 ) {
-                std::cout << "Error: Cannot find any PWM in the MEME-format file: " << indir
+                std::cerr << "Error: Cannot find any PWM in the MEME-format file: " << indir
                           << "\nPlease check the content of your input MEME file." << std::endl;
-                exit( 1 );
-           }
+//                exit( 1 );
+            }
 		}
 
 	} else if( tag.compare( "BaMM" ) == 0 ){
@@ -154,7 +154,7 @@ MotifSet::MotifSet( char* indir,
 
 		if( !file.good() ){
 
-			std::cout << "Error: Cannot open BaMM file: " << indir << std::endl;
+			std::cerr << "Error: Cannot open BaMM file: " << indir << std::endl;
 			exit( 1 );
 
 		} else {
@@ -179,7 +179,8 @@ MotifSet::MotifSet( char* indir,
 
 			// extend the core region of the model due to the added columns
 			model_length += l_flank + r_flank;
-			// adjust model order, extra 1
+
+            // adjust model order, extra 1
 			model_order -= 1;
 
 			// construct an initial motif
