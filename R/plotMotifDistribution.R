@@ -48,7 +48,7 @@ lwd_size    <- 1.5
 main_title  = "Motif Distribution"
 
 if( length(Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), collapse=""))) == 0 ){
-    stop("no input file exists in the folder!")
+    stop("Error: no input file exists in the folder!")
 }
 
 for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), collapse="")) ){
@@ -62,12 +62,14 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
     line_number = as.integer(system2("wc", args=c("-l", filename, " | awk '{print $1}'" ), stdout = TRUE))
 
     if( line_number < 3 ){
-        print("The input file is empty. No query motif is found in the sequence set.")
+        print("Warning: The input file is empty. No query motif is found in the sequence set.")
         # print out an empty image
         picname <- paste0(maindir, file_prefix, motif_id, "_distribution.png")
+
         png(filename=picname, width=png_width, height=png_height)
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
-        plot(y=0,
+
+        plot(0,
             main=main_title,
             xlab="", ylab="",
             type="l", lwd=lwd_size*3,
@@ -75,6 +77,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
             axes=FALSE, cex.axis=label_size, cex.main=label_size,
             xlim = c(-100, 100)
         )
+
         abline(v=0, col="grey", lwd=lwd_size)
         abline(h=0, col="grey", lwd=lwd_size)
         mtext("Position relative to sequence center", side=1, line=4.5, cex=label_size)

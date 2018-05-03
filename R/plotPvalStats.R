@@ -642,7 +642,7 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
     }
 
     if(max(pvalues) > 1 | min(pvalues) < 0){
-        stop("input p-values must all be in the range 0 to 1!")
+        stop("Error: input p-values must all be in the range 0 to 1!")
     }
 
     # use fdrtool to estimate eta0
@@ -651,6 +651,7 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
     # get the global fdr values and estimate of the weight eta0 of the null component
     fdr	    <- result_fdrtool$qval
     eta0 	<- result_fdrtool$param[3]
+
     if( eta0 >= 1){
         #stop("estimated eta0 >= 1. No positives in the input set.")
         eta0 = 0.9999
@@ -712,7 +713,7 @@ resultTitle = paste0(c("TF", "#", "d_avrec", "d_occur", "m_avrec", "m_occur"), c
 results = c(results, resultTitle)
 
 if( length(Sys.glob(paste(c(dir, "/", prefix, "*", file_suffix), collapse=""))) ==0 ){
-    stop("no input file exists in the folder!")
+    stop("Error: no input file exists in the folder!")
 }
 
 for (f in Sys.glob(paste(c(dir, "/", prefix, "*", file_suffix), collapse=""))) {
@@ -738,18 +739,17 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", file_suffix), collapse=""))) {
     mfold       <- as.numeric(first_row[6])
     occurrence  <- as.numeric(first_row[7])
 
-    print(length(pvalues))
     # check if any p-values are missing
     if( sum(is.na(pvalues)) > 0 ){
-        stop("Some of the input p-values are missing!")
+        stop("Error: Some of the input p-values are missing!")
     }
 
     if( is.na(mfold) ){
-        stop("mfold value is missing in the inpt file!")
+        stop("Error: mfold value is missing in the input file!")
     }
 
     if( is.na(occurrence) ){
-        stop("occurrence value is missing in the inpt file!")
+        stop("Error: Occurrence value is missing in the input file!")
     }
 
     # avoid the rounding errors when p-value = 0 or p-value > 1
