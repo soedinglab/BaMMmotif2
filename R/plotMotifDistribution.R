@@ -61,7 +61,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
     filename = paste0(c(maindir, file_prefix, motif_id, file_suffix), collapse="")
     line_number = as.integer(system2("wc", args=c("-l", filename, " | awk '{print $1}'" ), stdout = TRUE))
 
-    if( line_number < 3 ){
+    if( line_number < 2 ){
         print("Warning: The input file is empty. No query motif is found in the sequence set.")
         # print out an empty image
         picname <- paste0(maindir, file_prefix, motif_id, "_distribution.png")
@@ -128,7 +128,12 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
             pos_positions = motif_pos
         }
 
-        interval = max(max(pos_positions)-strand_center, strand_center-min(pos_positions))
+        if(posCount >= negCount){
+            interval = max(max(pos_positions)-strand_center, strand_center-min(pos_positions))
+        } else {
+            interval = max(max(neg_positions)-strand_center, strand_center-min(neg_positions))
+        }
+        
         interval = (as.integer(interval/10)+1) * 10
         picname <- paste0( maindir, file_prefix, motif_id, "_distribution.png")
         png(filename = picname, width=png_width, height=png_height)
@@ -138,11 +143,10 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
         ## use 'counts / n' as weights:
         #pos.strand = density(unique(pos_positions), weights=table(pos_positions)/length(pos_positions))
 
-        pos.strand = density((pos_positions))
-        if(negCount!= 0){
+        if(negCount > 1 && posCount > 1){
             ## use 'counts / n' as weights:
             #neg.strand = density(unique(neg_positions), weights=table(neg_positions)/length(neg_positions))
-
+            pos.strand = density((pos_positions))
             neg.strand = density((neg_positions))
             # turn neg strand upside down
             neg.strand$y <- neg.strand$y*-1
@@ -155,24 +159,45 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
                 col="darkblue",
                 axes=FALSE, cex.axis=label_size, cex.main=label_size,
                 xlim = c(strand_center - interval, strand_center + interval),
-                ylim = c(min(neg.strand$y), max(pos.strand$y)
-                )
+                ylim = c(min(neg.strand$y), max(pos.strand$y))
             )
 
             # for plotting distribution on negative strand
             lines(neg.strand, type="l", lwd=lwd_size*3, col="darkred")
             polygon(neg.strand, col=convertcolor("darkred",30), border = NA)
             legend("bottomright",legend="- strand", col="darkred", cex=label_size, bty="n", text.col="darkred")
+            polygon(pos.strand, col=convertcolor("darkblue", 30), border = NA)
+            legend("topright",legend="+ strand", col="darkblue", cex=label_size, bty="n", text.col="darkblue")
+        } else if(negCount > 1 && posCount <= 1) {
+            # only plot motif distribution on negative strand
+            neg.strand = density((neg_positions))
+            # turn neg strand upside down
+            neg.strand$y <- neg.strand$y*-1
 
-        } else {
-            plot(pos.strand,
-            main=main_title,
-            xlab="", ylab="",
-            type="l", lwd=lwd_size*3,
-            col="darkblue",
-            axes=FALSE, cex.axis=label_size, cex.main=label_size,
-            xlim = c(strand_center - interval, strand_center + interval)
+            plot(neg.strand,
+                main=main_title,
+                xlab="", ylab="",
+                type="l", lwd=lwd_size*3,
+                col="darkred",
+                axes=FALSE, cex.axis=label_size, cex.main=label_size,
+                xlim = c(strand_center - interval, strand_center + interval),
+                ylim = c(min(neg.strand$y), max(neg.strand$y))
             )
+            polygon(neg.strand, col=convertcolor("darkred",30), border = NA)
+            legend("bottomright",legend="- strand", col="darkred", cex=label_size, bty="n", text.col="darkred")
+        } else {
+            # only plot motif distribution on poistive strand
+            pos.strand = density((pos_positions))
+            plot(pos.strand,
+                main=main_title,
+                xlab="", ylab="",
+                type="l", lwd=lwd_size*3,
+                col="darkblue",
+                axes=FALSE, cex.axis=label_size, cex.main=label_size,
+                xlim = c(strand_center - interval, strand_center + interval)
+                )
+            polygon(pos.strand, col=convertcolor("darkblue", 30), border = NA)
+            legend("topright",legend="+ strand", col="darkblue", cex=label_size, bty="n", text.col="darkblue")
         }
 
         abline(h=0, v=strand_center, col="grey", lwd=lwd_size*2)
@@ -182,8 +207,6 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
             labels = c(-interval, 0, interval),
             tick = FALSE, cex.axis=label_size, line=1)
         axis(2, tick = FALSE, cex.axis=label_size, line=0.5)
-        polygon(pos.strand, col=convertcolor("darkblue", 30), border = NA)
-        legend("topright",legend="+ strand", col="darkblue", cex=label_size, bty="n", text.col="darkblue")
         box(lwd=lwd_size)
 
         invisible(dev.off())
