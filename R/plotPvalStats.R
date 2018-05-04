@@ -458,6 +458,11 @@ plotRRC = function(picname, recall, TFR, rerank){
     }
 
     avrec = sum(diff(recall)*rollmean(log10(TFR_modified),2)) / sum_area
+
+    if(is.na(avrec)){
+        avrec = 0
+    }
+
     avrec = round(avrec, digits=3)
 
     if(plots){
@@ -652,7 +657,7 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
     fdr	    <- result_fdrtool$qval
     eta0 	<- result_fdrtool$param[3]
 
-    if( eta0 >= 1){
+    if( eta0 >= 1 ){
         #stop("estimated eta0 >= 1. No positives in the input set.")
         eta0 = 0.9999
     }
@@ -687,6 +692,7 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
     } else {
         tfr = 1
     }
+
     recall[cutoff] = 1
     tfr[cutoff] = 1
 
@@ -764,13 +770,13 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", file_suffix), collapse=""))) {
 
     # evaluate motif on the dataset
     eval_dataset    = evaluateMotif(pvalues, filename = filename, rerank=FALSE, data_eta0=data_eta0)
-    data_occur      = occurrence                                # acquire motif occurrence
+    data_occur      = round(occurrence, digits=4)               # acquire motif occurrence
     data_avrec      = eval_dataset$avrec                        # acquire AvRec score
 
     # evaluate motif indenpendent from dataset
     eval_motif      = evaluateMotif(pvalues, filename = filename, rerank=TRUE, data_eta0=data_eta0)
     motif_eta0      = eval_motif$eta0
-    motif_occur     = round((1-motif_eta0)*(1+mfold), digits=3) # calculate motif occurrence
+    motif_occur     = round((1-motif_eta0)*(1+mfold), digits=4) # calculate motif occurrence
     motif_avrec     = eval_motif$avrec                          # acquire AvRec score
 
     # output the result
