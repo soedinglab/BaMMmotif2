@@ -119,6 +119,9 @@ int main( int nargs, char* args[] ) {
         std::string fileExtension;
         if( GScan::initialModelTag == "PWM"){
             fileExtension = "_init_motif_" + std::to_string( n+1 );
+        } else if ( GScan::initialModelTag == "BaMM" ){
+            std::string BaMMFilename = baseName( GScan::initialModelFilename );
+            fileExtension = concatenate2strings( BaMMFilename, GScan::outputFileBasename );
         }
         
         scorePosSet.write( GScan::outputDirectory,

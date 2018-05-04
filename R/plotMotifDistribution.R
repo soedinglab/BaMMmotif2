@@ -133,7 +133,7 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
         } else {
             interval = max(max(neg_positions)-strand_center, strand_center-min(neg_positions))
         }
-        
+
         interval = (as.integer(interval/10)+1) * 10
         picname <- paste0( maindir, file_prefix, motif_id, "_distribution.png")
         png(filename = picname, width=png_width, height=png_height)

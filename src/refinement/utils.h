@@ -90,6 +90,9 @@ inline std::string concatenate2strings( std::string s1, std::string s2 ){
     size_t i = 0;
     size_t j = 0;
 
+    // make sure s2 is not shorter than s1
+    if(s1.length() > s2.length()){ std::swap(s1, s2); }
+
     while( i < s2.length() ){
         if( s2[i] != s1[j] or j == s1.length() ){
             for( size_t t = 0; t < s2.length() - i; t++ ){

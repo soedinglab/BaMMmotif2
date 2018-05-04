@@ -122,6 +122,9 @@ int main( int nargs, char* args[] ){
         std::string fileExtension;
         if( GFdr::initialModelTag == "PWM" ){
             fileExtension = "_motif_" + std::to_string( n+1 );
+        } else if ( GFdr::initialModelTag == "BaMM" ){
+            std::string BaMMFilename = baseName( GFdr::initialModelFilename );
+            fileExtension = concatenate2strings( BaMMFilename, GFdr::outputFileBasename );
         }
         fdr.write( GFdr::outputDirectory,
                    GFdr::outputFileBasename + fileExtension );
