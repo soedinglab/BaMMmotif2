@@ -106,20 +106,17 @@ MotifSet::MotifSet( char* indir,
 					// get the following W lines
 					for( size_t j = l_flank; j < length - r_flank ; j++ ){
 
-						getline( file, row );
-
-                        // check if the MEME file is empty
-                        if( row.length() == 0 ) {
+						if( getline( file, row ).good()){
+                            std::stringstream number( row );
+                            for( size_t y = 0; y < asize; y++ ){
+                                number >> PWM[y][j];
+                            }
+                        } else {
+                            // check if the MEME file is empty
                             std::cerr << "Error: Cannot find any PWM in the MEME-format file: " << indir
                                       << "\nPlease check the content of your input MEME file." << std::endl;
                             exit( 1 );
                         }
-
-						std::stringstream number( row );
-
-						for( size_t y = 0; y < asize; y++ ){
-							number >> PWM[y][j];
-						}
 
 					}
 
@@ -141,7 +138,12 @@ MotifSet::MotifSet( char* indir,
                     if( N_ >= maxPWM ){
                         break;
                     }
-				}
+				} else {
+                    // check if the MEME file is empty or wrong format
+                    std::cerr << "Error: Cannot find any PWM in the MEME-format file: " << indir
+                              << "\nPlease check the version of your input MEME file." << std::endl;
+                    exit( 1 );
+                }
 			}
 
 		}
