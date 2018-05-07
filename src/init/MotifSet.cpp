@@ -108,6 +108,13 @@ MotifSet::MotifSet( char* indir,
 
 						getline( file, row );
 
+                        // check if the MEME file is empty
+                        if( row.length() == 0 ) {
+                            std::cerr << "Error: Cannot find any PWM in the MEME-format file: " << indir
+                                      << "\nPlease check the content of your input MEME file." << std::endl;
+                            exit( 1 );
+                        }
+
 						std::stringstream number( row );
 
 						for( size_t y = 0; y < asize; y++ ){
@@ -137,12 +144,6 @@ MotifSet::MotifSet( char* indir,
 				}
 			}
 
-            // check if the MEME file is empty
-            if( N_ == 0 ) {
-                std::cerr << "Error: Cannot find any PWM in the MEME-format file: " << indir
-                          << "\nPlease check the content of your input MEME file." << std::endl;
-//                exit( 1 );
-            }
 		}
 
 	} else if( tag.compare( "BaMM" ) == 0 ){
@@ -161,6 +162,7 @@ MotifSet::MotifSet( char* indir,
 
 			size_t model_length = 0;
 			size_t model_order = 0;
+            size_t check_lines = 0;
 			std::string line;
 
 			// read file to calculate motif length, order and alphabet size
@@ -170,18 +172,28 @@ MotifSet::MotifSet( char* indir,
 					// count the number of empty lines as the motif length
 					model_length++;
 
+                    // check if the input BaMM file has the right format
+                    if( model_length > 1 and check_lines != model_order){
+                        std::cerr << "This is not a BaMM-format file: " << indir << std::endl;
+                        exit( 1 );
+                    }
+                    check_lines = 0;
 				} else if( model_length == 0 ){
 					// count the lines of the first position
 					model_order++;
-
-				}
+				} else {
+                    check_lines++;
+                }
 			}
+
+
+            // adjust model order, extra 1
+            model_order -= 1;
+
+            std::cout << model_order << std::endl;
 
 			// extend the core region of the model due to the added columns
 			model_length += l_flank + r_flank;
-
-            // adjust model order, extra 1
-			model_order -= 1;
 
 			// construct an initial motif
 			Motif* motif = new Motif( model_length, K, alphas, f_bg, glob_q );
