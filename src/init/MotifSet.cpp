@@ -138,15 +138,17 @@ MotifSet::MotifSet( char* indir,
                     if( N_ >= maxPWM ){
                         break;
                     }
-				} else {
-                    // check if the MEME file is empty or wrong format
-                    std::cerr << "Error: Cannot find any PWM in the MEME-format file: " << indir
-                              << "\nPlease check the version of your input MEME file." << std::endl;
-                    exit( 1 );
-                }
+				}
 			}
 
 		}
+
+        if( N_ == 0 ){
+            // check if the MEME file is empty or wrong format
+            std::cerr << "Error: Cannot find any PWM in the MEME-format file: " << indir
+                      << "\nPlease check the version of your input MEME file." << std::endl;
+            exit( 1 );
+        }
 
 	} else if( tag.compare( "BaMM" ) == 0 ){
 
