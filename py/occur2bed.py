@@ -18,36 +18,41 @@ def create_parser():
 
 
 def parse_occur(ipath):
-    df = pd.read_csv(ipath, sep='\t',header=None, names=['chrom', 'length', 'strand', 'pos', 'pattern', 'p-val', 'e-val'])
+    df = pd.read_csv(ipath, sep='\t',header=1, names=['chrom', 'length', 'strand', 'pos', 'pattern', 'p-val', 'e-val'])
     chrom, srange = df['chrom'].str.split(':').str
     _, chrom = chrom.str.split('>').str
-    sleft, sright = srange.str.split('-').str
-    strand = df['strand']
-    mstart, _, mend = df['pos'].str.split('.').str
-    length = df['length'][1]
 
-    sleft=sleft.astype(int)
-    sright=sright.astype(int)
-    mstart=mstart.astype(int)
-    mend=mend.astype(int)
-    start, end = [], []
-    for i in range(len(chrom)):
-        if strand[i] == '+':
-            s_start = sleft[i] + mstart[i] -1
-            s_end = sleft[i] + mend[i] - 1
-        else:
-            s_start = sleft[i] + 2 * length - mend[i] -1
-            s_end = sleft[i] + 2 * length - mstart[i] - 1
-        start.append(s_start)
-        end.append(s_end)
+    if srange.str.find('-')[1] == -1:
+        print("Error: the header line contains no information for generating bed file!")
+        exit()
+    else:
+        sleft, sright = srange.str.split('-').str
+        strand = df['strand']
+        mstart, _, mend = df['pos'].str.split('.').str
+        length = df['length'][1]
 
-    occurs = pd.DataFrame(columns=['#CHROM', 'START', 'END', 'STRAND', 'Pval'])
-    occurs['#CHROM'] = chrom
-    occurs['START'] = start
-    occurs['END'] = end
-    occurs['STRAND'] = strand
-    occurs['Pval'] = df['p-val']
-    return occurs
+        sleft=sleft.astype(int)
+        sright=sright.astype(int)
+        mstart=mstart.astype(int)
+        mend=mend.astype(int)
+        start, end = [], []
+        for i in range(len(chrom)):
+            if strand[i] == '+':
+                s_start = sleft[i] + mstart[i] -1
+                s_end = sleft[i] + mend[i] - 1
+            else:
+                s_start = sleft[i] + 2 * length - mend[i] -1
+                s_end = sleft[i] + 2 * length - mstart[i] - 1
+            start.append(s_start)
+            end.append(s_end)
+
+        occurs = pd.DataFrame(columns=['#CHROM', 'START', 'END', 'STRAND', 'Pval'])
+        occurs['#CHROM'] = chrom
+        occurs['START'] = start
+        occurs['END'] = end
+        occurs['STRAND'] = strand
+        occurs['Pval'] = df['p-val']
+        return occurs
 
 
 def write_bed(occurs, ofile):
