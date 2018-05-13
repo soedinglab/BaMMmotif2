@@ -93,32 +93,42 @@ int SequenceSet::readFASTA( bool singleStrand ){
 						if( !( sequence.empty() ) ){
 
 							size_t L = sequence.length();
-
-							if( L > maxL ){
-								maxL = L;
-							}
-							if( L < minL ){
-								minL = L;
-							}
+                            size_t L_act = 0;
 
 							// translate sequence into encoding
 							uint8_t* encoding = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
 
 							for( size_t i = 0; i < L; i++ ){
 
-								encoding[i] = Alphabet::getCode( sequence[i] );
-
-								if( encoding[i] == 0 ){
+								if( Alphabet::getCode( sequence[i] ) == 0 ){
 
 //									std::cerr << "Warning: The FASTA file contains an undefined base: " <<
 //											sequence[i] << " at sequence " << header << std::endl;
 
 									continue; // exclude undefined base from base counts
 
-								}
-								baseCounts[encoding[i]-1]++; // count base
+								} else {
+
+                                    encoding[L_act] = Alphabet::getCode( sequence[i] );
+                                    baseCounts[encoding[L_act]-1]++; // count base
+                                    L_act++;
+
+                                }
 							}
-							sequences_.push_back( new Sequence( encoding, L, header, Y_, singleStrand ) );
+
+                            if( L_act >= 8 ){
+
+                                // only take sequences when its length is longer than certain bases
+                                // here we take 8
+                                sequences_.push_back( new Sequence( encoding, L_act, header, Y_, singleStrand ) );
+
+                                maxL = ( L_act > maxL )? L_act : maxL;
+
+                                minL = ( L_act < minL )? L_act : minL;
+
+                            } else {
+                                std::cerr << "Warning: Sequence " << header << " is too short. Skipped." << std::endl;
+                            }
 
 							sequence.clear();
 							header.clear();
@@ -128,7 +138,7 @@ int SequenceSet::readFASTA( bool singleStrand ){
 						} else {
 
 							std::cerr << "Warning: Ignore FASTA entry without sequence: "
-									<< sequenceFilepath_ << std::endl;
+                                      << sequenceFilepath_ << std::endl;
 							header.clear();
 						}
 					}
@@ -149,7 +159,7 @@ int SequenceSet::readFASTA( bool singleStrand ){
 					if( line.find( ' ' ) != std::string::npos ){
 						// space character in sequence
 						std::cerr << "Error: FASTA sequence contains space character: "
-								<< sequenceFilepath_ << std::endl;
+								  << sequenceFilepath_ << std::endl;
 						exit( 1 );
 					} else {
 						sequence += line;
@@ -157,8 +167,7 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 				} else {
 
-					std::cerr << "Error: Wrong FASTA format: "
-							<< sequenceFilepath_ << std::endl;
+					std::cerr << "Error: Wrong FASTA format: " << sequenceFilepath_ << std::endl;
 					exit( 1 );
 				}
 			}
@@ -168,32 +177,43 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 			if( !( sequence.empty() ) ){
 
-				size_t L = sequence.length();
+                size_t L = sequence.length();
+                size_t L_act = 0;
 
-				if ( L > maxL ){
-					maxL = L;
-				}
-				if ( L < minL ){
-					minL = L;
-				}
+                // translate sequence into encoding
+                uint8_t* encoding = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
 
-				// translate sequence into encoding
-				uint8_t* encoding = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
+                for( size_t i = 0; i < L; i++ ){
 
-				for( size_t i = 0; i < L; i++ ){
+                    if( Alphabet::getCode( sequence[i] ) == 0 ){
 
-					encoding[i] = Alphabet::getCode( sequence[i] );
+//					    std::cerr << "Warning: The FASTA file contains an undefined base: "
+//                                << sequence[i] << " at sequence " << header << std::endl;
 
-					if( encoding[i] == 0 ){
+                        continue; // exclude undefined base from base counts
 
-//						std::cerr << "Warning: The FASTA file contains an undefined base: " <<
-//								sequence[i] << " at sequence " << header << std::endl;
+                    } else {
 
-						continue; // exclude undefined base from base counts
-					}
-					baseCounts[encoding[i]-1]++; // count base
-				}
-				sequences_.push_back( new Sequence( encoding, L, header, Y_, singleStrand ) );
+                        encoding[L_act] = Alphabet::getCode( sequence[i] );
+                        baseCounts[encoding[L_act]-1]++; // count base
+                        L_act++;
+                    }
+
+                }
+
+                if( L_act >= 8 ){
+
+                    // only take sequences when its length is longer than certain bases
+                    // here we take 8
+                    sequences_.push_back( new Sequence( encoding, L_act, header, Y_, singleStrand ) );
+
+                    maxL = ( L_act > maxL )? L_act : maxL;
+
+                    minL = ( L_act < minL )? L_act : minL;
+
+                } else {
+                    std::cerr << "Warning: Sequence " << header << " is too short. Skipped." << std::endl;
+                }
 
 				sequence.clear();
 				header.clear();
