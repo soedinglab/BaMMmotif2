@@ -79,6 +79,7 @@ int SequenceSet::readFASTA( bool singleStrand ){
 	std::vector<size_t> baseCounts( Alphabet::getSize() );
 	std::string line, header, sequence;
 	std::ifstream file( sequenceFilepath_.c_str() ); // opens FASTA file
+    size_t shortL = 8;
 
 	if( file.is_open() ){
 
@@ -102,8 +103,8 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 								if( Alphabet::getCode( sequence[i] ) == 0 ){
 
-//									std::cerr << "Warning: The FASTA file contains an undefined base: " <<
-//											sequence[i] << " at sequence " << header << std::endl;
+//									std::cerr << "Warning: The FASTA file contains an undefined base: "
+//                                            << sequence[i] << " at sequence " << header << std::endl;
 
 									continue; // exclude undefined base from base counts
 
@@ -116,15 +117,15 @@ int SequenceSet::readFASTA( bool singleStrand ){
                                 }
 							}
 
-                            if( L_act >= 8 ){
+                            if( L_act >= shortL ){
 
                                 // only take sequences when its length is longer than certain bases
                                 // here we take 8
                                 sequences_.push_back( new Sequence( encoding, L_act, header, Y_, singleStrand ) );
 
-                                maxL = ( L_act > maxL )? L_act : maxL;
+                                maxL = ( L_act > maxL ) ? L_act : maxL;
 
-                                minL = ( L_act < minL )? L_act : minL;
+                                minL = ( L_act < minL ) ? L_act : minL;
 
                             } else {
                                 std::cerr << "Warning: Sequence " << header << " is too short. Skipped." << std::endl;
@@ -136,7 +137,6 @@ int SequenceSet::readFASTA( bool singleStrand ){
 							free( encoding );
 
 						} else {
-
 							std::cerr << "Warning: Ignore FASTA entry without sequence: "
                                       << sequenceFilepath_ << std::endl;
 							header.clear();
@@ -166,7 +166,6 @@ int SequenceSet::readFASTA( bool singleStrand ){
 					}
 
 				} else {
-
 					std::cerr << "Error: Wrong FASTA format: " << sequenceFilepath_ << std::endl;
 					exit( 1 );
 				}
@@ -201,15 +200,15 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
                 }
 
-                if( L_act >= 8 ){
+                if( L_act >= shortL ){
 
                     // only take sequences when its length is longer than certain bases
                     // here we take 8
                     sequences_.push_back( new Sequence( encoding, L_act, header, Y_, singleStrand ) );
 
-                    maxL = ( L_act > maxL )? L_act : maxL;
+                    maxL = ( L_act > maxL ) ? L_act : maxL;
 
-                    minL = ( L_act < minL )? L_act : minL;
+                    minL = ( L_act < minL ) ? L_act : minL;
 
                 } else {
                     std::cerr << "Warning: Sequence " << header << " is too short. Skipped." << std::endl;
@@ -222,8 +221,7 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 			} else {
 
-				std::cerr << "Warning: Ignore FASTA entry without sequence: "
-						<< sequenceFilepath_ << std::endl;
+				std::cerr << "Warning: Ignore FASTA entry without sequence: " << sequenceFilepath_ << std::endl;
 				header.clear();
 			}
 		}
@@ -232,8 +230,7 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 	} else {
 
-		std::cerr << "Error: Cannot open FASTA file: "
-				<< sequenceFilepath_ << std::endl;
+		std::cerr << "Error: Cannot open FASTA file: " << sequenceFilepath_ << std::endl;
 		exit( 1 );
 	}
 
@@ -248,8 +245,7 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 	// calculate base frequencies
 	for( size_t i = 0; i < Y_[1]; i++ ){
-		baseFrequencies_[i] = static_cast<float>( baseCounts[i] ) /
-		                      static_cast<float>( sumCounts );
+		baseFrequencies_[i] = static_cast<float>( baseCounts[i] ) / static_cast<float>( sumCounts );
 	}
 
 	return 0;
@@ -257,7 +253,6 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 int SequenceSet::readIntensities(){
 
-	std::cerr << "Error: sequenceSet::readIntensities() "
-			"is not implemented so far." << std::endl;
+	std::cerr << "Error: sequenceSet::readIntensities() is not implemented so far." << std::endl;
 	exit( 1 );
 }
