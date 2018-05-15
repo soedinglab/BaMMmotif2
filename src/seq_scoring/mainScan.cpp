@@ -112,7 +112,13 @@ int main( int nargs, char* args[] ) {
         // calculate p-values based on positive and negative scores
         ScoreSeqSet scorePosSet( motif, bgModel, GScan::posSequenceSet->getSequences() );
         scorePosSet.calcLogOdds();
-        //scorePosSet.writeLogOdds( GScan::outputDirectory, GScan::outputFileBasename + std::to_string( n+1 ), GScan::ss );
+//
+//        // print out log odds scores for checking before reranking
+//        scorePosSet.printLogOdds();
+//        scorePosSet.writeLogOdds( GScan::outputDirectory,
+//                                  GScan::outputFileBasename + std::to_string( n+1 ),
+//                                  GScan::ss );
+//
         std::vector<std::vector<float>> posScores = scorePosSet.getMopsScores();
         scorePosSet.calcPvalues( posScores, negScores );
 

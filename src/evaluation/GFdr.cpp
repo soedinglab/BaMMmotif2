@@ -81,6 +81,7 @@ void GFdr::init( int nargs, char* args[] ){
         std::cerr << "Error: Input sequences are too few for training! \n" << std::endl;
         exit( 1 );
     }
+
     // set mFold to 1 when input sequence set is to large
     if( posSequenceSet->getSequences().size() > 5e3 and mFold > 1 ){
         mFold = 1;

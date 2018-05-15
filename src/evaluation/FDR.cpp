@@ -249,8 +249,7 @@ void FDR::calculatePR(){
 
                 float Sl_upper = *(std::lower_bound( negScoreMax_.begin(), negScoreMax_.end(), Sl, std::greater<float>() )-1);
                 float Sl_lower = *std::upper_bound( negScoreMax_.begin(), negScoreMax_.end(), Sl, std::greater<float>() );
-                p_value = (idx_negMax + ( Sl_upper- Sl) / (Sl_upper - Sl_lower + 1e-5)) / negN;
-//                p_value = ( ( float )idx_negMax + 0.5f ) / ( ( float )negN + 1.0f );
+                p_value = ( idx_negMax + ( Sl_upper- Sl) / (Sl_upper - Sl_lower + 1e-5)) / (float)negN;
 
             } else {
                 // p-value is calculated by relying on a parametric fit of the exponentially cumulative distribution

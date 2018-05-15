@@ -61,7 +61,7 @@ EM::~EM(){
 
 int EM::optimize(){
 
-    auto t0_wall = std::chrono::high_resolution_clock::now();
+    auto    t0_wall = std::chrono::high_resolution_clock::now();
 
     bool 	iterate = true;
 
@@ -189,7 +189,8 @@ void EM::EStep(){
         // for the unused positions
         for( size_t i = LW1; i < L; i++ ){
             r_[n][i] = 0.0f;
-       }
+        }
+
         // calculate log likelihood over all sequences
         llikelihood += logf( normFactor );
     }
@@ -233,7 +234,7 @@ void EM::MStep(){
 
         // ij = i+j runs over all positions i on sequence n
         for( size_t ij = 0; ij < L-W_+1; ij++ ){
-            size_t y = kmer[ij] % Y_[K_+1]; // todo: time-consuming
+            size_t y = kmer[ij] % Y_[K_+1];
             for (size_t j = 0; j < W_; j++) {
                 // parallize for: n_[K_][y][j] += r_[n][L - W_ - ij + j];
                 atomic_float_add(&(n_[K_][y][j]), r_[n][L - W_ - ij + j]);
@@ -252,6 +253,7 @@ void EM::MStep(){
         }
     }
 
+    //printR();
     // update model parameters v[k][y][j] with updated k-mer counts, alphas and model order
     motif_->updateV( n_, A_, K_ );
 }
@@ -534,6 +536,18 @@ void EM::print(){
         std::cout << std::endl;
     }
 
+}
+
+void EM::printR(){
+
+    // print out weights r for each position on each sequence
+    for( size_t n = 0; n < seqs_.size(); n++ ){
+        std::cout << "seq " << n << ":" << std::endl;
+        for( size_t i = 0; i < seqs_[n]->getL(); i++ ){
+            std::cout << r_[n][seqs_[n]->getL()-W_-i] << '\t';
+        }
+        std::cout << std::endl;
+    }
 }
 
 void EM::write( char* odir, std::string basename, bool ss ){

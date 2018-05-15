@@ -33,6 +33,7 @@ public:
 
     float**                 getR();             // get the responsibility parameter r
     float                   getQ();             // get the optimized positional prior q
+    void                    printR();           // print out the responsibility parameter r
 
 private:
 

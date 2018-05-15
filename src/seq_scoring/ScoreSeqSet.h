@@ -18,7 +18,7 @@ class ScoreSeqSet{
 	 * using the (learned) model and background model,
 	 * find the occurrences of motifs on each sequence
 	 * and output these sequences when the p-value
-	 * is smaller than certain cutoff (default:0.01)
+	 * is smaller than certain cutoff (default:0.0001)
 	 */
 
 public:
@@ -34,6 +34,7 @@ public:
 
 	void write( char* odir, std::string basename, float pvalCutoff, bool ss );
     void writeLogOdds( char* odir, std::string basename, bool ss );
+    void printLogOdds();
 
 private:
 

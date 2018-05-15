@@ -25,6 +25,13 @@ int main( int nargs, char* args[] ){
 	// initialization
 	Global::init( nargs, args );
 
+/*
+    // printing out sequences for checking
+    for(size_t i =0; i < Global::posSequenceSet->getSequences().size(); i++){
+         Global::posSequenceSet->getSequences()[i]->print();
+    }
+*/
+
 	if( Global::verbose ){
 		std::cout << std::endl
                   << "************************" << std::endl
@@ -44,6 +51,7 @@ int main( int nargs, char* args[] ){
 		bgModel = new BackgroundModel( Global::bgModelFilename );
 
 	}
+
     // always save the background model
     bgModel->write( Global::outputDirectory, Global::outputFileBasename );
 
@@ -77,14 +85,21 @@ int main( int nargs, char* args[] ){
     std::vector<Sequence*>  negset;
     std::vector<std::unique_ptr<Sequence>> negSeqs;
     size_t minSeqN = 5000;
+
     SeqGenerator negseq( Global::posSequenceSet->getSequences() );
+
     if( Global::posSequenceSet->getSequences().size() >= minSeqN ){
         negSeqs = negseq.sample_bgseqset_by_fold( Global::mFold );
     } else {
-        negSeqs = negseq.sample_bgseqset_by_num( minSeqN, Global::posSequenceSet->getMaxL());
+        negSeqs = negseq.sample_bgseqset_by_num( minSeqN, Global::posSequenceSet->getMaxL() );
     }
+
+    // write out synthetic negative sequences
+//    negseq.write( Global::outputDirectory, Global::outputFileBasename +"_negset", negSeqs );
+
     // convert unique_ptr to regular pointer
     for( size_t n = 0; n < negSeqs.size(); n++ ) {
+//        negSeqs[n]->print();    // print out negative sequences for checking
         negset.push_back( negSeqs[n].release() );
         negSeqs[n].get_deleter();
     }
@@ -109,8 +124,8 @@ int main( int nargs, char* args[] ){
 
 		// optimize the model with either EM or Gibbs sampling
 		if( Global::EM ){
-			EM model( motif, bgModel, Global::posSequenceSet->getSequences(),Global::optimizeQ, Global::verbose, Global::f );
-			// learn motifs by EMq
+			EM model( motif, bgModel, Global::posSequenceSet->getSequences(), Global::optimizeQ, Global::verbose, Global::f );
+			// learn motifs by EM
 			if( !Global::advanceEM ) {
                 model.optimize();
             } else {
@@ -180,11 +195,14 @@ int main( int nargs, char* args[] ){
 
             ScoreSeqSet scoreNegSet( motif, bgModel, negset );
             scoreNegSet.calcLogOdds();
+
+            // print out log odds scores for checking before reranking
             if( Global::saveLogOdds ){
                 scoreNegSet.writeLogOdds(Global::outputDirectory,
                                          Global::outputFileBasename + ".negset",
                                          Global::ss );
             }
+
             std::vector<std::vector<float>> negAllScores = scoreNegSet.getMopsScores();
             std::vector<float> negScores;
             for( size_t n = 0; n < negset.size(); n++ ){
@@ -196,11 +214,14 @@ int main( int nargs, char* args[] ){
             // calculate p-values based on positive and negative scores
             ScoreSeqSet scorePosSet( motif, bg, Global::posSequenceSet->getSequences() );
             scorePosSet.calcLogOdds();
+
+            // print out log odds scores for checking before reranking
             if( Global::saveLogOdds ){
                 scorePosSet.writeLogOdds(Global::outputDirectory,
                                          Global::outputFileBasename + "_motif_" + std::to_string( n+1 ),
                                          Global::ss );
             }
+
             std::vector<std::vector<float>> posScores = scorePosSet.getMopsScores();
             scorePosSet.calcPvalues( posScores, negScores );
 

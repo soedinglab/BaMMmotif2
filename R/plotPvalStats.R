@@ -742,6 +742,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", file_suffix), collapse=""))) {
     first_row   <- read.table(f, nrows=1)
     stats       <- read.table(f, skip=1)
     pvalues     <- stats$V5
+    #pvalues     <- unique(stats$V5)
     mfold       <- as.numeric(first_row[6])
     occurrence  <- as.numeric(first_row[7])
 

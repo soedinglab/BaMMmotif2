@@ -140,7 +140,6 @@ MotifSet::MotifSet( char* indir,
                     }
 				}
 			}
-
 		}
 
         if( N_ == 0 ){
