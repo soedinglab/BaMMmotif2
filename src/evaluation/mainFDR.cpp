@@ -61,12 +61,16 @@ int main( int nargs, char* args[] ){
         // from positive training sequence set
         std::vector<std::unique_ptr<Sequence>> negSeqs;
         SeqGenerator negseq(GFdr::posSequenceSet->getSequences(), NULL, GFdr::sOrder);
-        if( !GFdr::fixedNegN and posN >= 5000 ){
+        if( !GFdr::fixedNegN and posN >= GFdr::negN ){
             negSeqs = negseq.sample_bgseqset_by_fold(GFdr::mFold);
-            std::cout << posN * GFdr::mFold << " background sequences are generated." << std::endl;
+            std::cout << posN << " x "<< GFdr::mFold << " background sequences are generated." << std::endl;
+        } else if( !GFdr::fixedNegN and posN < GFdr::negN ){
+            GFdr::mFold = GFdr::negN / posN + 1;
+            negSeqs = negseq.sample_bgseqset_by_fold(GFdr::mFold);
+            std::cout << posN << " x "<< GFdr::mFold << " background sequences are generated." << std::endl;
         } else {
             negSeqs = negseq.sample_bgseqset_by_num(GFdr::negN, GFdr::posSequenceSet->getMaxL());
-            std::cout << GFdr::negN << " background sequences are generated." << std::endl;
+            std::cout << GFdr::negN << " (fixed) background sequences are generated." << std::endl;
         }
         // convert unique_ptr to regular pointer
         for (size_t n = 0; n < negSeqs.size(); n++) {

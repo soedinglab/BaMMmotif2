@@ -221,6 +221,8 @@ void FDR::calculatePR(){
         }
         lambda /= n_top;
 
+//        std::cout << "lambda = " << lambda << std::endl;
+
         float Sl = 0.f;
 
 		for( size_t i = 0; i < posN + negN; i++ ){

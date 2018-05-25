@@ -25,13 +25,6 @@ int main( int nargs, char* args[] ){
 	// initialization
 	Global::init( nargs, args );
 
-/*
-    // printing out sequences for checking
-    for(size_t i =0; i < Global::posSequenceSet->getSequences().size(); i++){
-         Global::posSequenceSet->getSequences()[i]->print();
-    }
-*/
-
 	if( Global::verbose ){
 		std::cout << std::endl
                   << "************************" << std::endl
@@ -85,14 +78,13 @@ int main( int nargs, char* args[] ){
     std::vector<Sequence*>  negset;
     std::vector<std::unique_ptr<Sequence>> negSeqs;
     size_t minSeqN = 5000;
+    if( Global::posSequenceSet->getSequences().size() < minSeqN ){
+        Global::mFold = minSeqN / Global::posSequenceSet->getSequences().size() + 1;
+    }
 
     SeqGenerator negseq( Global::posSequenceSet->getSequences() );
+    negSeqs = negseq.sample_bgseqset_by_fold( Global::mFold );
 
-    if( Global::posSequenceSet->getSequences().size() >= minSeqN ){
-        negSeqs = negseq.sample_bgseqset_by_fold( Global::mFold );
-    } else {
-        negSeqs = negseq.sample_bgseqset_by_num( minSeqN, Global::posSequenceSet->getMaxL() );
-    }
 
     // write out synthetic negative sequences
 //    negseq.write( Global::outputDirectory, Global::outputFileBasename +"_negset", negSeqs );
