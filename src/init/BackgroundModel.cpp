@@ -16,8 +16,10 @@ BackgroundModel::BackgroundModel( std::vector<Sequence*> seqs,
 	}
 
 	n_ = ( size_t** )malloc( ( K_+1 ) * sizeof( size_t* ) );
+    v_ = ( float** )malloc( ( K_+1 ) * sizeof( float* ) );
 	for( size_t k = 0; k <= K_; k++ ){
 		n_[k] = ( size_t* )calloc( Y_[k+1], sizeof( size_t ) );
+        v_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
 	}
 
 	// calculate counts
@@ -39,10 +41,6 @@ BackgroundModel::BackgroundModel( std::vector<Sequence*> seqs,
 		}
 	}
 
-	v_ = ( float** )malloc( ( K_+1 ) * sizeof( float* ) );
-	for( size_t k = 0; k <= K_; k++ ){
-		v_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
-	}
 	// calculate conditional probabilities from counts
 	calculateV();
 }

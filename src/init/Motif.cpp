@@ -459,9 +459,12 @@ void Motif::print(){
 					"|_______________________|\n\n" );
 	for( size_t j = 0; j < W_; j++ ){
 		for( size_t k = 0; k < K_+1; k++ ){
-			for( size_t y = 0; y < Y_[k+1]; y++ )
-				std::cout << std::scientific << v_[k][y][j] << '\t';
-			std::cout << std::endl;
+            float sum = 0.f;
+			for( size_t y = 0; y < Y_[k+1]; y++ ) {
+                std::cout << std::scientific << v_[k][y][j] << '\t';
+                sum += v_[k][y][j];
+            }
+			std::cout << "\t sum = " << sum << std::endl;
 		}
 		std::cout << std::endl;
 	}

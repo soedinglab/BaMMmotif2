@@ -133,5 +133,4 @@ inline void Motif::updateV( float*** n, float** alpha, size_t K ){
 	}
 }
 
-
 #endif /* MOTIF_H_ */

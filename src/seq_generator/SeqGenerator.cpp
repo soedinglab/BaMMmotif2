@@ -11,23 +11,51 @@ SeqGenerator::SeqGenerator( std::vector<Sequence*> seqs, Motif* motif, size_t sO
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 
-	freqs_ = ( float** )calloc( sOrder_+1, sizeof( float* ) );
-	count_ = ( size_t** )calloc( sOrder_+1, sizeof( size_t* ) );
-	for( size_t k = 0; k < sOrder_+1; k++ ){
-		freqs_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
-		count_[k] = ( size_t* )calloc( Y_[k+1], sizeof( size_t ) );
-	}
+    v_ = ( float** )calloc( sOrder_+1, sizeof( float* ) );
+	n_ = ( size_t** )calloc( sOrder_+1, sizeof( size_t* ) );
+    range_bar_ = ( float** )calloc( sOrder_+1, sizeof( float* ) );
+    v_seq_ = ( float** )calloc( sOrder_+1, sizeof( float* ) );
+    n_seq_ = ( size_t** )calloc( sOrder_+1, sizeof( size_t* ) );
+	for( size_t k = 0; k < sOrder_+1; k++ ) {
+        v_[k] = (float *) calloc(Y_[k + 1], sizeof(float));
+        n_[k] = (size_t *) calloc(Y_[k + 1], sizeof(size_t));
+        range_bar_[k] = (float *) calloc(Y_[k + 1], sizeof(float));
+        v_seq_[k] = (float *) calloc(Y_[k + 1], sizeof(float));
+        n_seq_[k] = (size_t *) calloc(Y_[k + 1], sizeof(size_t));
+    }
+
+    A_ = ( float* )calloc( sOrder_+1, sizeof( float ) );
+    for( size_t k = 0; k < sOrder_+1; k++ ){
+        A_[k] = 20.f;
+    }
+
     rngx_.seed( 42 );
+    srand( 42 );
+
+    kmer_freq_is_calculated_ = false;
+    kmer_freq_is_rescaled_ = false;
+
+    N_ = seqs_.size();
+
 }
 
 SeqGenerator::~SeqGenerator(){
 
 	for( size_t k = 0; k < sOrder_+1; k++ ){
-		free( freqs_[k] );
-		free( count_[k] );
+        free( v_[k] );
+		free( n_[k] );
+        free( range_bar_[k] );
+        free( v_seq_[k] );
+        free( n_seq_[k] );
 	}
-	free( freqs_ );
-	free( count_ );
+
+    free( v_ );
+	free( n_ );
+    free( range_bar_ );
+    free( v_seq_ );
+	free( n_seq_ );
+
+    free( A_ );
 
 }
 
@@ -36,7 +64,7 @@ void SeqGenerator::calculate_kmer_frequency(){
 	// reset counts for k-mers
 	for( size_t k = 0; k < sOrder_+1; k++ ){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
-			count_[k][y] = 0;
+			n_[k][y] = 0;
 		}
 	}
 
@@ -45,28 +73,122 @@ void SeqGenerator::calculate_kmer_frequency(){
 		size_t L = seqs_[i]->getL();
 		size_t* kmer = seqs_[i]->getKmer();
 		for( size_t k = 0; k < sOrder_+1; k++ ){
-			// loop over sequence positions
 			for( size_t j = k; j < L; j++ ){
 				// extract (k+1)-mer
 				size_t y = kmer[j] % Y_[k+1];
 				// count (k+1)mer
-				count_[k][y]++;
+				n_[k][y]++;
 			}
 		}
 	}
 
 	// calculate frequencies
 	size_t normFactor = 0;
-	for( size_t y = 0; y < Y_[1]; y++ )	normFactor += count_[0][y];
-	for( size_t y = 0; y < Y_[1]; y++ )	freqs_[0][y] = ( float )count_[0][y] / ( float )normFactor;
-	for( size_t k = 1; k < sOrder_+1; k++ ){
+	for( size_t y = 0; y < Y_[1]; y++ )
+        normFactor += n_[0][y];
+
+    float sum = 0.0f;
+    // calculate probabilities for order k = 0
+    for( size_t y = 0; y < Y_[1]; y++ ){
+        v_[0][y] = ( ( float )n_[0][y] + A_[0] * 0.25f ) / ( ( float )normFactor + A_[0] );
+        sum += v_[0][y];
+        range_bar_[0][y] = sum;
+    }
+
+    for( size_t k = 1; k < sOrder_+1; k++ ){
+        sum = 0.f;
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
 			size_t yk = y / Y_[1];
-			freqs_[k][y] = ( float )count_[k][y] / ( float )count_[k-1][yk];
+            size_t y2 = y % Y_[k];
+            v_[k][y] = ( ( float )n_[k][y] + A_[k] * v_[k-1][y2] )/ ( ( float )n_[k-1][yk] + A_[k] );
+
+            if( y % Y_[1] == 0 ) sum = 0.f;
+            sum += v_[k][y];
+            range_bar_[k][y] = sum;
 		}
 	}
+    kmer_freq_is_calculated_ = true;
 }
 
+void SeqGenerator::rescale_kmer_frequency( Sequence* refSeq ) {
+
+    size_t L = refSeq->getL();
+    // count k-mers for each sequence
+    // reset counts for k-mers
+    for( size_t k = 0; k < sOrder_+1; k++ ){
+        for( size_t y = 0; y < Y_[k+1]; y++ ){
+            n_seq_[k][y] = 0;
+        }
+    }
+    // count k-mers
+    size_t* kmer = refSeq->getKmer();
+    for( size_t k = 0; k < sOrder_+1; k++ ){
+        // loop over sequence positions
+        for( size_t j = k; j < L; j++ ){
+            // extract (k+1)-mer
+            size_t y = kmer[j] % Y_[k+1];
+            // count (k+1)mer
+            n_seq_[k][y]++;
+        }
+    }
+
+    // calculate sequence-specific conditional probabilities
+    float sum = 0.f;
+    // when k = 0:
+    size_t k =0;
+    for( size_t y = 0; y < Y_[k+1]; y++ ){
+        v_seq_[k][y] = v_[k][y];
+        sum += v_seq_[k][y];
+        range_bar_[k][y] = sum;
+    }
+
+    // when k = 1:
+    k = 1;
+
+    std::vector<float> normFactors;
+    float norm_ind = 0.f;
+    for( size_t y = 0; y < Y_[k+1]; y++ ){
+        size_t y2 = y % Y_[k];
+        v_seq_[k][y] = v_[k][y] * ( n_seq_[k][y] + A_[k-1] * v_[k-1][y2] ) / v_[k-1][y2] / ( L + A_[k-1] );
+
+        norm_ind += v_seq_[k][y];
+        if( (y+1) % Y_[1] == 0 ){
+            normFactors.push_back( norm_ind );
+            norm_ind = 0.f;
+        }
+    }
+
+    // normalization:
+    for( size_t y = 0; y < Y_[k+1]; y++ ){
+        size_t yk = y / Y_[1];
+        v_seq_[k][y] /= normFactors[yk];
+    }
+
+    // re-scale 1st-order background model
+    for( size_t y = 0; y < Y_[k+1]; y++ ){
+        size_t yk = y / Y_[k];
+        v_seq_[k][y] = ( n_seq_[k][y] + A_[k] * v_seq_[k][y] ) / ( n_seq_[k-1][yk] + A_[k] );
+
+        if( y % Y_[1] == 0 ) sum = 0.0f;
+        sum += v_seq_[k][y];
+        range_bar_[k][y] = sum;
+    }
+
+    // for k= 2:
+    k = 2;
+    // re-scale 2nd-order background model
+    for( size_t y = 0; y < Y_[k+1]; y++ ){
+        size_t y2 = y % Y_[k];
+        size_t yk = y / Y_[k];
+        v_seq_[k][y] = ( n_seq_[k][y] + A_[k] * v_seq_[k-1][y2] ) / ( n_seq_[k-1][yk] + A_[k] );
+
+        if( y % Y_[1] == 0 ) sum = 0.0f;
+        sum += v_seq_[k][y];
+        range_bar_[k][y] = sum;
+    }
+
+    kmer_freq_is_rescaled_ = true;
+}
 
 // generate negative sequences based on k-mer frequencies, given m-fold
 std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_bgseqset_by_fold(size_t fold){
@@ -76,9 +198,9 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_bgseqset_by_fold(siz
 	calculate_kmer_frequency();
     // todo: can be parallised
 	for( size_t i = 0; i < seqs_.size(); i++ ){
-		size_t L = seqs_[i]->getL();
 		for( size_t n = 0; n < fold; n++ ){
-			negset.push_back( bg_sequence(L) );
+			//negset.push_back( bg_sequence( seqs_[i]->getL() ) );
+            negset.push_back( bgseq_on_rescaled_v(seqs_[i]) );
 		}
 	}
 
@@ -105,20 +227,18 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_bgseqset_by_num(size
 // generate each background sequence based on k-mer frequencies from positive set
 std::unique_ptr<Sequence> SeqGenerator::bg_sequence(size_t L){
 
-	uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
-	std::string header = ">bg_seq";
+    assert( kmer_freq_is_calculated_ );
+
+    uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
+	std::string header = "> bg_seq";
 
 	// sample the first nucleotide
-	double random = ( double )rand() / ( double )RAND_MAX;
-	double f = 0.0f;
-	for( uint8_t a = 1; a <= Y_[1]; a++ ){
-		f += freqs_[0][a-1];
-		if( random <= f ){
-			sequence[0] = a;
+	float random = ( float )rand() / ( float )RAND_MAX;
+	for( uint8_t y = 0; y < Y_[1]; y++ ){
+		if( random <= range_bar_[0][y] ){
+			sequence[0] = y+1;
 			break;
 		}
-		// Trick: this solves the numerical problem
-		if( sequence[0] == 0 )	sequence[0] = a;
 	}
 
 	// sample the next ( sOrder-1 ) nucleotides
@@ -131,45 +251,102 @@ std::unique_ptr<Sequence> SeqGenerator::bg_sequence(size_t L){
 		}
 
 		// sample a nucleotide based on k-mer frequency
-		random = ( double )rand() / ( double )RAND_MAX;
-		f = 0.0f;
-		for( uint8_t a = 1; a <= Y_[1]; a++ ){
-			f += freqs_[i][yk+a-1];
-			if( random <= f ){
-				sequence[i] = a;
-				break;
-			}
-			// Trick: this solves the numerical problem
-			if( sequence[i] == 0 )	sequence[i] = a;
-		}
+		random = ( float )rand() / ( float )RAND_MAX;
+        for( size_t y = yk, a = 1; y < yk+Y_[1]; y++, a++ ){
+            sequence[i] = a;
+            if( random <= range_bar_[i][y] ){
+                break;
+            }
+        }
 	}
 
+    // sample the rest residues from sOrder to L
 	for( size_t i = sOrder_; i < L; i++ ){
-		random = ( double )rand() / ( double )RAND_MAX;
+
 		// calculate y of K-mer
 		size_t yk = 0;
 		for( size_t k = sOrder_; k > 0; k-- ){
 			yk += ( sequence[i-k] - 1 ) * Y_[k];
 		}
 
-		// assign a nucleotide based on k-mer frequency
-		f = 0.0f;
-		for( uint8_t a = 1; a <= Y_[1]; a++ ){
-			f += freqs_[sOrder_][yk+a-1];
-			if( random <= f ){
-				sequence[i] = a;
-				break;
-			}
-			// Trick: this solves the numerical problem
-			if( sequence[i] == 0 )	sequence[i] = a;
-		}
+        random = ( float )rand() / ( float )RAND_MAX;
+        for( size_t y = yk, a = 1; y < yk+Y_[1]; y++, a++ ){
+            sequence[i] = a;
+            if( random <= range_bar_[sOrder_][y] ){
+			    break;
+            }
+        }
 	}
 
-	// std::unique_ptr<Sequence> arti_seq( new Sequence( sequence, L, header, Y_, true ) );
-    std::unique_ptr<Sequence> arti_seq = util::make_unique<Sequence>( sequence, L, header, Y_, true );
+    std::unique_ptr<Sequence> bg_seq = util::make_unique<Sequence>( sequence, L, header, Y_, true );
 	if( sequence ) free( sequence );
 
-	return arti_seq;
+	return bg_seq;
+
+}
+
+std::unique_ptr<Sequence> SeqGenerator::bgseq_on_rescaled_v( Sequence* refSeq ) {
+
+    assert( kmer_freq_is_calculated_ );
+
+    rescale_kmer_frequency( refSeq );
+
+    assert( kmer_freq_is_rescaled_ );
+
+    size_t L = refSeq->getL();
+    uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
+    std::string header = "> bg_seq";
+
+    // sample the first nucleotide
+    float random = ( float )rand() / ( float )RAND_MAX;
+    for( uint8_t y = 0; y < Y_[1]; y++ ){
+        if( random <= range_bar_[0][y] ){
+            sequence[0] = y+1;
+            break;
+        }
+    }
+
+    // sample the next ( sOrder-1 ) nucleotides
+    for( size_t i = 1; i < sOrder_; i++ ){
+
+        // extract y from k-mer
+        size_t yk = 0;
+        for( size_t k = i; k > 0; k-- ){
+            yk += ( sequence[i-k] - 1 ) * Y_[k];
+        }
+
+        // sample a nucleotide based on k-mer frequency
+        random = ( float )rand() / ( float )RAND_MAX;
+        for( size_t y = yk, a = 1; y < yk+Y_[1]; y++, a++ ){
+            sequence[i] = a;
+            if( random <= range_bar_[i][y] ){
+                break;
+            }
+        }
+    }
+
+    // sample the rest residues from sOrder to L
+    for( size_t i = sOrder_; i < L; i++ ){
+
+        // calculate y of K-mer
+        size_t yk = 0;
+        for( size_t k = sOrder_; k > 0; k-- ){
+            yk += ( sequence[i-k] - 1 ) * Y_[k];
+        }
+
+        random = ( float )rand() / ( float )RAND_MAX;
+        for( size_t y = yk, a = 1; y < yk+Y_[1]; y++, a++ ){
+            sequence[i] = a;
+            if( random <= range_bar_[sOrder_][y] ){
+                break;
+            }
+        }
+    }
+
+    std::unique_ptr<Sequence> bg_seq = util::make_unique<Sequence>( sequence, L, header, Y_, true );
+    if( sequence ) free( sequence );
+
+    return bg_seq;
 
 }
 
@@ -178,7 +355,7 @@ std::unique_ptr<Sequence> SeqGenerator::raw_sequence( Sequence* seq ){
 
     size_t L = seq->getL();
     uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
-    std::string header = ">raw_seq";
+    std::string header = "> raw_seq";
 
     // copy original sequence to the raw sequence
     for( size_t i = 0; i < L; i++ ){
@@ -250,12 +427,11 @@ std::unique_ptr<Sequence> SeqGenerator::posseq_motif_embedded( Sequence* seq, si
         float f = 0.0f;
         for( uint8_t a = 1; a <= Y_[1]; a++ ){
             f += motif_->getV()[sOrder_][yk+a-1][j];
+            sequence[j+at] = a;
             if( random <= f ){
-                sequence[j+at] = a;
                 break;
             }
-            // Trick: this solves the numerical problem
-            if( sequence[j+at] == 0 )	sequence[j+at] = a;
+
         }
 
     }
@@ -304,7 +480,7 @@ std::unique_ptr<Sequence> SeqGenerator::sequence_with_motif_masked(Sequence *pos
 		}
 	}
 
-	std::string header = ">seq with motif masked";
+	std::string header = "> seq with motif masked";
 
     std::unique_ptr<Sequence> seq_mask_motif = util::make_unique<Sequence>( masked_seq, L, header, Y_, true );
 
@@ -315,7 +491,6 @@ void SeqGenerator::write( char* odir, std::string basename, std::vector<std::uni
 	/**
 	 * save the generated sequence set in fasta file:
 	 */
-
 	std::string opath = std::string( odir ) + '/' + basename + ".fasta";
 
 	std::ofstream ofile( opath );
