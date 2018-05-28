@@ -38,6 +38,8 @@ MotifSet::MotifSet( char* indir,
 
 		N_ = 1;
 
+        maxW_ = motif->getW();
+
 		// todo: here to delete motif
 		// delete motif;  // Error
 
@@ -46,6 +48,7 @@ MotifSet::MotifSet( char* indir,
 		// read file to calculate motif length
 		std::ifstream file;
 		file.open( indir, std::ifstream::in );
+        maxW_ = 0;
 
 		if( !file.good() ){
 
@@ -128,6 +131,8 @@ MotifSet::MotifSet( char* indir,
 
 					motifs_.push_back( motif );
 
+                    maxW_ = ( motif->getW() > maxW_ ) ? motif->getW() : maxW_;
+
 					// free memory for PWM
 					for( size_t y = 0; y < asize; y++ ){
 						delete[] PWM[y];
@@ -193,7 +198,7 @@ MotifSet::MotifSet( char* indir,
             // adjust model order, extra 1
             model_order -= 1;
 
-            std::cout << model_order << std::endl;
+            std::cout << "Input BaMM order is " << model_order << std::endl;
 
 			// extend the core region of the model due to the added columns
 			model_length += l_flank + r_flank;
@@ -207,6 +212,8 @@ MotifSet::MotifSet( char* indir,
 			motifs_.push_back( motif );
 
 			N_ = 1;
+
+            maxW_ = motif->getW();
 		}
 	}
 }
@@ -223,6 +230,10 @@ std::vector<Motif*> MotifSet::getMotifs(){
 
 size_t MotifSet::getN(){
     return N_;
+}
+
+size_t MotifSet::getMaxW(){
+    return maxW_;
 }
 
 void MotifSet::print(){

@@ -224,6 +224,15 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, floa
 	std::vector<Sequence*> posSet = posSeqset->getSequences();
 	std::mt19937 rngx;
 
+    size_t i = 0;
+    for( auto it = posSet.begin(); it != posSet.end(); it++, i++ ){
+        if( posSet[i]->getL() < W_ ){
+            std::cout << "Warning: remove the short sequence: " << posSet[i]->getHeader() << std::endl;
+            posSet.erase(it);
+
+        }
+    }
+
 #pragma omp parallel for
 
 	for( size_t n = 0; n < posSet.size(); n++ ){

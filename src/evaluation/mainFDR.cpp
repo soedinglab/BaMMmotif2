@@ -48,10 +48,36 @@ int main( int nargs, char* args[] ){
                         GFdr::q );
 
     /**
+     * Filter out short sequences
+     */
+    std::vector<Sequence*> posSet = GFdr::posSequenceSet->getSequences();
+    size_t i = 0;
+    for( auto it = posSet.begin(); it != posSet.end(); it++, i++ ){
+        if( posSet[i]->getL() < motif_set.getMaxW() ){
+            std::cout << "Warning: remove the short sequence: " << posSet[i]->getHeader() << std::endl;
+            posSet.erase(it);
+        }
+    }
+
+    /**
+    * Optional: subsample input sequence set when it is too large
+    */
+    size_t posN = posSet.size();
+    if( GFdr::fixedPosN ){
+        size_t posNsub = std::min( GFdr::maxPosN, posN );
+        std::vector<size_t> indices(posN);
+        std::iota(indices.begin(), indices.end(), 0);
+        std::random_shuffle(indices.begin(), indices.end());
+        auto start = posSet.begin();
+        for(size_t n = 0; n < posN-posNsub; n++){
+            posSet.erase(start+indices[n]);
+        }
+    }
+
+    /**
      * Generate negative sequence set for cross-validation
      */
     std::vector<Sequence*>  negset;
-    size_t posN = GFdr::posSequenceSet->getSequences().size();
     if( GFdr::B3 ){
         // take the given negative sequence set
         negset = GFdr::negSequenceSet->getSequences();
@@ -59,39 +85,25 @@ int main( int nargs, char* args[] ){
     } else {
         // generate negative sequence set based on s-mer frequencies
         // from positive training sequence set
+        posN = posSet.size();   // update the size of positive sequences after filtering
         std::vector<std::unique_ptr<Sequence>> negSeqs;
-        SeqGenerator negseq(GFdr::posSequenceSet->getSequences(), NULL, GFdr::sOrder);
+        SeqGenerator negseq( posSet, NULL, GFdr::sOrder );
         if( !GFdr::fixedNegN and posN >= GFdr::negN ){
-            negSeqs = negseq.sample_bgseqset_by_fold(GFdr::mFold);
-            std::cout << posN << " x "<< GFdr::mFold << " background sequences are generated." << std::endl;
+            negSeqs = negseq.sample_bgseqset_by_fold( GFdr::mFold );
+            std::cout << GFdr::mFold << " x " << posN << " background sequences are generated." << std::endl;
         } else if( !GFdr::fixedNegN and posN < GFdr::negN ){
-            GFdr::mFold = GFdr::negN / posN + 1;
-            negSeqs = negseq.sample_bgseqset_by_fold(GFdr::mFold);
-            std::cout << posN << " x "<< GFdr::mFold << " background sequences are generated." << std::endl;
+            bool rest = GFdr::negN % posSet.size();
+            GFdr::mFold = GFdr::negN / posN + rest;
+            negSeqs = negseq.sample_bgseqset_by_fold( GFdr::mFold );
+            std::cout << GFdr::mFold << " x " << posN << " background sequences are generated." << std::endl;
         } else {
-            negSeqs = negseq.sample_bgseqset_by_num(GFdr::negN, GFdr::posSequenceSet->getMaxL());
+            negSeqs = negseq.sample_bgseqset_by_num( GFdr::negN, GFdr::posSequenceSet->getMaxL() );
             std::cout << GFdr::negN << " (fixed) background sequences are generated." << std::endl;
         }
         // convert unique_ptr to regular pointer
         for (size_t n = 0; n < negSeqs.size(); n++) {
             negset.push_back(negSeqs[n].release());
             negSeqs[n].get_deleter();
-        }
-    }
-
-    /**
-     * Optional: subsample input sequence set when it is two large
-     */
-    std::vector<Sequence*> posset;
-    if(!GFdr::fixedPosN){
-        posset = GFdr::posSequenceSet->getSequences();
-    } else {
-        size_t posNsub = std::min( GFdr::maxPosN, posN );
-        std::vector<size_t> indices(posN);
-        std::iota(indices.begin(), indices.end(), 0);
-        std::random_shuffle(indices.begin(), indices.end());
-        for(size_t n = 0; n < posNsub; n++){
-            posset.push_back(GFdr::posSequenceSet->getSequences()[indices[n]]);
         }
     }
 
@@ -103,13 +115,7 @@ int main( int nargs, char* args[] ){
 
         Motif* motif = new Motif( *motif_set.getMotifs()[n] );
 
-        // make sure the motif length does not exceed the sequence length
-        size_t minPosL = ( GFdr::ss ) ? GFdr::posSequenceSet->getMinL() : GFdr::posSequenceSet->getMinL() * 2;
-        size_t minNegL = ( GFdr::ss ) ? GFdr::negSequenceSet->getMinL() : GFdr::negSequenceSet->getMinL() * 2;
-        assert( motif->getW() <= minPosL );
-        assert( motif->getW() <= minNegL );
-
-        FDR fdr( posset, negset,
+        FDR fdr( posSet, negset,
                  motif, bgModel,
                  GFdr::cvFold, GFdr::mops, GFdr::zoops,
                  true, GFdr::savePvalues, GFdr::saveLogOdds );

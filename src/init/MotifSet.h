@@ -15,6 +15,7 @@ public:
 
 	std::vector<Motif*> getMotifs();		// get motifs
 	size_t		 		getN();				// get number of motifs
+    size_t              getMaxW();          // get maximal length of motifs
 
 	void 				print();			// print motifs to console
 	void 				write( char* outdir ); // write motifs to file
@@ -23,6 +24,7 @@ private:
 
 	std::vector<Motif*> motifs_;			// motifs
 	size_t         		N_;					// number of motifs
+    size_t              maxW_;              // maximal length of motifs
 
 };
 

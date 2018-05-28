@@ -47,7 +47,6 @@ int main( int nargs, char* args[] ) {
     /**
      * Initialize the model
      */
-
     MotifSet motif_set( GScan::initialModelFilename,
                         GScan::addColumns.at(0),
                         GScan::addColumns.at(1),
@@ -58,17 +57,28 @@ int main( int nargs, char* args[] ) {
                         GScan::modelAlpha,
                         GScan::maxPWM);
 
+    std::vector<Sequence*> posSet = GScan::posSequenceSet->getSequences();
+    /**
+     * Filter out short sequences
+     */
+    size_t i = 0;
+    for( auto it = posSet.begin(); it != posSet.end(); it++, i++ ){
+        if( posSet[i]->getL() < motif_set.getMaxW() ){
+            std::cout << "Warning: remove the short sequence: " << posSet[i]->getHeader() << std::endl;
+            posSet.erase(it);
+        }
+    }
+
     /**
      * Sample negative sequence set based on s-mer frequencies
      */
-
     std::vector<Sequence*>  negset;
     size_t minSeqN = 5000;
     // sample negative sequence set B1set based on s-mer frequencies
     // from positive training sequence set
     std::vector<std::unique_ptr<Sequence>> negSeqs;
-    SeqGenerator negseq( GScan::posSequenceSet->getSequences() );
-    if( GScan::posSequenceSet->getSequences().size() >= minSeqN ){
+    SeqGenerator negseq( posSet );
+    if( posSet.size() >= minSeqN ){
         negSeqs = negseq.sample_bgseqset_by_fold( GScan::mFold );
     } else {
         negSeqs = negseq.sample_bgseqset_by_num( minSeqN, GScan::posSequenceSet->getMaxL() );
@@ -84,13 +94,7 @@ int main( int nargs, char* args[] ) {
         // deep copy each motif in the motif set
         Motif *motif = new Motif( *motif_set.getMotifs()[n] );
 
-        // make sure the motif length does not exceed the sequence length
-        size_t minPosL = ( GScan::ss ) ? GScan::posSequenceSet->getMinL() : GScan::posSequenceSet->getMinL() * 2;
-        size_t minNegL = ( GScan::ss ) ? GScan::negSequenceSet->getMinL() : GScan::negSequenceSet->getMinL() * 2;
-        assert( motif->getW() <= minPosL );
-        assert( motif->getW() <= minNegL );
-
-        if(GScan::saveInitialModel){
+        if( GScan::saveInitialModel ){
             // write out the foreground model
             motif->write( GScan::outputDirectory,
                           GScan::outputFileBasename + "_init_motif_" + std::to_string( n+1 ) );
@@ -110,15 +114,9 @@ int main( int nargs, char* args[] ) {
 
         // score positive sequence set
         // calculate p-values based on positive and negative scores
-        ScoreSeqSet scorePosSet( motif, bgModel, GScan::posSequenceSet->getSequences() );
+        ScoreSeqSet scorePosSet( motif, bgModel, posSet );
         scorePosSet.calcLogOdds();
-//
-//        // print out log odds scores for checking before reranking
-//        scorePosSet.printLogOdds();
-//        scorePosSet.writeLogOdds( GScan::outputDirectory,
-//                                  GScan::outputFileBasename + std::to_string( n+1 ),
-//                                  GScan::ss );
-//
+
         std::vector<std::vector<float>> posScores = scorePosSet.getMopsScores();
         scorePosSet.calcPvalues( posScores, negScores );
 

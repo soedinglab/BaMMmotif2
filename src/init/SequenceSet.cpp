@@ -79,7 +79,6 @@ int SequenceSet::readFASTA( bool singleStrand ){
 	std::vector<size_t> baseCounts( Alphabet::getSize() );
 	std::string line, header, sequence;
 	std::ifstream file( sequenceFilepath_.c_str() ); // opens FASTA file
-    size_t shortL = 8;
 
 	if( file.is_open() ){
 
@@ -94,42 +93,28 @@ int SequenceSet::readFASTA( bool singleStrand ){
 						if( !( sequence.empty() ) ){
 
 							size_t L = sequence.length();
-                            size_t L_act = 0;
+
+                            maxL = ( L > maxL ) ? L : maxL;
+                            minL = ( L < minL ) ? L : minL;
 
 							// translate sequence into encoding
 							uint8_t* encoding = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
 
 							for( size_t i = 0; i < L; i++ ){
 
-								if( Alphabet::getCode( sequence[i] ) == 0 ){
+                                encoding[i] = Alphabet::getCode( sequence[i] );
+								if( encoding[i] == 0 ){
 
 //									std::cerr << "Warning: The FASTA file contains an undefined base: "
 //                                            << sequence[i] << " at sequence " << header << std::endl;
 
 									continue; // exclude undefined base from base counts
 
-								} else {
-
-                                    encoding[L_act] = Alphabet::getCode( sequence[i] );
-                                    baseCounts[encoding[L_act]-1]++; // count base
-                                    L_act++;
-
-                                }
+								}
+                                baseCounts[encoding[i]-1]++; // count base
 							}
 
-                            if( L_act >= shortL ){
-
-                                // only take sequences when its length is longer than certain bases
-                                // here we take 8
-                                sequences_.push_back( new Sequence( encoding, L_act, header, Y_, singleStrand ) );
-
-                                maxL = ( L_act > maxL ) ? L_act : maxL;
-
-                                minL = ( L_act < minL ) ? L_act : minL;
-
-                            } else {
-                                std::cerr << "Warning: Sequence " << header << " is too short. Skipped." << std::endl;
-                            }
+                            sequences_.push_back( new Sequence( encoding, L, header, Y_, singleStrand ) );
 
 							sequence.clear();
 							header.clear();
@@ -177,42 +162,30 @@ int SequenceSet::readFASTA( bool singleStrand ){
 			if( !( sequence.empty() ) ){
 
                 size_t L = sequence.length();
-                size_t L_act = 0;
+
+                maxL = ( L > maxL ) ? L : maxL;
+                minL = ( L < minL ) ? L : minL;
 
                 // translate sequence into encoding
                 uint8_t* encoding = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
 
                 for( size_t i = 0; i < L; i++ ){
 
-                    if( Alphabet::getCode( sequence[i] ) == 0 ){
+                    encoding[i] = Alphabet::getCode( sequence[i] );
+
+                    if( encoding[i] == 0 ){
 
 //					    std::cerr << "Warning: The FASTA file contains an undefined base: "
 //                                << sequence[i] << " at sequence " << header << std::endl;
 
                         continue; // exclude undefined base from base counts
 
-                    } else {
-
-                        encoding[L_act] = Alphabet::getCode( sequence[i] );
-                        baseCounts[encoding[L_act]-1]++; // count base
-                        L_act++;
                     }
 
+                    baseCounts[encoding[i]-1]++; // count base
                 }
 
-                if( L_act >= shortL ){
-
-                    // only take sequences when its length is longer than certain bases
-                    // here we take 8
-                    sequences_.push_back( new Sequence( encoding, L_act, header, Y_, singleStrand ) );
-
-                    maxL = ( L_act > maxL ) ? L_act : maxL;
-
-                    minL = ( L_act < minL ) ? L_act : minL;
-
-                } else {
-                    std::cerr << "Warning: Sequence " << header << " is too short. Skipped." << std::endl;
-                }
+                sequences_.push_back( new Sequence( encoding, L, header, Y_, singleStrand ) );
 
 				sequence.clear();
 				header.clear();
