@@ -82,7 +82,7 @@ int SequenceSet::readFASTA( bool singleStrand ){
 
 	if( file.is_open() ){
 
-		while( getline( file, line ).good() ){
+		while( getline( file, line ) ){
 
 			if( !( line.empty() ) ){ // skip blank lines
 

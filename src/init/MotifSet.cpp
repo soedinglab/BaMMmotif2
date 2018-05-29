@@ -109,7 +109,7 @@ MotifSet::MotifSet( char* indir,
 					// get the following W lines
 					for( size_t j = l_flank; j < length - r_flank ; j++ ){
 
-						if( getline( file, row ).good()){
+						if( getline( file, row ) ){
                             std::stringstream number( row );
                             for( size_t y = 0; y < asize; y++ ){
                                 number >> PWM[y][j];
