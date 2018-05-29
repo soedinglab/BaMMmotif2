@@ -646,7 +646,7 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
         pn_rrc  <- paste0( filename, '_dataRRC' )
     }
 
-    if(max(pvalues) > 1 | min(pvalues) < 0){
+    if(max(pvalues) > 1 | min(pvalues) <= 0){
         stop("Error: input p-values must all be in the range 0 to 1!")
     }
 
@@ -763,6 +763,8 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", file_suffix), collapse=""))) {
     for(i in seq(1, length(pvalues))){
         if( pvalues[i] > 1 ){
             pvalues[i] = 1
+        } else if (pvalues[i] == 0 ){
+            pvalues[i] = 1e-10
         }
     }
 
