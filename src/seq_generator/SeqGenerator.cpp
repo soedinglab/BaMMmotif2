@@ -1,11 +1,12 @@
 #include "SeqGenerator.h"
 
-SeqGenerator::SeqGenerator( std::vector<Sequence*> seqs, Motif* motif, size_t sOrder, float q ){
+SeqGenerator::SeqGenerator( std::vector<Sequence*> seqs, Motif* motif, size_t sOrder, float q, bool genericNeg ){
 
 	seqs_ = seqs;
 	sOrder_ = sOrder;
     motif_ = motif;
     q_ = q;
+    genericNeg_ = genericNeg;
 
 	for( size_t k = 0; k < sOrder_ + 8; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
@@ -133,9 +134,9 @@ void SeqGenerator::rescale_kmer_frequency( Sequence* refSeq ) {
     }
 
     // calculate sequence-specific conditional probabilities
-    float sum = 0.f;
     // when k = 0:
     size_t k =0;
+    float sum = 0.f;
     for( size_t y = 0; y < Y_[k+1]; y++ ){
         v_seq_[k][y] = v_[k][y];
         sum += v_seq_[k][y];
@@ -145,31 +146,25 @@ void SeqGenerator::rescale_kmer_frequency( Sequence* refSeq ) {
     // when k = 1:
     k = 1;
 
-    std::vector<float> normFactors;
-    float norm_ind = 0.f;
     for( size_t y = 0; y < Y_[k+1]; y++ ){
         size_t y2 = y % Y_[k];
         v_seq_[k][y] = v_[k][y] * ( n_seq_[k][y] + A_[k-1] * v_[k-1][y2] ) / v_[k-1][y2] / ( L + A_[k-1] );
-
-        norm_ind += v_seq_[k][y];
-        if( (y+1) % Y_[1] == 0 ){
-            normFactors.push_back( norm_ind );
-            norm_ind = 0.f;
-        }
     }
-
+    // re-scale 1st-order background model
+    std::vector<float> normFactors( Y_[k], 0.0f );
+    for( size_t y = 0; y < Y_[k+1]; y++ ){
+        size_t yk = y / Y_[1];
+        v_seq_[k][y] = ( n_seq_[k][y] + A_[k] * v_seq_[k][y] ) / ( n_seq_[k-1][yk] + A_[k] );
+        normFactors[yk] += v_seq_[k][y];
+    }
     // normalization:
     for( size_t y = 0; y < Y_[k+1]; y++ ){
         size_t yk = y / Y_[1];
         v_seq_[k][y] /= normFactors[yk];
     }
 
-    // re-scale 1st-order background model
     for( size_t y = 0; y < Y_[k+1]; y++ ){
-        size_t yk = y / Y_[k];
-        v_seq_[k][y] = ( n_seq_[k][y] + A_[k] * v_seq_[k][y] ) / ( n_seq_[k-1][yk] + A_[k] );
-
-        if( y % Y_[1] == 0 ) sum = 0.0f;
+        if( y % Y_[1] == 0 )    sum = 0.0f;
         sum += v_seq_[k][y];
         range_bar_[k][y] = sum;
     }
@@ -179,9 +174,8 @@ void SeqGenerator::rescale_kmer_frequency( Sequence* refSeq ) {
     // re-scale 2nd-order background model
     for( size_t y = 0; y < Y_[k+1]; y++ ){
         size_t y2 = y % Y_[k];
-        size_t yk = y / Y_[k];
+        size_t yk = y / Y_[1];
         v_seq_[k][y] = ( n_seq_[k][y] + A_[k] * v_seq_[k-1][y2] ) / ( n_seq_[k-1][yk] + A_[k] );
-
         if( y % Y_[1] == 0 ) sum = 0.0f;
         sum += v_seq_[k][y];
         range_bar_[k][y] = sum;
@@ -199,8 +193,11 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_bgseqset_by_fold(siz
     // todo: can be parallised
 	for( size_t i = 0; i < seqs_.size(); i++ ){
 		for( size_t n = 0; n < fold; n++ ){
-			//negset.push_back( bg_sequence( seqs_[i]->getL() ) );
-            negset.push_back( bgseq_on_rescaled_v(seqs_[i]) );
+            if( genericNeg_ ){
+                negset.push_back( bg_sequence( seqs_[i]->getL() ) );
+            } else {
+                negset.push_back( bgseq_on_rescaled_v(seqs_[i]) );
+            }
 		}
 	}
 

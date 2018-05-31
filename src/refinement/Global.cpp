@@ -15,6 +15,8 @@ char*               Global::negSequenceFilename = NULL;		// filename of negative
 std::string			Global::negSequenceBasename;			// basename of negative sequence FASTA file
 SequenceSet*        Global::negSequenceSet = NULL;			// negative sequence set
 bool				Global::negSeqGiven = false;			// a flag for the negative sequence given by users
+bool                Global::genericNeg = false;             // flag for generating negative sequences based on generic 2nd-bgModel
+
 // weighting options
 char*               Global::intensityFilename = NULL;		// filename of intensity file (i.e. for HT-SELEX data)
 
@@ -163,7 +165,9 @@ int Global::readArguments( int nargs, char* args[] ){
 	}
 	negSequenceBasename = baseName( negSequenceFilename );
 
-	// Alphabet Type
+    opt >> GetOpt::OptionPresent( "genericNeg", genericNeg );
+
+    // Alphabet Type
 	if( opt >> GetOpt::OptionPresent( "alphabet" ) ){
 		opt >> GetOpt::Option( "alphabet", alphabetType );
 	} else {
