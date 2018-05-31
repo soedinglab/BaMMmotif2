@@ -96,7 +96,7 @@ int main( int nargs, char* args[] ){
         Global::mFold = minSeqN / posSet.size() + rest;
     }
 
-    SeqGenerator negseq( posSet );
+    SeqGenerator negseq( posSet, NULL, Global::sOrder, 1.0f, Global::seqSpecificNeg );
     negSeqs = negseq.sample_bgseqset_by_fold( Global::mFold );
 
     // convert unique_ptr to regular pointer

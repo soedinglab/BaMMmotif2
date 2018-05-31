@@ -40,6 +40,7 @@ public:
 	static std::string	negSequenceBasename;	// basename of negative sequence FASTA file
 	static SequenceSet*	negSequenceSet;			// negative sequence set
 	static bool			negSeqGiven;			// a flag for the negative sequence given by users
+    static bool         seqSpecificNeg;         // flag for generating sequence specific negative sequences
 
 	// weighting options
 	static char*		intensityFilename;		// filename of intensity file (i.e. for HT-SELEX data)
