@@ -87,7 +87,7 @@ int main( int nargs, char* args[] ){
         // from positive training sequence set
         posN = posSet.size();   // update the size of positive sequences after filtering
         std::vector<std::unique_ptr<Sequence>> negSeqs;
-        SeqGenerator negseq( posSet, NULL, GFdr::sOrder , GFdr::seqSpecificNeg );
+        SeqGenerator negseq( posSet, NULL, GFdr::sOrder , GFdr::genericNeg );
         if( !GFdr::fixedNegN and posN >= GFdr::negN ){
             negSeqs = negseq.sample_bgseqset_by_fold( GFdr::mFold );
             std::cout << GFdr::mFold << " x " << posN << " background sequences are generated." << std::endl;

@@ -1,12 +1,12 @@
 #include "SeqGenerator.h"
 
-SeqGenerator::SeqGenerator( std::vector<Sequence*> seqs, Motif* motif, size_t sOrder, float q, bool specificNeg ){
+SeqGenerator::SeqGenerator( std::vector<Sequence*> seqs, Motif* motif, size_t sOrder, float q, bool genericNeg ){
 
 	seqs_ = seqs;
 	sOrder_ = sOrder;
     motif_ = motif;
     q_ = q;
-    specificNeg_ = specificNeg;
+    genericNeg_ = genericNeg;
 
 	for( size_t k = 0; k < sOrder_ + 8; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
@@ -193,10 +193,10 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_bgseqset_by_fold(siz
     // todo: can be parallised
 	for( size_t i = 0; i < seqs_.size(); i++ ){
 		for( size_t n = 0; n < fold; n++ ){
-            if( specificNeg_ ){
-                negset.push_back( bgseq_on_rescaled_v(seqs_[i]) );
-            } else {
+            if( genericNeg_ ){
                 negset.push_back( bg_sequence( seqs_[i]->getL() ) );
+            } else {
+                negset.push_back( bgseq_on_rescaled_v(seqs_[i]) );
             }
 		}
 	}

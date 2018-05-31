@@ -29,7 +29,7 @@ public:
     static SequenceSet*	negSequenceSet;			// negative sequence set
     static char* 		alphabetType;			// provide alphabet type
     static bool         B3;                     // whether or not to take the given negative sequences for evaluation
-    static bool         seqSpecificNeg;         // flag for generating sequence specific negative sequences
+    static bool         genericNeg;             // flag for generating negative sequences based on generic 2nd-bgModel
 
     // initial model(s) options
     static char*		initialModelFilename;	// filename of initial model

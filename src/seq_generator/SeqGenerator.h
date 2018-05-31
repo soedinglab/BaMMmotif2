@@ -20,7 +20,7 @@ class SeqGenerator {
 	 */
 
 public:
-	SeqGenerator( std::vector<Sequence*> seqs, Motif* motif = NULL, size_t sOrder = 2, float q = 1.f, bool specificNeg = false );
+	SeqGenerator( std::vector<Sequence*> seqs, Motif* motif = NULL, size_t sOrder = 2, float q = 1.f, bool genericNeg = false );
 
 	~SeqGenerator();
 
@@ -58,7 +58,7 @@ private:
 	Motif* 						motif_;			// the optimized motif
 	size_t						sOrder_;	    // the order of k-mers for generating negative/pseudo sequence set
     float                       q_;             // portion of sequences in the set that are masked/embedded with the motif
-    bool                        specificNeg_;   // flag for generating sequence specific negative sequences
+    bool                        genericNeg_;   // flag for generating sequence specific negative sequences
 
     std::mt19937                rngx_;
     std::vector<size_t>			Y_;
