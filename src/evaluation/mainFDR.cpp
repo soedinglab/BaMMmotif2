@@ -63,14 +63,12 @@ int main( int nargs, char* args[] ){
     * Optional: subsample input sequence set when it is too large
     */
     size_t posN = posSet.size();
-    if( GFdr::fixedPosN ){
-        size_t posNsub = std::min( GFdr::maxPosN, posN );
-        std::vector<size_t> indices(posN);
+    if( GFdr::fixedPosN and GFdr::maxPosN < posN ){
+        std::vector<size_t> indices(posN-GFdr::maxPosN);
         std::iota(indices.begin(), indices.end(), 0);
         std::random_shuffle(indices.begin(), indices.end());
-        auto start = posSet.begin();
-        for(size_t n = 0; n < posN-posNsub; n++){
-            posSet.erase(start+indices[n]);
+        for( size_t n = 0; n < posN-GFdr::maxPosN; n++ ){
+            posSet.erase(posSet.begin()+indices[n]);
         }
     }
 
