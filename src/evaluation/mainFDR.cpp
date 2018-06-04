@@ -51,24 +51,27 @@ int main( int nargs, char* args[] ){
      * Filter out short sequences
      */
     std::vector<Sequence*> posSet = GFdr::posSequenceSet->getSequences();
-    size_t i = 0;
-    for( auto it = posSet.begin(); it != posSet.end(); it++, i++ ){
-        if( posSet[i]->getL() < motif_set.getMaxW() ){
-            std::cout << "Warning: remove the short sequence: " << posSet[i]->getHeader() << std::endl;
+    size_t count = 0;
+    std::vector<Sequence*>::iterator it = posSet.begin();
+    while( it != posSet.end() ){
+        if( (*it)->getL() < motif_set.getMaxW() ){
+            //std::cout << "Warning: remove the short sequence: " << (*it)->getHeader() << std::endl;
             posSet.erase(it);
+            count++;
+        } else {
+            it++;
         }
     }
+    std::cout << "Note: " << count << " short sequences have been filtered out." << std::endl;
 
     /**
     * Optional: subsample input sequence set when it is too large
     */
     size_t posN = posSet.size();
     if( GFdr::fixedPosN and GFdr::maxPosN < posN ){
-        std::vector<size_t> indices(posN-GFdr::maxPosN);
-        std::iota(indices.begin(), indices.end(), 0);
-        std::random_shuffle(indices.begin(), indices.end());
-        for( size_t n = 0; n < posN-GFdr::maxPosN; n++ ){
-            posSet.erase(posSet.begin()+indices[n]);
+        std::random_shuffle(posSet.begin(), posSet.end());
+        for( size_t n = posN-GFdr::maxPosN; n > 0; n-- ){
+            posSet.erase( posSet.begin() + GFdr::maxPosN + n - 1 );
         }
     }
 

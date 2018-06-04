@@ -223,15 +223,19 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, floa
 	// sampling z from each sequence of the sequence set based on the weights:
 	std::vector<Sequence*> posSet = posSeqset->getSequences();
 	std::mt19937 rngx;
-
-    size_t i = 0;
-    for( auto it = posSet.begin(); it != posSet.end(); it++, i++ ){
-        if( posSet[i]->getL() < W_ ){
-            std::cout << "Warning: remove the short sequence: " << posSet[i]->getHeader() << std::endl;
+    size_t count = 0;
+    std::vector<Sequence*>::iterator it = posSet.begin();
+    while( it != posSet.end() ){
+        if( (*it)->getL() < W_ ){
+            //std::cout << "Warning: remove the short sequence: " << (*it)->getHeader() << std::endl;
             posSet.erase(it);
-
+            count++;
+        } else {
+            it++;
         }
     }
+    std::cout << "Note: " << count << " short sequences have been neglected for sampling PWM." << std::endl;
+
 
 #pragma omp parallel for
 
