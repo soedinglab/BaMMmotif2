@@ -25,6 +25,7 @@ set (CMAKE_CXX_FLAGS "-std=c++11 -Wall")
 find_package(OpenMP)
 if(OPENMP_FOUND OR OpenMP_FOUND OR OpenMP_CXX_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    add_definitions(-DOPENMP)
 endif()
 
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
