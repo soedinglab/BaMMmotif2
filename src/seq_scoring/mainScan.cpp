@@ -61,11 +61,13 @@ int main( int nargs, char* args[] ) {
     /**
      * Filter out short sequences
      */
-    size_t i = 0;
-    for( auto it = posSet.begin(); it != posSet.end(); it++, i++ ){
-        if( posSet[i]->getL() < motif_set.getMaxW() ){
-            std::cout << "Warning: remove the short sequence: " << posSet[i]->getHeader() << std::endl;
+    std::vector<Sequence*>::iterator it = posSet.begin();
+    while( it != posSet.end() ){
+        if( (*it)->getL() < motif_set.getMaxW() ){
+            //std::cout << "Warning: remove the short sequence: " << (*it)->getHeader() << std::endl;
             posSet.erase(it);
+        } else {
+            it++;
         }
     }
 
