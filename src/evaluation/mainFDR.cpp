@@ -110,9 +110,17 @@ int main( int nargs, char* args[] ){
     /**
      * Cross-validate the motif model
      */
-    size_t perLoopThreads = GFdr::mainLoopThreads > 1 ? 1 : GFdr::threads;
+    size_t mainLoopThreads;
+    size_t perLoopThreads;
+    if( GFdr::parallel_motif ){
+        mainLoopThreads = GFdr::threads;
+        perLoopThreads = 1;
+    } else {
+        mainLoopThreads = 1;
+        perLoopThreads = GFdr::threads;
+    }
 
-#pragma omp parallel for num_threads( GFdr::mainLoopThreads )
+#pragma omp parallel for num_threads( mainLoopThreads )
 
     for( size_t n = 0; n < motif_set.getN(); n++ ){
 
