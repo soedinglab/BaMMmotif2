@@ -71,6 +71,7 @@ public:
 
     // option for openMP
     static size_t       threads;                // number of threads to use
+    static size_t       mainLoopThreads;        // threads for parallelizing over motifs
 
     static void         init( int nargs, char* args[] );
     static void         destruct();
