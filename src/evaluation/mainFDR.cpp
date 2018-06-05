@@ -2,7 +2,6 @@
 // Created by wanwan on 03.09.17.
 //
 
-
 #include "GFdr.h"
 #include "FDR.h"
 
@@ -65,8 +64,8 @@ int main( int nargs, char* args[] ){
     std::cout << "Note: " << count << " short sequences have been filtered out." << std::endl;
 
     /**
-    * Optional: subsample input sequence set when it is too large
-    */
+     * Optional: subsample input sequence set when it is too large
+     */
     size_t posN = posSet.size();
     if( GFdr::fixedPosN and GFdr::maxPosN < posN ){
         std::random_shuffle(posSet.begin(), posSet.end());
@@ -111,7 +110,10 @@ int main( int nargs, char* args[] ){
     /**
      * Cross-validate the motif model
      */
-#pragma omp parallel for
+    size_t perLoopThreads = GFdr::mainLoopThreads > 1 ? 1 : GFdr::threads;
+
+#pragma omp parallel for num_threads( GFdr::mainLoopThreads )
+
     for( size_t n = 0; n < motif_set.getN(); n++ ){
 
         Motif* motif = new Motif( *motif_set.getMotifs()[n] );
@@ -121,7 +123,7 @@ int main( int nargs, char* args[] ){
                  GFdr::cvFold, GFdr::mops, GFdr::zoops,
                  true, GFdr::savePvalues, GFdr::saveLogOdds );
 
-        fdr.evaluateMotif( GFdr::EM, GFdr::CGS );
+        fdr.evaluateMotif( GFdr::EM, GFdr::CGS, false, false, 0.05f, perLoopThreads );
 
         if(GFdr::saveInitialModel){
             // write out the foreground model

@@ -66,6 +66,7 @@ bool			    GFdr::saveLogOdds = false;			// write the log odds of positive and ne
 
 // option for openMP
 size_t              GFdr::threads = 4;                  // number of threads to use
+size_t              GFdr::mainLoopThreads = 1;          // threads for parallelizing over motifs
 
 void GFdr::init( int nargs, char* args[] ){
 
@@ -282,6 +283,13 @@ int GFdr::readArguments( int nargs, char* args[] ){
                 exit( 2 );
             }
             threads = std::stoi( args[i] );
+        } else if( !strcmp( args[i], "--threads_motif" ) ){
+            if( ++i >= nargs ){
+                printHelp();
+                std::cerr << "No expression following --threads_motif" << std::endl;
+                exit( 2 );
+            }
+            mainLoopThreads = std::stoi( args[i] );
         } else {
             std::cerr << "Ignoring unknown option " << args[i] << std::endl;
         }
@@ -326,6 +334,10 @@ int GFdr::readArguments( int nargs, char* args[] ){
     if( cvFold > 1 and EM == 0 and CGS == 0 ){
         std::cerr << "No optimization is applied to the cross-validation." << std::endl;
         exit( 1 );
+    }
+    if( mainLoopThreads > threads ){
+        std::cout << "Warning: reset threads_motif to "<< threads << " (the max. threads assigned)." << std::endl;
+        mainLoopThreads = threads;
     }
 
     return 0;

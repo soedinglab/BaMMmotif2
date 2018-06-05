@@ -35,7 +35,8 @@ public:
                            bool CGSoptimize = false,
                            bool optimizeQ = false,
                            bool advanceEM = false,
-                           float f = 0.05f );
+                           float f = 0.05f,
+                           size_t perLoopThreads = 4 );
 	void 	print();
 	void	write( char* odir, std::string basename );
     void    saveUnsortedLogOdds( std::string opath, std::vector<float> logOdds );
