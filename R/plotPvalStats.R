@@ -654,23 +654,18 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
     result_fdrtool = fdrtool(pvalues, statistic="pvalue", plot=FALSE, eta0set=eta0set)
 
     # get the global fdr values and estimate of the weight eta0 of the null component
-    fdr	    <- result_fdrtool$qval
     eta0 	<- result_fdrtool$param[3]
-
     if( eta0 >= 1 ){
-        #stop("estimated eta0 >= 1. No positives in the input set.")
-        eta0 = 0.9999
+        print("Warning: estimated eta0 = 1. No positives in the input set.")
+        eta0    = 0.9999
     }
 
-    # plot p-value density plot
-    if(plots) plotPvalStat(pvalues, filename=pn_pval, eta0=eta0, data_eta0=data_eta0, rerank)
-
+    # get FDR from fdrtool. Note that when eta0 = 1, fdr is not well estimated
+    fdr	    <- result_fdrtool$qval
     # calculate recall
-    len         = length(fdr)
-    list        <- seq(1, len)
-
+    len     = length(fdr)
+    list    <- seq(1, len)
     recall  <- ( 1 - fdr ) * list / ( 1 - eta0 ) / len
-
     # cut values when recall is larger than 1
     cutoff = len
     for(i in list){
@@ -679,22 +674,22 @@ evaluateMotif = function( pvalues, filename, rerank, data_eta0 ){
             break
         }
     }
-
     recall=recall[1:cutoff]
     fdr=fdr[1:cutoff]
-
     # set FP / TP ratio to 1:1
     mfold  = eta0 / (1-eta0)
     tfr <- numeric(len)
 
     if(max(fdr)>0){
-        tfr <- (1-fdr)/fdr * mfold
+        tfr <- (1-fdr) / fdr * mfold
     } else {
         tfr = 1
     }
-
     recall[cutoff] = 1
     tfr[cutoff] = 1
+
+    # plot p-value density plot
+    if(plots) plotPvalStat(pvalues, filename=pn_pval, eta0=eta0, data_eta0=data_eta0, rerank)
 
     if(eta0 < data_eta0) eta0 = data_eta0
 
@@ -730,7 +725,6 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", file_suffix), collapse=""))) {
     motif_id <- sub(file_suffix, "", motif_id, fixed = TRUE)
     motif_num <- unlist(strsplit(motif_id, "_motif_"))[-1]
 
-
     if( length(motif_num) == 0){
         motif_num = "NaN"
     }
@@ -763,7 +757,7 @@ for (f in Sys.glob(paste(c(dir, "/", prefix, "*", file_suffix), collapse=""))) {
     for(i in seq(1, length(pvalues))){
         if( pvalues[i] > 1 ){
             pvalues[i] = 1
-        } else if (pvalues[i] == 0 ){
+        } else if (pvalues[i] <= 0 ){
             pvalues[i] = 1e-10
         }
     }
