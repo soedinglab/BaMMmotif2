@@ -96,7 +96,10 @@ int main( int nargs, char* args[] ) {
         // deep copy each motif in the motif set
         Motif *motif = new Motif( *motif_set.getMotifs()[n] );
 
-        std::string fileExtension = "_motif_" + std::to_string( n+1 );
+        std::string fileExtension;
+        if( GScan::initialModelTag == "PWM" ){
+            fileExtension = "_motif_" + std::to_string( n+1 );
+        }
 
         if( GScan::saveInitialModel ){
             // write out the foreground model
