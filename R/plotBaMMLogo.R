@@ -1951,11 +1951,16 @@ stamp_height    <- 500
 #...............................................................................
 file_suffix = ".ihbcp"
 
-if( length(Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), collapse=""))) == 0 ){
-    stop("no input file exists in the folder!")
+# strip away the trailing slash if used by the user
+maindir <- gsub('/$', '', maindir)
+
+file_glob = paste(c(file_prefix, '*', file_suffix), collapse="")
+full_glob = file.path(maindir, file_glob)
+if( length(Sys.glob(full_glob)) == 0 ){
+  stop("Error: no input file exists in the folder!")
 }
 
-for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), collapse="")) ){
+for( file in Sys.glob(full_glob) ){
     # add title to the logo
     plot_title = TRUE
     xaxis <- TRUE
@@ -1964,9 +1969,11 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
     width <- png_width
     height <- png_height
 
-    # get motif number from the filename
-    motif_id <- sub(paste(c(maindir, '/', file_prefix), collapse=""), "", file)
+    # # get motif number from the filename
+    prefix <- file.path(maindir, file_prefix)
+    motif_id <- sub(prefix, "", file)
     motif_id <- sub(file_suffix, "", motif_id)
+    
     # get a filename for each motif
     trunc_filename = file.path( maindir, paste( file_prefix, motif_id, sep="") )
     # ending used for distinguishing between revComp / stamp / general
@@ -1985,8 +1992,8 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
     revComp = TRUE
     ending = paste0("_revComp",ending)
     }
-    ofilename = paste( maindir, file_prefix, motif_id, "-logo-order-", order, ending, sep="" )
-    png( file.path(ofilename), width=width , height=height )
+    ofilename = paste(file_prefix, motif_id, "-logo-order-", order, ending, sep="" )
+    png( file.path(maindir, ofilename), width=width , height=height )
     hoSeqLogo( filename=trunc_filename, order=order,
              useFreqs=useFreqs, base=base, icColumnScale=icColumnScale,
              icLetterScale=icLetterScale, xaxis=xaxis, yaxis=yaxis,
@@ -2001,8 +2008,8 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
     # 1. revComp with axis
     revComp = TRUE
     ending = paste0("_revComp",ending)
-    ofilename = paste( maindir, file_prefix, motif_id, "-logo-order-", order, ending, sep="" )
-    png( file.path(ofilename), width=width , height=height )
+    ofilename = paste(file_prefix, motif_id, "-logo-order-", order, ending, sep="" )
+    png( file.path(maindir, ofilename), width=width , height=height )
     hoSeqLogo( filename=trunc_filename, order=order,
                useFreqs=useFreqs, base=base, icColumnScale=icColumnScale,
                icLetterScale=icLetterScale, xaxis=xaxis, yaxis=yaxis,
@@ -2019,8 +2026,8 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
     height     <- stamp_height
     ending     <- paste0("_stamp",ending)
 
-    ofilename = paste( maindir, file_prefix, motif_id, "-logo-order-", order, ending, sep="" )
-    png( file.path(ofilename), width=width , height=height )
+    ofilename = paste(file_prefix, motif_id, "-logo-order-", order, ending, sep="" )
+    png( file.path(maindir, ofilename), width=width , height=height )
     hoSeqLogo( filename=trunc_filename, order=order,
                useFreqs=useFreqs, base=base, icColumnScale=icColumnScale,
                icLetterScale=icLetterScale, xaxis=xaxis, yaxis=yaxis,
@@ -2033,8 +2040,8 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
     revComp = FALSE
     ending = paste0("_stamp.png")
 
-    ofilename = paste( maindir, file_prefix, motif_id, "-logo-order-", order, ending, sep="" )
-    png( file.path(ofilename), width=width , height=height )
+    ofilename = paste(file_prefix, motif_id, "-logo-order-", order, ending, sep="" )
+    png( file.path(maindir, ofilename), width=width , height=height )
     hoSeqLogo( filename=trunc_filename, order=order,
                useFreqs=useFreqs, base=base, icColumnScale=icColumnScale,
                icLetterScale=icLetterScale, xaxis=xaxis, yaxis=yaxis,
