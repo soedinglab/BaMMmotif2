@@ -96,11 +96,12 @@ int main( int nargs, char* args[] ) {
         // deep copy each motif in the motif set
         Motif *motif = new Motif( *motif_set.getMotifs()[n] );
 
+        std::string fileExtension = "_motif_" + std::to_string( n+1 );
+
         if( GScan::saveInitialModel ){
             // write out the foreground model
             motif->write( GScan::outputDirectory,
-                          GScan::outputFileBasename + "_init_motif_" + std::to_string( n+1 ) );
-
+                          GScan::outputFileBasename + fileExtension );
         }
 
         // score negative sequence set
@@ -122,11 +123,6 @@ int main( int nargs, char* args[] ) {
         std::vector<std::vector<float>> posScores = scorePosSet.getMopsScores();
         scorePosSet.calcPvalues( posScores, negScores );
 
-        std::string fileExtension;
-        if( GScan::initialModelTag == "PWM"){
-            fileExtension = "_init_motif_" + std::to_string( n+1 );
-        }
-        
         scorePosSet.write( GScan::outputDirectory,
                            GScan::outputFileBasename + fileExtension,
                            GScan::pvalCutoff,
