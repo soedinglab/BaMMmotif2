@@ -47,24 +47,33 @@ lwd_size    <- 1.5
 
 main_title  = "Motif Distribution"
 
-if( length(Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), collapse=""))) == 0 ){
+# strip away the trailing slash if used by the user
+maindir <- gsub('/$', '', maindir)
+
+file_glob = paste(c(file_prefix, '*', file_suffix), collapse="")
+full_glob = file.path(maindir, file_glob)
+if( length(Sys.glob(full_glob)) == 0 ){
     stop("Error: no input file exists in the folder!")
 }
 
-for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), collapse="")) ){
+for( file in Sys.glob(full_glob) ){
 
     # get motif number from the filename
-    motif_id <- sub(paste(c(maindir, '/', file_prefix), collapse=""), "", file)
+    prefix <- file.path(maindir, file_prefix)
+    motif_id <- sub(prefix, "", file)
     motif_id <- sub(file_suffix, "", motif_id)
 
     # get a filename for each motif
-    filename = paste0(c(maindir, file_prefix, motif_id, file_suffix), collapse="")
+    file_name = paste(c(file_prefix, motif_id, file_suffix), collapse="")
+    filename = file.path(maindir, file_name)
     line_number = as.integer(system2("wc", args=c("-l", filename, " | awk '{print $1}'" ), stdout = TRUE))
 
     if( line_number < 2 ){
         print("Warning: The input file is empty. No query motif is found in the sequence set.")
         # print out an empty image
-        picname <- paste0(maindir, file_prefix, motif_id, "_distribution.png")
+
+	picname <- paste(c(file_prefix, motif_id, "_distribution.png"), collapse="")
+	picname <- file.path(maindir, picname)
 
         png(filename=picname, width=png_width, height=png_height)
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
@@ -135,7 +144,8 @@ for( file in Sys.glob(paste(c(maindir, '/', file_prefix, "*", file_suffix), coll
         }
 
         interval = (as.integer(interval/10)+1) * 10
-        picname <- paste0( maindir, file_prefix, motif_id, "_distribution.png")
+	picname <- paste(c(file_prefix, motif_id, "_distribution.png"), collapse="")
+	picname <- file.path(maindir, picname)
         png(filename = picname, width=png_width, height=png_height)
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
 

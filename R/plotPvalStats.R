@@ -56,6 +56,7 @@ web     <- args$web
 plots   <- args$plots
 
 # preset variables
+dir <- gsub('/$', '', dir)
 ofile   <- paste(dir, '/', prefix, ".bmscore", sep = "" )
 
 ###########################
