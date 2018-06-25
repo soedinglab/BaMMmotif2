@@ -9,7 +9,7 @@ class MotifSet {
 public:
 
 	MotifSet( char* indir, size_t l_flank, size_t r_flank, std::string tag,
-			  SequenceSet* posSet = NULL, float* f_bg = NULL,
+			  SequenceSet* posSet = NULL, float** v_bg = NULL, size_t k_bg = 2,
               size_t order = 2, std::vector<float> = {}, size_t maxPWM = 10, float glob_q = 0.9f );
 	~MotifSet();
 

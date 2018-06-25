@@ -12,10 +12,11 @@ class Motif {
 public:
 
 	Motif( size_t length,
-			size_t order,
-			std::vector<float> alpha,
-			float* f_bg,
-            float glob_q );
+           size_t order,
+           std::vector<float> alpha,
+           float** v_bg,
+           size_t k_bg,
+           float glob_q );
 
 	Motif( const Motif& other );					// copy constructor
 	~Motif();
@@ -53,7 +54,8 @@ private:
     float_t             q_;                         // estimated motif fraction on the sequences
 	float**			 	A_;							// hyperparameter alphas
 	float***    		v_;				        	// conditional probabilities for (k+1)-mers y at motif position j
-    float*	            f_bg_;			            // monomer frequencies from background model
+    float**	            v_bg_;			            // conditional probabilities of background model
+    size_t              k_bg_;                      // order of background model
 	float***			p_;							// probabilities for (k+1)-mers y at motif position j
 	float**				s_;							// log odds scores for (K+1)-mers y at motif position j
 	int***			    n_;							// fractional counts of (k+1)-mer for all y at motif position j
@@ -109,7 +111,7 @@ inline void Motif::updateV( float*** n, float** alpha, size_t K ){
 	// for k = 0, v_ = freqs:
 	for( size_t y = 0; y < Y_[1]; y++ ){
 		for( size_t j = 0; j < W_; j++ ){
-			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * f_bg_[y] )
+			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * v_bg_[0][y] )
 						/ ( sumN[j] + alpha[0][j] );
             assert( v_[0][y][j] <= 1 );
 		}

@@ -2,23 +2,28 @@
 #include <random>       // std::mt19937, std::discrete_distribution
 #include "Motif.h"
 
-Motif::Motif( size_t length, size_t K, std::vector<float> alpha, float* f_bg, float glob_q ){
+Motif::Motif( size_t length, size_t K, std::vector<float> alpha, float** v_bg, size_t k_bg, float glob_q ){
 
 	W_ = length;
 	K_ = K;
 	C_ = 0;
     q_ = glob_q;
 
-	for( size_t k = 0; k < K_+5; k++ ){
+	for( size_t k = 0; k < K_+8; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 
-	if( f_bg != NULL ){
-		f_bg_ = f_bg;
+	if( v_bg != NULL ){
+        k_bg_ = k_bg;
+		v_bg_ = v_bg;
 	} else {
-		f_bg_ = ( float* )calloc( Y_[1], sizeof( float ) );
-		for( size_t i = 0; i < Y_[1]; i++ ){
-			f_bg_[i] = 1.f / ( float )Y_[1];
+        k_bg_ = 2;
+		v_bg_ = ( float** )calloc( k_bg_ + 1, sizeof( float* ) );
+		for( size_t k = 0; k <= k_bg_; k++ ){
+            v_bg_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
+            for( size_t y = 0; y < Y_[k+1]; y++ ){
+                v_bg_[k][y] = powf( 1.0f / Y_[1], (float)(k+1) );
+            }
 		}
 	}
 
@@ -89,7 +94,8 @@ Motif::Motif( const Motif& other ){ 		// copy constructor
 		}
 	}
 
-	f_bg_ = other.f_bg_;
+	k_bg_ = other.k_bg_;
+    v_bg_ = other.v_bg_;
 	isInitialized_ = true;
 }
 
@@ -216,7 +222,7 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, floa
 	}
 	for( size_t y = 0; y < asize; y++ ){
 		for( size_t j = 0; j < W_; j++ ){
-			score[y][j] = v_[0][y][j] / f_bg_[y];
+			score[y][j] = v_[0][y][j] / v_bg_[0][y];
 		}
 	}
 
@@ -234,8 +240,9 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, floa
             it++;
         }
     }
-    std::cout << "Note: " << count << " short sequences have been neglected for sampling PWM." << std::endl;
-
+    if( count > 0 ) std::cout << "Note: " << count
+                              << " short sequences have been neglected for sampling PWM."
+                              << std::endl;
 
 #pragma omp parallel for
 
@@ -393,9 +400,9 @@ void Motif::calculateV( int*** n ){
     // for k = 0, v_ = freqs:
 	for( size_t y = 0; y < Y_[1]; y++ ){
 		for( size_t j = 0; j < W_; j++ ){
-			v_[0][y][j] = ( n[0][y][j] + A_[0][j] * f_bg_[y] )
+			v_[0][y][j] = ( n[0][y][j] + A_[0][j] * v_bg_[0][y] )
 						/ ( static_cast<float>( C_ ) + A_[0][j] );
-		}
+        }
 	}
 
 	// for k > 0:
@@ -423,18 +430,34 @@ void Motif::calculateP(){
 			p_[0][y][j] = v_[0][y][j];
 		}
 	}
+
 	// when k > 0:
-	for( size_t k = 1; k < K_+1; k++){
+	for( size_t k = 1; k < K_+1; k++ ){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
-			size_t y2 = y % Y_[k];				// cut off first nucleotide in (k+1)-mer
 			size_t yk = y / Y_[1];				// cut off last nucleotide in (k+1)-mer
-			// todo: the calculation for j < k is not correct.
+			// when j < k:
 			for( size_t j = 0; j < k; j++ ){
-				p_[k][y][j] = p_[k-1][y2][j];	// i.e. p_j(ACG) = p_j(CG)
+				p_[k][y][j] = 1;	            // i.e. p_j(ACG) = p_j(G|AC) x p_j-1(C|A) x p_j-2(A)
+                for( size_t i = 0; i <= j; i++ ){
+                    size_t yi = y / Y_[i];
+                    p_[k][y][j] *= v_[k-i][yi][j-i];
+                }
+                for( size_t i = j+1; i <= k; i++ ){
+
+                    if( (k - i) <= k_bg_ or k <= k_bg_ ){
+                        size_t yi = y / Y_[i];
+                        p_[k][y][j] *= v_bg_[k-i][yi];
+                    } else {
+                        size_t yi = y / Y_[1] % Y_[k_bg_+1];
+                        p_[k][y][j] *= v_bg_[k_bg_][yi];
+                    }
+                }
 			}
+            // when j >= k:
 			for( size_t j = k; j < W_; j++ ){
-				p_[k][y][j] =  v_[k][y][j] * p_[k-1][yk][j-1];
+				p_[k][y][j] = v_[k][y][j] * p_[k-1][yk][j-1];
 			}
+
 		}
 	}
 }
@@ -500,6 +523,7 @@ void Motif::write( char* odir, std::string basename ){
 												// probabilities
 	std::ofstream ofile_v( opath_v.c_str() );
 	std::ofstream ofile_p( opath_p.c_str() );
+
 	for( size_t j = 0; j < W_; j++ ){
 		for( size_t k = 0; k < K_+1; k++ ){
 			for( size_t y = 0; y < Y_[k+1]; y++ ){

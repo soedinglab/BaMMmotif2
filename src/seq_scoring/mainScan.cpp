@@ -52,7 +52,8 @@ int main( int nargs, char* args[] ) {
                         GScan::addColumns.at(1),
                         GScan::initialModelTag,
                         GScan::posSequenceSet,
-                        GScan::posSequenceSet->getBaseFrequencies(),
+                        bgModel->getV(),
+                        GScan::bgModelOrder,
                         GScan::modelOrder,
                         GScan::modelAlpha,
                         GScan::maxPWM);
