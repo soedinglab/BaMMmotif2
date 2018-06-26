@@ -95,7 +95,13 @@ Motif::Motif( const Motif& other ){ 		// copy constructor
 	}
 
 	k_bg_ = other.k_bg_;
-    v_bg_ = other.v_bg_;
+    k_bg_ = other.k_bg_;
+    for( size_t k = 0; k <= k_bg_; k++ ){
+        v_bg_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
+        for( size_t y = 0; y < Y_[k+1]; y++ ){
+            v_bg_[k][y] = other.v_bg_[k][y];
+        }
+    }
 	isInitialized_ = true;
 }
 
@@ -122,6 +128,11 @@ Motif::~Motif(){
 	}
 	free( s_ );
 
+/*  // does not work properly
+    for( size_t k = 0; k <= k_bg_; k++ ){
+        free( v_bg_[k] );
+    }
+    free( v_bg_ );*/
 }
 
 // initialize v from binding sites file

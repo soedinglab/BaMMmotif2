@@ -159,7 +159,7 @@ int main( int nargs, char* args[] ){
 			std::cout << "Note: the model is not optimized!\n";
 		}
 
-        // write out the learned model
+        // write out the (learned) foreground model
         motif->write( Global::outputDirectory,
                       Global::outputFileBasename + "_motif_" + std::to_string( n+1 ) );
 
