@@ -199,21 +199,6 @@ void EM::EStep(){
 
 }
 
-// for parallelizing MStep()
-inline void atomic_float_add(float *source, const float operand) {
-    union {
-        unsigned int intVal;
-        float floatVal;
-    } newVal, prevVal;
-
-    do {
-        prevVal.floatVal = *source;
-        newVal.floatVal = prevVal.floatVal + operand;
-    } while (__atomic_compare_exchange_n( (volatile unsigned int *)source,
-                                          &prevVal.intVal, newVal.intVal, 0,
-                                          __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST) == false );
-}
-
 void EM::MStep(){
 
     // reset the fractional counts n

@@ -136,6 +136,7 @@ void Motif::initFromBindingSites( char* indir, size_t l_flank, size_t r_flank ){
 	std::ifstream file( indir );			// read file
 	std::string bindingsite;				// get binding site sequence from each line
 	size_t bindingSiteWidth;				// length of binding site
+    srand( 42 );
 
 	while( getline( file, bindingsite ).good() ){
 
@@ -235,6 +236,8 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, floa
 	// sampling z from each sequence of the sequence set based on the weights:
 	std::vector<Sequence*> posSet = posSeqset->getSequences();
 	std::mt19937 rngx;
+    rngx.seed( 42 );
+
     size_t count = 0;
     std::vector<Sequence*>::iterator it = posSet.begin();
     while( it != posSet.end() ){
@@ -246,12 +249,13 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, floa
             it++;
         }
     }
-    if( count > 0 ) std::cout << "Note: " << count
-                              << " short sequences have been neglected for sampling PWM."
-                              << std::endl;
+    if( count > 0 ){
+        std::cout << "Note: " << count << " short sequences have been neglected for sampling PWM."
+                  << std::endl;
+    }
 
-#pragma omp parallel for
 
+//#pragma omp for
 	for( size_t n = 0; n < posSet.size(); n++ ){
 
 		size_t LW1 = posSet[n]->getL() - W_ + 1;
@@ -292,6 +296,10 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, floa
 			r[i] /= normFactor;
 			posteriors.push_back( r[i] );
 		}
+
+        // todo: with random drawing from std::discrete_distribution, it is difficult to parallize the code
+        // todo: possible solution is to implement this function on our own and pre-generated n random numbers
+        // todo: for drawing z
 		// draw a new position z from discrete posterior distribution
 		std::discrete_distribution<size_t> posterior_dist( posteriors.begin(), posteriors.end() );
 
@@ -304,6 +312,7 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, floa
 				for( size_t j = 0; j < W_; j++ ){
 					size_t y = kmer[z-1+j] % Y_[k+1];
                     __sync_fetch_and_add(&(n_[k][y][j]), 1);
+
 				}
 			}
 		}
@@ -338,14 +347,6 @@ void Motif::initFromBaMM( char* indir, size_t l_flank, size_t r_flank ){
 	std::ifstream file( indir, std::ifstream::in );
 	std::string line;
     if( file.is_open() ) {
-/*    getline( file, line );
-    std::stringstream eachline( line );
-    size_t k = 0;     // count for
-    while( line.length() != 0 ){
-        std::cout << k << std::endl;
-        getline( file, line );
-        k++;
-    }*/
 
         // loop over motif position j
         // set each v to 0.25f in the flanking region

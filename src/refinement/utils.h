@@ -63,6 +63,9 @@ static std::string          concatenate2strings( std::string s1, std::string s2 
 // returns a permutation which rearranges v into ascending order
 template <typename T> std::vector<size_t> sortIndices( const std::vector<T> &v );
 
+// parallelize float addition
+static void atomic_float_add(float *source, const float operand);
+
 inline std::string baseName( const char* filePath ){
 
 	size_t i = 0, start = 0, end = 0;
@@ -193,6 +196,22 @@ template <typename T> inline std::vector<size_t> sortIndices( const std::vector<
 
   return idx;
 }
+
+// for parallelizing MStep()
+inline void atomic_float_add(float *source, const float operand) {
+    union {
+        unsigned int intVal;
+        float floatVal;
+    } newVal, prevVal;
+
+    do {
+        prevVal.floatVal = *source;
+        newVal.floatVal = prevVal.floatVal + operand;
+    } while (__atomic_compare_exchange_n( (volatile unsigned int *)source,
+                                          &prevVal.intVal, newVal.intVal, 0,
+                                          __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST) == false );
+}
+
 
 /** The digamma function in long double precision.
 * @param x the real value of the argument
