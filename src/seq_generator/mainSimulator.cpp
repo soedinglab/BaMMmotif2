@@ -42,7 +42,8 @@ int main( int nargs, char* args[] ){
                             GSimu::addColumns.at(1),
                             GSimu::initialModelTag,
                             GSimu::sequenceSet,
-                            GSimu::sequenceSet->getBaseFrequencies(),
+                            bgModel->getV(),
+                            GSimu::bgModelOrder,
                             GSimu::modelOrder,
                             GSimu::modelAlpha );
 

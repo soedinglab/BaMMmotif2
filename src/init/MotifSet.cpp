@@ -5,11 +5,13 @@ MotifSet::MotifSet( char* indir,
                     size_t r_flank,
                     std::string tag,
                     SequenceSet* posSet,
-                    float* f_bg,
+                    float** v_bg,
+                    size_t k_bg,
                     size_t K,
                     std::vector<float> alphas,
                     size_t maxPWM,
                     float glob_q ){
+
 	N_ = 0;
 
 	if( tag.compare( "bindingsites" ) == 0 ){
@@ -30,7 +32,7 @@ MotifSet::MotifSet( char* indir,
 
 		length += l_flank + r_flank;
 
-		Motif* motif = new Motif( length, K, alphas, f_bg, glob_q );
+		Motif* motif = new Motif( length, K, alphas, v_bg, k_bg, glob_q );
 
 		motif->initFromBindingSites( indir, l_flank, r_flank );
 
@@ -88,7 +90,7 @@ MotifSet::MotifSet( char* indir,
                     }
 
 					// construct an initial motif
-					Motif* motif = new Motif( length, K, alphas, f_bg, q );
+					Motif* motif = new Motif( length, K, alphas, v_bg, k_bg, q );
 
 					// parse PWM for each motif
 					float** PWM = new float*[asize];
@@ -181,7 +183,7 @@ MotifSet::MotifSet( char* indir,
 					model_length++;
 
                     // check if the input BaMM file has the right format
-                    if( model_length > 1 and check_lines != model_order){
+                    if( model_length > 1 and check_lines != model_order ){
                         std::cerr << "This is not a BaMM-format file: " << indir << std::endl;
                         exit( 1 );
                     }
@@ -192,19 +194,21 @@ MotifSet::MotifSet( char* indir,
 				} else {
                     check_lines++;
                 }
-			}
 
+			}
 
             // adjust model order, extra 1
             model_order -= 1;
-
-            std::cout << "Input BaMM order is " << model_order << std::endl;
+            if( model_order > 8 ){
+                std::cerr << "The input BaMM model order is too high: " << indir << std::endl;
+                exit( 1 );
+            }
 
 			// extend the core region of the model due to the added columns
 			model_length += l_flank + r_flank;
 
 			// construct an initial motif
-			Motif* motif = new Motif( model_length, K, alphas, f_bg, glob_q );
+			Motif* motif = new Motif( model_length, K, alphas, v_bg, k_bg, glob_q );
 
 			// initialize motif from file
 			motif->initFromBaMM( indir, l_flank, r_flank );
