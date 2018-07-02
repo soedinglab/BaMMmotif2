@@ -29,7 +29,9 @@ public:
 
     void 					EStep();			// E-step
     void 					MStep();			// M-step
-    void                    optimize_q();       // optimize the hyperparameter q
+    void                    optimizeQ();        // optimize the hyper-parameter q
+    void                    initializePos();    // initialize positional prior pos_i
+
 
     float**                 getR();             // get the responsibility parameter r
     float                   getQ();             // get the optimized positional prior q

@@ -73,6 +73,9 @@ int EM::optimize(){
         v_before[y].resize( W_ );
     }
 
+    // initialized positional priors
+    initializePos();
+
     size_t iteration = 0;
 
     // iterate over
@@ -96,7 +99,7 @@ int EM::optimize(){
         MStep();
 
         // optimize hyper-parameter q in the first 5 steps
-        if( optimizeQ_ and iteration <= 5 )    optimize_q();
+        if( optimizeQ_ and iteration <= 5 ) optimizeQ();
 
         // check parameter difference for convergence
         v_diff = 0.0f;
@@ -157,10 +160,9 @@ void EM::EStep(){
         // note here:   r_[n][0] and pos_[n][0] are for motif is absent
         //              and the indices of r_[n][i] is reverted, which means:
         //              r_[n][i] is the weight for motif being at position L-W-i on sequence n
-        float pos_i = q_ / static_cast<float>( LW1 );
+        //float pos_i = q_ / static_cast<float>( LW1 );
         for( size_t i = 0; i < LW1; i++ ){
             r_[n][i] = 1.0f;
-            pos_[n][i] = pos_i;
         }
 
         // when p(z_n > 0), ij = i+j runs over all positions in sequence
@@ -221,7 +223,7 @@ void EM::MStep(){
         for( size_t ij = 0; ij < L-W_+1; ij++ ){
             size_t y = kmer[ij] % Y_[K_+1];
             for (size_t j = 0; j < W_; j++) {
-                // parallize for: n_[K_][y][j] += r_[n][L - W_ - ij + j];
+                // parallelize for: n_[K_][y][j] += r_[n][L - W_ - ij + j];
                 atomic_float_add(&(n_[K_][y][j]), r_[n][L - W_ - ij + j]);
             }
         }
@@ -241,6 +243,20 @@ void EM::MStep(){
     //printR();
     // update model parameters v[k][y][j] with updated k-mer counts, alphas and model order
     motif_->updateV( n_, A_, K_ );
+}
+
+void EM::initializePos(){
+
+    for( size_t n = 0; n < seqs_.size(); n++ ){
+        size_t 	L = seqs_[n]->getL();
+        size_t 	LW1 = L - W_ + 1;
+        pos_[n][0] = 1.0f - q_;                         // probability of having no motif on the sequence
+        float   pos_i = q_ / static_cast<float>( LW1 ); // probability of having a motif at position i on the sequence
+        for( size_t i = 1; i <= L; i++ ){
+            pos_[n][i] = pos_i;
+        }
+    }
+    
 }
 
 int EM::mask() {
@@ -303,7 +319,7 @@ int EM::mask() {
         /**
          * optimize fractional prior q
          */
-        if( optimizeQ_ )    optimize_q();
+        if( optimizeQ_ ) optimizeQ();
 
     }
 
@@ -487,7 +503,7 @@ int EM::mask() {
     return 0;
 }
 
-void EM::optimize_q(){
+void EM::optimizeQ(){
 
     float N1 = 0.f;                   // expectation value of the count of sequences with at least a query motif
 
