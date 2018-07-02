@@ -256,7 +256,10 @@ void EM::initializePos(){
     
 }
 
-void EM::EStep_noflip(){
+void EM::EStep_slow(){
+    /**
+     * together with MStep_slow(), this is the slow version of EM
+     */
 
     float llikelihood = 0.0f;
 
@@ -308,7 +311,10 @@ void EM::EStep_noflip(){
 
 }
 
-void EM::MStep_noflip(){
+void EM::MStep_slow(){
+    /**
+     * together with EStep_slow(), this is the slow version of EM
+     */
 
     // reset the fractional counts n
     for( size_t k = 0; k < K_+1; k++ ){
@@ -321,6 +327,7 @@ void EM::MStep_noflip(){
 
     // compute fractional occurrence counts for the highest order K
     // n runs over all sequences
+#pragma omp parallel for
     for( size_t n = 0; n < seqs_.size(); n++ ){
         size_t L = seqs_[n]->getL();
         size_t LW1 = L - W_ + 1;
@@ -330,7 +337,8 @@ void EM::MStep_noflip(){
         for( size_t i = 1; i <= LW1; i++ ){
             for (size_t j = 0; j < W_; j++) {
                 size_t y = kmer[i+j-1] % Y_[K_+1];
-                n_[K_][y][j] += r_[n][i];
+                //n_[K_][y][j] += r_[n][i];
+                atomic_float_add(&(n_[K_][y][j]), r_[n][i]);
             }
         }
     };

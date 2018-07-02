@@ -29,8 +29,8 @@ public:
 
     void 					EStep();			// E-step
     void 					MStep();			// M-step
-    void 					EStep_noflip();			// E-step
-    void 					MStep_noflip();			// M-step
+    void 					EStep_slow();			// E-step
+    void 					MStep_slow();			// M-step
 
     void                    optimizeQ();        // optimize the hyper-parameter q
     void                    initializePos();    // initialize positional prior pos_i
