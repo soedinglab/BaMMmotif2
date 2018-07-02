@@ -76,9 +76,8 @@ int EM::optimize(){
     // initialized positional priors
     initializePos();
 
-    size_t iteration = 0;
-
     // iterate over
+    size_t iteration = 0;
     while( iterate && ( iteration < maxEMIterations_ ) ){
 
         iteration++;
@@ -147,7 +146,6 @@ void EM::EStep(){
 
     // calculate responsibilities r at all LW1 positions on sequence n
     // n runs over all sequences
-
 #pragma omp parallel for reduction(+:llikelihood)
     for( size_t n = 0; n < seqs_.size(); n++ ){
 
@@ -160,8 +158,7 @@ void EM::EStep(){
         // note here:   r_[n][0] and pos_[n][0] are for motif is absent
         //              and the indices of r_[n][i] is reverted, which means:
         //              r_[n][i] is the weight for motif being at position L-W-i on sequence n
-        //float pos_i = q_ / static_cast<float>( LW1 );
-        for( size_t i = 0; i < LW1; i++ ){
+        for( size_t i = 0; i <= LW1; i++ ){
             r_[n][i] = 1.0f;
         }
 
@@ -178,18 +175,18 @@ void EM::EStep(){
         }
 
         // calculate the responsibilities and sum them up
-        for( size_t i = 0; i < LW1; i++ ){
+        for( size_t i = 0; i <= LW1; i++ ){
             r_[n][i] *= pos_[n][i];
             normFactor += r_[n][i];
         }
 
         // normalize responsibilities
-        for( size_t i = 0; i < LW1; i++ ){
+        for( size_t i = 0; i <= LW1; i++ ){
             r_[n][i] /= normFactor;
         }
 
         // for the unused positions
-        for( size_t i = LW1; i < L; i++ ){
+        for( size_t i = LW1+1; i < L; i++ ){
             r_[n][i] = 0.0f;
         }
 
@@ -257,6 +254,101 @@ void EM::initializePos(){
         }
     }
     
+}
+
+void EM::EStep_noflip(){
+
+    float llikelihood = 0.0f;
+
+    motif_->calculateLinearS( bgModel_->getV(), K_bg_ );
+
+    // calculate responsibilities r at all LW1 positions on sequence n
+    // n runs over all sequences
+#pragma omp parallel for reduction(+:llikelihood)
+    for( size_t n = 0; n < seqs_.size(); n++ ){
+
+        size_t 	L = seqs_[n]->getL();
+        size_t 	LW1 = L - W_ + 1;
+        size_t*	kmer = seqs_[n]->getKmer();
+        float 	normFactor = 1.0f - q_;
+
+        // initialize r_[n][i] with 1:
+        // note here:   r_[n][0] is the responsibility when motif is absent
+        //              and the indices of r_[n][i] is reverted, which means:
+        //              r_[n][i] is the weight for motif being at position i on sequence n
+        for( size_t i = 0; i <= LW1; i++ ){
+            r_[n][i] = 1.0f;
+        }
+
+        // when p(z_n > 0), it runs over all positions in sequence in the region of [1, LW1]
+        for( size_t i = 1; i <= LW1; i++ ){
+            for( size_t j = 0; j < W_; j++ ){
+                // extract (K+1)-mer y from positions (ij-K,...,ij)
+                size_t y = kmer[i+j-1] % Y_[K_+1];
+                r_[n][i] *= s_[y][j];
+            }
+        }
+
+        // calculate the responsibilities and sum them up
+        for( size_t i = 0; i <= LW1; i++ ){
+            r_[n][i] *= pos_[n][i];
+            normFactor += r_[n][i];
+        }
+
+        // normalize responsibilities in the region [0, LW1]
+        for( size_t i = 0; i <= LW1; i++ ){
+            r_[n][i] /= normFactor;
+        }
+
+        // calculate log likelihood over all sequences
+        llikelihood += logf( normFactor );
+    }
+
+    llikelihood_ = llikelihood;
+
+}
+
+void EM::MStep_noflip(){
+
+    // reset the fractional counts n
+    for( size_t k = 0; k < K_+1; k++ ){
+        for( size_t y = 0; y < Y_[k+1]; y++ ){
+            for( size_t j = 0; j < W_; j++ ){
+                n_[k][y][j] = 0.0f;
+            }
+        }
+    }
+
+    // compute fractional occurrence counts for the highest order K
+    // n runs over all sequences
+    for( size_t n = 0; n < seqs_.size(); n++ ){
+        size_t L = seqs_[n]->getL();
+        size_t LW1 = L - W_ + 1;
+        size_t* kmer = seqs_[n]->getKmer();
+
+        // it runs over all positions i on sequence n in the region of [1, LW1]
+        for( size_t i = 1; i <= LW1; i++ ){
+            for (size_t j = 0; j < W_; j++) {
+                size_t y = kmer[i+j-1] % Y_[K_+1];
+                n_[K_][y][j] += r_[n][i];
+            }
+        }
+    };
+
+    // compute fractional occurrence counts from higher to lower order
+    // k runs over all lower orders
+    for( size_t k = K_; k > 0; k-- ){
+        for( size_t y = 0; y < Y_[k+1]; y++ ){
+            size_t y2 = y % Y_[k];
+            for( size_t j = 0; j < W_; j++ ){
+                n_[k-1][y2][j] += n_[k][y][j];
+            }
+        }
+    }
+
+    //printR();
+    // update model parameters v[k][y][j] with updated k-mer counts, alphas and model order
+    motif_->updateV( n_, A_, K_ );
 }
 
 int EM::mask() {
