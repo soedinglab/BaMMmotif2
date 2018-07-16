@@ -280,7 +280,7 @@ void EM::EStep_slow(){
         size_t 	L = seqs_[n]->getL();
         size_t 	LW1 = L - W_ + 1;
         size_t*	kmer = seqs_[n]->getKmer();
-        float 	normFactor = 0;
+        float 	normFactor = 0.f;
 
         // initialize r_[n][i] with 1:
         // note here:   r_[n][0] is the responsibility when motif is absent
@@ -336,8 +336,8 @@ void EM::MStep_slow(){
     // n runs over all sequences
 #pragma omp parallel for
     for( size_t n = 0; n < seqs_.size(); n++ ){
-        size_t L = seqs_[n]->getL();
-        size_t LW1 = L - W_ + 1;
+        size_t  L = seqs_[n]->getL();
+        size_t  LW1 = L - W_ + 1;
         size_t* kmer = seqs_[n]->getKmer();
 
         // it runs over all positions i on sequence n in the region of [1, LW1]
