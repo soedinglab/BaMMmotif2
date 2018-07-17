@@ -92,23 +92,26 @@ int main( int nargs, char* args[] ){
     // sample negative sequence set B1set based on s-mer frequencies
     // from positive training sequence set
     std::vector<Sequence*>  negSet;
-    std::vector<std::unique_ptr<Sequence>> negSeqs;
-    size_t minSeqN = 5000;
-    bool rest = minSeqN % posSet.size();
-    if( posSet.size() < minSeqN ){
-        Global::mFold = minSeqN / posSet.size() + rest;
-    }
+    if( Global::negSeqGiven ){
+        negSet = Global::negSequenceSet->getSequences();
+    } else {
+        std::vector<std::unique_ptr<Sequence>> negSeqs;
+        size_t minSeqN = 5000;
+        bool rest = minSeqN % posSet.size();
+        if (posSet.size() < minSeqN) {
+            Global::mFold = minSeqN / posSet.size() + rest;
+        }
 
-    SeqGenerator negseq( posSet, NULL, Global::sOrder, 1.0f, Global::genericNeg );
-    negSeqs = negseq.sample_bgseqset_by_fold( Global::mFold );
+        SeqGenerator negseq(posSet, NULL, Global::sOrder, 1.0f, Global::genericNeg);
+        negSeqs = negseq.sample_bgseqset_by_fold(Global::mFold);
 
-    // convert unique_ptr to regular pointer
-    for( size_t n = 0; n < negSeqs.size(); n++ ) {
+        // convert unique_ptr to regular pointer
+        for (size_t n = 0; n < negSeqs.size(); n++) {
 //        negSeqs[n]->print();    // print out negative sequences for checking
-        negSet.push_back( negSeqs[n].release() );
-        negSeqs[n].get_deleter();
+            negSet.push_back(negSeqs[n].release());
+            negSeqs[n].get_deleter();
+        }
     }
-
 //#pragma omp parallel for
     for( size_t n = 0; n < motif_set.getN(); n++ ){
 		// deep copy each motif in the motif set
