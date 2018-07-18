@@ -26,8 +26,8 @@ EM::EM( Motif* motif, BackgroundModel* bgModel,
 	r_ = ( float** )calloc( seqs_.size(), sizeof( float* ) );
 	pos_ = ( float** )calloc( seqs_.size(), sizeof( float* ) );
 	for( size_t n = 0; n < seqs_.size(); n++ ){
-		r_[n] = ( float* )calloc( seqs_[n]->getL()/*-W_+1*/, sizeof( float ) );
-		pos_[n] = ( float* )calloc( seqs_[n]->getL()/*-W_+1*/, sizeof( float ) );
+		r_[n] = ( float* )calloc( seqs_[n]->getL()/*-W_*/+1, sizeof( float ) );
+		pos_[n] = ( float* )calloc( seqs_[n]->getL()/*-W_*/+1, sizeof( float ) );
 	}
 
 	// allocate memory for n_[k][y][j]

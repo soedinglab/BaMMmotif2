@@ -62,7 +62,9 @@ int main( int nargs, char* args[] ){
             it++;
         }
     }
-    std::cout << "Note: " << count << " short sequences have been filtered out." << std::endl;
+    if( count > 0 ){
+        std::cout << "Note: " << count << " short sequences have been filtered out." << std::endl;
+    }
 
     /**
      * Optional: subsample input sequence set when it is too large
@@ -111,6 +113,8 @@ int main( int nargs, char* args[] ){
     /**
      * Cross-validate the motif model
      */
+    // Determine whether to optimize over motifs
+    // or over optimization steps within a motif
     size_t mainLoopThreads;
     size_t perLoopThreads;
     if( GFdr::parallel_motif ){
@@ -138,7 +142,6 @@ int main( int nargs, char* args[] ){
             // write out the foreground model
             motif->write( GFdr::outputDirectory,
                           GFdr::outputFileBasename + "_init_motif_" + std::to_string( n+1 ) );
-
         }
 
         std::string fileExtension;

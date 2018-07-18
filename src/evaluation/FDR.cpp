@@ -141,7 +141,6 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
 
 		calculatePvalues();
 	}
-
 }
 
 void FDR::calculatePR(){
@@ -220,15 +219,17 @@ void FDR::calculatePR(){
             lambda += negScoreMax_[l] - negScoreMax_[n_top];
         }
         lambda /= n_top;
-
-//        std::cout << "lambda = " << lambda << std::endl;
+        assert( lambda > 0.f );
 
         float Sl = 0.f;
 
 		for( size_t i = 0; i < posN + negN; i++ ){
 
-            if( (posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] or idx_negMax == negN or idx_posMax == 0 )
-                and idx_posMax < posN ){
+            if (idx_posMax >= posN || idx_negMax >= negN) {
+                break;
+            }
+
+            if( (posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] || idx_negMax == negN || idx_posMax == 0 )){
                 Sl = posScoreMax_[idx_posMax];
                 idx_posMax++;
             } else if( posScoreMax_[idx_posMax] == negScoreMax_[idx_negMax] && rand() % 2 == 0){
