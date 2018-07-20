@@ -254,7 +254,6 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, floa
                   << std::endl;
     }
 
-
 //#pragma omp for
 	for( size_t n = 0; n < posSet.size(); n++ ){
 

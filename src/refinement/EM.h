@@ -33,7 +33,8 @@ public:
     void 					MStep_slow();		// M-step: slow version
 
     void                    optimizeQ();        // optimize the hyper-parameter q
-    void                    initializePos();    // initialize positional prior pos_i
+    void                    optimizePos();      // optimize the positional prior pos_i
+    void                    initializePos();    // initialize the positional prior pos_i
 
 
     float**                 getR();             // get the responsibility parameter r
@@ -58,6 +59,8 @@ private:
     float**					s_;					// log odds scores
     float*** 				n_;	            	// fractional counts n for (k+1)-mers y at motif position j
     float**					pos_;				// positional prior, pos[i][0] indicates the prior for no motif present on sequence i
+    float                   beta_;              // hyper-parameter for smoothness on positional prior
+    float*                  pi_;                // probability of a motif to start at position i on the longest sequence
 
     float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif
     float                   f_;                 // fraction of sequences to be masked
