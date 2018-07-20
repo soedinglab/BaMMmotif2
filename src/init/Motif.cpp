@@ -297,7 +297,7 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, floa
 			posteriors.push_back( r[i] );
 		}
 
-        // todo: with random drawing from std::discrete_distribution, it is difficult to parallize the code
+        // todo: with random drawing from std::discrete_distribution, it is difficult to parallelize the code
         // todo: possible solution is to implement this function on our own and pre-generated n random numbers
         // todo: for drawing z
 		// draw a new position z from discrete posterior distribution
@@ -311,8 +311,8 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, floa
 			for( size_t k = 0; k < K_+1; k++ ){
 				for( size_t j = 0; j < W_; j++ ){
 					size_t y = kmer[z-1+j] % Y_[k+1];
-                    __sync_fetch_and_add(&(n_[k][y][j]), 1);
-
+                    //__sync_fetch_and_add(&(n_[k][y][j]), 1);
+                    n_[k][y][j]++;
 				}
 			}
 		}

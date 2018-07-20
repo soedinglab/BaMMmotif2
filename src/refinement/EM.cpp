@@ -174,7 +174,6 @@ void EM::EStep(){
             for( size_t j = 0; j < W_; j++ ){
                 r_[n][LW1-ij+j] *= s_[y][j];
             }
-
         }
 
         // calculate the responsibilities and sum them up
@@ -192,7 +191,7 @@ void EM::EStep(){
 
         // for the unused positions
         for( size_t i = LW1+1; i <= L; i++ ){
-            r_[n][i] = 0.0f;
+//            r_[n][i] = 0.0f;
         }
 
         // calculate log likelihood over all sequences
@@ -231,7 +230,7 @@ void EM::MStep(){
                 atomic_float_add(&(n_[K_][y][j]), r_[n][LW1-ij+j]);
             }
         }
-    };
+    }
 
     // compute fractional occurrence counts from higher to lower order
     // k runs over all lower orders
@@ -348,7 +347,7 @@ void EM::MStep_slow(){
                 atomic_float_add(&(n_[K_][y][j]), r_[n][i]);
             }
         }
-    };
+    }
 
     // compute fractional occurrence counts from higher to lower order
     // k runs over all lower orders

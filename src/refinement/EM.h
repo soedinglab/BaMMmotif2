@@ -65,7 +65,7 @@ private:
 
     float 					llikelihood_        = 0.0f;     // log likelihood for each iteration
     float					epsilon_            = 0.01f;	// threshold for parameter v convergence
-    size_t					maxEMIterations_    = 1000;
+    size_t					maxEMIterations_    = 3;
     bool                    optimizeQ_;
 
     bool                    verbose_;           // show the output of each EM iteration
