@@ -29,8 +29,8 @@ public:
 
     void 					EStep();			// E-step
     void 					MStep();			// M-step
-    void 					EStep_slow();			// E-step
-    void 					MStep_slow();			// M-step
+    void 					EStep_slow();		// E-step: slow version
+    void 					MStep_slow();		// M-step: slow version
 
     void                    optimizeQ();        // optimize the hyper-parameter q
     void                    initializePos();    // initialize positional prior pos_i
@@ -65,7 +65,7 @@ private:
 
     float 					llikelihood_        = 0.0f;     // log likelihood for each iteration
     float					epsilon_            = 0.01f;	// threshold for parameter v convergence
-    size_t					maxEMIterations_    = 3;
+    size_t					maxEMIterations_    = 1000;
     bool                    optimizeQ_;
 
     bool                    verbose_;           // show the output of each EM iteration

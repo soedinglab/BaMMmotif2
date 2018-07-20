@@ -26,7 +26,7 @@ EM::EM( Motif* motif, BackgroundModel* bgModel,
 	r_ = ( float** )calloc( seqs_.size(), sizeof( float* ) );
 	pos_ = ( float** )calloc( seqs_.size(), sizeof( float* ) );
 	for( size_t n = 0; n < seqs_.size(); n++ ){
-		r_[n] = ( float* )calloc( seqs_[n]->getL()/*-W_*/+1, sizeof( float ) );
+		r_[n] = ( float* )calloc( seqs_[n]->getL()+W_+1, sizeof( float ) );
 		pos_[n] = ( float* )calloc( seqs_[n]->getL()/*-W_*/+1, sizeof( float ) );
 	}
 
@@ -150,48 +150,50 @@ void EM::EStep(){
     for( size_t n = 0; n < seqs_.size(); n++ ){
 
         size_t 	L = seqs_[n]->getL();
-        size_t 	LW1 = L - W_ + 1;
         size_t*	kmer = seqs_[n]->getKmer();
         float 	normFactor = 0.f;
 
         // initialize r_[n][i] and pos_[n][i]:
         // note here:   r_[n][0] and pos_[n][0] are for motif is absent
         //              and the indices of r_[n][i] is reverted, which means:
-        //              r_[n][i] is the weight for motif being at position LW1-i on sequence n
+        //              r_[n][i] is the weight for motif being at position L-i on sequence n
         //              the purpose of doing the reverting is to improve the computation speed
 
-        for( size_t i = 0; i <= L; i++ ){
+        for( size_t i = 0; i <= L+W_; i++ ){
             r_[n][i] = 1.0f;
         }
 
         // when p(z_n > 0), ij = i+j runs over all positions in sequence
         // r index goes from (0, L]
-        for( size_t ij = 0; ij < LW1; ij++ ){
+        for( size_t ij = 0; ij < L; ij++ ){
 
             // extract (K+1)-mer y from positions (ij-K,...,ij)
             size_t y = kmer[ij] % Y_[K_+1];
 
             for( size_t j = 0; j < W_; j++ ){
-                r_[n][LW1-ij+j] *= s_[y][j];
+                r_[n][L-ij+j] *= s_[y][j];
             }
         }
 
         // calculate the responsibilities and sum them up
         r_[n][0] = pos_[n][0];
         normFactor += r_[n][0];
-        for( size_t i = 1; i <= LW1; i++ ){
-            r_[n][i] *= pos_[n][LW1-i+1];
+        for( size_t i = W_-1; i <= L-1; i++ ){
+            r_[n][i] *= pos_[n][L-i];
             normFactor += r_[n][i];
         }
 
         // normalize responsibilities
-        for( size_t i = 0; i <= LW1; i++ ){
+        for( size_t i = W_-1; i <= L-1; i++ ){
             r_[n][i] /= normFactor;
         }
 
         // for the unused positions
-        for( size_t i = LW1+1; i <= L; i++ ){
-//            r_[n][i] = 0.0f;
+        for( size_t i = 1; i <= W_-2; i++ ){
+            r_[n][i] = 0.0f;
+        }
+        for( size_t i = L; i <= L+W_; i++ ){
+            r_[n][i] = 0.0f;
         }
 
         // calculate log likelihood over all sequences
@@ -218,16 +220,15 @@ void EM::MStep(){
 #pragma omp parallel for
     for( size_t n = 0; n < seqs_.size(); n++ ){
         size_t  L = seqs_[n]->getL();
-        size_t 	LW1 = L - W_ + 1;
         size_t* kmer = seqs_[n]->getKmer();
 
         // ij = i+j runs over all positions i on sequence n
         // r index goes from (0, L]
-        for( size_t ij = 0; ij < LW1; ij++ ){
+        for( size_t ij = 0; ij < L; ij++ ){
             size_t y = kmer[ij] % Y_[K_+1];
             for (size_t j = 0; j < W_; j++) {
-                // parallelize for: n_[K_][y][j] += r_[n][LW1 - ij + j];
-                atomic_float_add(&(n_[K_][y][j]), r_[n][LW1-ij+j]);
+                // parallelize for: n_[K_][y][j] += r_[n][L-ij+j];
+                atomic_float_add(&(n_[K_][y][j]), r_[n][L-ij+j]);
             }
         }
     }
