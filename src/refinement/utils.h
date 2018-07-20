@@ -396,17 +396,21 @@ struct deleter{
     };
 };
 
-namespace util
-{
+namespace util {
 #if __cplusplus == 201402L // C++14
 
-    using std::make_unique ;
+    using std::make_unique;
 
 #else // C++11
 
-    template < typename T, typename... CONSTRUCTOR_ARGS >
-    std::unique_ptr<T> make_unique( CONSTRUCTOR_ARGS&&... constructor_args )
-    { return std::unique_ptr<T>( new T( std::forward<CONSTRUCTOR_ARGS>(constructor_args)... ) ); }
+    // note: this implementation does not disable this overload for array types
+    template<typename T, typename... Args>
+    std::unique_ptr<T> make_unique(Args&&... args)
+    {
+        return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+        // If you don't know what std::forward it simply read it as:
+        // return std::unique_ptr<T>(new T(args...));
+    }
 
 #endif // __cplusplus == 201402L
 }

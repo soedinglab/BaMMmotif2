@@ -190,7 +190,7 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_bgseqset_by_fold(siz
 	std::vector<std::unique_ptr<Sequence>> negset;
 
 	calculate_kmer_frequency();
-    // todo: can be parallised
+    // todo: can be parallelized
 	for( size_t i = 0; i < seqs_.size(); i++ ){
 		for( size_t n = 0; n < fold; n++ ){
             if( genericNeg_ ){

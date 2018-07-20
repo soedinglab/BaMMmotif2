@@ -89,30 +89,35 @@ int main( int nargs, char* args[] ){
                   << "*********************" << std::endl;
 	}
 
-    // sample negative sequence set B1set based on s-mer frequencies
-    // from positive training sequence set
-    std::vector<Sequence*>  negSet;
+    /**
+     * Generate negative sequence set for training, scoring and cross-validation
+     */
+    std::vector<Sequence*> negSet;
     if( Global::negSeqGiven ){
+        // take the given negative sequence set
         negSet = Global::negSequenceSet->getSequences();
     } else {
+        // generate negative sequence set based on s-mer frequencies
+        // from positive training sequence set
         std::vector<std::unique_ptr<Sequence>> negSeqs;
+        SeqGenerator negseq(posSet, NULL, Global::sOrder, Global::q, Global::genericNeg);
+        size_t posN = posSet.size();
         size_t minSeqN = 5000;
-        bool rest = minSeqN % posSet.size();
-        if (posSet.size() < minSeqN) {
-            Global::mFold = minSeqN / posSet.size() + rest;
+        bool rest = minSeqN % posN;
+        if (posN < minSeqN) {
+            Global::mFold = minSeqN / posN + rest;
         }
-
-        SeqGenerator negseq(posSet, NULL, Global::sOrder, 1.0f, Global::genericNeg);
         negSeqs = negseq.sample_bgseqset_by_fold(Global::mFold);
+        std::cout << Global::mFold << " x " << posN << " background sequences are generated." << std::endl;
 
-        // convert unique_ptr to regular pointer
+        // convert unique_ptr to regular pointer: memory leak will occur:
         for (size_t n = 0; n < negSeqs.size(); n++) {
-//        negSeqs[n]->print();    // print out negative sequences for checking
             negSet.push_back(negSeqs[n].release());
             negSeqs[n].get_deleter();
         }
+
     }
-//#pragma omp parallel for
+
     for( size_t n = 0; n < motif_set.getN(); n++ ){
 		// deep copy each motif in the motif set
 		Motif* motif = new Motif( *motif_set.getMotifs()[n] );
@@ -275,7 +280,11 @@ int main( int nargs, char* args[] ){
 
 	// free memory
 	if( bgModel ) delete bgModel;
-
+    if( !Global::negSeqGiven and negSet.size() ){
+        for (size_t n = 0; n < negSet.size(); n++) {
+            delete negSet[n];
+        }
+    }
 	Global::destruct();
 
 	return 0;

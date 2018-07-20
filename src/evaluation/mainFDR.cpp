@@ -90,12 +90,12 @@ int main( int nargs, char* args[] ){
         // from positive training sequence set
         posN = posSet.size();   // update the size of positive sequences after filtering
         std::vector<std::unique_ptr<Sequence>> negSeqs;
-        SeqGenerator negseq( posSet, NULL, GFdr::sOrder , GFdr::genericNeg );
+        SeqGenerator negseq( posSet, NULL, GFdr::sOrder, GFdr::q, GFdr::genericNeg );
         if( !GFdr::fixedNegN and posN >= GFdr::negN ){
             negSeqs = negseq.sample_bgseqset_by_fold( GFdr::mFold );
             std::cout << GFdr::mFold << " x " << posN << " background sequences are generated." << std::endl;
         } else if( !GFdr::fixedNegN and posN < GFdr::negN ){
-            bool rest = GFdr::negN % posSet.size();
+            bool rest = GFdr::negN % posN;
             GFdr::mFold = GFdr::negN / posN + rest;
             negSeqs = negseq.sample_bgseqset_by_fold( GFdr::mFold );
             std::cout << GFdr::mFold << " x " << posN << " background sequences are generated." << std::endl;
@@ -154,8 +154,10 @@ int main( int nargs, char* args[] ){
         if( motif )		delete motif;
     }
 
-    for (size_t n = 0; n < negset.size(); n++) {
-        if( !GFdr::B3 and negset[n] ) delete negset[n];
+    if( !GFdr::B3 and negset.size() ) {
+        for (size_t n = 0; n < negset.size(); n++) {
+            delete negset[n];
+        }
     }
 
     // free memory
