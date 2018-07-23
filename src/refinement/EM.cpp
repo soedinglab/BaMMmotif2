@@ -5,7 +5,7 @@
 #include <chrono>
 
 EM::EM( Motif* motif, BackgroundModel* bgModel,
-        std::vector<Sequence*> seqs, bool optimizeQ, bool verbose, float f ){
+        std::vector<Sequence*> seqs, bool optimizeQ, bool optimizePos, bool verbose, float f ){
 
     motif_      = motif;
 	bgModel_    = bgModel;
@@ -13,6 +13,7 @@ EM::EM( Motif* motif, BackgroundModel* bgModel,
     f_          = f;
 	seqs_       = seqs;
     optimizeQ_  = optimizeQ;
+    optimizePos_= optimizePos;
     beta_       = 6;                // a hyper-parameter for estimating the positional prior
 
     // get motif (hyper-)parameters from motif class
@@ -104,11 +105,15 @@ int EM::optimize(){
         MStep();
 
         // optimize hyper-parameter q in the first 5 steps
-        if( optimizeQ_ and iteration <= 5 ) optimizeQ();
+        if( optimizeQ_ and iteration <= 5 ) {
+            optimizeQ();
+        }
 
         // optimize positional prior pos_
         // note: this only works for sequences with the same length
-        optimizePos();
+        if( optimizePos_ ){
+            optimizePos();
+        }
 
         // check parameter difference for convergence
         v_diff = 0.0f;

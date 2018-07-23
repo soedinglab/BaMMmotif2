@@ -18,7 +18,7 @@ class EM {
 public:
 
     EM( Motif* motif, BackgroundModel* bgModel, std::vector<Sequence*> seqs,
-        bool optimizeQ = true, bool verbose = false, float f = 0.2f );
+        bool optimizeQ = true, bool optimizePos = false, bool verbose = false, float f = 0.2f );
     ~EM();
 
     int                     optimize();         // run EM optimization
@@ -70,6 +70,7 @@ private:
     float					epsilon_            = 0.01f;	// threshold for parameter v convergence
     size_t					maxEMIterations_    = 1000;
     bool                    optimizeQ_;
+    bool                    optimizePos_;
 
     bool                    verbose_;           // show the output of each EM iteration
     std::vector<size_t>		Y_;

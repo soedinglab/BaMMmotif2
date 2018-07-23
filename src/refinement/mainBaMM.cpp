@@ -130,7 +130,7 @@ int main( int nargs, char* args[] ){
 
 		// optimize the model with either EM or Gibbs sampling
 		if( Global::EM ){
-			EM model( motif, bgModel, posSet, Global::optimizeQ, Global::verbose, Global::f );
+			EM model( motif, bgModel, posSet, Global::optimizeQ, Global::optimizePos, Global::verbose, Global::f );
 			// learn motifs by EM
 			if( !Global::advanceEM ) {
                 model.optimize();
@@ -260,7 +260,7 @@ int main( int nargs, char* args[] ){
                      motif, bgModel, Global::cvFold,
                      Global::mops, Global::zoops,
                      Global::savePRs, Global::savePvalues, Global::saveLogOdds );
-			fdr.evaluateMotif( Global::EM, Global::CGS, Global::optimizeQ, Global::advanceEM, Global::f );
+			fdr.evaluateMotif( Global::EM, Global::CGS, Global::optimizeQ, Global::optimizePos, Global::advanceEM, Global::f );
 			fdr.write( Global::outputDirectory,
                        Global::outputFileBasename + "_motif_" + std::to_string( n+1 ) );
 			if( motif )		delete motif;

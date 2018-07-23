@@ -52,6 +52,7 @@ bool				Global::EM = false;						// flag to trigger EM learning
 float				Global::q = 0.3f;						// prior probability for a positive sequence to contain a motif
 bool 				Global::optimizeQ = false;				// optimize hyper-parameter q in EM algorithm
 float               Global::f = 0.05f;                      // fraction of sequences to be masked
+bool                Global::optimizePos = false;            // optimize positional prior in the EM algorithm
 
 // CGS (Collapsed Gibbs sampling) options
 bool				Global::CGS = false;					// flag to trigger Collapsed Gibbs sampling
@@ -322,6 +323,7 @@ int Global::readArguments( int nargs, char* args[] ){
     // flags for developers
     opt >> GetOpt::OptionPresent( "makeMovie", makeMovie );
 	opt >> GetOpt::OptionPresent( "optimizeQ", optimizeQ );
+    opt >> GetOpt::OptionPresent( "optimizePos", optimizePos );
 	opt >> GetOpt::OptionPresent( "B2", B2 );
 	opt >> GetOpt::OptionPresent( "B3", B3 );
 	opt >> GetOpt::OptionPresent( "B3prime", B3prime );

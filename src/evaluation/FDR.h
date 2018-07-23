@@ -34,6 +34,7 @@ public:
 	void 	evaluateMotif( bool EMoptimize = false,
                            bool CGSoptimize = false,
                            bool optimizeQ = false,
+                           bool optimizePos = false,
                            bool advanceEM = false,
                            float f = 0.05f,
                            size_t perLoopThreads = 4 );

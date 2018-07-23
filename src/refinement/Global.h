@@ -113,6 +113,7 @@ public:
 	// flags for developers
 	static bool			makeMovie;				// print out bamms in each iteration while optimizing
 	static bool 		optimizeQ;				// optimize hyperparameter q in EM algorithm
+    static bool         optimizePos;            // optimize positional prior in the EM algorithm
 	static void         debug();
     static bool         B2;
     static bool         B3;

@@ -25,7 +25,7 @@ FDR::~FDR(){
 
 }
 
-void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool advanceEM, float frac, size_t perLoopThreads ){
+void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool optimizePos, bool advanceEM, float frac, size_t perLoopThreads ){
 
 	std::vector<std::vector<float>> mops_scores;
 	std::vector<float> 				zoops_scores;
@@ -64,7 +64,7 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
 		 */
 		// learn motif from each training set
 		if( EMoptimize ){
-			EM model( motif, bgModel_, trainSet, optimizeQ, false, frac );
+			EM model( motif, bgModel_, trainSet, optimizeQ, optimizePos, false, frac );
             if( advanceEM ){
                 model.mask();
             } else {
@@ -228,7 +228,7 @@ void FDR::calculatePR(){
             if (idx_posMax >= posN || idx_negMax >= negN) {
                 break;
             }
-
+            // todo: still memory leak:
             if( (posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] || idx_negMax == negN || idx_posMax == 0 )){
                 Sl = posScoreMax_[idx_posMax];
                 idx_posMax++;
