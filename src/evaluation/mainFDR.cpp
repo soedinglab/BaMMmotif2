@@ -103,6 +103,7 @@ int main( int nargs, char* args[] ){
             negSeqs = negseq.sample_bgseqset_by_num( GFdr::negN, GFdr::posSequenceSet->getMaxL() );
             std::cout << GFdr::negN << " (fixed) background sequences are generated." << std::endl;
         }
+
         // convert unique_ptr to regular pointer
         for (size_t n = 0; n < negSeqs.size(); n++) {
             negset.push_back(negSeqs[n].release());

@@ -502,3 +502,21 @@ void SeqGenerator::write( char* odir, std::string basename, std::vector<std::uni
 
 }
 
+void SeqGenerator::write( char* odir, std::string basename, std::vector<Sequence*> seqset ){
+    /**
+     * save the generated sequence set in fasta file:
+     */
+    std::string opath = std::string( odir ) + '/' + basename + ".fasta";
+
+    std::ofstream ofile( opath );
+
+    for( size_t n = 0; n < seqset.size(); n++ ){
+        ofile << seqset[n]->getHeader() << std::endl;
+        for( size_t i = 0; i < seqset[n]->getL(); i++ ){
+            ofile << Alphabet::getBase( seqset[n]->getSequence()[i] );
+        }
+        ofile << std::endl;
+    }
+
+}
+

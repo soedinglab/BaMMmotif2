@@ -32,7 +32,9 @@ public:
 	void write( char* odir,
 				std::string basename,
 				std::vector<std::unique_ptr<Sequence>> seqset );
-
+    void write( char* odir,
+                std::string basename,
+                std::vector<Sequence*> seqset );
 private:
 
 	void						calculate_kmer_frequency();

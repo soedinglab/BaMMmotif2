@@ -116,6 +116,9 @@ int main( int nargs, char* args[] ){
             negSeqs[n].get_deleter();
         }
 
+        // save sampled negative sequence set into a file
+//        negseq.write( Global::outputDirectory, Global::outputFileBasename, negSet );
+
     }
 
     for( size_t n = 0; n < motif_set.getN(); n++ ){

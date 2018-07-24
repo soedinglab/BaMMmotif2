@@ -644,7 +644,6 @@ void EM::optimizeQ(){
 void EM::optimizePos() {
 
     // todo: note this function currently only works for sequences of the same length
-
     size_t L = seqs_[0]->getL();
     size_t LW1 = L - W_ + 1;
     size_t LW2 = L - W_ + 2;
@@ -654,32 +653,37 @@ void EM::optimizePos() {
     // according to Eq. 149
     std::vector<float> N_i( LW2, 0.f );
 
+    // initialize pi_i
+    for( size_t i = 1; i <= LW1; i++ ) {
+        pi_[i] = pos_[0][i];
+    }
+
     size_t method_flag = 1;
 
     if( method_flag == 1 ){
+
         // method 1: Using a flat Bayesian prior on positional preference
+        // according to Eq. 149
         for( size_t i = 1; i <= LW1; i++ ) {
             for (size_t n = 0; n < posN; n++) {
                 N_i[i] += r_[n][L-i];
             }
-            for (size_t n = 0; n < posN; n++) {
-                pos_[n][i] = (N_i[i] + beta_ - 1.f) / (posN + LW1 * (beta_ - 1.f));
-            }
+            // update pi according to Eq. 149
+            pi_[i] = (N_i[i] + beta_ - 1.f) / (posN + LW1 * (beta_ - 1.f));
         }
     } else if ( method_flag == 2 ){
 
         // method 2: Using a prior for penalising jumps in the positional preference profile
-
         // calculate constant value N0:
         float N_0 = 0.f;
         for (size_t n = 0; n < seqs_.size(); n++) {
             N_0 += r_[n][0];
         }
+
         // define matrix A:
-        std::vector<int> row( LW1, 0 );
-        std::vector< std::vector<int>> A_matrix(LW1, row);
-        for( size_t i = 0; i < LW1-1; i++ ){
-            for( size_t j = 0; j < LW1-1; j++ ){
+        std::vector< std::vector<int>> A_matrix(LW1, std::vector<int> ( LW1, 0 ));
+        for( size_t i = 0; i < LW1; i++ ){
+            for( size_t j = 0; j < LW1; j++ ){
                 if( i == j ) {
                     A_matrix[i][j] = 2;
                 } else if( abs( i-j ) == 1 ){
@@ -702,21 +706,45 @@ void EM::optimizePos() {
         for( size_t iter = 0; iter < 5; iter++ ){
             ;
         }
+    } else if( method_flag == 3 ){
+        // update smoothness parameter beta using positional prior distribution from the data
+        // according to Eq. 158
+        float sum = 0.f;
+        for( size_t i = 2; i <= LW1; i++ ){
+            sum += powf( pi_[i] - pi_[i-1], 2.f )/* - 2 *  logf( pos_[1][i])*/;
+        }
+
+        // update beta by its expectation value
+        beta_ = LW2 / sum;
+
+        std::cout << "sum=" << sum << ", beta=" << LW2 / sum << std::endl;
+
+    } else if( method_flag == 4 ){
+        // prior penalising kinks in the positional preference profile
+        // define matrix B:
+        std::vector< std::vector<int>> B_matrix(LW1, std::vector<int> ( LW1, 0 ));
+        for( size_t i = 0; i < LW1; i++ ){
+            for( size_t j = 0; j < LW1; j++ ){
+                if( i == j ) {
+                    B_matrix[i][j] = 6;
+                } else if( abs( i-j ) == 1 ){
+                    B_matrix[i][j] = -4;
+                } else if( abs( i-j ) == 2 ){
+                    B_matrix[i][j] = 1;
+                }
+            }
+        }
+        B_matrix[0][0] = B_matrix[LW1-1][LW1-1] = 1;
+        B_matrix[1][1] = B_matrix[LW1-2][LW1-2] = 5;
+        B_matrix[0][1] = B_matrix[1][0] = B_matrix[LW1-1][LW1-2] = B_matrix[LW1-2][LW1-1] = -2;
     }
-/*
 
-    // update smoothness parameter beta using positional prior distribution from the data
-    // according to Eq. 158
-    float sum = 0.f;
-    for( size_t i = 2; i <= LW1; i++ ){
-        sum += powf( pi_[i] - pi_[i-1], 2.f ) - 2 *  logf( pi_[i]);
+    // update pos_ni by pi_i
+    for( size_t i = 1; i <= LW1; i++ ) {
+        for (size_t n = 0; n < posN; n++) {
+            pos_[n][i] = pi_[i];
+        }
     }
-
-    //beta_ = LW2 / sum;
-
-    std::cout << "sum=" << sum << ", beta=" << LW2 / sum << std::endl;
-*/
-
 }
 
 float** EM::getR(){
