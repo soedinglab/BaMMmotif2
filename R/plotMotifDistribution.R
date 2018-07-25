@@ -68,7 +68,7 @@ for( file in Sys.glob(full_glob) ){
     filename = file.path(maindir, file_name)
     line_number = as.integer(system2("wc", args=c("-l", filename, " | awk '{print $1}'" ), stdout = TRUE))
 
-    if( line_number < 2 ){
+    if( line_number <= 2 ){
         print("Warning: The input file is empty. No query motif is found in the sequence set.")
         # print out an empty image
 
