@@ -149,7 +149,11 @@ int main( int nargs, char* args[] ){
 			}
 
             // print out the optimized q for checking:
-            std::cout << "optimized q = " << model.getQ() << std::endl;
+            if( Global::optimizeQ ){
+                std::cout << "optimized q = " << model.getQ() << std::endl;
+            } else {
+                std::cout << "chosen q = " << model.getQ() << std::endl;
+            }
 
 		} else if ( Global::CGS ){
 			GibbsSampling model( motif, bgModel, posSet,

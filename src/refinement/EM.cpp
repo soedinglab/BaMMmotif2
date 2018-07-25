@@ -107,7 +107,7 @@ int EM::optimize(){
         MStep();
 
         // optimize hyper-parameter q in the first 5 steps
-        if( optimizeQ_ and iteration <= 5 ) {
+        if( optimizeQ_ /*and iteration <= 5*/ ) {
             optimizeQ();
         }
 
@@ -629,15 +629,17 @@ int EM::mask() {
 
 void EM::optimizeQ(){
 
-    float N1 = 0.f;                   // expectation value of the count of sequences with at least a query motif
+    float N_i = 0.f;                   // expectation value of the count of sequences without the query motif
+    size_t posN = seqs_.size();
 
-    for( size_t n = 0; n < seqs_.size(); n++ ){
-        for( size_t i = 0; i < seqs_[n]->getL() - W_ + 1; i++ ){
-            N1 += r_[n][i];
+    for( size_t n = 0; n < posN; n++ ){
+        for( size_t i = W_-1; i <= seqs_[n]->getL()-1; i++ ){
+            N_i += r_[n][i];
         }
+
     }
 
-    q_ = ( seqs_.size() - N1 + 1.f ) / ( ( float )seqs_.size() + 2.f );
+    q_ = ( /*posN - */N_i + 1.f ) / ( posN + 2.f );
 
     if( verbose_ ) std::cout << "optimized q=" << q_ << std::endl;
 
@@ -672,18 +674,22 @@ void EM::optimizePos() {
             }
             // update pi according to Eq. 149
             pi_[i] = (N_i[i] + beta_ - 1.f) / (posN + LW1 * (beta_ - 1.f));
+            // update pos_ni by pi_i
+            for (size_t n = 0; n < posN; n++) {
+                pos_[n][i] = pi_[i];
+            }
         }
     } else if ( method_flag == 2 ){
 
         // method 2: Using a prior for penalising jumps in the positional preference profile
         // calculate constant value N0:
         float N_0 = 0.f;
-        for (size_t n = 0; n < seqs_.size(); n++) {
+        for (size_t n = 0; n < posN; n++) {
             N_0 += r_[n][0];
         }
 
         // define matrix A:
-        Eigen::MatrixXf A_matrix = Eigen::MatrixXf::Zero(LW1, LW1);
+        Eigen::MatrixXf A_matrix = Eigen::MatrixXf::Zero( LW1, LW1 );
         for( size_t i = 0; i < LW1; i++ ){
             for( size_t j = 0; j < LW1; j++ ){
                 if( i == j ) {
@@ -697,20 +703,35 @@ void EM::optimizePos() {
         A_matrix(LW1-1, LW1-1) = 1;
 
         // calculate vector b in Ax=b
-        Eigen::VectorXf B_vector(LW1);
-        //B_vector.setRandom();
+        Eigen::VectorXf B_vector( LW1 );
         for( size_t i = 1; i <= LW1; i++ ) {
             for (size_t n = 0; n < posN; n++) {
                 N_i[i] += r_[n][L-i];
             }
-            B_vector[i-1] = ( N_i[i] - (posN - N_0) *pi_[i] ) / beta_;
+            B_vector[i-1] = ( N_i[i] - ( posN - N_0 ) * pos_[0][i] ) / beta_;
         }
 
-
         // run a few iterations of conjugate gradients (e.g. 5~10)
-        Eigen::ConjugateGradient<Eigen::MatrixXf, Eigen::Lower| Eigen::Upper> cg;
-        cg.compute(A_matrix);
-        Eigen::VectorXf pi = cg.solve(B_vector);
+        Eigen::ConjugateGradient<Eigen::MatrixXf, Eigen::Lower | Eigen::Upper> cg;
+        cg.compute( A_matrix );
+        cg.setMaxIterations( 5 );
+        Eigen::VectorXf pi = cg.solve( B_vector );
+
+        // normalize pi
+        float min = pi.minCoeff();
+        float max = pi.maxCoeff();
+        for( size_t i = 0; i < LW1; i++ ) {
+            pi[i] = (pi[i] - min) / ( min + max);
+        }
+
+        std::cout << min << '\t' << max << std::endl;
+        // update pos_ni by pi_i
+        for( size_t i = 1; i <= LW1; i++ ) {
+            for (size_t n = 0; n < posN; n++) {
+                pos_[n][i] = pi[i-1];
+                //if( n == 1 ) std::cout << pos_[n][i] << '\t';
+            }
+        }
 
     } else if( method_flag == 3 ){
         // update smoothness parameter beta using positional prior distribution from the data
@@ -745,12 +766,7 @@ void EM::optimizePos() {
         B_matrix[0][1] = B_matrix[1][0] = B_matrix[LW1-1][LW1-2] = B_matrix[LW1-2][LW1-1] = -2;
     }
 
-    // update pos_ni by pi_i
-    for( size_t i = 1; i <= LW1; i++ ) {
-        for (size_t n = 0; n < posN; n++) {
-            pos_[n][i] = pi_[i];
-        }
-    }
+
 }
 
 float** EM::getR(){
