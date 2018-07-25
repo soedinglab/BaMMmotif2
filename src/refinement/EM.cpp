@@ -629,17 +629,16 @@ int EM::mask() {
 
 void EM::optimizeQ(){
 
-    float N_i = 0.f;                   // expectation value of the count of sequences without the query motif
+    float N_i = 0.f;                   // expectation value of the count of sequences with a query motif
     size_t posN = seqs_.size();
 
     for( size_t n = 0; n < posN; n++ ){
         for( size_t i = W_-1; i <= seqs_[n]->getL()-1; i++ ){
             N_i += r_[n][i];
         }
-
     }
 
-    q_ = ( /*posN - */N_i + 1.f ) / ( posN + 2.f );
+    q_ = ( N_i + 1.f ) / ( posN + 2.f );
 
     if( verbose_ ) std::cout << "optimized q=" << q_ << std::endl;
 
