@@ -461,15 +461,12 @@ int EM::mask() {
 
     // put the index of the f_% r's in an array
     for( size_t n = 0; n < posN; n++ ){
-        std::cout << std::endl << n+1 << ": " << std::endl;
         for( size_t i = seqs_[n]->getL() - 1; i >= W_-1; i-- ){
             if( r_[n][i] >= r_cutoff ){
                 ridx[n].push_back( i );
-                std::cout << seqs_[n]->getL() - i << '\t';
             }
         }
     }
-    std::cout << "r_cutoff = " << r_cutoff << std::endl;
 
     /**
      * optimize the model with the highest order from the top f_% global occurrences
@@ -507,7 +504,6 @@ int EM::mask() {
 
         // calculate responsibilities r at all LW1 positions on sequence n
         // n runs over all sequences
-//#pragma omp parallel for reduction(+:llikelihood)
         for( size_t n = 0; n < seqs_.size(); n++ ){
 
             size_t 	L = seqs_[n]->getL();
