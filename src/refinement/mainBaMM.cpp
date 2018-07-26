@@ -150,9 +150,9 @@ int main( int nargs, char* args[] ){
 
             // print out the optimized q for checking:
             if( Global::optimizeQ ){
-                std::cout << "optimized q = " << model.getQ() << std::endl;
+                std::cout << "Optimized q = " << model.getQ() << std::endl;
             } else {
-                std::cout << "chosen q = " << model.getQ() << std::endl;
+                std::cout << "Given q = " << model.getQ() << std::endl;
             }
 
 		} else if ( Global::CGS ){
@@ -206,10 +206,10 @@ int main( int nargs, char* args[] ){
                 }
             }
 
-            ScoreSeqSet scoreNegSet( motif, bgModel, negSet );
+            ScoreSeqSet scoreNegSet( motif, bg, negSet );
             scoreNegSet.calcLogOdds();
 
-            // print out log odds scores for checking before reranking
+            // print out log odds scores for checking before re-ranking
             if( Global::saveLogOdds ){
                 scoreNegSet.writeLogOdds(Global::outputDirectory,
                                          Global::outputFileBasename + ".negSet",
@@ -228,7 +228,7 @@ int main( int nargs, char* args[] ){
             ScoreSeqSet scorePosSet( motif, bg, posSet );
             scorePosSet.calcLogOdds();
 
-            // print out log odds scores for checking before reranking
+            // print out log odds scores for checking before re-ranking
             if( Global::saveLogOdds ){
                 scorePosSet.writeLogOdds(Global::outputDirectory,
                                          Global::outputFileBasename + "_motif_" + std::to_string( n+1 ),
@@ -238,6 +238,7 @@ int main( int nargs, char* args[] ){
             std::vector<std::vector<float>> posScores = scorePosSet.getMopsScores();
             scorePosSet.calcPvalues( posScores, negScores );
 
+            // save the occurrences that has a p-value above certain cutoff
             scorePosSet.write( Global::outputDirectory,
                                Global::outputFileBasename + "_motif_" + std::to_string( n+1 ),
                                Global::pvalCutoff,

@@ -107,7 +107,7 @@ int EM::optimize(){
         MStep();
 
         // optimize hyper-parameter q in the first 5 steps
-        if( optimizeQ_ /*and iteration <= 5*/ ) {
+        if( optimizeQ_ and iteration <= 10 ) {
             optimizeQ();
         }
 
@@ -399,91 +399,84 @@ int EM::mask() {
         }
     }
 
-    // todo: parallelize the code
+    // initialized positional priors
+    initializePos();
+    size_t posN = seqs_.size();
+    std::vector<float> r_all;   // add all r's to an array for sorting
+    size_t N_position = 0;      // count the number of all possible positions
+
     // calculate responsibilities r at all LW1 positions on sequence n
     // n runs over all sequences
-    for( size_t n = 0; n < seqs_.size(); n++ ) {
+//#pragma omp parallel for
+    for( size_t n = 0; n < posN; n++ ) {
 
-        size_t L = seqs_[n]->getL();
-        size_t LW1 = L - W_ + 1;
-        size_t *kmer = seqs_[n]->getKmer();
-        float normFactor = 1.0f - q_;
+        size_t  L = seqs_[n]->getL();
+        size_t  *kmer = seqs_[n]->getKmer();
 
-        // initialize r_[n][i] and pos_[n][i]
-        float pos_i = q_ / static_cast<float>( LW1 );
-        for (size_t i = 0; i < LW1; i++) {
+        // initialize r_[n][i]
+        for (size_t i = 0; i <= L+W_; i++) {
             r_[n][i] = 1.0f;
-            pos_[n][i] = pos_i;
         }
 
-
         // when p(z_n > 0), ij = i+j runs over all positions in sequence
+        // r index goes from (0, L]
         for (size_t ij = 0; ij < L; ij++) {
 
             // extract monomer y at position i
             size_t y = kmer[ij] % Y_[1];
-            // j runs over all motif positions
-            size_t padding = (static_cast<int>( ij - L + W_ ) > 0) * (ij - L + W_);
-            for (size_t j = padding; j < (W_ < ij ? W_ : ij ); j++) {
-                r_[n][L-W_-ij + j] *= s_[y][j];
+
+            for( size_t j = 0; j < W_; j++ ){
+                r_[n][L-ij+j] *= s_[y][j];
             }
         }
 
         // calculate the responsibilities and sum them up
-        for (size_t i = 0; i < LW1; i++) {
-            r_[n][i] *= pos_[n][L-W_-i];
-            normFactor += r_[n][i];
+        r_[n][0] = pos_[n][0];
+        for( size_t i = W_-1; i <= L-1; i++ ){
+            r_[n][i] *= pos_[n][L-i];
         }
 
-        // normalize responsibilities
-        for (size_t i = 0; i < LW1; i++) {
-            r_[n][i] /= normFactor;
+        // add all un-normalized r to a vector
+        r_all.push_back( r_[n][0] );
+        for( size_t i = W_-1; i <= L-1; i++ ){
+            r_all.push_back( r_[n][i] );
         }
 
-        /**
-         * optimize fractional prior q
-         */
-        if( optimizeQ_ ) optimizeQ();
-
+        // count the number of all possible motif positions
+        N_position += L-W_+1;
     }
 
     /**
-     * found the cutoff of responsibility that covers the top 10% of the motif occurrences
-     * by applying partion-based selection algorithm, which runs in O(n)
+     * found the cutoff of responsibility that covers the top f_% of the motif occurrences
+     * by applying partition-based selection algorithm, which runs in O(n)
      */
-    std::vector<float> r_all;
-    size_t pos_count = 0;
-    // add all r's to an array for sorting
-    for( size_t n = 0; n < seqs_.size(); n++ ){
-        size_t LW1 = seqs_[n]->getL() - W_ + 1;
-        for (size_t i = 0; i < LW1; i++) {
-            r_all.push_back( r_[n][i] );
-        }
-        pos_count += LW1;
-    }
     // Sort log odds scores in descending order
     std::sort( r_all.begin(), r_all.end(), std::greater<float>() );
 
     // find the cutoff with f_% best r's
-    float r_cutoff = r_all[size_t((float)pos_count * f_)];
+    float r_cutoff = r_all[size_t( N_position * f_ )];
 
-    std::vector<std::vector<size_t>> ri;
-    ri.resize( seqs_.size() );
+    // create a vector to store all the r's which are above the cutoff
+    std::vector<std::vector<size_t>> ridx( posN );
 
     // put the index of the f_% r's in an array
-    for( size_t n = 0; n < seqs_.size(); n++ ){
-        size_t LW1 = seqs_[n]->getL() - W_ + 1;
-        for( size_t i = 0; i < LW1; i++ ){
+    for( size_t n = 0; n < posN; n++ ){
+        std::cout << std::endl << n+1 << ": " << std::endl;
+        for( size_t i = seqs_[n]->getL() - 1; i >= W_-1; i-- ){
             if( r_[n][i] >= r_cutoff ){
-                ri[n].push_back( i );
+                ridx[n].push_back( i );
+                std::cout << seqs_[n]->getL() - i << '\t';
             }
         }
     }
+    std::cout << "r_cutoff = " << r_cutoff << std::endl;
 
     /**
-     * optimize the model from the top 10% global occurrences with the highest order till convergence
+     * optimize the model with the highest order from the top f_% global occurrences
+     * using EM till convergence
      */
     bool 	iterate = true;
+    size_t  iteration = 0;
     float 	v_diff, llikelihood_prev, llikelihood_diff;
 
     std::vector<std::vector<float>> v_before;
@@ -491,8 +484,6 @@ int EM::mask() {
     for( size_t y = 0; y < Y_[K_+1]; y++ ){
         v_before[y].resize( W_ );
     }
-
-    size_t iteration = 0;
 
     // iterate over
     while( iterate && ( iteration < maxEMIterations_ ) ){
@@ -516,40 +507,41 @@ int EM::mask() {
 
         // calculate responsibilities r at all LW1 positions on sequence n
         // n runs over all sequences
-#pragma omp parallel for reduction(+:llikelihood)
+//#pragma omp parallel for reduction(+:llikelihood)
         for( size_t n = 0; n < seqs_.size(); n++ ){
 
             size_t 	L = seqs_[n]->getL();
-            size_t 	LW1 = L - W_ + 1;
             size_t*	kmer = seqs_[n]->getKmer();
-            float 	normFactor = 1.0f - q_;
+            float 	normFactor = 0.f;
 
-            // initialize r_[n][i] and pos_[n][i]
-            float pos_i = q_ / static_cast<float>( LW1 );
-            for( size_t idx = 0; idx < ri[n].size(); idx++ ){
-                r_[n][ri[n][idx]] = 1.0f;
-                pos_[n][ri[n][idx]] = pos_i;
+            // initialize all filtered r_[n][i]
+            for( size_t idx = 0; idx < ridx[n].size(); idx++ ){
+                r_[n][ridx[n][idx]] = 1.0f;
             }
 
             // update r based on the log odd ratios
-            for( size_t idx = 0; idx < ri[n].size(); idx++ ){
+            for( size_t idx = 0; idx < ridx[n].size(); idx++ ){
                 for( size_t j = 0; j < W_; j++ ){
-                    size_t y = kmer[L-W_-ri[n][idx]+j] % Y_[K_+1];
-                    r_[n][ri[n][idx]] *= s_[y][j];
+                    size_t y = kmer[L-ridx[n][idx]+j] % Y_[K_+1];
+                    r_[n][ridx[n][idx]] *= s_[y][j];
                 }
                 // calculate the responsibilities and sum them up
-                r_[n][ri[n][idx]] *= pos_[n][LW1-ri[n][idx]];
-                normFactor += r_[n][ri[n][idx]];
+                r_[n][ridx[n][idx]] *= pos_[n][L-ridx[n][idx]];
+                normFactor += r_[n][ridx[n][idx]];
             }
 
             // normalize responsibilities
+            normFactor += r_[n][0];
             r_[n][0] /= normFactor;
-            for( size_t idx = 0; idx < ri[n].size(); idx++ ){
-                r_[n][ri[n][idx]] /= normFactor;
+            for( size_t idx = 0; idx < ridx[n].size(); idx++ ){
+                r_[n][ridx[n][idx]] /= normFactor;
             }
 
             // for the unused positions
-            for( size_t i = LW1; i < L; i++ ){
+            for( size_t i = 1; i <= W_-2; i++ ){
+                r_[n][i] = 0.0f;
+            }
+            for( size_t i = L; i <= L+W_; i++ ){
                 r_[n][i] = 0.0f;
             }
 
@@ -573,14 +565,14 @@ int EM::mask() {
         // compute fractional occurrence counts for the highest order K
         // using the f_% r's
         // n runs over all sequences
-        for( size_t n = 0; n < seqs_.size(); n++ ){
+        for( size_t n = 0; n < posN; n++ ){
             size_t  L = seqs_[n]->getL();
             size_t* kmer = seqs_[n]->getKmer();
 
-            for( size_t idx = 0; idx < ri[n].size(); idx++ ){
+            for( size_t idx = 0; idx < ridx[n].size(); idx++ ){
                 for( size_t j = 0; j < W_; j++ ){
-                    size_t y = kmer[L-W_-ri[n][idx]+j] % Y_[K_+1];
-                    n_[K_][y][j] += r_[n][ri[n][idx]];
+                    size_t y = kmer[L-ridx[n][idx]+j] % Y_[K_+1];
+                    n_[K_][y][j] += r_[n][ridx[n][idx]];
                 }
             }
         }
@@ -596,7 +588,7 @@ int EM::mask() {
             }
         }
 
-        // update model parameters v[k][y][j], due to the kmer counts, alphas and model order
+        // update model parameters v[k][y][j], due to the k-mer counts, alphas and model order
         motif_->updateV( n_, A_, K_ );
 
         /**
@@ -611,10 +603,10 @@ int EM::mask() {
 
         // check the change of likelihood for convergence
         llikelihood_diff = llikelihood_ - llikelihood_prev;
-        if( verbose_ ) std::cout << iteration << "th iteration, delta_llikelihood=" << llikelihood_diff << std::endl;
+        if( verbose_ ) std::cout << iteration << " iter, llh=" << llikelihood_diff
+                                 << ", v_diff=" << v_diff << std::endl;
         if( v_diff < epsilon_ )							iterate = false;
         if( llikelihood_diff < 0 and iteration > 10 )	iterate = false;
-
     }
 
     // calculate probabilities
