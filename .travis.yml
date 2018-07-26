@@ -12,6 +12,7 @@ addons:
     packages: &default_packages
     - cmake
     - libboost-dev
+    - libeigen3-dev
 
 script:
   - mkdir build
