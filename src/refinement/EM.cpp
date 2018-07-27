@@ -658,8 +658,11 @@ void EM::optimizePos() {
             // update pos_ni by pi_i
             for (size_t n = 0; n < posN; n++) {
                 pos_[n][i] = pi_[i];
+                //if( n == 4 ) std::cout << pos_[n][i] << '\t';
             }
         }
+        //std::cout << std::endl;
+
     } else if ( method_flag == 2 ){
 
         // method 2: Using a prior for penalising jumps in the positional preference profile
@@ -686,10 +689,13 @@ void EM::optimizePos() {
         // calculate vector b in Ax=b
         Eigen::VectorXf B_vector( LW1 );
         for( size_t i = 1; i <= LW1; i++ ) {
+            N_i[i] = 0.f;       // reset to 0
             for (size_t n = 0; n < posN; n++) {
                 N_i[i] += r_[n][L-i];
             }
             B_vector[i-1] = ( N_i[i] - ( posN - N_0 ) * pos_[0][i] ) / beta_;
+            std::cout << N_i[i] << '\t' << posN << '\t' << N_0 << '\t' << pos_[0][i] << std::endl;
+            assert(B_vector[i-1] > 0);
         }
 
         // run a few iterations of conjugate gradients (e.g. 5~10)
@@ -698,21 +704,24 @@ void EM::optimizePos() {
         cg.setMaxIterations( 5 );
         Eigen::VectorXf pi = cg.solve( B_vector );
 
+/*
         // normalize pi
         float min = pi.minCoeff();
         float max = pi.maxCoeff();
         for( size_t i = 0; i < LW1; i++ ) {
             pi[i] = (pi[i] - min) / ( min + max);
         }
-
         std::cout << min << '\t' << max << std::endl;
+*/
+
         // update pos_ni by pi_i
         for( size_t i = 1; i <= LW1; i++ ) {
             for (size_t n = 0; n < posN; n++) {
                 pos_[n][i] = pi[i-1];
-                //if( n == 1 ) std::cout << pos_[n][i] << '\t';
+                if( n == 4 ) std::cout << pos_[n][i] << '\t';
             }
         }
+        std::cout << std::endl;
 
     } else if( method_flag == 3 ){
         // update smoothness parameter beta using positional prior distribution from the data

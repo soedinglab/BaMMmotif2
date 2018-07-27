@@ -21,8 +21,8 @@ script:
   - export PATH="$PATH:$PWD/bin"
   - bin/BaMMmotif /tmp/ ../example/JunD.fasta --PWMFile ../example/PWM_peng10.meme --EM -k 0 --FDR --scoreSeqset --maxPWM 1
 
-before_install:
-  - ./.travis/dependencies/eigen-3.2
+#before_install:
+#  - ./.travis/dependencies/eigen-3.2
 
 matrix:
   include:
