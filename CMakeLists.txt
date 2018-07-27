@@ -14,12 +14,6 @@ find_package (Boost REQUIRED)
 include_directories (${Boost_INCLUDE_DIR})
 link_libraries (${Boost_LIBRARIES})
 
-# linke to Eigen library
-find_package(Eigen3 REQUIRED)
-include_directories(${EIGEN3_INCLUDE_DIR})
-include_directories("lib")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -std=c++11")
-
 # set the version of BaMM!motif
 set (BAMMMOTIF_MAJOR_VERSION 2)
 set (BAMMMOTIF_MINOR_VERSION 0)
