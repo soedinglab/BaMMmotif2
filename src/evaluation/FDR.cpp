@@ -227,15 +227,11 @@ void FDR::calculatePR(){
 
 		for( size_t i = 0; i < posN + negN; i++ ){
 
-            if( idx_posMax >= posN || idx_negMax >= negN ){
-                break;
-            }
-
-            if( (posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] || idx_negMax == negN || idx_posMax == 0 )
-                and idx_posMax < posN ){
+            if( (posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] || idx_posMax == 0 || idx_negMax == negN )
+                && idx_posMax < posN ){
                 Sl = posScoreMax_[idx_posMax];
                 idx_posMax++;
-            } else if( posScoreMax_[idx_posMax] == negScoreMax_[idx_negMax] && rand() % 2 == 0){
+            } else if( posScoreMax_[idx_posMax] == negScoreMax_[idx_negMax] && rand() % 2 == 0 && idx_posMax < posN ){
                 Sl = posScoreMax_[idx_posMax];
                 idx_posMax++;
             } else {
