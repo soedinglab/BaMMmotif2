@@ -685,9 +685,9 @@ void EM::optimizePos() {
             for( size_t j = 0; j < LW1; j++ ){
                 if( i == j ) {
                     B_matrix[i][j] = 6;
-                } else if( abs( i-j ) == 1 ){
+                } else if( std::abs( i-j ) == 1 ){
                     B_matrix[i][j] = -4;
-                } else if( abs( i-j ) == 2 ){
+                } else if( std::abs( i-j ) == 2 ){
                     B_matrix[i][j] = 1;
                 }
             }
