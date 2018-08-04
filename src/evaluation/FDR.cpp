@@ -214,7 +214,7 @@ void FDR::calculatePR(){
         // set limit for using the exponential extrapolation for p-value calculation
         size_t n_top = std::fmin(100, negN / 10);
 
-        float lambda = 0.f;
+        float lambda = 1e-16f;
         for( size_t l = 0; l < n_top; l++ ){
             lambda += negScoreMax_[l] - negScoreMax_[n_top];
         }
