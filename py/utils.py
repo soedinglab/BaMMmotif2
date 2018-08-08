@@ -224,6 +224,7 @@ def parse_meme(meme_input_file):
             else:
                 # if not given, assign 0.25 to each letter
                 dataset['bg_freq'] = [0.25,0.25,0.25,0.25]
+                bg_freqs = dataset['bg_freq']
 
             if line.startswith('MOTIF'):
                 model = {}

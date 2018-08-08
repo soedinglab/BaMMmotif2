@@ -52,6 +52,7 @@ maindir <- gsub('/$', '', maindir)
 
 file_glob = paste(c(file_prefix, '*', file_suffix), collapse="")
 full_glob = file.path(maindir, file_glob)
+
 if( length(Sys.glob(full_glob)) == 0 ){
     stop("Error: no input file exists in the folder!")
 }
@@ -69,11 +70,11 @@ for( file in Sys.glob(full_glob) ){
     line_number = as.integer(system2("wc", args=c("-l", filename, " | awk '{print $1}'" ), stdout = TRUE))
 
     if( line_number <= 2 ){
-        print("Warning: The input file is empty. No query motif is found in the sequence set.")
+        print("Warning: The input file is empty. Query motif has <3 occurrences in the sequence set.")
         # print out an empty image
 
-	picname <- paste(c(file_prefix, motif_id, "_distribution.png"), collapse="")
-	picname <- file.path(maindir, picname)
+	    picname <- paste(c(file_prefix, motif_id, "_distribution.png"), collapse="")
+	    picname <- file.path(maindir, picname)
 
         png(filename=picname, width=png_width, height=png_height)
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
@@ -144,8 +145,8 @@ for( file in Sys.glob(full_glob) ){
         }
 
         interval = (as.integer(interval/10)+1) * 10
-	picname <- paste(c(file_prefix, motif_id, "_distribution.png"), collapse="")
-	picname <- file.path(maindir, picname)
+	    picname <- paste(c(file_prefix, motif_id, "_distribution.png"), collapse="")
+	    picname <- file.path(maindir, picname)
         png(filename = picname, width=png_width, height=png_height)
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
 
