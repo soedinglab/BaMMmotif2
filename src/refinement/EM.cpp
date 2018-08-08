@@ -3,6 +3,8 @@
 //
 #include "EM.h"
 #include <chrono>
+#include <Eigen/Dense>  // e.g. conjugate gradient solver
+#include <Eigen/IterativeLinearSolvers>
 
 EM::EM( Motif* motif, BackgroundModel* bgModel,
         std::vector<Sequence*> seqs, bool optimizeQ, bool optimizePos, bool verbose, float f ){
@@ -641,7 +643,7 @@ void EM::optimizePos() {
         pi_[i] = pos_[0][i];
     }
 
-    size_t method_flag = 1;
+    size_t method_flag = 2;
 
     if( method_flag == 1 ){
 
@@ -656,13 +658,61 @@ void EM::optimizePos() {
             // update pos_ni by pi_i
             for (size_t n = 0; n < posN; n++) {
                 pos_[n][i] = pi_[i];
-                //if( n == 4 ) std::cout << pos_[n][i] << '\t';
             }
         }
-        //std::cout << std::endl;
 
     } else if ( method_flag == 2 ){
+        // method 2: Using a prior for penalising jumps in the positional preference profile
+        // calculate constant value N0:
+        float N_0 = 0.f;
+        for (size_t n = 0; n < posN; n++) {
+            N_0 += r_[n][0];
+        }
 
+        // define matrix A:
+        Eigen::MatrixXf A_matrix = Eigen::MatrixXf::Zero( LW1, LW1 );
+        for( size_t i = 0; i < LW1; i++ ){
+            for( size_t j = 0; j < LW1; j++ ){
+                if( i == j ) {
+                    A_matrix(i, j) = 2;
+                } else if( abs( i-j ) == 1 ){
+                    A_matrix(i, j) = -1;
+                }
+            }
+        }
+        A_matrix(0, 0) = 1;
+        A_matrix(LW1-1, LW1-1) = 1;
+
+        // calculate vector b in Ax=b
+        Eigen::VectorXf B_vector( LW1 );
+        for( size_t i = 1; i <= LW1; i++ ) {
+            for (size_t n = 0; n < posN; n++) {
+                N_i[i] += r_[n][L-i];
+            }
+            B_vector[i-1] = ( N_i[i] - ( posN - N_0 ) * pos_[0][i] ) / beta_;
+        }
+
+        // run a few iterations of conjugate gradients (e.g. 5~10)
+        Eigen::ConjugateGradient<Eigen::MatrixXf, Eigen::Lower | Eigen::Upper> cg;
+        cg.compute( A_matrix );
+        cg.setMaxIterations( 5 );
+        Eigen::VectorXf pi = cg.solve( B_vector );
+
+        // normalize pi
+        float min = pi.minCoeff();
+        float max = pi.maxCoeff();
+        for( size_t i = 0; i < LW1; i++ ) {
+            pi[i] = (pi[i] - min) / ( min + max);
+        }
+
+        std::cout << min << '\t' << max << std::endl;
+        // update pos_ni by pi_i
+        for( size_t i = 1; i <= LW1; i++ ) {
+            for (size_t n = 0; n < posN; n++) {
+                pos_[n][i] = pi[i-1];
+                //if( n == 1 ) std::cout << pos_[n][i] << '\t';
+            }
+        }
 
     } else if( method_flag == 3 ){
         // update smoothness parameter beta using positional prior distribution from the data
