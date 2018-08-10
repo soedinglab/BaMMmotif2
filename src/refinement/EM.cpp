@@ -660,21 +660,18 @@ void EM::optimizePos() {
                 pos_[n][i] = pi_[i] * q_;
             }
         }
-
-
+        
         // update smoothness parameter beta using positional prior distribution from the data
         // according to Eq. 158
         float sum = 0.f;
         for (size_t i = 2; i <= LW1; i++) {
-            sum += powf( logf( pi_[i] / pi_[i - 1] ), 2.f);
+            sum += powf( logf( pi_[i] / pi_[i-1] ), 2.f);
         }
 
         // update beta by its expectation value
         beta_ = LW2 / sum;
 
         //std::cout << "sum=" << sum << ", beta=" << LW2 / sum << std::endl;
-
-        assert(beta_ < 100);
 
     } else if ( method_flag == 2 ){
 /*
