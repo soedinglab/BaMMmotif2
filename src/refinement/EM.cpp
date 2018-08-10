@@ -3,8 +3,8 @@
 //
 #include "EM.h"
 #include <chrono>
-#include <Eigen/Dense>  // e.g. conjugate gradient solver
-#include <Eigen/IterativeLinearSolvers>
+//#include <Eigen/Dense>  // e.g. conjugate gradient solver
+//#include <Eigen/IterativeLinearSolvers>
 
 EM::EM( Motif* motif, BackgroundModel* bgModel,
         std::vector<Sequence*> seqs, bool optimizeQ, bool optimizePos, bool verbose, float f ){
@@ -640,12 +640,12 @@ void EM::optimizePos() {
 
     // initialize pi_i
     for( size_t i = 1; i <= LW1; i++ ) {
-        pi_[i] = pos_[0][i];
+        pi_[i] = 1 / LW1;
     }
 
-    size_t method_flag = 2;
+    size_t method_flag = 1;
 
-    if( method_flag == 1 ){
+    if( method_flag == 1 && beta_ > 1 ){
 
         // method 1: Using a flat Bayesian prior on positional preference
         // according to Eq. 149
@@ -657,11 +657,27 @@ void EM::optimizePos() {
             pi_[i] = (N_i[i] + beta_ - 1.f) / (posN + LW1 * (beta_ - 1.f));
             // update pos_ni by pi_i
             for (size_t n = 0; n < posN; n++) {
-                pos_[n][i] = pi_[i];
+                pos_[n][i] = pi_[i] * q_;
             }
         }
 
+
+        // update smoothness parameter beta using positional prior distribution from the data
+        // according to Eq. 158
+        float sum = 0.f;
+        for (size_t i = 2; i <= LW1; i++) {
+            sum += powf( logf( pi_[i] / pi_[i - 1] ), 2.f);
+        }
+
+        // update beta by its expectation value
+        beta_ = LW2 / sum;
+
+        //std::cout << "sum=" << sum << ", beta=" << LW2 / sum << std::endl;
+
+        assert(beta_ < 100);
+
     } else if ( method_flag == 2 ){
+/*
         // method 2: Using a prior for penalising jumps in the positional preference profile
         // calculate constant value N0:
         float N_0 = 0.f;
@@ -689,7 +705,7 @@ void EM::optimizePos() {
             for (size_t n = 0; n < posN; n++) {
                 N_i[i] += r_[n][L-i];
             }
-            B_vector[i-1] = ( N_i[i] - ( posN - N_0 ) * pos_[0][i] ) / beta_;
+            B_vector[i-1] = ( N_i[i] - ( posN - N_0 ) * pi_[i] ) / beta_;
         }
 
         // run a few iterations of conjugate gradients (e.g. 5~10)
@@ -706,26 +722,30 @@ void EM::optimizePos() {
         }
 
         std::cout << min << '\t' << max << std::endl;
+
         // update pos_ni by pi_i
         for( size_t i = 1; i <= LW1; i++ ) {
             for (size_t n = 0; n < posN; n++) {
-                pos_[n][i] = pi[i-1];
+                pos_[n][i] = expf( pi[i-1] ) * q_;
                 //if( n == 1 ) std::cout << pos_[n][i] << '\t';
             }
         }
+*/
 
     } else if( method_flag == 3 ){
         // update smoothness parameter beta using positional prior distribution from the data
         // according to Eq. 158
         float sum = 0.f;
         for( size_t i = 2; i <= LW1; i++ ){
-            sum += powf( pi_[i] - pi_[i-1], 2.f )/* - 2 *  logf( pos_[1][i])*/;
+            sum += powf( logf( pi_[i] / pi_[i-1] ), 2.f )/* - 2 *  logf( pos_[1][i])*/;
         }
 
         // update beta by its expectation value
         beta_ = LW2 / sum;
 
         std::cout << "sum=" << sum << ", beta=" << LW2 / sum << std::endl;
+
+        assert( beta_ < 100 );
 
     } else if( method_flag == 4 ){
         // prior penalising kinks in the positional preference profile
@@ -838,8 +858,9 @@ void EM::write( char* odir, std::string basename, bool ss ){
 		std::string opath_r = opath + ".weights";
 		std::ofstream ofile_r( opath_r.c_str() );
 		for( size_t n = 0; n < seqs_.size(); n++ ){
-			for( size_t i = 0; i < seqs_[n]->getL() - W_ + 1; i++ ){
-				ofile_r << std::setprecision( 2 ) << r_[n][seqs_[n]->getL()-W_-i] << ' ';
+            ofile_r << std::setprecision( 2 ) << r_[n][0] << ' ';
+			for( size_t i = W_+1; i < seqs_[n]->getL(); i++ ){
+				ofile_r << std::setprecision( 2 ) << r_[n][seqs_[n]->getL()-i] << ' ';
 			}
 			ofile_r << std::endl;
 		}

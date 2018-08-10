@@ -72,8 +72,8 @@ for( file in Sys.glob(full_glob) ){
         print("Warning: The input file is empty. No query motif is found in the sequence set.")
         # print out an empty image
 
-	picname <- paste(c(file_prefix, motif_id, "_distribution.png"), collapse="")
-	picname <- file.path(maindir, picname)
+	    picname <- paste(c(file_prefix, motif_id, "_distribution.png"), collapse="")
+	    picname <- file.path(maindir, picname)
 
         png(filename=picname, width=png_width, height=png_height)
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
@@ -144,8 +144,8 @@ for( file in Sys.glob(full_glob) ){
         }
 
         interval = (as.integer(interval/10)+1) * 10
-	picname <- paste(c(file_prefix, motif_id, "_distribution.png"), collapse="")
-	picname <- file.path(maindir, picname)
+	    picname <- paste(c(file_prefix, motif_id, "_distribution.png"), collapse="")
+	    picname <- file.path(maindir, picname)
         png(filename = picname, width=png_width, height=png_height)
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
 
