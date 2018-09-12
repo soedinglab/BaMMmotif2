@@ -2,8 +2,8 @@
 This script is for reducing the redundancy of PWMs by filtering similar PWMs out and only keep one PWM from each cluster.
 Prerequisite: input file must be in MEME-format, version 4
 '''
-import argparse
 
+import argparse
 import logging
 import sys
 import shutil

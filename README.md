@@ -74,6 +74,10 @@ Update your environment:
 
     source $HOME/.bashrc
 
+Install the R packages:
+
+    ./install_packages.R
+
 ## How to use BaMM!motif from the command line?
 
 ### SYNOPSIS

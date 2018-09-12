@@ -205,7 +205,7 @@ def parse_meme(meme_input_file):
             dataset['version'] = line.strip()
 
         models = []
-        for line in handle:
+        for line in handle.readline():
 
             # read in the ALPHABET info
             if line.startswith('ALPHABET'):
