@@ -104,11 +104,11 @@ int main( int nargs, char* args[] ){
         size_t posN = posSet.size();
         size_t minSeqN = 5000;
         bool rest = minSeqN % posN;
-        if (posN < minSeqN) {
+        if ( posN * Global::mFold < minSeqN ) {
             Global::mFold = minSeqN / posN + rest;
         }
         negSeqs = negseq.sample_bgseqset_by_fold(Global::mFold);
-        std::cout << Global::mFold << " x " << posN << " background sequences are generated." << std::endl;
+        std::cout << negSeqs.size() << " background sequences are generated." << std::endl;
 
         // convert unique_ptr to regular pointer: memory leak will occur:
         for (size_t n = 0; n < negSeqs.size(); n++) {

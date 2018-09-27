@@ -1,5 +1,6 @@
 '''
-This script is for reducing the redundancy of PWMs by filtering similar PWMs out and only keep one PWM from each cluster.
+This script is for reducing the redundancy of PWMs by filtering similar PWMs out
+and only keep one PWM from each cluster.
 Prerequisite: input file must be in MEME-format, version 4
 '''
 
@@ -49,7 +50,7 @@ def main():
     models = update_models(model_set['models'])
 
     #filter models using affinity propagation
-    new_models = filter_pwms(models, min_overlap)
+    new_models = reduce_pwms(models, min_overlap)
 
     # update the model set after filtering
     new_model_set = {}

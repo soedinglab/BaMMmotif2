@@ -75,20 +75,23 @@ int main( int nargs, char* args[] ) {
     /**
      * Sample negative sequence set based on s-mer frequencies
      */
-    std::vector<Sequence*>  negset;
+    std::vector<Sequence*>  negSet;
     size_t minSeqN = 5000;
     // sample negative sequence set B1set based on s-mer frequencies
     // from positive training sequence set
     std::vector<std::unique_ptr<Sequence>> negSeqs;
     SeqGenerator negseq( posSet );
-    if( posSet.size() >= minSeqN ){
-        negSeqs = negseq.sample_bgseqset_by_fold( GScan::mFold );
-    } else {
-        negSeqs = negseq.sample_bgseqset_by_num( minSeqN, GScan::posSequenceSet->getMaxL() );
+    size_t posN = posSet.size();
+    bool rest = minSeqN % posN;
+    if ( posN * GScan::mFold < minSeqN ) {
+        GScan::mFold = minSeqN / posN + rest;
     }
+    negSeqs = negseq.sample_bgseqset_by_fold(GScan::mFold);
+    std::cout << negSeqs.size() << " background sequences are generated." << std::endl;
+
     // convert unique_ptr to regular pointer
     for( size_t n = 0; n < negSeqs.size(); n++ ) {
-        negset.push_back( negSeqs[n].release() );
+        negSet.push_back( negSeqs[n].release() );
         negSeqs[n].get_deleter();
     }
 
@@ -109,11 +112,11 @@ int main( int nargs, char* args[] ) {
         }
 
         // score negative sequence set
-        ScoreSeqSet scoreNegSet( motif, bgModel, negset );
+        ScoreSeqSet scoreNegSet( motif, bgModel, negSet );
         scoreNegSet.calcLogOdds();
         std::vector<std::vector<float>> negAllScores = scoreNegSet.getMopsScores();
         std::vector<float> negScores;
-        for( size_t n = 0; n < negset.size(); n++ ){
+        for( size_t n = 0; n < negSet.size(); n++ ){
             negScores.insert( std::end( negScores ),
                               std::begin( negAllScores[n] ),
                               std::end( negAllScores[n] ) );

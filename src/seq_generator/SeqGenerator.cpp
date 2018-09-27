@@ -402,8 +402,14 @@ std::unique_ptr<Sequence> SeqGenerator::posseq_motif_embedded( Sequence* seq, si
     // sample nucleotides till the position for motif implantation
     // due to k-mer frequencies
     if( at == 0 ) {
+        // implant motif due to uniform distribution
         std::uniform_int_distribution<> range(sOrder_, L - W + 1);
         at = range(rngx_);
+    } else{
+        // implant motif around the given position due to normal distribution
+        // set mean as the given position and variance as 10
+        std::normal_distribution<> nd{at, 10};
+        at = std::round( nd(rngx_) );
     }
 
     // copy the left part of the given sequence

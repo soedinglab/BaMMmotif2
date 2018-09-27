@@ -167,7 +167,7 @@ def update_models(models):
     return upd_models
 
 
-def filter_pwms(models, min_overlap=2):
+def reduce_pwms(models, min_overlap=2):
     total_models = len(models)
     # calculate similarity score for each model with others
     # build a numpy array of similarity scores

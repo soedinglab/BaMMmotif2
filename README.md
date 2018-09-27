@@ -249,7 +249,7 @@ The performance scores such as AUSFC, pAUC amd AUPRC are written in the `.bmscor
     
 ### How to plot BaMM logos?
 
-R script `platBaMMLogo.R` is provided in the installation directory `${HOME}/opt/BaMM/bin` to plot the BaMM logo from a BaMM flat file. 
+R script `plotBaMMLogo.R` is provided in the installation directory `${HOME}/opt/BaMM/bin` to plot the BaMM logo from a BaMM flat file.
 
 It requires output files with extension `.ihbcp`, `.ihbp`, `.hbcp` or `.hbp` from BaMMmotif as input.
 
