@@ -7,6 +7,10 @@
 
 #include "../init/BackgroundModel.h"
 #include "../init/MotifSet.h"
+#include <eigen3/Eigen/Dense>   // e.g. conjugate gradient solver
+#include <eigen3/Eigen/IterativeLinearSolvers>
+#include <eigen3/Eigen/Core>    // e.g. used for LBFGS++
+
 
 class EM {
     /**
@@ -33,7 +37,8 @@ public:
     void 					MStep_slow();		// M-step: slow version
 
     void                    optimizeQ();        // optimize the hyper-parameter q
-    void                    optimizePos();      // optimize the positional prior pos_i
+    void                    optimizePos( Eigen::MatrixXf A_matrix );
+                                                // optimize the positional prior pos_i
     void                    initializePos();    // initialize the positional prior pos_i
 
 
@@ -60,7 +65,12 @@ private:
     float*** 				n_;	            	// fractional counts n for (k+1)-mers y at motif position j
     float**					pos_;				// positional prior, pos[i][0] indicates the prior for no motif present on sequence i
     float                   beta_;              // hyper-parameter for smoothness on positional prior
+    float                   beta2_;             // hyper-parameter for smoothness on positional prior
+    float                   norm_;
     float*                  pi_;                // probability of a motif to start at position i on the longest sequence
+    Eigen::VectorXf         b_vector_;
+    Eigen::VectorXf         si_;
+    std::mt19937            rngx_;
 
     float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif
     float                   f_;                 // fraction of sequences to be masked

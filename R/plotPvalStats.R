@@ -56,7 +56,7 @@ web     <- args$web
 plots   <- args$plots
 
 # preset variables
-dir <- gsub('/$', '', dir)
+dir     <- gsub('/$', '', dir)
 ofile   <- paste(dir, '/', prefix, ".bmscore", sep = "" )
 
 ###########################
@@ -354,8 +354,8 @@ pvt.plotlabels <- function(statistic, scale.param, eta0)
 plotPvalStat = function(pvalues, filename, eta0, data_eta0, rerank){
 
     picname = paste0(filename,".png")
-    png( filename = picname, width = 800, height = 800 )
-    histRes <- hist(pvalues, plot=FALSE, breaks=30)
+    png(filename=picname, width=800, height=800)
+    histRes <- hist(pvalues, plot=FALSE, breaks =30)
     xvals <- histRes$breaks
     yvals <- histRes$density
 

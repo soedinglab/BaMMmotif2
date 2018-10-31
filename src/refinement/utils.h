@@ -7,6 +7,7 @@
 #include <vector>
 #include <memory>
 #include <utility>
+#include <complex>      // e.g. std::norm
 
 #include <sys/stat.h>	// e.g. stat
 
@@ -60,8 +61,8 @@ static size_t				ipow( size_t base, size_t exp );
 // concatenate two strings by leaving out the overlapped characters
 static std::string          concatenate2strings( std::string s1, std::string s2 );
 
-// returns a permutation which rearranges v into ascending order
-template <typename T> std::vector<size_t> sortIndices( const std::vector<T> &v );
+// returns a permutation which rearranges v into either ascending or descending order
+template <typename T> std::vector<size_t> sortIndices( const std::vector<T> &v, bool descending = false );
 
 // parallelize float addition
 static void atomic_float_add(float *source, const float operand);
@@ -181,20 +182,29 @@ inline size_t ipow( size_t base, size_t exp ){
     return res;
 }
 
-template <typename T> inline std::vector<size_t> sortIndices( const std::vector<T>& v ){
+template <typename T> inline std::vector<size_t> sortIndices( const std::vector<T>& v, bool descending ){
 
-  // initialize with original indices
-  std::vector<size_t> idx( v.size() );
-  iota( idx.begin(), idx.end(), 0 );
+    // initialize with original indices
+    std::vector<size_t> idx( v.size() );
+    iota( idx.begin(), idx.end(), 0 );
 
-  // sort indices based on comparing values in v
-  sort( idx.begin(), idx.end(),
-		[&v]( size_t i1, size_t i2 ){
-	        return v[i1] < v[i2];
-        }
-      );
+    if( descending ){
+        // sort indices based on comparing values in v
+        sort( idx.begin(), idx.end(),
+              [&v]( size_t i1, size_t i2 ){
+                  return v[i1] > v[i2];
+              }
+        );
+    } else {
+        // sort indices based on comparing values in v
+        sort( idx.begin(), idx.end(),
+              [&v]( size_t i1, size_t i2 ){
+                  return v[i1] < v[i2];
+              }
+        );
+    }
 
-  return idx;
+    return idx;
 }
 
 // for parallelizing MStep()
@@ -386,6 +396,56 @@ inline double digamma(double x)
 		}
 		return resul ;
 	}
+}
+
+// Conjugate gradient solver
+template <class Matrix, class Vector, class Preconditioner, class Real>
+int CG(const Matrix &A, Vector &x, const Vector &b,
+              const Preconditioner &M, int &max_iter, Real &tol) {
+    Real resid;
+    Vector p, z, q;
+    Vector alpha(1), beta(1), rho(1), rho_1(1);
+
+    Real normb = b.norm();
+    Vector r = b - A * x;
+
+    if (normb == 0.0)
+        normb = 1;
+
+    if ((resid = r.norm() / normb) <= tol) {
+        tol = resid;
+        max_iter = 0;
+        return 0;
+    }
+
+    for (int i = 1; i <= max_iter; i++) {
+        z = M.solve(r);
+        rho(0) = r.dot(z);
+
+        if (i == 1)
+            p = z;
+        else {
+            beta(0) = rho(0) / rho_1(0);
+            p = z + beta(0) * p;
+        }
+
+        q = A * p;
+        alpha(0) = rho(0) / p.dot(q);
+
+        x += alpha(0) * p;
+        r -= alpha(0) * q;
+
+        if ((resid = r.norm() / normb) <= tol) {
+            tol = resid;
+            max_iter = i;
+            return 0;
+        }
+
+        rho_1(0) = rho(0);
+    }
+
+    tol = resid;
+    return 1;
 }
 
 // free allocation memory for sequence
