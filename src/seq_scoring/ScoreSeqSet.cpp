@@ -35,13 +35,15 @@ void ScoreSeqSet::calcLogOdds(){
 	motif_->calculateLogS( bg_->getV(), K_bg );
 	float** s = motif_->getS();
 
-	mops_scores_.resize( seqSet_.size() );
+    size_t seqN = seqSet_.size();
+	mops_scores_.resize( seqN );
 
-//#pragma omp parallel for
-	for( size_t n = 0; n < seqSet_.size(); n++ ){
+#pragma omp parallel for
+	for( size_t n = 0; n < seqN; n++ ){
 
 		size_t 	LW1 = seqSet_[n]->getL() - W + 1;
 		size_t* kmer = seqSet_[n]->getKmer();
+        mops_scores_[n].resize( LW1 );    // important for code paralleling
 		float 	maxScore = -FLT_MAX;
 
         size_t z_i = 0;
@@ -52,7 +54,7 @@ void ScoreSeqSet::calcLogOdds(){
 				logOdds += s[y][j];
 			}
 			// take all the log odds scores for MOPS model:
-			mops_scores_[n].push_back( logOdds );
+			mops_scores_[n][i] = logOdds;
 
 			// take the largest log odds score for ZOOPS model:
             if( logOdds > maxScore ){
@@ -171,7 +173,6 @@ void ScoreSeqSet::calcPvalues( std::vector<std::vector<float>> pos_scores,
     // create a vector to store the positive sequence lengths
     std::vector<size_t> seql;
     seql.push_back( pos_scores[0].size() );
-
     for( size_t n = 1; n < seqN; n++ ){
         seql.push_back( seql[n-1] + pos_scores[n].size() );
     }
@@ -184,17 +185,6 @@ void ScoreSeqSet::calcPvalues( std::vector<std::vector<float>> pos_scores,
         }
     }
     size_t posN = pos_all_scores.size();
-
-    // get all scores from both positive and negative sets
-    std::vector<float> all_scores;
-    all_scores = pos_all_scores;
-    for( size_t m = 0; m < negN; m++ ){
-        all_scores.push_back( neg_all_scores[m] );
-    }
-
-    // get the permutation of index after sorting all positive and negative scores
-    // jointly in descending order
-    std::vector<size_t> pidx_all = sortIndices( all_scores, true );
 
     // get the permutation of index after sorting all positive scores in descending order
     std::vector<size_t> pidx_pos = sortIndices( pos_all_scores, true );
@@ -230,7 +220,7 @@ void ScoreSeqSet::calcPvalues( std::vector<std::vector<float>> pos_scores,
             // take the accumulated score for negative set as false positive of entry l
             size_t FPl = cScore_neg;
 
-            float Sl = all_scores[pidx_all[l]];
+            float Sl = pos_all_scores[pidx_pos[cScore_pos]];
             float Sl_higher = neg_all_scores[pidx_neg[cScore_neg]];
             float Sl_lower  = neg_all_scores[pidx_neg[cScore_neg]];
 
