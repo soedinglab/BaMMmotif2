@@ -129,7 +129,7 @@ for( file in Sys.glob(full_glob) ){
                     pos_positions[pos_idx] = motif_pos[i]
                     pos_idx = pos_idx + 1
                 } else {
-                    neg_positions[neg_idx] = motif_pos[i] - strand_length[i]
+                    neg_positions[neg_idx] = 2*strand_length[i] - motif_pos[i]
                     neg_idx = neg_idx + 1
                 }
             }
@@ -161,7 +161,7 @@ for( file in Sys.glob(full_glob) ){
             # turn neg strand upside down
             neg.strand$y <- neg.strand$y*-1
 
-            # for plotting distribution on postive strand
+            # for plotting distribution on positive strand
             plot(pos.strand,
                 main=main_title,
                 xlab="", ylab="",
@@ -196,7 +196,7 @@ for( file in Sys.glob(full_glob) ){
             polygon(neg.strand, col=convertcolor("darkred",30), border = NA)
             legend("bottomright",legend="- strand", col="darkred", cex=label_size, bty="n", text.col="darkred")
         } else {
-            # only plot motif distribution on poistive strand
+            # only plot motif distribution on positive strand
             pos.strand = density((pos_positions))
             plot(pos.strand,
                 main=main_title,
