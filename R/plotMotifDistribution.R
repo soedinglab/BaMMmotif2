@@ -24,13 +24,20 @@ suppressMessages(library( gdata ))
 #
 #-----------------------------
 parser <- ArgumentParser(description="plot the motif distribution")
+
 # positional arguments
 parser$add_argument('maindir',  help="directory that contains the target file")
 parser$add_argument('prefix',   help="prefix of the target file")
 
+# optional arguments
+parser$add_argument('--anchor', type="integer", help="Define where the starting point is")
+parser$add_argument('--anchorname', type="character", default='0', help="Define the name of the starting point")
+
 args        <- parser$parse_args()
 maindir     <- args$maindir
 file_prefix <- args$prefix
+anchor      <- args$anchor
+anchorname  <- args$anchorname
 
 #-----------------------------
 #
@@ -59,7 +66,7 @@ if( length(Sys.glob(full_glob)) == 0 ){
 for( file in Sys.glob(full_glob) ){
 
     # get motif number from the filename
-    prefix <- file.path(maindir, file_prefix)
+    prefix   <- file.path(maindir, file_prefix)
     motif_id <- sub(prefix, "", file)
     motif_id <- sub(file_suffix, "", motif_id)
 
@@ -69,8 +76,10 @@ for( file in Sys.glob(full_glob) ){
     line_number = as.integer(system2("wc", args=c("-l", filename, " | awk '{print $1}'" ), stdout = TRUE))
 
     if( line_number <= 2 ){
-        print("Warning: The input file is empty. No query motif is found in the sequence set.")
+
         # print out an empty image
+
+        print("Warning: The input file is empty. No query motif is found in the sequence set.")
 
 	    picname <- paste(c(file_prefix, motif_id, "_distribution.png"), collapse="")
 	    picname <- file.path(maindir, picname)
@@ -109,14 +118,22 @@ for( file in Sys.glob(full_glob) ){
 
         seqCount            = line_number - 1
         strand_length       = c(table$V2)
-        max_strand_length   = max(strand_length)
-        strand_center       = max_strand_length / 2
+        max_strand_length = max(strand_length)
+
+        # define the starting point of the sequences
+        if( is.null(anchor) ){
+            strand_center   = max_strand_length / 2
+        } else {
+            strand_center   = anchor
+        }
+
         strand_ind          = c(table$V3)
         negCount            = length(grep('-', strand_ind)) # count negative strands
         posCount            = seqCount - negCount           # count positive strands
         start               = as.numeric(lapply(strsplit(table$V4, split='..', fixed=TRUE), `[`, 1))
-        end                 = as.numeric(lapply(strsplit(table$V4, split='..', fixed=TRUE), `[`, 2))
-        motif_pos           = as.integer(( start+end ) / 2) - strand_length / 2 + strand_center
+        #end                 = as.numeric(lapply(strsplit(table$V4, split='..', fixed=TRUE), `[`, 2))
+        #motif_pos           = as.integer(( start+end ) / 2) - strand_length / 2 + strand_center
+        motif_pos           = start
 
         pos_positions       <- rep(NA, posCount)
         neg_positions       <- rep(NA, negCount)
@@ -137,13 +154,10 @@ for( file in Sys.glob(full_glob) ){
             pos_positions = motif_pos
         }
 
-        if(posCount >= negCount){
-            interval = max(max(pos_positions)-strand_center, strand_center-min(pos_positions))
-        } else {
-            interval = max(max(neg_positions)-strand_center, strand_center-min(neg_positions))
-        }
+        whole_region = max(max(pos_positions), max(neg_positions)) - min(min(pos_positions), min(neg_positions))
+        interval_left = strand_center
+        interval_right = whole_region - strand_center
 
-        interval = (as.integer(interval/10)+1) * 10
 	    picname <- paste(c(file_prefix, motif_id, "_distribution.png"), collapse="")
 	    picname <- file.path(maindir, picname)
         png(filename = picname, width=png_width, height=png_height)
@@ -168,7 +182,7 @@ for( file in Sys.glob(full_glob) ){
                 type="l", lwd=lwd_size*3,
                 col="darkblue",
                 axes=FALSE, cex.axis=label_size, cex.main=label_size,
-                xlim = c(strand_center - interval, strand_center + interval),
+                xlim = c(0, whole_region),
                 ylim = c(min(neg.strand$y), max(pos.strand$y))
             )
 
@@ -178,7 +192,9 @@ for( file in Sys.glob(full_glob) ){
             legend("bottomright",legend="- strand", col="darkred", cex=label_size, bty="n", text.col="darkred")
             polygon(pos.strand, col=convertcolor("darkblue", 30), border = NA)
             legend("topright",legend="+ strand", col="darkblue", cex=label_size, bty="n", text.col="darkblue")
+
         } else if(negCount > 1 && posCount <= 1) {
+
             # only plot motif distribution on negative strand
             neg.strand = density((neg_positions))
             # turn neg strand upside down
@@ -190,7 +206,7 @@ for( file in Sys.glob(full_glob) ){
                 type="l", lwd=lwd_size*3,
                 col="darkred",
                 axes=FALSE, cex.axis=label_size, cex.main=label_size,
-                xlim = c(strand_center - interval, strand_center + interval),
+                xlim = c(0, whole_region),
                 ylim = c(min(neg.strand$y), max(neg.strand$y))
             )
             polygon(neg.strand, col=convertcolor("darkred",30), border = NA)
@@ -204,7 +220,7 @@ for( file in Sys.glob(full_glob) ){
                 type="l", lwd=lwd_size*3,
                 col="darkblue",
                 axes=FALSE, cex.axis=label_size, cex.main=label_size,
-                xlim = c(strand_center - interval, strand_center + interval)
+                xlim = c(0, whole_region)
                 )
             polygon(pos.strand, col=convertcolor("darkblue", 30), border = NA)
             legend("topright",legend="+ strand", col="darkblue", cex=label_size, bty="n", text.col="darkblue")
@@ -213,8 +229,9 @@ for( file in Sys.glob(full_glob) ){
         abline(h=0, v=strand_center, col="grey", lwd=lwd_size*2)
         mtext("Position relative to sequence center", side=1, line=4.5, cex=label_size)
         mtext("Density", side=2, line=4, cex=label_size)
-        axis(1, at=c(strand_center - interval, strand_center, strand_center + interval),
-            labels = c(-interval, 0, interval),
+
+        axis(1, at=c(strand_center - interval_left, strand_center, strand_center + interval_right),
+            labels = c(-interval_left, anchorname, interval_right),
             tick = FALSE, cex.axis=label_size, line=1)
         axis(2, tick = FALSE, cex.axis=label_size, line=0.5)
         box(lwd=lwd_size)

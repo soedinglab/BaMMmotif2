@@ -1889,7 +1889,7 @@ parser$add_argument('prefix',       help="prefix of the target file")
 parser$add_argument('logo_order',   help='logo order, it must be not higher than bamm model order')
 parser$add_argument('--revComp',    type="logical", default=FALSE, help='flag to plot reverse complement logo of zeroth order' )
 parser$add_argument('--stamp',      type="logical", default=FALSE, help='flag to plot without axis' )
-parser$add_argument('--web',      type="logical", default=FALSE, help='flag to plot stamp and revComp for zeroth order in web mode' )
+parser$add_argument('--web',        type="logical", default=FALSE, help='flag to plot stamp and revComp for zeroth order in web mode' )
 
 
 args        <- parser$parse_args()
