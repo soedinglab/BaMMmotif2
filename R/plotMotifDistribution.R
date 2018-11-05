@@ -131,30 +131,50 @@ for( file in Sys.glob(full_glob) ){
         negCount            = length(grep('-', strand_ind)) # count negative strands
         posCount            = seqCount - negCount           # count positive strands
         start               = as.numeric(lapply(strsplit(table$V4, split='..', fixed=TRUE), `[`, 1))
-        #end                 = as.numeric(lapply(strsplit(table$V4, split='..', fixed=TRUE), `[`, 2))
-        #motif_pos           = as.integer(( start+end ) / 2) - strand_length / 2 + strand_center
-        motif_pos           = start
+        end                 = as.numeric(lapply(strsplit(table$V4, split='..', fixed=TRUE), `[`, 2))
 
         pos_positions       <- rep(NA, posCount)
         neg_positions       <- rep(NA, negCount)
 
-        if( negCount!= 0 ){
-            pos_idx = 1
-            neg_idx = 1
-            for( i in seq(1, seqCount) ){
-                if( strand_ind[i] == '+' ){
-                    pos_positions[pos_idx] = motif_pos[i]
-                    pos_idx = pos_idx + 1
-                } else {
-                    neg_positions[neg_idx] = 2*strand_length[i] - motif_pos[i]
-                    neg_idx = neg_idx + 1
+        if( is.null(anchor) ){
+            if( negCount!= 0 ){
+                pos_idx = 1
+                neg_idx = 1
+                for( i in seq(1, seqCount) ){
+                    if( strand_ind[i] == '+' ){
+                        pos_positions[pos_idx] = strand_center + start[i] - strand_length[i] / 2
+                        pos_idx = pos_idx + 1
+                    } else {
+                        neg_positions[neg_idx] = strand_center + 2*strand_length[i] - end[i] - strand_length[i] / 2
+                        neg_idx = neg_idx + 1
+                    }
                 }
+            } else {
+                # shift the positions if sequences have different lengths
+                pos_positions = strand_center + start - strand_length / 2
             }
         } else {
-            pos_positions = motif_pos
+            # Note: this can only be applied when sequences have the same length
+            if( negCount!= 0 ){
+                pos_idx = 1
+                neg_idx = 1
+                for( i in seq(1, seqCount) ){
+                    if( strand_ind[i] == '+' ){
+                        pos_positions[pos_idx] = start[i]
+                        pos_idx = pos_idx + 1
+                    } else {
+                        neg_positions[neg_idx] = 2*strand_length[i] - end[i]
+                        neg_idx = neg_idx + 1
+                    }
+                }
+            } else {
+                # shift the positions if sequences have different lengths
+                pos_positions = start
+            }
         }
 
-        whole_region = max(max(pos_positions), max(neg_positions)) - min(min(pos_positions), min(neg_positions))
+
+        whole_region = max_strand_length
         interval_left = strand_center
         interval_right = whole_region - strand_center
 
@@ -230,7 +250,7 @@ for( file in Sys.glob(full_glob) ){
         mtext("Position relative to sequence center", side=1, line=4.5, cex=label_size)
         mtext("Density", side=2, line=4, cex=label_size)
 
-        axis(1, at=c(strand_center - interval_left, strand_center, strand_center + interval_right),
+        axis(1, at=c(0, strand_center, whole_region),
             labels = c(-interval_left, anchorname, interval_right),
             tick = FALSE, cex.axis=label_size, line=1)
         axis(2, tick = FALSE, cex.axis=label_size, line=0.5)
