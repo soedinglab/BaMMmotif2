@@ -116,10 +116,10 @@ int main( int nargs, char* args[] ) {
         scoreNegSet.calcLogOdds();
         std::vector<std::vector<float>> negAllScores = scoreNegSet.getMopsScores();
         std::vector<float> negScores;
-        for( size_t n = 0; n < negSet.size(); n++ ){
+        for( size_t i = 0; i < negSet.size(); i++ ){
             negScores.insert( std::end( negScores ),
-                              std::begin( negAllScores[n] ),
-                              std::end( negAllScores[n] ) );
+                              std::begin( negAllScores[i] ),
+                              std::end( negAllScores[i] ) );
         }
 
         // score positive sequence set

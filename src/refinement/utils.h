@@ -189,14 +189,14 @@ template <typename T> inline std::vector<size_t> sortIndices( const std::vector<
     iota( idx.begin(), idx.end(), 0 );
 
     if( descending ){
-        // sort indices based on comparing values in v
+        // sort indices in descending order based on comparing values in v
         sort( idx.begin(), idx.end(),
               [&v]( size_t i1, size_t i2 ){
                   return v[i1] > v[i2];
               }
         );
     } else {
-        // sort indices based on comparing values in v
+        // sort indices in ascending order based on comparing values in v
         sort( idx.begin(), idx.end(),
               [&v]( size_t i1, size_t i2 ){
                   return v[i1] < v[i2];

@@ -43,6 +43,7 @@ private:
 	std::vector<Sequence*>			seqSet_;
 
     std::vector<float>				zoops_scores_;
+    std::vector<size_t>             seql_;      // create a vector to store the cumulative positive sequence lengths
 	std::vector<std::vector<float>>	mops_scores_;
     std::vector<std::vector<float>> mops_p_values_;
     std::vector<std::vector<float>> mops_e_values_;

@@ -173,7 +173,6 @@ for( file in Sys.glob(full_glob) ){
             }
         }
 
-
         whole_region = max_strand_length
         interval_left = strand_center
         interval_right = whole_region - strand_center
