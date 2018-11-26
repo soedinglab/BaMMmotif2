@@ -9,7 +9,7 @@ import logging
 import sys
 import shutil
 
-from utils import update_models, filter_pwms, parse_meme, write_meme
+from utils import update_models, reduce_pwms, parse_meme, write_meme
 
 
 def create_parser():

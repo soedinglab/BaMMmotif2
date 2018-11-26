@@ -183,6 +183,7 @@ def reduce_pwms(models, min_overlap=2):
     #print(af_labels)
 
     new_models = []
+
     for rank in range(total_models):
         for idx, model in enumerate(models, start=0):
             if af_labels[idx] == rank:
@@ -193,7 +194,9 @@ def reduce_pwms(models, min_overlap=2):
 
 
 def parse_meme(meme_input_file):
+
     dataset = {}
+
     with open(meme_input_file) as handle:
 
         line = handle.readline()
@@ -204,28 +207,30 @@ def parse_meme(meme_input_file):
         else:
             dataset['version'] = line.strip()
 
+        # skip the blank line
+        line = handle.readline()
+
+        # read in the ALPHABET info
+        dataset['alphabet'] = handle.readline().split()[1]
+
+        # skip the blank line
+        line = handle.readline()
+
+        # read in the background letter frequencies
+        line = handle.readline()
+
+        # if not given, assign 0.25 to each letter
+        bg_freqs = [0.25,0.25,0.25,0.25]
+        if line.startswith('Background letter frequencies'):
+            bg_toks = handle.readline().split()[1::2]
+            bg_freqs = [float(f) for f in bg_toks]
+            dataset['bg_freq'] = bg_freqs
+
         models = []
-        for line in handle.readline():
 
-            # read in the ALPHABET info
-            if line.startswith('ALPHABET'):
-                dataset['alphabet'] = line.split()[1]
-            else:
-                dataset['alphabet'] = 'unknown'
-
-            # skip strands lines
-            if line.startswith('strands'):
-                continue
-
-            if line.startswith('Background letter frequencies'):
-                bg_toks = handle.readline().split()[1::2]
-                bg_freqs = [float(f) for f in bg_toks]
-                dataset['bg_freq'] = bg_freqs
-            else:
-                # if not given, assign 0.25 to each letter
-                dataset['bg_freq'] = [0.25,0.25,0.25,0.25]
-
+        for line in handle:
             if line.startswith('MOTIF'):
+
                 model = {}
                 model['model_id'] = line.split()[1]
                 model['bg_freq'] = bg_freqs
@@ -256,9 +261,10 @@ def parse_meme(meme_input_file):
                 model['motif_length'] = pwm_length
                 model['H_model_bg'] = calculate_H_model_bg(pwm_arr, bg_arr).tolist()
                 model['H_model'] = calculate_H_model(pwm_arr).tolist()
-
                 models.append(model)
         dataset['models'] = models
+        dataset['bg_freq'] = bg_freqs
+
     return dataset
 
 
