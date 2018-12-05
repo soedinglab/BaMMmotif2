@@ -19,7 +19,7 @@ EM::EM( Motif* motif, BackgroundModel* bgModel,
     optimizeQ_  = optimizeQ;
     optimizePos_= optimizePos;
     beta_       = 5;                // a hyper-parameter for estimating the positional prior
-    beta2_      = 400;              // for method 2 and 3
+    beta2_      = 100;              // for method 2 and 3
 
     // get motif (hyper-)parameters from motif class
 	K_ = motif_->getK();
@@ -94,58 +94,18 @@ int EM::optimize(){
     // pre-define hyper-parameters
     size_t L = seqs_[0]->getL();
     size_t LW1 = L - W_+1;
-//    size_t posN = seqs_.size();
-//    // calculate the value N0 and Ni_i:
-//    float N_0 = 0.f;
-//    for (size_t n = 0; n < posN; n++) {
-//        N_0 += r_[n][0];
-//    }
-//    std::vector<float> N_i( LW1+1, 0.f );
-//    for( size_t i = 1; i <= LW1; i++ ) {
-//        for (size_t n = 0; n < posN; n++) {
-//            N_i[i] += r_[n][L - i];
-//        }
-//    }
 
     norm_ = 0.0f;
     for( size_t i = 1; i <= LW1; i++ ) {
-        std::normal_distribution<> nd{ LW1/2.0f, 2.0f * W_ };
+        std::normal_distribution<> nd{ LW1/2.0f, (float)LW1 };
         si_[i-1] = nd( rngx_ ) / LW1;
         pi_[i] = expf( si_[i-1] );
         norm_ += pi_[i];
     }
     for( size_t i = 1; i <= LW1; i++ ) {
         pi_[i] /= norm_;
-        si_[i-1] = logf( pi_[i] );
+        //si_[i-1] = logf( pi_[i] );
     }
-
-    // ========================
-    // todo: write out for checking:
-    std::string opath_pi = "/home/wanwan/benchmark/art/toyset/pi_orig.txt";
-    std::string opath_si = "/home/wanwan/benchmark/art/toyset/si_orig.txt";
-
-    std::ofstream ofile_pi( opath_pi );
-    std::ofstream ofile_si( opath_si );
-
-    for( size_t i = 1; i <= LW1; i++ ) {
-        ofile_pi << pi_[i] << std::endl;
-        ofile_si << si_[i-1] << std::endl;
-    }
-    // ========================
-
-    // define matrix A:
-    Eigen::MatrixXf A_matrix = Eigen::MatrixXf::Zero( LW1, LW1 );
-    for( size_t i = 0; i < LW1; i++ ){
-        for( size_t j = 0; j < LW1; j++ ){
-            if( i == j ) {
-                A_matrix(i, j) = 2;
-            } else if( abs( i-j ) == 1 ){
-                A_matrix(i, j) = -1;
-            }
-        }
-    }
-    A_matrix(0, 0) = 1;
-    A_matrix(LW1-1, LW1-1) = 1;
 
     // iterate over
     size_t iteration = 0;
@@ -168,17 +128,17 @@ int EM::optimize(){
         // M-step: update model parameters
         MStep();
 
-        // optimize hyper-parameter q in the first 5 steps
-        if( optimizeQ_ and iteration <= 10 ) {
+        // optimize hyper-parameter q in the first step
+        if( optimizeQ_ and iteration <= 1 ) {
             optimizeQ();
         }
 
         // optimize positional prior pos_
         // note: this only works for sequences with the same length
-        if( optimizePos_ and iteration < 2 ){
-            for( size_t it = 0; it < 5; it++ ){
-                optimizePos( A_matrix );
-            }
+        if( optimizePos_  and iteration < 10 ){
+//            for( size_t it = 0; it < 5; it++ ){
+                optimizePos();
+//            }
         }
 
         // check parameter difference for convergence
@@ -198,8 +158,8 @@ int EM::optimize(){
                                  << std::endl;
 
         if( v_diff < epsilon_ )							iterate = false;
-        if( iteration > 10 )							iterate = false;
-        //if( llikelihood_diff < 0 and iteration > 10 )	iterate = false;
+        //if( iteration > 10 )							iterate = false;
+        if( llikelihood_diff < 0 and iteration > 10 )	iterate = false;
 
 /*
         // for making a movie out of all iterations
@@ -269,8 +229,9 @@ void EM::EStep(){
         for( size_t i = W_-1; i <= L-1; i++ ){
             r_[n][i] /= normFactor;
         }
+        r_[n][0] /= normFactor;
 
-        // for the unused positions
+        // zero out responsibilities for the unused positions
         for( size_t i = 1; i <= W_-2; i++ ){
             r_[n][i] = 0.0f;
         }
@@ -283,7 +244,6 @@ void EM::EStep(){
     }
 
     llikelihood_ = llikelihood;
-
 }
 
 void EM::MStep(){
@@ -326,7 +286,6 @@ void EM::MStep(){
         }
     }
 
-    //printR();
     // update model parameters v[k][y][j] with updated k-mer counts, alphas and model order
     motif_->updateV( n_, A_, K_ );
 }
@@ -337,12 +296,12 @@ void EM::initializePos(){
         size_t 	L = seqs_[n]->getL();
         size_t 	LW1 = L - W_ + 1;
         pos_[n][0] = 1.0f - q_;                         // probability of having no motif on the sequence
-        float   pos_i = q_ / static_cast<float>( LW1 ); // probability of having a motif at position i on the sequence
+        float pos_i = q_ / static_cast<float>( LW1 );   // probability of having a motif at position i on the sequence
         for( size_t i = 1; i <= L; i++ ){
             pos_[n][i] = pos_i;
         }
     }
-    
+
 }
 
 void EM::EStep_slow(){
@@ -391,6 +350,7 @@ void EM::EStep_slow(){
         for( size_t i = 0; i <= LW1; i++ ){
             r_[n][i] /= normFactor;
         }
+       // r_[n][0] /= normFactor;
 
         // calculate log likelihood over all sequences
         llikelihood += logf( normFactor );
@@ -443,7 +403,6 @@ void EM::MStep_slow(){
         }
     }
 
-    //printR();
     // update model parameters v[k][y][j] with updated k-mer counts, alphas and model order
     motif_->updateV( n_, A_, K_ );
 }
@@ -676,22 +635,20 @@ int EM::mask() {
 
 void EM::optimizeQ(){
 
-    float N_i = 0.f;                   // expectation value of the count of sequences with a query motif
+    float N_0 = 0.f;
     size_t posN = seqs_.size();
-
-    for( size_t n = 0; n < posN; n++ ){
-        for( size_t i = W_-1; i <= seqs_[n]->getL()-1; i++ ){
-            N_i += r_[n][i];
-        }
+    for (size_t n = 0; n < posN; n++) {
+        N_0 += r_[n][0];
     }
+    q_ = ( posN - N_0 + 1.f ) / ( posN + 2.f );
 
-    q_ = ( N_i + 1.f ) / ( posN + 2.f );
-
-    if( verbose_ ) std::cout << "optimized q=" << q_ << std::endl;
+    if( verbose_ ){
+        std::cout << "optimized q=" << q_ << std::endl;
+    }
 
 }
 
-void EM::optimizePos( Eigen::MatrixXf A_matrix ) {
+void EM::optimizePos() {
 
     // todo: note this function currently only works for sequences of the same length
     size_t L = seqs_[0]->getL();
@@ -709,11 +666,11 @@ void EM::optimizePos( Eigen::MatrixXf A_matrix ) {
     std::vector<float> N_i( LW2, 0.f );
     for( size_t i = 1; i <= LW1; i++ ) {
         for (size_t n = 0; n < posN; n++) {
-            N_i[i] += r_[n][L - i];
+            N_i[i] += r_[n][L-i];
         }
     }
 
-    size_t method_flag = 2;
+    size_t method_flag = 3;
 
     if( method_flag == 1 ){
 
@@ -721,32 +678,141 @@ void EM::optimizePos( Eigen::MatrixXf A_matrix ) {
         // according to Eq. 149
         for( size_t i = 1; i <= LW1; i++ ) {
             // update pi according to Eq. 149
-            pi_[i] = (N_i[i] + beta_ - 1.f) / (posN - N_0 + LW1 * (beta_ - 1.f));
+            pi_[i] = (N_i[i] + beta_ - 1.f) /
+                    (posN - N_0 + LW1 * (beta_ - 1.f));
         }
 
-        // additional check:
-        float sum = 0.f;
+/*
+        // todo: additional check:
+        float sum = 1.e-8f;
         for (size_t i = 1; i < LW1; i++) {
             sum += powf( logf( pi_[i+1] ) - logf( pi_[i] ), 2.f );
         }
-        std::cout << "sum=" << sum << ", beta=" << LW2 / sum << std::endl;
+        std::cout << "sum=" << sum
+                  << ", beta=" << LW2 / sum
+                  << std::endl;
+*/
 
     } else if ( method_flag == 2 ){
 
-        // method 2: Using a prior for penalising jumps in the positional preference profile
+        // method 2: Using a prior for penalising jumps in the positional
+        // preference profile
         // run a few iterations of conjugate gradients (e.g. 5~10)
         for( size_t i = 1; i <= LW1; i++ ) {
-//            b_vector_[i - 1] = ( N_i[i] - (posN - N_0) * expf( si_[i-1] ) / norm_ ) / beta2_;
-            b_vector_[i - 1] = ( N_i[i] - (posN - N_0) * pi_[i] ) / beta2_;
+            b_vector_[i-1] = ( N_i[i] - (posN - N_0) * pi_[i] ) / beta2_;
         }
 
         Eigen::ConjugateGradient<Eigen::MatrixXf, Eigen::Lower | Eigen::Upper> cg;
+        Eigen::MatrixXf A_matrix = getAmatrix(LW1);
         cg.compute( A_matrix );
-        cg.setMaxIterations( 1 );
+        cg.setMaxIterations( 5 );
         si_ = cg.solve( b_vector_ );
 
-/*
-        // method 3: use LBFGS optimizer instead of CG
+        // normalize pi
+        norm_ = 1.e-8f;
+        for( size_t i = 1; i <= LW1; i++ ) {
+            pi_[i] = expf( si_[i-1] );
+            norm_ += pi_[i];
+        }
+        for( size_t i = 1; i <= LW1; i++ ) {
+            pi_[i] /= norm_;
+        }
+
+        // ========================
+        // todo: write out for checking:
+        std::string opath_pos = "/home/wanwan/benchmark/art/posPrior/pos.txt";
+        std::string opath_pi = "/home/wanwan/benchmark/art/posPrior/pi.txt";
+        std::string opath_bv = "/home/wanwan/benchmark/art/posPrior/bv.txt";
+        std::string opath_left = "/home/wanwan/benchmark/art/posPrior/left.txt";
+        std::string opath_middle = "/home/wanwan/benchmark/art/posPrior/middle.txt";
+        std::string opath_right = "/home/wanwan/benchmark/art/posPrior/right.txt";
+        std::string opath_grad = "/home/wanwan/benchmark/art/posPrior/grad.txt";
+        std::string opath_smooth = "/home/wanwan/benchmark/art/posPrior/smooth.txt";
+
+        std::ofstream ofile_pos( opath_pos );
+        std::ofstream ofile_pi( opath_pi );
+        std::ofstream ofile_bv( opath_bv );
+        std::ofstream ofile_left( opath_left );
+        std::ofstream ofile_middle( opath_middle );
+        std::ofstream ofile_right( opath_right );
+        std::ofstream ofile_grad( opath_grad );
+        std::ofstream ofile_smooth( opath_smooth );
+
+        Eigen::VectorXf right_vector =  beta2_ * ( getAmatrix(LW1) * si_ );
+
+        for( size_t i = 1; i <= LW1; i++ ) {
+            ofile_pos << pi_[i] * q_ << std::endl;
+            ofile_pi << pi_[i] << std::endl;
+            ofile_bv << b_vector_[i-1] << std::endl;
+            ofile_left << N_i[i] << std::endl;
+            float middle = (posN - N_0) * pi_[i];
+            ofile_middle << middle << std::endl;
+            ofile_right << right_vector[i-1] << std::endl;
+            ofile_grad << N_i[i] - middle - right_vector[i-1] << std::endl;
+            ofile_smooth << ( N_i[i] - right_vector[i-1] ) / (posN - N_0) << std::endl;
+        }
+        // ========================
+
+        // method 2b: update smoothness parameter beta using positional prior distribution
+        // from the data
+        // according to Eq. 158, note the indices for si
+        float sum = 1.e-8f;
+        for (size_t i = 1; i < LW1; i++) {
+            sum += powf( si_[i] - si_[i-1], 2.f );
+        }
+
+        // a) update beta by its expectation value
+        //beta2_ = LW2 / sum;
+
+        // b) sample beta2 from the Gamma distribution
+        std::default_random_engine generator;
+        std::gamma_distribution<double> distribution( LW2/2, sum/2);
+        beta2_ = distribution(generator);
+
+        std::cout << "N0=" << N_0 << ", N=" << posN
+                  << ", LW1=" << LW1 << ", norm=" << norm_
+                  << ", sum=" << sum << ", beta=" << LW2 / sum
+                  << std::endl;
+
+    } else if( method_flag == 3 ){
+        // prior penalising kinks in the positional preference profile
+        for( size_t i = 1; i <= LW1; i++ ) {
+            b_vector_[i-1] = ( N_i[i] - (posN - N_0) * pi_[i] ) * 4 / beta2_;
+        }
+
+        Eigen::ConjugateGradient<Eigen::MatrixXf, Eigen::Lower | Eigen::Upper> cg;
+        Eigen::MatrixXf B_matrix = getBmatrix(LW1);
+        cg.compute( B_matrix );
+        cg.setMaxIterations( 5 );
+        si_ = cg.solve( b_vector_ );
+
+        // normalize pi
+        norm_ = 1.e-8f;
+        for( size_t i = 1; i <= LW1; i++ ) {
+            pi_[i] = expf( si_[i-1] );
+            norm_ += pi_[i];
+        }
+        for( size_t i = 1; i <= LW1; i++ ) {
+            pi_[i] /= norm_;
+        }
+
+        float sum = 1.e-8f;
+        for (size_t i = 1; i < LW1-1; i++) {
+            sum += powf(si_[i] - ( si_[i-1] + si_[i+1] ) / 2, 2.f);
+        }
+        // a) update beta by its expectation value 2
+        beta2_ = LW1 / sum;
+
+        // b) update beta by its expectation value 2
+        //beta2_ = ( LW1-2 ) / sum;
+
+        std::cout << "N0=" << N_0 << ", N=" << posN
+                  << ", LW1=" << LW1 << ", norm=" << norm_
+                  << ", sum=" << sum << ", beta=" << LW2 / sum
+                  << std::endl;
+
+        /*
+        // method 4: use LBFGS optimizer instead of CG
         // set up parameters
         LBFGSParam<float> param;
         param.epsilon = 1e-6f;
@@ -761,96 +827,8 @@ void EM::optimizePos( Eigen::MatrixXf A_matrix ) {
         int niter = solver.minimize( func, si_, fx);
 
 */
-
-        // get pi from si after normalization
-        norm_ = 0.f;
-        float norm_si = 0.f;
-        for( size_t i = 1; i <= LW1; i++ ) {
-            pi_[i] = expf( si_[i-1] );
-            norm_ += pi_[i];
-            norm_si += si_[i-1];
-        }
-        for( size_t i = 1; i <= LW1; i++ ) {
-            pi_[i] /= norm_;
-            // normalization of si
-            si_[i-1] -= norm_si / LW1;
-
-        }
-
-        // ========================
-        // todo: write out for checking:
-        std::string opath_pos = "/home/wanwan/benchmark/art/toyset/pos.txt";
-        std::string opath_pi = "/home/wanwan/benchmark/art/toyset/pi.txt";
-        std::string opath_si = "/home/wanwan/benchmark/art/toyset/si.txt";
-        std::string opath_bv = "/home/wanwan/benchmark/art/toyset/bv.txt";
-        std::string opath_left = "/home/wanwan/benchmark/art/toyset/left.txt";
-        std::string opath_middle = "/home/wanwan/benchmark/art/toyset/middle.txt";
-        std::string opath_right = "/home/wanwan/benchmark/art/toyset/right.txt";
-        std::string opath_grad = "/home/wanwan/benchmark/art/toyset/grad.txt";
-        std::string opath_smooth = "/home/wanwan/benchmark/art/toyset/smooth.txt";
-
-        std::ofstream ofile_pos( opath_pos );
-        std::ofstream ofile_pi( opath_pi );
-        std::ofstream ofile_si( opath_si );
-        std::ofstream ofile_bv( opath_bv );
-        std::ofstream ofile_left( opath_left );
-        std::ofstream ofile_middle( opath_middle );
-        std::ofstream ofile_right( opath_right );
-        std::ofstream ofile_grad( opath_grad );
-        std::ofstream ofile_smooth( opath_smooth );
-
-        Eigen::VectorXf right_vector =  beta2_ * ( A_matrix * si_ );
-
-        for( size_t i = 1; i <= LW1; i++ ) {
-            ofile_pos << pi_[i] * q_ << std::endl;
-            ofile_pi << pi_[i] << std::endl;
-            ofile_si << si_[i-1] << std::endl;
-            ofile_bv << b_vector_[i-1] << std::endl;
-            ofile_left << N_i[i] << std::endl;
-            float middle = (posN - N_0) * pi_[i];
-            ofile_middle << middle << std::endl;
-            ofile_right << right_vector[i-1] << std::endl;
-            ofile_grad << N_i[i] - middle - right_vector[i-1] << std::endl;
-            ofile_smooth << ( N_i[i] - right_vector[i-1] ) / (posN - N_0) << std::endl;
-        }
-        // ========================
-
-
-        // method 3: update smoothness parameter beta using positional prior distribution
-        // from the data
-        // according to Eq. 158, note the indices for si
-        float sum = 0.f;
-        for (size_t i = 1; i < LW1; i++) {
-            sum += powf( si_[i] - si_[i-1], 2.f );
-            //sum += powf( logf(pi_[i+1]) - logf(pi_[i]), 2.f );
-        }
-
-        // update beta by its expectation value
-        //beta2_ = LW2 / sum;
-
-        std::cout << "N0=" << N_0 << ", N=" << posN
-                  << ", LW1=" << LW1 << ",  norm=" << norm_
-                  << ", sum=" << sum << ", beta=" << LW2 / sum << std::endl;
-
-    } else if( method_flag == 3 ){
-        // prior penalising kinks in the positional preference profile
-        // define matrix B:
-        std::vector< std::vector<int>> B_matrix(LW1, std::vector<int> ( LW1, 0 ));
-        for( size_t i = 0; i < LW1; i++ ){
-            for( size_t j = 0; j < LW1; j++ ){
-                if( i == j ) {
-                    B_matrix[i][j] = 6;
-                } else if( std::abs( i-j ) == 1 ){
-                    B_matrix[i][j] = -4;
-                } else if( std::abs( i-j ) == 2 ){
-                    B_matrix[i][j] = 1;
-                }
-            }
-        }
-        B_matrix[0][0] = B_matrix[LW1-1][LW1-1] = 1;
-        B_matrix[1][1] = B_matrix[LW1-2][LW1-2] = 5;
-        B_matrix[0][1] = B_matrix[1][0] = B_matrix[LW1-1][LW1-2] = B_matrix[LW1-2][LW1-1] = -2;
     }
+
 
     // update pos_ni by pi_i
     for( size_t i = 1; i <= LW1; i++ ) {
@@ -859,6 +837,46 @@ void EM::optimizePos( Eigen::MatrixXf A_matrix ) {
         }
     }
 
+}
+
+Eigen::MatrixXf EM::getAmatrix( size_t w ) {
+    // define matrix A:
+    Eigen::MatrixXf A_matrix = Eigen::MatrixXf::Zero( w, w );
+    for( size_t i = 0; i < w; i++ ){
+        for( size_t j = 0; j < w; j++ ){
+            if( i == j ) {
+                A_matrix(i, j) = 2;
+            } else if( abs( i-j ) == 1 ){
+                A_matrix(i, j) = -1;
+            }
+        }
+    }
+    A_matrix(0, 0) = 1;
+    A_matrix(w-1, w-1) = 1;
+
+    return A_matrix;
+}
+
+Eigen::MatrixXf EM::getBmatrix( size_t w ) {
+    // define matrix B:
+    Eigen::MatrixXf B_matrix = Eigen::MatrixXf::Zero( w, w );
+
+    for( size_t i = 0; i < w; i++ ){
+        for( size_t j = 0; j < w; j++ ){
+            if( i == j ) {
+                B_matrix(i, j) = 6;
+            } else if( std::abs( i-j ) == 1 ){
+                B_matrix(i, j) = -4;
+            } else if( std::abs( i-j ) == 2 ){
+                B_matrix(i, j) = 1;
+            }
+        }
+    }
+    B_matrix(0, 0) = B_matrix(w-1, w-1) = 1;
+    B_matrix(1, 1) = B_matrix(w-2, w-2) = 5;
+    B_matrix(0, 1) = B_matrix(1, 0) = B_matrix(w-1, w-2) = B_matrix(w-2, w-1) = -2;
+
+    return B_matrix;
 }
 
 float** EM::getR(){

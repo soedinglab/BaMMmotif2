@@ -207,6 +207,7 @@ int main( int nargs, char* args[] ){
             }
 
             ScoreSeqSet scoreNegSet( motif, bg, negSet );
+
             scoreNegSet.calcLogOdds();
 
             // print out log odds scores for checking before re-ranking
@@ -290,7 +291,7 @@ int main( int nargs, char* args[] ){
 	if( bgModel ) delete bgModel;
     if( !Global::negSeqGiven and negSet.size() ){
         for (size_t n = 0; n < negSet.size(); n++) {
-            delete negSet[n];
+        //    delete negSet[n];
         }
     }
 	Global::destruct();

@@ -37,10 +37,12 @@ public:
     void 					MStep_slow();		// M-step: slow version
 
     void                    optimizeQ();        // optimize the hyper-parameter q
-    void                    optimizePos( Eigen::MatrixXf A_matrix );
+    void                    optimizePos();
                                                 // optimize the positional prior pos_i
     void                    initializePos();    // initialize the positional prior pos_i
 
+    Eigen::MatrixXf         getAmatrix( size_t w );
+    Eigen::MatrixXf         getBmatrix( size_t w );
 
     float**                 getR();             // get the responsibility parameter r
     float                   getQ();             // get the optimized positional prior q

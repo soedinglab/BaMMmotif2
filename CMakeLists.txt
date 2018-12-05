@@ -5,6 +5,7 @@ project (BaMMmotif-v2)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(FindASan)
+include(FindEigen3)
 
 # link to Boost library
 set (Boost_USE_STATIC_LIBS ON CACHE BOOL "use static libraries from Boost")

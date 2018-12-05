@@ -55,7 +55,8 @@ void ScoreSeqSet::calcLogOdds(){
 
     size_t seqN = seqSet_.size();
 
-#pragma omp parallel for
+    // todo: the parallelization does not work properly given PWM and applied EM
+//#pragma omp parallel for
 	for( size_t n = 0; n < seqN; n++ ){
 
 		size_t 	LW1 = seqSet_[n]->getL() - W + 1;
@@ -105,6 +106,8 @@ void ScoreSeqSet::calcPvalues( std::vector<std::vector<float>> pos_scores,
 
     size_t posN = pos_all_scores.size();
     size_t negN = neg_all_scores.size();
+
+    std::cout << "There are " << posN << " positions in the given set." << std::endl;
 
     float eps = 1.0e-5f; // to avoid 0 in the denominator
 
@@ -373,6 +376,7 @@ void ScoreSeqSet::write( char* odir, std::string basename, float pvalCutoff, boo
 
         for( size_t i = 0; i < LW1; i++ ){
 
+//            if( mops_scores_[n][i] >= 0.f ){
 //            if( mops_scores_[n][i] >= 10.f ){
             if( mops_p_values_[n][i] < pvalCutoff ){
 //			  if( mops_e_values_[n][i] < 0.1f ){

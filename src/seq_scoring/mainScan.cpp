@@ -29,7 +29,8 @@ int main( int nargs, char* args[] ) {
     // use provided bgModelFile if initialized with bamm format
     if( GScan::initialModelTag == "BaMM" ) {
         if( GScan::bgModelFilename == NULL ) {
-            std::cerr << "Error: No background model file provided for initial search motif!" << std::endl;
+            std::cerr << "Error: No background model file provided for initial "
+                    "search motif!" << std::endl;
             exit( 1 );
         }
         // get background model from the given file
@@ -65,7 +66,8 @@ int main( int nargs, char* args[] ) {
     std::vector<Sequence*>::iterator it = posSet.begin();
     while( it != posSet.end() ){
         if( (*it)->getL() < motif_set.getMaxW() ){
-            //std::cout << "Warning: remove the short sequence: " << (*it)->getHeader() << std::endl;
+            std::cout << "Warning: remove the short sequence: " << (*it)->getHeader()
+                      << std::endl;
             posSet.erase(it);
         } else {
             it++;
