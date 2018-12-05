@@ -7,9 +7,9 @@
 
 #include "../init/BackgroundModel.h"
 #include "../init/MotifSet.h"
-#include <eigen3/Eigen/Dense>   // e.g. conjugate gradient solver
-#include <eigen3/Eigen/IterativeLinearSolvers>
-#include <eigen3/Eigen/Core>    // e.g. used for LBFGS++
+//#include <eigen3/Eigen/Dense>   // e.g. conjugate gradient solver
+//#include <eigen3/Eigen/IterativeLinearSolvers>
+//#include <eigen3/Eigen/Core>    // e.g. used for LBFGS++
 
 
 class EM {
@@ -41,8 +41,8 @@ public:
                                                 // optimize the positional prior pos_i
     void                    initializePos();    // initialize the positional prior pos_i
 
-    Eigen::MatrixXf         getAmatrix( size_t w );
-    Eigen::MatrixXf         getBmatrix( size_t w );
+//    Eigen::MatrixXf         getAmatrix( size_t w );
+//    Eigen::MatrixXf         getBmatrix( size_t w );
 
     float**                 getR();             // get the responsibility parameter r
     float                   getQ();             // get the optimized positional prior q
@@ -70,8 +70,8 @@ private:
     float                   beta2_;             // hyper-parameter for smoothness on positional prior
     float                   norm_;
     float*                  pi_;                // probability of a motif to start at position i on the longest sequence
-    Eigen::VectorXf         b_vector_;
-    Eigen::VectorXf         si_;
+//    Eigen::VectorXf         b_vector_;
+//    Eigen::VectorXf         si_;
     std::mt19937            rngx_;
 
     float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif

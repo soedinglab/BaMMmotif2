@@ -3,10 +3,6 @@
 //
 #include "EM.h"
 #include <chrono>
-#include "../dependencies/LBFGS/LBFGS.h"
-
-using Eigen::VectorXd;
-using namespace LBFGSpp;
 
 EM::EM( Motif* motif, BackgroundModel* bgModel,
         std::vector<Sequence*> seqs, bool optimizeQ, bool optimizePos, bool verbose, float f ){
@@ -48,8 +44,8 @@ EM::EM( Motif* motif, BackgroundModel* bgModel,
 
     // allocate memory for pi_[i]
     pi_ = ( float* )calloc( seqs_[0]->getL()-W_+2, sizeof(float) );
-    b_vector_ = Eigen::VectorXf::Zero( seqs_[0]->getL()-W_+1 );
-    si_ = Eigen::VectorXf::Zero( seqs_[0]->getL()-W_+1 );
+//    b_vector_ = Eigen::VectorXf::Zero( seqs_[0]->getL()-W_+1 );
+//    si_ = Eigen::VectorXf::Zero( seqs_[0]->getL()-W_+1 );
     rngx_.seed( 42 );
 
     verbose_ = verbose;
@@ -91,6 +87,7 @@ int EM::optimize(){
     // initialized positional priors
     initializePos();
 
+/*
     // pre-define hyper-parameters
     size_t L = seqs_[0]->getL();
     size_t LW1 = L - W_+1;
@@ -106,6 +103,7 @@ int EM::optimize(){
         pi_[i] /= norm_;
         //si_[i-1] = logf( pi_[i] );
     }
+*/
 
     // iterate over
     size_t iteration = 0;
@@ -670,7 +668,7 @@ void EM::optimizePos() {
         }
     }
 
-    size_t method_flag = 3;
+    size_t method_flag = 1;
 
     if( method_flag == 1 ){
 
@@ -693,7 +691,7 @@ void EM::optimizePos() {
                   << std::endl;
 */
 
-    } else if ( method_flag == 2 ){
+    }/* else if ( method_flag == 2 ){
 
         // method 2: Using a prior for penalising jumps in the positional
         // preference profile
@@ -811,7 +809,7 @@ void EM::optimizePos() {
                   << ", sum=" << sum << ", beta=" << LW2 / sum
                   << std::endl;
 
-        /*
+        *//*
         // method 4: use LBFGS optimizer instead of CG
         // set up parameters
         LBFGSParam<float> param;
@@ -826,9 +824,9 @@ void EM::optimizePos() {
         float fx;
         int niter = solver.minimize( func, si_, fx);
 
-*/
+*//*
     }
-
+*/
 
     // update pos_ni by pi_i
     for( size_t i = 1; i <= LW1; i++ ) {
@@ -839,6 +837,7 @@ void EM::optimizePos() {
 
 }
 
+/*
 Eigen::MatrixXf EM::getAmatrix( size_t w ) {
     // define matrix A:
     Eigen::MatrixXf A_matrix = Eigen::MatrixXf::Zero( w, w );
@@ -878,6 +877,7 @@ Eigen::MatrixXf EM::getBmatrix( size_t w ) {
 
     return B_matrix;
 }
+*/
 
 float** EM::getR(){
     return r_;

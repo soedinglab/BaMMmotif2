@@ -5,7 +5,6 @@ project (BaMMmotif-v2)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(FindASan)
-include(FindEigen3)
 
 # link to Boost library
 set (Boost_USE_STATIC_LIBS ON CACHE BOOL "use static libraries from Boost")
@@ -16,9 +15,10 @@ include_directories (${Boost_INCLUDE_DIR})
 link_libraries (${Boost_LIBRARIES})
 
 # link to Eigen library
-find_package(Eigen3 REQUIRED)
-include_directories(${EIGEN3_INCLUDE_DIR})
-include_directories("lib")
+#include(FindEigen3)
+#find_package(Eigen3 REQUIRED)
+#include_directories(${EIGEN3_INCLUDE_DIR})
+#include_directories("lib")
 
 # set the version of BaMM!motif
 set (BAMMMOTIF_MAJOR_VERSION 2)

@@ -408,7 +408,7 @@ std::unique_ptr<Sequence> SeqGenerator::posseq_motif_embedded( Sequence* seq, si
     } else{
         // implant motif around the given position due to normal distribution
         // set mean as the given position and variance as 10
-        std::normal_distribution<> nd{at, 10};
+        std::normal_distribution<> nd{(float)at, 10.f};
         at = std::round( nd(rngx_) );
     }
 
