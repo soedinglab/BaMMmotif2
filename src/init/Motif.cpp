@@ -449,7 +449,6 @@ void Motif::calculateP(){
                     p_[k][y][j] *= v_[k-i][yi][j-i];
                 }
                 for( size_t i = j+1; i <= k; i++ ){
-
                     if( (k - i) <= k_bg_ or k <= k_bg_ ){
                         size_t yi = y / Y_[i];
                         p_[k][y][j] *= v_bg_[k-i][yi];
@@ -473,10 +472,7 @@ void Motif::calculateLogS( float** Vbg, size_t K_bg ){
 	for( size_t y = 0; y < Y_[K_+1]; y++ ){
 		size_t y_bg = y % Y_[K_bg+1];
 		for( size_t j = 0; j < W_; j++ ){
-            // todo: randomize this value between
-            //float rand = ((float) rand() / (RAND_MAX))/ 1e6f;
-            float rand = 1e-5f;
-			s_[y][j] = logf( v_[K_][y][j] + rand ) - logf( Vbg[K_bg][y_bg] );
+			s_[y][j] = logf( v_[K_][y][j] + 1.e-8f ) - logf( Vbg[K_bg][y_bg] );
 		}
 	}
 

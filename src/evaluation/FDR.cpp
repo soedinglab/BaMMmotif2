@@ -85,7 +85,7 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
         score_testset.calcLogOdds();
 
         // score negative sequence set
-        ScoreSeqSet score_negset(motif, bgModel_, negSet);
+        ScoreSeqSet score_negset( motif, bgModel_, negSet );
         score_negset.calcLogOdds();
 
 #pragma omp critical

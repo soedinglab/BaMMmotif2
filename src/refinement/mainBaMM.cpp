@@ -9,6 +9,7 @@
 int main( int nargs, char* args[] ){
 
     auto t0_wall = std::chrono::high_resolution_clock::now();
+    std::cout.precision(4);
 
     std::cout << std::endl
               << "======================================" << std::endl
@@ -75,7 +76,8 @@ int main( int nargs, char* args[] ){
     std::vector<Sequence*>::iterator it = posSet.begin();
     while( it != posSet.end() ){
         if( (*it)->getL() < motif_set.getMaxW() ){
-            //std::cout << "Warning: remove the short sequence: " << (*it)->getHeader() << std::endl;
+            //std::cout << "Warning: remove the short sequence: "
+            // << (*it)->getHeader() << std::endl;
             posSet.erase(it);
         } else {
             it++;
@@ -133,7 +135,12 @@ int main( int nargs, char* args[] ){
 
 		// optimize the model with either EM or Gibbs sampling
 		if( Global::EM ){
-			EM model( motif, bgModel, posSet, Global::optimizeQ, Global::optimizePos, Global::verbose, Global::f );
+			EM model( motif, bgModel, posSet,
+                      Global::optimizeQ,
+                      Global::optimizePos,
+                      Global::verbose,
+                      Global::f );
+
 			// learn motifs by EM
 			if( !Global::advanceEM ) {
                 model.optimize();
@@ -269,7 +276,8 @@ int main( int nargs, char* args[] ){
                      motif, bgModel, Global::cvFold,
                      Global::mops, Global::zoops,
                      Global::savePRs, Global::savePvalues, Global::saveLogOdds );
-			fdr.evaluateMotif( Global::EM, Global::CGS, Global::optimizeQ, Global::optimizePos, Global::advanceEM, Global::f );
+			fdr.evaluateMotif( Global::EM, Global::CGS, Global::optimizeQ,
+                               Global::optimizePos, Global::advanceEM, Global::f );
 			fdr.write( Global::outputDirectory,
                        Global::outputFileBasename + "_motif_" + std::to_string( n+1 ) );
 			if( motif )		delete motif;

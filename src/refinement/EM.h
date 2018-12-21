@@ -7,9 +7,10 @@
 
 #include "../init/BackgroundModel.h"
 #include "../init/MotifSet.h"
-//#include <eigen3/Eigen/Dense>   // e.g. conjugate gradient solver
-//#include <eigen3/Eigen/IterativeLinearSolvers>
-//#include <eigen3/Eigen/Core>    // e.g. used for LBFGS++
+#include <random>
+#include <eigen3/Eigen/Dense>   // e.g. conjugate gradient solver
+#include <eigen3/Eigen/IterativeLinearSolvers>
+#include <eigen3/Eigen/Core>    // e.g. used for LBFGS++
 
 
 class EM {
@@ -41,8 +42,9 @@ public:
                                                 // optimize the positional prior pos_i
     void                    initializePos();    // initialize the positional prior pos_i
 
-//    Eigen::MatrixXf         getAmatrix( size_t w );
-//    Eigen::MatrixXf         getBmatrix( size_t w );
+    Eigen::MatrixXf         getAmatrix( size_t w );
+    Eigen::MatrixXf         getBmatrix( size_t w );
+    float                   obj_fun( Eigen::VectorXf& si, Eigen::VectorXf& grad );
 
     float**                 getR();             // get the responsibility parameter r
     float                   getQ();             // get the optimized positional prior q
@@ -58,6 +60,9 @@ private:
     float** 				A_;	        		// pseudo-count hyper-parameter for order k and motif position j
     size_t 					K_bg_;				// the order of the background model
 
+    size_t                  posN_;
+
+
     float** 				r_;		        	// responsibilities at all the positions in sequence n
                                                 // Note: here the r_[n][0] indicates the responsibility of not having
                                                 //      a motif on the n'th sequence;
@@ -66,12 +71,19 @@ private:
     float**					s_;					// log odds scores
     float*** 				n_;	            	// fractional counts n for (k+1)-mers y at motif position j
     float**					pos_;				// positional prior, pos[i][0] indicates the prior for no motif present on sequence i
-    float                   beta_;              // hyper-parameter for smoothness on positional prior
+    float                   beta1_;              // hyper-parameter for smoothness on positional prior
     float                   beta2_;             // hyper-parameter for smoothness on positional prior
     float                   norm_;
     float*                  pi_;                // probability of a motif to start at position i on the longest sequence
-//    Eigen::VectorXf         b_vector_;
-//    Eigen::VectorXf         si_;
+
+    float                   N0_;
+    size_t                  LW1_;
+
+    Eigen::VectorXf         b_vector_;
+    Eigen::VectorXf         si_;
+    Eigen::VectorXf         Ni_;
+    Eigen::MatrixXf         A_matrix_;
+
     std::mt19937            rngx_;
 
     float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif
@@ -79,7 +91,7 @@ private:
     std::vector<Sequence*>	seqs_;				// copy positive sequences
 
     float 					llikelihood_        = 0.0f;     // log likelihood for each iteration
-    float					epsilon_            = 0.01f;	// threshold for parameter v convergence
+    float					epsilon_            = 0.001f;	// threshold for parameter v convergence
     size_t					maxEMIterations_    = 1000;
     bool                    optimizeQ_;
     bool                    optimizePos_;

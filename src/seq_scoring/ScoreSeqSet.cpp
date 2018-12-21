@@ -25,7 +25,7 @@ ScoreSeqSet::ScoreSeqSet( Motif* motif, BackgroundModel* bg, std::vector<Sequenc
         mops_scores_[n].resize( LW1 );    // important for code paralleling
         mops_p_values_[n].resize( LW1 );
         mops_e_values_[n].resize( LW1 );
-        if(n == 0 ){
+        if( n == 0 ){
             seql_[n] = LW1;
         } else {
             seql_[n] = seql_[n-1] + LW1;
@@ -48,8 +48,10 @@ void ScoreSeqSet::calcLogOdds(){
 
 	size_t K = motif_->getK();
 	size_t W = motif_->getW();
-	size_t K_bg = ( bg_->getOrder() < K ) ? bg_->getOrder() : K;
-	// pre-calculate log odds scores given motif and bg model
+	//size_t K_bg = ( bg_->getOrder() < K ) ? bg_->getOrder() : K;
+    size_t K_bg = bg_->getOrder();
+
+    // pre-calculate log odds scores given motif and bg model
 	motif_->calculateLogS( bg_->getV(), K_bg );
 	float** s = motif_->getS();
 
@@ -246,21 +248,10 @@ void ScoreSeqSet::calcPvalues( std::vector<std::vector<float>> pos_scores,
 
                 cScore_neg++;
 
-//                std::cout << l << '\t'
-//                          << pos_all_scores[pidx_pos[cScore_pos]] << '\t'
-//                          << neg_all_scores[pidx_neg[cScore_neg]] << '\t'
-//                          << cScore_pos << '\t'
-//                          << cScore_neg << '\n';
             } else {
                 // take the accumulated score for negative set as
                 // false positive of entry l
                 size_t FPl = cScore_neg;
-
-//                std::cout << l << '\t'
-//                          << pos_all_scores[pidx_pos[cScore_pos]] << '\t'
-//                          << neg_all_scores[pidx_neg[cScore_neg]] << '\t'
-//                          << cScore_pos << '\t'
-//                          << cScore_neg << " (+)" <<'\n';
 
                 float Sl = pos_all_scores[pidx_pos[cScore_pos]];
 
@@ -322,12 +313,6 @@ void ScoreSeqSet::calcPvalues( std::vector<std::vector<float>> pos_scores,
     }
 
     pval_is_calulated_ = true;
-
-//    // clear the content
-//    pidx_pos.clear();
-//    pidx_neg.clear();
-//    pos_all_scores.clear();
-
 }
 
 std::vector<std::vector<float>> ScoreSeqSet::getMopsScores(){

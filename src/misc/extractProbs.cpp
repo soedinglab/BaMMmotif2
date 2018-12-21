@@ -8,7 +8,6 @@
 #include "../init/Alphabet.h"
 #include "../init/BackgroundModel.h"
 #include "../init/Motif.h"
-#include "../refinement/utils.h"
 
 void constructBaMM( char* indir, char* odir, float** v_bg, size_t k_bg) {
     // each BaMM file contains one optimized motif model
