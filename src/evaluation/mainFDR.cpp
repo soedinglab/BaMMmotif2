@@ -132,12 +132,13 @@ int main( int nargs, char* args[] ){
 
         Motif* motif = new Motif( *motif_set.getMotifs()[n] );
 
-        FDR fdr( posSet, negset,
+        FDR fdr( posSet, negset, GFdr::ss,
                  motif, bgModel,
                  GFdr::cvFold, GFdr::mops, GFdr::zoops,
                  true, GFdr::savePvalues, GFdr::saveLogOdds );
 
-        fdr.evaluateMotif( GFdr::EM, GFdr::CGS, false, false, false, 0.05f, perLoopThreads );
+        fdr.evaluateMotif( GFdr::EM, GFdr::CGS, false, false, false,
+                           0.05f, perLoopThreads );
 
         if(GFdr::saveInitialModel){
             // write out the foreground model

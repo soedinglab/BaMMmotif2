@@ -2,12 +2,13 @@
 // Created by wanwan on 16.08.17.
 //
 #include "EM.h"
-#include "ObjFun.h"
-#include "../LBFGS/LBFGS.h"
+//#include "ObjFun.h"
+//#include "../LBFGS/LBFGS.h"
 #include <chrono>
 
 EM::EM( Motif* motif, BackgroundModel* bgModel,
-        std::vector<Sequence*> seqs, bool optimizeQ,
+        std::vector<Sequence*> seqs, bool singleStrand,
+        bool optimizeQ,
         bool optimizePos, bool verbose, float f ){
 
     motif_      = motif;
@@ -15,6 +16,7 @@ EM::EM( Motif* motif, BackgroundModel* bgModel,
 	q_          = motif->getQ();    // get fractional prior q from initial motifs
     f_          = f;
 	seqs_       = seqs;
+    singleStrand_ = singleStrand;
     optimizeQ_  = optimizeQ;
     optimizePos_= optimizePos;
     beta1_      = 5;                // a hyper-parameter for estimating the positional prior
@@ -51,12 +53,12 @@ EM::EM( Motif* motif, BackgroundModel* bgModel,
     // allocate memory for pi_[i]
     N0_         = 0.f;
     LW1_        = seqs_[0]->getL()-W_+1;
-    pi_         = ( float* )calloc( LW1_+1, sizeof(float) );
+    pi_         = ( float* )calloc( LW1_+1, sizeof( float ) );
 
-    b_vector_   = Eigen::VectorXf::Zero( LW1_ );
-    si_         = Eigen::VectorXf::Zero( LW1_ );
-    Ni_         = Eigen::VectorXf::Zero( LW1_ );
-    A_matrix_   = getAmatrix( LW1_ );
+//    b_vector_   = Eigen::VectorXf::Zero( LW1_ );
+//    si_         = Eigen::VectorXf::Zero( LW1_ );
+//    Ni_         = Eigen::VectorXf::Zero( LW1_ );
+//    A_matrix_   = getAmatrix( LW1_ );
 
     rngx_.seed( 42 );
 
@@ -98,8 +100,9 @@ int EM::optimize(){
     }
 
     // initialized positional priors
-    initializePos();
+    updatePos();
 
+/*
     if( optimizePos_ ) {
         // pre-define hyper-parameters for optimizing position priors
         size_t L = seqs_[0]->getL();
@@ -117,12 +120,11 @@ int EM::optimize(){
             //si_[i-1] = logf( pi_[i] );
         }
     }
+*/
 
     // iterate over
     size_t iteration = 0;
     while( iterate && ( iteration < maxEMIterations_ ) ){
-
-        iteration++;
 
         // get parameter variables with highest order before EM
         llikelihood_prev = llikelihood_;
@@ -140,15 +142,15 @@ int EM::optimize(){
         MStep();
 
         // optimize hyper-parameter q in the first step
-        if( optimizeQ_ and iteration <= 1 ) {
+        if( optimizeQ_ and iteration < 1 ) {
             optimizeQ();
+            updatePos();
         }
 
         // optimize positional prior pos_
         // note: this only works for sequences with the same length
-        if( optimizePos_ and iteration <= 5 ){
-            std::cout << "Optimizing positional prior...\n";
-            optimizePos();
+        if( optimizePos_ and iteration == 1 ){
+//            optimizePos();
         }
 
         // check parameter difference for convergence
@@ -162,16 +164,18 @@ int EM::optimize(){
         // check the change of likelihood for convergence
         llikelihood_diff = llikelihood_ - llikelihood_prev;
 
-        if( verbose_ ) std::cout << iteration << " iter:"
-                                 << std::fixed
-                                 << "\tllh=" << llikelihood_
-                                 << "\tllh_diff=" << llikelihood_diff
-                                 << "\tmodel_diff=" << v_diff << std::endl;
+        if( verbose_ and iteration > 0 )
+            std::cout << iteration << " iter:"
+                      << std::fixed
+                      << "\tllh=" << llikelihood_
+                      << "\tllh_diff=" << llikelihood_diff
+                      << "\tmodel_diff=" << v_diff << std::endl;
 
         if( v_diff < epsilon_ )							iterate = false;
         if( llikelihood_diff < 0 and iteration > 10 )	iterate = false;
-/*
 
+        iteration++;
+/*
         // todo: for making a movie out of all iterations
         // calculate probabilities
         motif_->calculateP();
@@ -303,7 +307,7 @@ void EM::MStep(){
     motif_->updateV( n_, A_, K_ );
 }
 
-void EM::initializePos(){
+void EM::updatePos(){
 
     for( size_t n = 0; n < seqs_.size(); n++ ){
         size_t 	L = seqs_[n]->getL();
@@ -437,7 +441,7 @@ int EM::mask() {
     }
 
     // initialized positional priors
-    initializePos();
+    updatePos();
     size_t posN = seqs_.size();
     std::vector<float> r_all;   // add all r's to an array for sorting
     size_t N_position = 0;      // count the number of all possible positions
@@ -653,13 +657,17 @@ void EM::optimizeQ(){
     for (size_t n = 0; n < posN; n++) {
         N_0 += r_[n][0];
     }
+
     q_ = ( posN - N_0 + 1.f ) / ( posN + 2.f );
+
+    if( !singleStrand_ ) q_ /= 2;
 
     if( verbose_ ){
         std::cout << "optimized q=" << q_ << std::endl;
     }
 
 }
+/*
 
 void EM::optimizePos() {
 
@@ -733,6 +741,7 @@ void EM::optimizePos() {
         Q = p1 - p2;
         std::cout << "cost function = " << Q << std::endl;
         // ======== end of objfun calculation =======
+*/
 /*
         // ========================
         // todo: write out for checking:
@@ -775,7 +784,8 @@ void EM::optimizePos() {
             ofile_ri << r_[n][L-LW1] << std::endl;
         }
         // ========================
-*/
+*//*
+
 
         // method 2b: update smoothness parameter beta using positional prior distribution
         // from the data
@@ -789,11 +799,13 @@ void EM::optimizePos() {
         //beta2_ = LW1_+1 / sum;
 
         // b) sample beta2 from the Gamma distribution
+*/
 /*
         std::default_random_engine generator;
         std::gamma_distribution<double> distribution( (LW1_+1)/2, sum/2);
         beta2_ = distribution(generator);
-*/
+*//*
+
 
         std::cout << "N0=" << N0_ << ", N=" << posN_
                   << ", LW1=" << LW1_ << ", norm=" << norm_
@@ -838,9 +850,11 @@ void EM::optimizePos() {
                   << std::endl;
 
     } else if( method_flag == 4 ){
-        /**
+        */
+/**
          * Use L-BFGS as optimizer
-         */
+         *//*
+
 
         // pre-define parameters
         LBFGSpp::LBFGSParam<float> param;
@@ -858,7 +872,9 @@ void EM::optimizePos() {
         float fx;
         int niter;
         niter = solver.minimize( func, si_, fx );
-        std::cout << niter << " iterations, f(x)=" << fx << std::endl;
+        if( verbose_ ){
+            std::cout << niter << " iterations, f(x)=" << fx << std::endl;
+        }
 
         float beta2 = 0.f;
         for( size_t i = 1; i < LW1_; i++){
@@ -866,7 +882,9 @@ void EM::optimizePos() {
         }
         beta2 = ( LW1_-1 ) / beta2;
         //beta2_ = beta2;
-        std::cout << "Optimized beta2 = " << beta2 << std::endl;
+        if( verbose_ ){
+            std::cout << "Optimized beta2 = " << beta2 << std::endl;
+        }
 
     }
 
@@ -949,6 +967,7 @@ Eigen::MatrixXf EM::getBmatrix( size_t w ) {
     return B_matrix;
 }
 
+*/
 
 float** EM::getR(){
     return r_;

@@ -136,6 +136,7 @@ int main( int nargs, char* args[] ){
 		// optimize the model with either EM or Gibbs sampling
 		if( Global::EM ){
 			EM model( motif, bgModel, posSet,
+                      Global::ss,
                       Global::optimizeQ,
                       Global::optimizePos,
                       Global::verbose,
@@ -272,7 +273,7 @@ int main( int nargs, char* args[] ){
 //#pragma omp parallel for
         for( size_t n = 0; n < motif_set.getN(); n++ ){
 			Motif* motif = new Motif( *motif_set.getMotifs()[n] );
-			FDR fdr( posSet, negSet,
+			FDR fdr( posSet, negSet, Global::ss,
                      motif, bgModel, Global::cvFold,
                      Global::mops, Global::zoops,
                      Global::savePRs, Global::savePvalues, Global::saveLogOdds );

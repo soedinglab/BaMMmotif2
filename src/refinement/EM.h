@@ -8,9 +8,9 @@
 #include "../init/BackgroundModel.h"
 #include "../init/MotifSet.h"
 #include <random>
-#include <eigen3/Eigen/Dense>   // e.g. conjugate gradient solver
-#include <eigen3/Eigen/IterativeLinearSolvers>
-#include <eigen3/Eigen/Core>    // e.g. used for LBFGS++
+//#include <eigen3/Eigen/Dense>   // e.g. conjugate gradient solver
+//#include <eigen3/Eigen/IterativeLinearSolvers>
+//#include <eigen3/Eigen/Core>    // e.g. used for LBFGS++
 
 
 class EM {
@@ -22,8 +22,10 @@ class EM {
 
 public:
 
-    EM( Motif* motif, BackgroundModel* bgModel, std::vector<Sequence*> seqs,
-        bool optimizeQ = true, bool optimizePos = false, bool verbose = false, float f = 0.2f );
+    EM( Motif* motif, BackgroundModel* bgModel,
+        std::vector<Sequence*> seqs, bool singleStrand,
+        bool optimizeQ = true, bool optimizePos = false,
+        bool verbose = false, float f = 0.2f );
     ~EM();
 
     int                     optimize();         // run EM optimization
@@ -38,13 +40,12 @@ public:
     void 					MStep_slow();		// M-step: slow version
 
     void                    optimizeQ();        // optimize the hyper-parameter q
-    void                    optimizePos();
-                                                // optimize the positional prior pos_i
-    void                    initializePos();    // initialize the positional prior pos_i
+//    void                    optimizePos();      // optimize the positional prior pos_i
+    void                    updatePos();        // initialize the positional prior pos_i
 
-    Eigen::MatrixXf         getAmatrix( size_t w );
-    Eigen::MatrixXf         getBmatrix( size_t w );
-    float                   obj_fun( Eigen::VectorXf& si, Eigen::VectorXf& grad );
+//    Eigen::MatrixXf         getAmatrix( size_t w );
+//    Eigen::MatrixXf         getBmatrix( size_t w );
+//    float                   obj_fun( Eigen::VectorXf& si, Eigen::VectorXf& grad );
 
     float**                 getR();             // get the responsibility parameter r
     float                   getQ();             // get the optimized positional prior q
@@ -61,6 +62,7 @@ private:
     size_t 					K_bg_;				// the order of the background model
 
     size_t                  posN_;
+    bool                    singleStrand_;
 
 
     float** 				r_;		        	// responsibilities at all the positions in sequence n
@@ -79,10 +81,10 @@ private:
     float                   N0_;
     size_t                  LW1_;
 
-    Eigen::VectorXf         b_vector_;
-    Eigen::VectorXf         si_;
-    Eigen::VectorXf         Ni_;
-    Eigen::MatrixXf         A_matrix_;
+//    Eigen::VectorXf         b_vector_;
+//    Eigen::VectorXf         si_;
+//    Eigen::VectorXf         Ni_;
+//    Eigen::MatrixXf         A_matrix_;
 
     std::mt19937            rngx_;
 
@@ -91,7 +93,7 @@ private:
     std::vector<Sequence*>	seqs_;				// copy positive sequences
 
     float 					llikelihood_        = 0.0f;     // log likelihood for each iteration
-    float					epsilon_            = 0.001f;	// threshold for parameter v convergence
+    float					epsilon_            = 0.01f;	// threshold for parameter v convergence
     size_t					maxEMIterations_    = 1000;
     bool                    optimizeQ_;
     bool                    optimizePos_;

@@ -1,6 +1,7 @@
 #include "FDR.h"
 
 FDR::FDR( std::vector<Sequence*> posSeqs, std::vector<Sequence*> negSeqs,
+          bool singleStrand,
           Motif* motif, BackgroundModel* bgModel, size_t cvFold,
           bool mops, bool zoops, bool savePRs,
           bool savePvalues, bool saveLogOdds){
@@ -8,6 +9,7 @@ FDR::FDR( std::vector<Sequence*> posSeqs, std::vector<Sequence*> negSeqs,
 	posSeqs_	= posSeqs;
 	negSeqs_	= negSeqs;
 	q_ 			= motif->getQ();
+    singleStrand_         = singleStrand;
 	motif_ 		= motif;
     bgModel_    = bgModel;
 	cvFold_		= cvFold;
@@ -64,7 +66,7 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
 		 */
 		// learn motif from each training set
 		if( EMoptimize ){
-			EM model( motif, bgModel_, trainSet, optimizeQ, optimizePos, false, frac );
+			EM model( motif, bgModel_, trainSet, singleStrand_, optimizeQ, optimizePos, false, frac );
             if( advanceEM ){
                 model.mask();
             } else {
