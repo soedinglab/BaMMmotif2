@@ -27,7 +27,7 @@ bool                Global::ss = false;						// only search on single strand seq
 char*				Global::initialModelFilename = NULL; 	// filename of initial model
 std::string			Global::initialModelBasename;			// basename of initial model
 std::string			Global::initialModelTag;				// tag for initializing the model
-size_t				Global::maxPWM = std::numeric_limits<size_t>::max(); // number of init that are to be optimized
+size_t				Global::maxPWM = 100;                   // number of initial models that are to be optimized
 bool				Global::mops = false;					// learn MOPS model
 bool				Global::zoops = true;					// learn ZOOPS model
 
@@ -315,7 +315,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "debug", debugMode );
 	opt >> GetOpt::OptionPresent( "saveBaMMs", saveBaMMs );
 	opt >> GetOpt::OptionPresent( "saveInitialBaMMs", saveInitialBaMMs );
-	opt >> GetOpt::Option( "savePRs", savePRs );
+	opt >> GetOpt::OptionPresent( "savePRs", savePRs );
 	opt >> GetOpt::OptionPresent( "savePvalues", savePvalues );
 	opt >> GetOpt::OptionPresent( "saveLogOdds", saveLogOdds );
 	opt >> GetOpt::OptionPresent( "saveBgModel", saveBgModel );
@@ -331,6 +331,7 @@ int Global::readArguments( int nargs, char* args[] ){
 
     // option for openMP
     opt >> GetOpt::Option( "threads", threads );
+
 #ifdef OPENMP
     omp_set_num_threads( threads );
 #endif

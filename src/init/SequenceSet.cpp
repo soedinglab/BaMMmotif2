@@ -19,12 +19,15 @@ SequenceSet::SequenceSet( std::string sequenceFilepath,
 
 	baseFrequencies_ = new float[Y_[1]];
 
-	readFASTA( singleStrand );
+    isSingleStranded_ = singleStrand;
+
+	readFASTA();
 
 	if( !( intensityFilepath.empty() ) ){
 		intensityFilepath_ = intensityFilepath;
 		readIntensities();
 	}
+
 
 }
 
@@ -60,11 +63,15 @@ float* SequenceSet::getBaseFrequencies(){
 	return baseFrequencies_;
 }
 
+bool SequenceSet::isSingleStranded() {
+    return isSingleStranded_;
+}
+
 void SequenceSet::print(){
 
 }
 
-int SequenceSet::readFASTA( bool singleStrand ){
+int SequenceSet::readFASTA(){
 
 	/**
 	 * while reading in the sequences do:
@@ -114,7 +121,7 @@ int SequenceSet::readFASTA( bool singleStrand ){
                                 baseCounts[encoding[i]-1]++; // count base
 							}
 
-                            sequences_.push_back( new Sequence( encoding, L, header, Y_, singleStrand ) );
+                            sequences_.push_back( new Sequence( encoding, L, header, Y_, isSingleStranded_ ) );
 
 							sequence.clear();
 							header.clear();
@@ -185,7 +192,7 @@ int SequenceSet::readFASTA( bool singleStrand ){
                     baseCounts[encoding[i]-1]++; // count base
                 }
 
-                sequences_.push_back( new Sequence( encoding, L, header, Y_, singleStrand ) );
+                sequences_.push_back( new Sequence( encoding, L, header, Y_, isSingleStranded_ ) );
 
 				sequence.clear();
 				header.clear();

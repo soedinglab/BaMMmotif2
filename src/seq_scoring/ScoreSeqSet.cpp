@@ -362,7 +362,7 @@ void ScoreSeqSet::write( char* odir, std::string basename, float pvalCutoff, boo
         for( size_t i = 0; i < LW1; i++ ){
 
 //            if( mops_scores_[n][i] >= 0.f ){
-//            if( mops_scores_[n][i] >= 10.f ){
+//            if( mops_scores_[n][i] >= 13.f ){
             if( mops_p_values_[n][i] < pvalCutoff ){
 //			  if( mops_e_values_[n][i] < 0.1f ){
                 // >header:sequence_length

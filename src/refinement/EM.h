@@ -73,7 +73,7 @@ private:
     float**					s_;					// log odds scores
     float*** 				n_;	            	// fractional counts n for (k+1)-mers y at motif position j
     float**					pos_;				// positional prior, pos[i][0] indicates the prior for no motif present on sequence i
-    float                   beta1_;              // hyper-parameter for smoothness on positional prior
+    float                   beta1_;             // hyper-parameter for smoothness on positional prior
     float                   beta2_;             // hyper-parameter for smoothness on positional prior
     float                   norm_;
     float*                  pi_;                // probability of a motif to start at position i on the longest sequence
@@ -93,7 +93,7 @@ private:
     std::vector<Sequence*>	seqs_;				// copy positive sequences
 
     float 					llikelihood_        = 0.0f;     // log likelihood for each iteration
-    float					epsilon_            = 0.01f;	// threshold for parameter v convergence
+    float					epsilon_            = 0.001f;	// threshold for parameter v convergence
     size_t					maxEMIterations_    = 1000;
     bool                    optimizeQ_;
     bool                    optimizePos_;

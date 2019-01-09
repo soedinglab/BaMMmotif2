@@ -32,6 +32,7 @@ EM::EM( Motif* motif, BackgroundModel* bgModel,
     // todo: this introduces a bug when optimizing the 0th-order model
 //	K_bg_ = ( bgModel_->getOrder() < K_ ) ? bgModel_->getOrder() : K_;
     K_bg_ = bgModel_->getOrder();
+    std::cout << "K_bg=" << K_bg_ << std::endl;
 
 	// allocate memory for r_[n][i], pos_[n][i], z_[n]
 	r_ = ( float** )calloc( seqs_.size(), sizeof( float* ) );
