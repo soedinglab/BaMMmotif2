@@ -473,11 +473,8 @@ void Motif::calculateLogS( float** Vbg, size_t K_bg ){
 
 void Motif::calculateLinearS( float** Vbg, size_t K_bg ){
 
-    std::cout << "K_bg=" << K_bg << std::endl;
 	for( size_t y = 0; y < Y_[K_+1]; y++ ){
 		size_t y_bg = y % Y_[K_bg+1];
-        std::cout << "Vbg["<<K_bg<<"][" << y_bg <<"]="
-                  << Vbg[K_bg][y_bg] << std::endl;
 		for( size_t j = 0; j < W_; j++ ){
 			s_[y][j] = v_[K_][y][j] / Vbg[K_bg][y_bg];
 		}

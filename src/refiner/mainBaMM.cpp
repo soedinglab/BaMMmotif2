@@ -22,7 +22,6 @@ int main( int nargs, char* args[] ){
     /**
      * initialization
      */
-
     Global G( nargs, args );
 
 	BackgroundModel* bgModel;
