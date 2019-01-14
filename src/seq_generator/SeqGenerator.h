@@ -5,6 +5,7 @@
 #include "../init/Alphabet.h"
 #include "../init/BackgroundModel.h"
 #include "../init/Motif.h"
+#include "../Global/Global.h"
 
 class SeqGenerator {
 
@@ -20,7 +21,7 @@ class SeqGenerator {
 	 */
 
 public:
-	SeqGenerator( std::vector<Sequence*> seqs, Motif* motif = NULL, size_t sOrder = 2, float q = 1.f, bool genericNeg = false );
+	SeqGenerator( std::vector<Sequence*> seqs, Motif* motif = NULL );
 
 	~SeqGenerator();
 

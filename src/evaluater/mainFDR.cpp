@@ -84,7 +84,7 @@ int main( int nargs, char* args[] ){
         // from positive training sequence set
         posN = posSet.size();   // update the size of positive sequences after filtering
         std::vector<std::unique_ptr<Sequence>> negSeqs;
-        SeqGenerator negseq( posSet, NULL, Global::sOrder, Global::q, Global::genericNeg );
+        SeqGenerator negseq( posSet, NULL );
         if( !Global::fixedNegN and posN >= Global::negSeqNum ){
             negSeqs = negseq.sample_bgseqset_by_fold( Global::mFold );
             std::cout << Global::mFold << " x " << posN

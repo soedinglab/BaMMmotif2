@@ -23,7 +23,7 @@ int main( int nargs, char* args[] ){
         /**
          * Sample background sequence set based on s-mer frequencies from the input sequence set
          */
-        SeqGenerator negseq( Global::posSequenceSet->getSequences(), NULL, Global::sOrder );
+        SeqGenerator negseq( Global::posSequenceSet->getSequences(), NULL);
         negseq.write( Global::outputDirectory,
                       Global::posSequenceBasename + "_bgset",
                       negseq.sample_bgseqset_by_fold(Global::mFold) );
@@ -55,10 +55,7 @@ int main( int nargs, char* args[] ){
                 /**
                  * Mask the given motif from the input sequence set
                  */
-                SeqGenerator seq_generator(Global::posSequenceSet->getSequences(),
-                                           motif,
-                                           Global::modelOrder,
-                                           Global::q);
+                SeqGenerator seq_generator(Global::posSequenceSet->getSequences(), motif);
                 seq_generator.write(Global::outputDirectory,
                                     Global::posSequenceBasename + "_motif_" + std::to_string(n + 1) + "_masked",
                                     seq_generator.seqset_with_motif_masked(model.getR()));
@@ -66,10 +63,7 @@ int main( int nargs, char* args[] ){
                 /**
                  * embed the given motifs into the input sequence set
                  */
-                SeqGenerator seq_generator(Global::posSequenceSet->getSequences(),
-                                           motif,
-                                           Global::modelOrder,
-                                           Global::q);
+                SeqGenerator seq_generator(Global::posSequenceSet->getSequences(), motif);
                 seq_generator.write(Global::outputDirectory,
                                     Global::posSequenceBasename + "_motif_" + std::to_string(n + 1) + "_embedded",
                                     seq_generator.arti_posset_motif_embedded( Global::at ));

@@ -1,12 +1,12 @@
 #include "SeqGenerator.h"
 
-SeqGenerator::SeqGenerator( std::vector<Sequence*> seqs, Motif* motif, size_t sOrder, float q, bool genericNeg ){
+SeqGenerator::SeqGenerator( std::vector<Sequence*> seqs, Motif* motif ){
 
 	seqs_ = seqs;
-	sOrder_ = sOrder;
+	sOrder_ = Global::sOrder;
     motif_ = motif;
-    q_ = q;
-    genericNeg_ = genericNeg;
+    q_ = Global::q;
+    genericNeg_ = Global::genericNeg;
 
 	for( size_t k = 0; k < sOrder_ + 8; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );

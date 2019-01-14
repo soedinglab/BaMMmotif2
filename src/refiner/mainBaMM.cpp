@@ -78,7 +78,7 @@ int main( int nargs, char* args[] ){
         // generate negative sequence set based on s-mer frequencies
         // from positive training sequence set
         std::vector<std::unique_ptr<Sequence>> negSeqs;
-        SeqGenerator negseq(posSet, NULL, Global::sOrder, Global::q, Global::genericNeg);
+        SeqGenerator negseq(posSet, NULL);
         size_t posN = posSet.size();
         size_t minSeqN = 5000;
         bool rest = minSeqN % posN;
