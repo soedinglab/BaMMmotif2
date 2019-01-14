@@ -32,9 +32,6 @@ int main( int nargs, char* args[] ){
          * Build up the background model
          */
         BackgroundModel* bgModel = new BackgroundModel( Global::negSequenceSet->getSequences(),
-                                                        Global::bgModelOrder,
-                                                        Global::bgModelAlpha,
-                                                        Global::interpolateBG,
                                                         Global::outputFileBasename );
         /**
          * Construct the motif set

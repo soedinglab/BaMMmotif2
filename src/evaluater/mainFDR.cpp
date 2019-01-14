@@ -19,9 +19,6 @@ int main( int nargs, char* args[] ){
 	BackgroundModel* bgModel;
     if( Global::bgModelFilename == NULL ) {
         bgModel = new BackgroundModel(Global::posSequenceSet->getSequences(),
-                                      Global::bgModelOrder,
-                                      Global::bgModelAlpha,
-                                      Global::interpolateBG,
                                       Global::outputFileBasename);
     } else {
         bgModel = new BackgroundModel( Global::bgModelFilename );

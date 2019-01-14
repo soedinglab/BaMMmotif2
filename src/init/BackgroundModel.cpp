@@ -1,15 +1,13 @@
 #include "BackgroundModel.h"
+#include "../Global/Global.h"
 
 BackgroundModel::BackgroundModel( std::vector<Sequence*> seqs,
-									size_t order,
-									std::vector<float> alpha,
-									bool interpolate,
-									std::string basename ){
+                                  std::string basename ){
 
 	basename_ = basename;
-	K_ = order;
-	A_ = alpha;
-	interpolate_ = interpolate;
+	K_ = Global::bgModelOrder;
+	A_ = Global::bgModelAlpha;
+	interpolate_ = Global::interpolateBG;
 
 	for( size_t k = 0; k < K_+8; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );

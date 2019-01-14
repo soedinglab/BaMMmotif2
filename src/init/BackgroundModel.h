@@ -20,9 +20,6 @@ class BackgroundModel{
 public:
 
 	BackgroundModel( std::vector<Sequence*> sequenceSet,
-					size_t order,
-			        std::vector<float> alpha,
-			        bool interpolate = true,
 					std::string basename = "" );
 
 	BackgroundModel( std::string filePath );

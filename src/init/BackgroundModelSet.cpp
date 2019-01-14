@@ -25,7 +25,6 @@ BackgroundModelSet::BackgroundModelSet( char* indir, char* extension,
 
 					BackgroundModel* bamm = new BackgroundModel(
 										sequenceSet->getSequences(),
-										order, alpha, interpolate,
 										baseName( sequenceSet->getSequenceFilepath().c_str() ) );
 
 					backgroundModels_.push_back( bamm );

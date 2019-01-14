@@ -21,9 +21,6 @@ int main( int nargs, char* args[] ) {
      */
     // use bgModel generated from input sequences when prediction is turned on
     BackgroundModel* bgModel = new BackgroundModel( Global::negSequenceSet->getSequences(),
-                                                    Global::bgModelOrder,
-                                                    Global::bgModelAlpha,
-                                                    Global::interpolateBG,
                                                     Global::outputFileBasename );
 
     // use provided bgModelFile if initialized with bamm format

@@ -25,14 +25,9 @@ int main( int nargs, char* args[] ){
 
     Global G( nargs, args );
 
-    std::vector<Sequence*> posSet = Global::posSequenceSet->getSequences();
-
 	BackgroundModel* bgModel;
 	if( !Global::bgModelGiven ){
-		bgModel = new BackgroundModel( posSet,
-                                       Global::bgModelOrder,
-                                       Global::bgModelAlpha,
-                                       Global::interpolateBG,
+		bgModel = new BackgroundModel( Global::posSequenceSet->getSequences(),
                                        Global::outputFileBasename );
     } else {
 		bgModel = new BackgroundModel( Global::bgModelFilename );
@@ -58,6 +53,7 @@ int main( int nargs, char* args[] ){
     /**
      * Filter out short sequences
      */
+    std::vector<Sequence*> posSet = Global::posSequenceSet->getSequences();
     std::vector<Sequence*>::iterator it = posSet.begin();
     while( it != posSet.end() ){
         if( (*it)->getL() < motif_set.getMaxW() ){
