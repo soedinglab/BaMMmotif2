@@ -37,12 +37,16 @@ public:
     static std::string	posSequenceBasename;    // basename of positive sequence FASTA file
 	static SequenceSet*	posSequenceSet;			// positive sequence set
 	static bool 		maskPosSequenceSet;		// mask motif patterns from positive sequence set
+    static size_t       maxPosN;                // maximal number of positive sequences to be used for training motif
+    static bool         fixedPosN;              // flag for using fixed number of input sequences
 
 	static char*		negSequenceFilename;	// filename of negative sequence FASTA file
 	static std::string	negSequenceBasename;	// basename of negative sequence FASTA file
 	static SequenceSet*	negSequenceSet;			// negative sequence set
 	static bool			negSeqGiven;			// a flag for the negative sequence given by users
     static bool         genericNeg;             // flag for generating negative sequences based on generic 2nd-bgModel
+    static size_t       negSeqNum;                   // number of negative sequences to be generated
+    static bool         fixedNegN;              // flag for using fixed number of negative sequences
 
 	// weighting options
 	static char*		intensityFilename;		// filename of intensity file (i.e. for HT-SELEX data)
@@ -79,6 +83,8 @@ public:
 
 	// EM options
 	static bool			EM;						// flag to trigger EM learning
+    static float        EMepsilon;              // epsilon for EM convergence
+    static size_t       maxEMIterations;        // maximal iterations
     static float        f;                      // fraction of sequences to be masked
 
 	// Gibbs sampling options
@@ -101,6 +107,12 @@ public:
 	static bool         scoreSeqset;			// write logOdds Scores of positive sequence set to disk
 	static float        pvalCutoff;			    // cutoff for logOdds scores to print out as motif hits
 
+    // sequence simulator options
+    static bool         maskSeqset;
+    static bool         embedSeqset;
+    static bool         sampleBgset;
+    static size_t       at;
+
 	// other options
 	static bool			verbose;				// verbose printouts, defaults to false
 	static bool         debugMode;				// verbose printouts for debugging, defaults to false
@@ -116,7 +128,6 @@ public:
 	static bool			makeMovie;				// print out bamms in each iteration while optimizing
 	static bool 		optimizeQ;				// optimize hyperparameter q in EM algorithm
     static bool         optimizePos;            // optimize positional prior in the EM algorithm
-	static void         debug();
     static bool         B2;
     static bool         B3;
     static bool         B3prime;
@@ -124,7 +135,9 @@ public:
 
     // option for openMP
     static size_t       threads;                // number of threads to use
+    static bool         parallelOverMotif;      // flag for parallelizing over motifs
 
+    // functions
     static void			printPara();
 	static void			printStat();
 	static char* 		String( const char *s );// convert const char* to string, for GetOpt library

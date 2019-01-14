@@ -13,7 +13,7 @@
 
 #include "Alphabet.h"
 #include "SequenceSet.h"
-#include "../refinement/utils.h"
+#include "../Global/utils.h"
 
 class BackgroundModel{
 

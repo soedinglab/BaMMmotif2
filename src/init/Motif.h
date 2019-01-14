@@ -5,7 +5,7 @@
 #include <math.h>	// e.g. logf
 
 #include "BackgroundModel.h"
-#include "../refinement/utils.h"
+#include "../Global/utils.h"
 
 class Motif {
 

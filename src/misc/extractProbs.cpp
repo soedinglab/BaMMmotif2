@@ -1,6 +1,7 @@
 //
 // Created by wanwan on 25.06.18.
-// This script is aimed to extract model probabilities from conditional probabilities in BaMM format
+// This script is aimed to extract model probabilities from
+// conditional probabilities in BaMM format
 // Input: file with suffix .ihbcp & .hbcp
 // Output: file with suffix .hbcp & .hbp
 //
@@ -67,7 +68,7 @@ void constructBaMM( char* indir, char* odir, float** v_bg, size_t k_bg) {
     }
 }
 
-int main( int nargs, char* args[] ){
+int mainExtractPos( int nargs, char* args[] ){
 
     /**
      * read in input files

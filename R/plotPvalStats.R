@@ -346,7 +346,7 @@ pvt.plotlabels <- function(statistic, scale.param, eta0)
 
 #-----------------------------------------
 #
-# plot functions used for motif evaluation
+# plot functions used for motif evaluater
 #
 #-----------------------------------------
 
@@ -631,7 +631,7 @@ plotRRC = function(picname, recall, TFR, rerank){
 
 #--------------------------
 #
-# motif evaluation function
+# motif evaluater function
 #
 #--------------------------
 

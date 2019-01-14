@@ -10,11 +10,15 @@ char*               Global::posSequenceFilename = NULL;		// filename of positive
 std::string			Global::posSequenceBasename;			// basename of positive sequence FASTA file
 SequenceSet*        Global::posSequenceSet = NULL;			// positive sequence set
 bool 		        Global::maskPosSequenceSet = false;		// mask motif patterns from positive sequence set
+size_t              Global::maxPosN = 1e5;                  // set maximal number of input sequences used for training model
+bool                Global::fixedPosN = false;              // flag for using fixed number of input sequences
 
 char*               Global::negSequenceFilename = NULL;		// filename of negative sequence FASTA file
 std::string			Global::negSequenceBasename;			// basename of negative sequence FASTA file
 SequenceSet*        Global::negSequenceSet = NULL;			// negative sequence set
 bool				Global::negSeqGiven = false;			// a flag for the negative sequence given by users
+size_t              Global::negSeqNum = 5000;                    // number of negative sequences to be generated
+bool                Global::fixedNegN = false;              // flag for using fixed number of negative sequences
 bool                Global::genericNeg = false;             // flag for generating negative sequences based on generic 2nd-bgModel
 
 // weighting options
@@ -49,6 +53,8 @@ std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.f );// background mod
 
 // EM options
 bool				Global::EM = false;						// flag to trigger EM learning
+float               Global::EMepsilon = 0.001f;             // epsilon for EM convergence
+size_t              Global::maxEMIterations = 1000;         // maximal iterations
 float				Global::q = 0.3f;						// prior probability for a positive sequence to contain a motif
 bool 				Global::optimizeQ = false;				// optimize hyper-parameter q in EM algorithm
 float               Global::f = 0.05f;                      // fraction of sequences to be masked
@@ -74,6 +80,13 @@ size_t				Global::sOrder = 2;						// the k-mer order for sampling negative sequ
 bool                Global::scoreSeqset = false;            // write logOdds Scores of positive sequence set to disk
 float 				Global::pvalCutoff = 0.0001f;			// score cutoff for printing log odds scores as motif hit
 
+// sequence simulator options
+bool                Global::maskSeqset = false;
+bool                Global::sampleBgset = false;
+bool                Global::embedSeqset = false;
+size_t              Global::at = 0;
+
+
 // printout options
 bool                Global::verbose = false;
 bool                Global::debugMode = false;              // debug-mode: prints out everything.
@@ -95,6 +108,7 @@ bool                Global::advanceEM = false;
 
 // option for openMP
 size_t              Global::threads = 4;                   // number of threads to use
+bool                Global::parallelOverMotif = false;     // flag for parallelizing over motifs
 
 Global::Global( int nargs, char* args[] ){
 
@@ -164,6 +178,9 @@ int Global::readArguments( int nargs, char* args[] ){
     }
     // mask motif patterns from the positive sequence set
     opt >> GetOpt::OptionPresent( "maskPosSequenceSet", maskPosSequenceSet );
+    if( opt >> GetOpt::Option( "maxPosN", maxPosN ) ){
+        fixedPosN = true;
+    }
 
 	// read in negative sequence file
 	if( opt >> GetOpt::OptionPresent( "negSeqFile" ) ){
@@ -174,6 +191,9 @@ int Global::readArguments( int nargs, char* args[] ){
 	}
 	negSequenceBasename = baseName( negSequenceFilename );
 
+    if( opt >> GetOpt::Option( "negSeqNum", negSeqNum ) ){
+        fixedNegN = true;
+    }
     opt >> GetOpt::OptionPresent( "genericNeg", genericNeg );
 
     // Alphabet Type
@@ -289,6 +309,8 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	// EM options
 	opt >> GetOpt::OptionPresent( "EM", EM );
+    opt >> GetOpt::Option( "EMepsilon", EMepsilon );
+    opt >> GetOpt::Option( "maxEMIterations", maxEMIterations );
 
 	// CGS options
 	if( opt >> GetOpt::OptionPresent( "CGS", CGS ) ){
@@ -318,7 +340,14 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "scoreSeqset", scoreSeqset );
 	opt >> GetOpt::Option( "pvalCutoff", pvalCutoff );
 
-	// printout options
+    // sequence simulator options
+    opt >> GetOpt::OptionPresent( "maskSeqset", maskSeqset );
+    opt >> GetOpt::OptionPresent( "sampleBgset", sampleBgset );
+    if( opt >> GetOpt::OptionPresent( "embedSeqset", embedSeqset ) ){
+        opt >> GetOpt::Option( "at", at );
+    }
+
+    // printout options
 	opt >> GetOpt::OptionPresent( "verbose", verbose );
 	opt >> GetOpt::OptionPresent( "debug", debugMode );
 	opt >> GetOpt::OptionPresent( "saveBaMMs", saveBaMMs );
@@ -339,6 +368,7 @@ int Global::readArguments( int nargs, char* args[] ){
 
     // option for openMP
     opt >> GetOpt::Option( "threads", threads );
+    opt >> GetOpt::OptionPresent( "parallelOverMotif", parallelOverMotif );
 
 #ifdef OPENMP
     omp_set_num_threads( threads );
@@ -618,8 +648,4 @@ Global::~Global(){
     if( alphabetType ) 			delete[] alphabetType;
     if( posSequenceSet )	 	delete posSequenceSet;
     if( negSequenceSet ) 		delete negSequenceSet;
-}
-
-void Global::debug(){
-
 }

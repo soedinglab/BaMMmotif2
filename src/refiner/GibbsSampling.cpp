@@ -2,7 +2,7 @@
 // Created by wanwan on 16.08.17.
 //
 #include "GibbsSampling.h"
-#include "Global.h"
+#include "../Global/Global.h"
 
 #include <boost/math/special_functions.hpp>			/* gamma and digamma function */
 #include <boost/math/distributions/beta.hpp>		/* beta distribution */
@@ -97,7 +97,7 @@ void GibbsSampling::optimize(){
 
     // initialize z for all the sequences
     if( initializeZ_ ){
-        EM model( motif_, bg_, seqs_, q_ );
+        EM model( motif_, bg_, seqs_ );
         // E-step: calculate posterior
         model.EStep();
 

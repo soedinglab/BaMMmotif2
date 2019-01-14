@@ -184,7 +184,7 @@ Sequence options
           Limit the number of CGS iterations.
           It should be larger than 5 and defaults to 100.
 
-  Options for model evaluation
+  Options for model evaluater
       
       --FDR
           Triggers False-Discovery-Rate (FDR) estimation.

@@ -4,31 +4,26 @@
 #include "EM.h"
 
 EM::EM( Motif* motif, BackgroundModel* bgModel,
-        std::vector<Sequence*> seqs, bool singleStrand,
+        std::vector<Sequence*> seqs/*, bool singleStrand,
         bool optimizeQ,
-        bool optimizePos, bool verbose, float f ){
+        bool optimizePos, bool verbose, float f */){
 
     motif_      = motif;
 	bgModel_    = bgModel;
 	q_          = motif->getQ();    // get fractional prior q from initial motifs
-    f_          = f;
 	seqs_       = seqs;
-    singleStrand_ = singleStrand;
-    optimizeQ_  = optimizeQ;
-    optimizePos_= optimizePos;
     beta1_      = 5;                // a hyper-parameter for estimating the positional prior
     beta2_      = 400;              // for method 2 and 3
-    posN_       = seqs.size();
 
     // get motif (hyper-)parameters from motif class
-	K_ = motif_->getK();
+	K_ = Global::modelOrder;
 	W_ = motif_->getW();
 	Y_ = motif_->getY();
 	s_ = motif_->getS();
 	A_ = motif_->getA();
     // todo: this introduces a bug when optimizing the 0th-order model
 //	K_bg_ = ( bgModel_->getOrder() < K_ ) ? bgModel_->getOrder() : K_;
-    K_bg_ = bgModel_->getOrder();
+    K_bg_ = Global::bgModelOrder;
 
 	// allocate memory for r_[n][i], pos_[n][i], z_[n]
 	r_ = ( float** )calloc( seqs_.size(), sizeof( float* ) );
@@ -57,9 +52,6 @@ EM::EM( Motif* motif, BackgroundModel* bgModel,
 //    Ni_         = Eigen::VectorXf::Zero( LW1_ );
 //    A_matrix_   = getAmatrix( LW1_ );
 
-    rngx_.seed( 42 );
-
-    verbose_ = verbose;
 }
 
 EM::~EM(){
@@ -83,7 +75,7 @@ EM::~EM(){
 
 int EM::optimize(){
 
-    if( verbose_ ) {
+    if( Global::verbose ) {
         std::cout << " ______" << std::endl;
         std::cout << "|*    *|" << std::endl;
         std::cout << "|  EM  |" << std::endl;
@@ -130,7 +122,7 @@ int EM::optimize(){
 
     // iterate over
     size_t iteration = 0;
-    while( iterate && ( iteration < maxEMIterations_ ) ){
+    while( iterate && ( iteration < Global::maxEMIterations ) ){
 
         // get parameter variables with highest order before EM
         llikelihood_prev = llikelihood_;
@@ -148,14 +140,14 @@ int EM::optimize(){
         MStep();
 
         // optimize hyper-parameter q in the first step
-        if( optimizeQ_ and iteration < 1 ) {
+        if( Global::optimizeQ and iteration < 1 ) {
             optimizeQ();
             updatePos();
         }
 
         // optimize positional prior pos_
         // note: this only works for sequences with the same length
-        if( optimizePos_ and iteration == 1 ){
+        if( Global::optimizePos and iteration == 1 ){
 //            optimizePos();
         }
 
@@ -170,7 +162,7 @@ int EM::optimize(){
         // check the change of likelihood for convergence
         llikelihood_diff = llikelihood_ - llikelihood_prev;
 
-        if( verbose_ )
+        if( Global::verbose )
             std::cout << "it=" << iteration
                       << std::fixed
                       << "\tlog likelihood=" << llikelihood_
@@ -178,24 +170,27 @@ int EM::optimize(){
                       << "\t\tmodel_diff=" << v_diff
                       << std::endl;
 
-        if( v_diff < epsilon_ )							iterate = false;
+        if( v_diff < Global::EMepsilon )					iterate = false;
         if( llikelihood_diff < 0 and iteration > 10 )	iterate = false;
 
         iteration++;
-/*
+
         // todo: for making a movie out of all iterations
-        // calculate probabilities
-        motif_->calculateP();
-        // write out the learned model
-        std::string opath = "/home/wanwan/benchmark/benchmark/investigation/ENCODE_Bcl3/movie_factory";
-        std::string filename = "movie_clap";
-        char* odir = new char[opath.length()+1];
-        std::strcpy( odir, opath.c_str() );
-        motif_->write( odir, filename + std::to_string( iteration ) );
-*/
+        if( Global::makeMovie ) {
+            // calculate probabilities
+            motif_->calculateP();
+            // write out the learned model
+            std::string opath = std::string( Global::outputDirectory ) + "/movie_factory" ;
+            std::string filename = "movie_clap";
+            char *odir = new char[opath.length() + 1];
+            std::strcpy(odir, opath.c_str());
+            motif_->write(odir, filename + std::to_string(iteration));
+        }
         // todo: print out for checking
-        //print();
-        //printR();
+        if( Global::debugMode ) {
+            print();
+            printR();
+        }
     }
 
     // calculate probabilities
@@ -497,7 +492,7 @@ int EM::mask() {
     std::sort( r_all.begin(), r_all.end(), std::greater<float>() );
 
     // find the cutoff with f_% best r's
-    float r_cutoff = r_all[size_t( N_position * f_ )];
+    float r_cutoff = r_all[size_t( N_position * Global::f )];
 
     // create a vector to store all the r's which are above the cutoff
     std::vector<std::vector<size_t>> ridx( posN );
@@ -526,7 +521,7 @@ int EM::mask() {
     }
 
     // iterate over
-    while( iterate && ( iteration < maxEMIterations_ ) ){
+    while( iterate && ( iteration < Global::maxEMIterations ) ){
 
         iteration++;
 
@@ -634,11 +629,11 @@ int EM::mask() {
 
         // check the change of likelihood for convergence
         llikelihood_diff = llikelihood_ - llikelihood_prev;
-        if( verbose_ ) std::cout << iteration << " iter, llh=" << llikelihood_
+        if( Global::verbose ) std::cout << iteration << " iter, llh=" << llikelihood_
                                  << ", diff_llh=" << llikelihood_diff
                                  << ", v_diff=" << v_diff
                                  << std::endl;
-        if( v_diff < epsilon_ )							iterate = false;
+        if( v_diff < Global::EMepsilon )							iterate = false;
         if( llikelihood_diff < 0 and iteration > 10 )	iterate = false;
     }
 
@@ -662,15 +657,15 @@ void EM::optimizeQ(){
 
     q_ = ( posN - N_0 + 1.f ) / ( posN + 2.f );
 
-    if( !singleStrand_ ) q_ /= 2;
+    if( !Global::ss ) q_ /= 2;
 
-    if( verbose_ ){
+    if( Global::verbose ){
         std::cout << "optimized q=" << q_ << std::endl;
     }
 
 }
-/*
 
+/*
 void EM::optimizePos() {
 
     // todo: note this function currently only works for sequences of the same length
@@ -1096,7 +1091,7 @@ void EM::printR(){
     }
 }
 
-void EM::write( char* odir, std::string basename, bool ss ){
+void EM::write( char* odir, std::string basename ){
 
 	/**
 	 * 	 * save BaMM (hyper-)parameters in flat files:
@@ -1131,7 +1126,7 @@ void EM::write( char* odir, std::string basename, bool ss ){
     for( size_t n = 0; n < seqs_.size(); n++ ){
 
         size_t L = seqs_[n]->getL();
-        L = ss ? L : ( L - 1 ) / 2;
+        L = Global::ss ? L : ( L - 1 ) / 2;
 
         for( size_t i = 0; i < seqs_[n]->getL()-W_+1; i++ ){
 

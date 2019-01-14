@@ -10,7 +10,7 @@
 
 #include "BackgroundModel.h"
 #include "SequenceSet.h"
-#include "../refinement/utils.h"
+#include "../Global/utils.h"
 
 class BackgroundModelSet{
 

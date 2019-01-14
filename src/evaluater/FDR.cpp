@@ -1,23 +1,15 @@
 #include "FDR.h"
 
 FDR::FDR( std::vector<Sequence*> posSeqs, std::vector<Sequence*> negSeqs,
-          bool singleStrand,
-          Motif* motif, BackgroundModel* bgModel, size_t cvFold,
-          bool mops, bool zoops, bool savePRs,
-          bool savePvalues, bool saveLogOdds){
+          Motif* motif, BackgroundModel* bgModel){
 
 	posSeqs_	= posSeqs;
 	negSeqs_	= negSeqs;
-	q_ 			= motif->getQ();
-    singleStrand_         = singleStrand;
+
+    q_          = Global::q;
 	motif_ 		= motif;
     bgModel_    = bgModel;
-	cvFold_		= cvFold;
-    mops_       = mops;
-    zoops_      = zoops;
-    savePRs_    = savePRs;
-    savePvalues_= savePvalues;
-    saveLogOdds_= saveLogOdds;
+
 	occ_frac_	= 0.0f;
 	occ_mult_	= 0.0f;
 
@@ -27,7 +19,7 @@ FDR::~FDR(){
 
 }
 
-void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool optimizePos, bool advanceEM, float frac, size_t perLoopThreads ){
+void FDR::evaluateMotif( size_t perLoopThreads ){
 
 	std::vector<std::vector<float>> mops_scores;
 	std::vector<float> 				zoops_scores;
@@ -37,7 +29,7 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
 	 * Cross validation
 	 */
 #pragma omp parallel for num_threads(perLoopThreads)
-	for( size_t fold = 0; fold < cvFold_; fold++ ){
+	for( size_t fold = 0; fold < Global::cvFold; fold++ ){
 
 		// deep copy the initial motif
 		Motif* motif = new Motif( *motif_ );
@@ -48,8 +40,8 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
 		std::vector<Sequence*> testSet;
 		std::vector<Sequence*> trainSet;
         std::vector<Sequence*> negSet;
-		for( size_t n = 0; n <= posSeqs_.size()-cvFold_; n+=cvFold_ ){
-			for( size_t f = 0; f < cvFold_; f++ ){
+		for( size_t n = 0; n <= posSeqs_.size()-Global::cvFold; n+=Global::cvFold ){
+			for( size_t f = 0; f < Global::cvFold; f++ ){
 				if( f != fold ){
 					trainSet.push_back( posSeqs_[n+f] );
 				} else {
@@ -57,7 +49,7 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
 				}
 			}
 		}
-		for( size_t n = 0; n <= negSeqs_.size()-cvFold_; n+=cvFold_ ){
+		for( size_t n = 0; n <= negSeqs_.size()-Global::cvFold; n+=Global::cvFold ){
             negSet.push_back( negSeqs_[n] );
 		}
 
@@ -65,16 +57,16 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
 		 * Training
 		 */
 		// learn motif from each training set
-		if( EMoptimize ){
-			EM model( motif, bgModel_, trainSet, singleStrand_, optimizeQ, optimizePos, false, frac );
-            if( advanceEM ){
+		if( Global::EM ){
+			EM model( motif, bgModel_, trainSet );
+            if( Global::advanceEM ){
                 model.mask();
             } else {
                 model.optimize();
             }
             updatedQ = model.getQ();
-		} else if ( CGSoptimize ){
-			GibbsSampling model( motif, bgModel_, trainSet, optimizeQ );
+		} else if ( Global::CGS ){
+			GibbsSampling model( motif, bgModel_, trainSet, Global::optimizeQ );
 			model.optimize();
             updatedQ = model.getQ();
 		}
@@ -92,7 +84,7 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
 
 #pragma omp critical
         {
-            if (mops_) {
+            if (Global::mops) {
                 mops_scores = score_testset.getMopsScores();
 
                 for (size_t n = 0; n < testSet.size(); n++) {
@@ -111,7 +103,7 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
                 }
             }
 
-            if (zoops_) {
+            if (Global::zoops) {
                 zoops_scores = score_testset.getZoopsScores();
                 posScoreMax_.insert(std::end(posScoreMax_),
                                     std::begin(zoops_scores),
@@ -134,12 +126,13 @@ void FDR::evaluateMotif( bool EMoptimize, bool CGSoptimize, bool optimizeQ, bool
     // calculate precision and recall
     calculatePR();
 
-    if( savePvalues_ ){
+    if( Global::savePvalues ){
 
-		fprintf( stderr, " ______________________\n"
-						"|                      |\n"
-						"|  calculate P-values  |\n"
-						"|______________________|\n\n" );
+        std::cout << " ____________________" << std::endl;
+        std::cout << "|                    |" << std::endl;
+        std::cout << "| calculate P-values |" << std::endl;
+        std::cout << "|____________________|" << std::endl;
+        std::cout << std::endl;
 
 		calculatePvalues();
 	}
@@ -154,7 +147,7 @@ void FDR::calculatePR(){
     srand(42);
 
 	// for MOPS model:
-	if( mops_ ){
+	if( Global::mops ){
 		// Sort log odds scores in descending order
 		std::sort( posScoreAll_.begin(), posScoreAll_.end(), std::greater<float>() );
 		std::sort( negScoreAll_.begin(), negScoreAll_.end(), std::greater<float>() );
@@ -200,7 +193,7 @@ void FDR::calculatePR(){
 	}
 
 	// for ZOOPS model:
-	if( zoops_ ){
+	if( Global::zoops ){
 		PN_Pvalue_.clear();
 
 		// Sort log odds scores in descending order
@@ -284,7 +277,7 @@ void FDR::calculatePvalues(){
 	 */
 
     // for MOPS model:
-    if( mops_ ){
+    if( Global::mops ){
         // Sort log odds scores in ascending order
         std::sort( negScoreAll_.begin(), negScoreAll_.end(), std::less<float>() );
         std::sort( posScoreAll_.begin(), posScoreAll_.end(), std::less<float>() );
@@ -308,7 +301,7 @@ void FDR::calculatePvalues(){
     }
 
     // for ZOOPS model:
-    if( zoops_ ){
+    if( Global::zoops ){
         // Sort log odds scores in ascending order
         std::sort( negScoreMax_.begin(), negScoreMax_.end(), std::less<float>() );
         std::sort( posScoreMax_.begin(), posScoreMax_.end(), std::less<float>() );
@@ -340,7 +333,7 @@ void FDR::write( char* odir, std::string basename ){
 
 	std::string opath = std::string( odir ) + '/' + basename;
 
-	if( savePRs_ ){
+	if( Global::savePRs ){
 		/**
 		 * save FDR results in two flat files for obtaining AUSFC:
 		 * (1) posSequenceBasename.zoops.stats:
@@ -350,7 +343,7 @@ void FDR::write( char* odir, std::string basename ){
 		 */
 
 		// for ZOOPS model:
-		if( zoops_ ){
+		if( Global::zoops ){
 			std::string opath_zoops_stats = opath + ".zoops.stats";
 			std::ofstream ofile_zoops( opath_zoops_stats );
 			// the headers:
@@ -373,7 +366,7 @@ void FDR::write( char* odir, std::string basename ){
 		}
 
 		// for MOPS model:
-		if( mops_ ){
+		if( Global::mops ){
 			std::string opath_mops_stats = opath + ".mops.stats";
 			std::ofstream ofile_mops( opath_mops_stats );
 			ofile_mops  << "TP" 	    << '\t'
@@ -391,13 +384,13 @@ void FDR::write( char* odir, std::string basename ){
 		}
 	}
 
-	if( savePvalues_ ){
+	if( Global::savePvalues ){
 		/**
 		 * save FDR results in two flat files for ranking motifs:
 		 * (1) posSequenceBasename.zoops.pvalues:	p-values for ZOOPS model
 		 * (2) posSequenceBasename.mops.pvalues:	p-values for MOPS model
 		 */
-		if( zoops_ ){
+		if( Global::zoops ){
 			std::string opath_zoops = opath + ".zoops.pvalues";
 			std::ofstream ofile_zoops( opath_zoops );
 			for( size_t i = 0; i < ZOOPS_Pvalue_.size(); i++ ){
@@ -405,7 +398,7 @@ void FDR::write( char* odir, std::string basename ){
 			}
 		}
 
-		if( mops_ ){
+		if( Global::mops ){
 			std::string opath_mops = opath + ".mops.pvalues";
 			std::ofstream ofile_mops( opath_mops );
 			for( size_t i = 0; i < MOPS_Pvalue_.size(); i++ ){
@@ -414,7 +407,7 @@ void FDR::write( char* odir, std::string basename ){
 		}
 	}
 
-	if( saveLogOdds_ ){
+	if( Global::saveLogOdds ){
 
 		/**
 		 * save log odds scores into two files for
@@ -422,7 +415,7 @@ void FDR::write( char* odir, std::string basename ){
 		 * (1) posSequenceBasename.zoops.logOdds
 		 * (2) posSequenceBasename.mops.logOdds
 		 */
-		if( zoops_ ){
+		if( Global::zoops ){
 			std::string opath_zoops_logOdds = opath + ".zoops.logOdds";
 			std::ofstream ofile_zoops_logOdds( opath_zoops_logOdds );
 			ofile_zoops_logOdds << "positive" << '\t'
@@ -435,7 +428,7 @@ void FDR::write( char* odir, std::string basename ){
 			}
 		}
 
-		if( mops_ ){
+		if( Global::mops ){
 			std::string opath_mops_logOdds = opath + ".mops.logOdds";
 			std::ofstream ofile_mops_logOdds( opath_mops_logOdds );
 			ofile_mops_logOdds 	<< "positive" << '\t'

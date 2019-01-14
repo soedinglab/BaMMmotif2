@@ -15,7 +15,7 @@
 
 #include "../init/BackgroundModel.h"
 #include "../init/MotifSet.h"
-#include "Global.h"
+#include "../Global/Global.h"
 
 class EM {
     /**
@@ -27,15 +27,13 @@ class EM {
 public:
 
     EM( Motif* motif, BackgroundModel* bgModel,
-        std::vector<Sequence*> seqs, bool singleStrand,
-        bool optimizeQ = true, bool optimizePos = false,
-        bool verbose = false, float f = 0.2f );
+        std::vector<Sequence*> seqs );
     ~EM();
 
     int                     optimize();         // run EM optimization
     int                     mask();             // improve the EM optimization
     void                    print();            // print out optimized model v
-    void					write( char* odir, std::string basename, bool ss );
+    void					write( char* odir, std::string basename/*, bool ss*/ );
                                                 // write out the EM parameters such as n, pos, r
 
     void 					EStep();			// E-step
@@ -65,9 +63,6 @@ private:
     float** 				A_;	        		// pseudo-count hyper-parameter for order k and motif position j
     size_t 					K_bg_;				// the order of the background model
 
-    size_t                  posN_;
-    bool                    singleStrand_;
-
 
     float** 				r_;		        	// responsibilities at all the positions in sequence n
                                                 // Note: here the r_[n][0] indicates the responsibility of not having
@@ -90,19 +85,10 @@ private:
 //    Eigen::VectorXf         Ni_;
 //    Eigen::MatrixXf         A_matrix_;
 
-    std::mt19937            rngx_;
-
     float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif
-    float                   f_;                 // fraction of sequences to be masked
     std::vector<Sequence*>	seqs_;				// copy positive sequences
 
     float 					llikelihood_        = 0.0f;     // log likelihood for each iteration
-    float					epsilon_            = 0.001f;	// threshold for parameter v convergence
-    size_t					maxEMIterations_    = 2;
-    bool                    optimizeQ_;
-    bool                    optimizePos_;
-
-    bool                    verbose_;           // show the output of each EM iteration
     std::vector<size_t>		Y_;
 
 };

@@ -44,8 +44,8 @@ install (DIRECTORY R/ ${CMAKE_BINARY_DIR}/bin/
 
 add_subdirectory (src/getopt_pp getopt_pp)
 add_subdirectory (src/init init)
-add_subdirectory (src/seq_generator seq_generator)
-add_subdirectory (src/seq_scoring seq_scoring)
-add_subdirectory (src/refinement bamm)
-add_subdirectory (src/evaluation evaluation)
-add_subdirectory (src/misc extractProbs)
+add_subdirectory (src/seq_generator simulator)
+add_subdirectory (src/seq_scanner scanner)
+add_subdirectory (src/refiner bamm)
+add_subdirectory (src/evaluater evaluater)
+add_subdirectory (src/Global global)

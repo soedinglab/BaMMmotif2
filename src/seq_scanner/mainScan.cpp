@@ -3,7 +3,7 @@
 // This function is used for scanning motif occurrences in a sequence set
 //
 
-#include "GScan.h"
+#include "../Global/Global.h"
 #include "ScoreSeqSet.h"
 #include "../init/MotifSet.h"
 #include "../seq_generator/SeqGenerator.h"
@@ -14,52 +14,53 @@ int main( int nargs, char* args[] ) {
      * initialization
      */
 
-	GScan::init( nargs, args );
+	Global G( nargs, args );
 
     /**
      * Build up the background model
      */
     // use bgModel generated from input sequences when prediction is turned on
-    BackgroundModel* bgModel = new BackgroundModel( GScan::negSequenceSet->getSequences(),
-                                       GScan::bgModelOrder,
-                                       GScan::bgModelAlpha,
-                                       GScan::interpolateBG,
-                                       GScan::outputFileBasename );
+    BackgroundModel* bgModel = new BackgroundModel( Global::negSequenceSet->getSequences(),
+                                                    Global::bgModelOrder,
+                                                    Global::bgModelAlpha,
+                                                    Global::interpolateBG,
+                                                    Global::outputFileBasename );
 
     // use provided bgModelFile if initialized with bamm format
-    if( GScan::initialModelTag == "BaMM" ) {
-        if( GScan::bgModelFilename == NULL ) {
+    if( Global::initialModelTag == "BaMM" ) {
+        if( Global::bgModelFilename == NULL ) {
             std::cerr << "Error: No background model file provided for initial "
                     "search motif!" << std::endl;
             exit( 1 );
         }
         // get background model from the given file
-        bgModel = new BackgroundModel( GScan::bgModelFilename );
-    } else if( GScan::initialModelTag == "PWM" ){
+        bgModel = new BackgroundModel( Global::bgModelFilename );
+    } else if( Global::initialModelTag == "PWM" ){
         // this means that also the global motif order needs to be adjusted;
-        GScan::modelOrder = 0;
+        Global::modelOrder = 0;
     }
 
-    if(GScan::saveInitialModel){
+    if( Global::saveBgModel ){
         // save background model
-        bgModel->write(GScan::outputDirectory, GScan::outputFileBasename);
+        bgModel->write( Global::outputDirectory, Global::outputFileBasename );
     }
 
     /**
      * Initialize the model
      */
-    MotifSet motif_set( GScan::initialModelFilename,
-                        GScan::addColumns.at(0),
-                        GScan::addColumns.at(1),
-                        GScan::initialModelTag,
-                        GScan::posSequenceSet,
+    MotifSet motif_set( Global::initialModelFilename,
+                        Global::addColumns.at(0),
+                        Global::addColumns.at(1),
+                        Global::initialModelTag,
+                        Global::posSequenceSet,
                         bgModel->getV(),
-                        GScan::bgModelOrder,
-                        GScan::modelOrder,
-                        GScan::modelAlpha,
-                        GScan::maxPWM);
+                        Global::bgModelOrder,
+                        Global::modelOrder,
+                        Global::modelAlpha,
+                        Global::maxPWM );
 
-    std::vector<Sequence*> posSet = GScan::posSequenceSet->getSequences();
+    std::vector<Sequence*> posSet = Global::posSequenceSet->getSequences();
+
     /**
      * Filter out short sequences
      */
@@ -85,11 +86,15 @@ int main( int nargs, char* args[] ) {
     SeqGenerator negseq( posSet );
     size_t posN = posSet.size();
     bool rest = minSeqN % posN;
-    if ( posN * GScan::mFold < minSeqN ) {
-        GScan::mFold = minSeqN / posN + rest;
+    if ( posN * Global::mFold < minSeqN ) {
+        Global::mFold = minSeqN / posN + rest;
     }
-    negSeqs = negseq.sample_bgseqset_by_fold(GScan::mFold);
-    std::cout << negSeqs.size() << " background sequences are generated." << std::endl;
+    negSeqs = negseq.sample_bgseqset_by_fold( Global::mFold );
+    if(Global::verbose) {
+        std::cout << "\n" << negSeqs.size()
+                  << " background sequences are generated."
+                  << std::endl;
+    }
 
     // convert unique_ptr to regular pointer
     for( size_t n = 0; n < negSeqs.size(); n++ ) {
@@ -103,14 +108,14 @@ int main( int nargs, char* args[] ) {
         Motif *motif = new Motif( *motif_set.getMotifs()[n] );
 
         std::string fileExtension;
-        if( GScan::initialModelTag == "PWM" ){
+        if( Global::initialModelTag == "PWM" ){
             fileExtension = "_motif_" + std::to_string( n+1 );
         }
 
-        if( GScan::saveInitialModel ){
+        if( Global::saveInitialBaMMs ){
             // write out the foreground model
-            motif->write( GScan::outputDirectory,
-                          GScan::outputFileBasename + fileExtension );
+            motif->write( Global::outputDirectory,
+                          Global::outputFileBasename + fileExtension );
         }
 
         // score negative sequence set
@@ -132,16 +137,15 @@ int main( int nargs, char* args[] ) {
         std::vector<std::vector<float>> posScores = scorePosSet.getMopsScores();
         scorePosSet.calcPvalues( posScores, negScores );
 
-        scorePosSet.write( GScan::outputDirectory,
-                           GScan::outputFileBasename + fileExtension,
-                           GScan::pvalCutoff,
-                           GScan::ss );
+        scorePosSet.write( Global::outputDirectory,
+                           Global::outputFileBasename + fileExtension,
+                           Global::pvalCutoff,
+                           Global::ss );
 
         delete motif;
     }
 
     if( bgModel ) delete bgModel;
-    GScan::destruct();
 
     return 0;
 }

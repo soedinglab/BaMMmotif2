@@ -1,10 +1,10 @@
 #include <iomanip>
 #include <chrono>
 
-#include "Global.h"
+#include "../Global/Global.h"
 #include "EM.h"
 #include "GibbsSampling.h"
-#include "../evaluation/FDR.h"
+#include "../evaluater/FDR.h"
 
 int main( int nargs, char* args[] ){
 
@@ -128,12 +128,7 @@ int main( int nargs, char* args[] ){
 
 		// optimize the model with either EM or Gibbs sampling
 		if( Global::EM ){
-			EM model( motif, bgModel, posSet,
-                      Global::ss,
-                      Global::optimizeQ,
-                      Global::optimizePos,
-                      Global::verbose,
-                      Global::f );
+			EM model( motif, bgModel, posSet );
 
 			// learn motifs by EM
 			if( !Global::advanceEM ) {
@@ -145,8 +140,7 @@ int main( int nargs, char* args[] ){
             // write model parameters on the disc
 			if( Global::saveBaMMs ){
 				model.write( Global::outputDirectory,
-                             Global::outputFileBasename + "_motif_" + std::to_string( n+1 ),
-                             Global::ss );
+                             Global::outputFileBasename + "_motif_" + std::to_string( n+1 ) );
 			}
 
             if( Global::verbose ){
@@ -256,12 +250,8 @@ int main( int nargs, char* args[] ){
 //#pragma omp parallel for
         for( size_t n = 0; n < motif_set.getN(); n++ ){
 			Motif* motif = new Motif( *motif_set.getMotifs()[n] );
-			FDR fdr( posSet, negSet, Global::ss,
-                     motif, bgModel, Global::cvFold,
-                     Global::mops, Global::zoops,
-                     Global::savePRs, Global::savePvalues, Global::saveLogOdds );
-			fdr.evaluateMotif( Global::EM, Global::CGS, Global::optimizeQ,
-                               Global::optimizePos, Global::advanceEM, Global::f );
+			FDR fdr( posSet, negSet, motif, bgModel );
+			fdr.evaluateMotif();
 			fdr.write( Global::outputDirectory,
                        Global::outputFileBasename + "_motif_" + std::to_string( n+1 ) );
 			if( motif )		delete motif;

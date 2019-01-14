@@ -3,11 +3,11 @@
 
 #include "../init/BackgroundModel.h"
 #include "../init/Motif.h"
-#include "../refinement/utils.h"
-#include "../refinement/EM.h"
-#include "../refinement/GibbsSampling.h"
+#include "../Global/utils.h"
+#include "../refiner/EM.h"
+#include "../refiner/GibbsSampling.h"
 #include "../seq_generator/SeqGenerator.h"
-#include "../seq_scoring/ScoreSeqSet.h"
+#include "../seq_scanner/ScoreSeqSet.h"
 
 class FDR {
 
@@ -19,26 +19,17 @@ class FDR {
 	 * 3. calculate true positives(TP), false positives(FP), false
 	 *    discovery rate(FDR) and recall values;
 	 * 4. calculate p-values due to log odds scores, in order to use
-	 *    fdrtool R package for further evaluation.
+	 *    fdrtool R package for further evaluater.
 	 */
 
 public:
 
 	FDR( std::vector<Sequence*> posSeqs, std::vector<Sequence*> negSeqs,
-         bool singleStrand = false,
-         Motif* motif = NULL, BackgroundModel* bgmodel = NULL,
-         size_t cvFold = 4, bool mops = false, bool zoops = true,
-         bool savePRs = true, bool savePvalues = false, bool saveLogOdds = false
+         Motif* motif = NULL, BackgroundModel* bgmodel = NULL
         );
 	~FDR();
 
-	void 	evaluateMotif( bool EMoptimize = false,
-                           bool CGSoptimize = false,
-                           bool optimizeQ = false,
-                           bool optimizePos = false,
-                           bool advanceEM = false,
-                           float f = 0.05f,
-                           size_t perLoopThreads = 4 );
+	void 	evaluateMotif( size_t perLoopThreads = 4 );
 	void 	print();
 	void	write( char* odir, std::string basename );
     void    saveUnsortedLogOdds( std::string opath, std::vector<float> logOdds );
@@ -47,19 +38,10 @@ private:
 
 	std::vector<Sequence*> posSeqs_;
 	std::vector<Sequence*> negSeqs_;
-	float               q_;
-    bool                singleStrand_;
 
 	Motif*				motif_;			// initial motif
     BackgroundModel*    bgModel_;       // background model
-
-	size_t				cvFold_;		// fold for cross-validation, training
-										// set is (cv-1)-fold of the testing set
-	bool				mops_;
-	bool				zoops_;
-	bool				savePRs_;
-	bool				savePvalues_;
-	bool				saveLogOdds_;
+    float               q_;
 
 	std::vector<float> 	posScoreAll_;	// store log odds scores over all positions on the sequences
 	std::vector<float> 	posScoreMax_;	// store maximal log odds score from each sequence

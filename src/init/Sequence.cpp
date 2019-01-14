@@ -1,5 +1,5 @@
 #include "Sequence.h"
-#include "../refinement/utils.h"
+#include "../Global/utils.h"
 
 Sequence::Sequence( uint8_t* sequence,
 					size_t L,

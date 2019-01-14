@@ -163,7 +163,7 @@ void ScoreSeqSet::calcPvalues( std::vector<std::vector<float>> pos_scores,
                         std::cout << "n=" << n << ",i=" << i
                                   << ", pval=" << pVal
                                   << ", nTop=" << nTop
-                                  << ", negN=" << negN
+                                  << ", negSeqNum=" << negN
                                   << ", FPl = " << FPl
                                   << ", Sl=" << Sl
                                   << ", S_ntop=" << S_ntop
@@ -195,7 +195,7 @@ void ScoreSeqSet::calcPvalues( std::vector<std::vector<float>> pos_scores,
                         std::cout << "n=" << n << ",i=" << i
                                   << ", pval=" << pVal
                                   << ", eps=" << eps
-                                  << ", negN=" << negN
+                                  << ", negSeqNum=" << negN
                                   << ", Sl=" << Sl
                                   << ", S_higher=" << Sl_higher
                                   << ", S_lower=" << Sl_lower
