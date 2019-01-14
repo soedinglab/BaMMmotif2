@@ -1,31 +1,28 @@
 #include <fstream>		// std::fstream
 #include <random>       // std::mt19937, std::discrete_distribution
 #include "Motif.h"
+#include "../Global/Global.h"
 
-Motif::Motif( size_t length, size_t K, std::vector<float> alpha, float** v_bg, size_t k_bg, float glob_q ){
+Motif::Motif( size_t length ){
 
 	W_ = length;
-	K_ = K;
+	K_ = Global::modelOrder;
 	C_ = 0;
-    q_ = glob_q;
+    q_ = Global::q;
 
 	for( size_t k = 0; k < K_+8; k++ ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 
-	if( v_bg != NULL ){
-        k_bg_ = k_bg;
-		v_bg_ = v_bg;
-	} else {
-        k_bg_ = 2;
-		v_bg_ = ( float** )calloc( k_bg_ + 1, sizeof( float* ) );
-		for( size_t k = 0; k <= k_bg_; k++ ){
-            v_bg_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
-            for( size_t y = 0; y < Y_[k+1]; y++ ){
-                v_bg_[k][y] = powf( 1.0f / Y_[1], (float)(k+1) );
-            }
-		}
-	}
+
+    k_bg_ = Global::bgModelOrder;
+    v_bg_ = ( float** )calloc( k_bg_ + 1, sizeof( float* ) );
+    for( size_t k = 0; k <= k_bg_; k++ ){
+        v_bg_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
+        for( size_t y = 0; y < Y_[k+1]; y++ ){
+            v_bg_[k][y] = powf( 1.0f / Y_[1], (float)(k+1) );
+        }
+    }
 
 	v_ = ( float*** )calloc( K_+1, sizeof( float** ) );
 	n_ = ( int*** )calloc( K_+1, sizeof( int** ) );
@@ -42,7 +39,7 @@ Motif::Motif( size_t length, size_t K, std::vector<float> alpha, float** v_bg, s
 		}
 		A_[k] = ( float* )calloc( W_, sizeof( float ) );
 		for( size_t j = 0; j < W_; j++ ){
-			A_[k][j] = alpha[k];
+			A_[k][j] = Global::modelAlpha[k];
 		}
 	}
 
@@ -123,11 +120,6 @@ Motif::~Motif(){
 	}
 	free( s_ );
 
-/*  // does not work properly
-    for( size_t k = 0; k <= k_bg_; k++ ){
-        free( v_bg_[k] );
-    }
-    free( v_bg_ );*/
 }
 
 // initialize v from binding sites file

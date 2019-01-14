@@ -39,13 +39,7 @@ int main( int nargs, char* args[] ){
                         Global::addColumns.at(0),
                         Global::addColumns.at(1),
                         Global::initialModelTag,
-                        Global::posSequenceSet,
-                        bgModel->getV(),
-                        Global::bgModelOrder,
-                        Global::modelOrder,
-                        Global::modelAlpha,
-                        Global::maxPWM,
-                        Global::q );
+                        Global::posSequenceSet );
 
     /**
      * Filter out short sequences

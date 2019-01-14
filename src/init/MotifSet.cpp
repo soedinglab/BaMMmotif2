@@ -4,13 +4,7 @@ MotifSet::MotifSet( char* indir,
                     size_t l_flank,
                     size_t r_flank,
                     std::string tag,
-                    SequenceSet* posSet,
-                    float** v_bg,
-                    size_t k_bg,
-                    size_t K,
-                    std::vector<float> alphas,
-                    size_t maxPWM,
-                    float glob_q ){
+                    SequenceSet* posSet ){
 
 	N_ = 0;
 
@@ -32,7 +26,7 @@ MotifSet::MotifSet( char* indir,
 
 		length += l_flank + r_flank;
 
-		Motif* motif = new Motif( length, K, alphas, v_bg, k_bg, glob_q );
+		Motif* motif = new Motif( length );
 
 		motif->initFromBindingSites( indir, l_flank, r_flank );
 
@@ -86,11 +80,11 @@ MotifSet::MotifSet( char* indir,
                         std::stringstream Q(line.substr(line.find("occur=") + 7) );
                         Q >> q;
                     } else {
-                        q = glob_q;
+                        q = Global::q;
                     }
 
 					// construct an initial motif
-					Motif* motif = new Motif( length, K, alphas, v_bg, k_bg, q );
+					Motif* motif = new Motif( length );
 
 					// parse PWM for each motif
 					float** PWM = new float*[asize];
@@ -142,7 +136,7 @@ MotifSet::MotifSet( char* indir,
 					delete[] PWM;
 
                     // parse PWMs due to the maximal PWM counts
-                    if( N_ >= maxPWM ){
+                    if( N_ >= Global::maxPWM ){
                         break;
                     }
 				}
@@ -208,7 +202,7 @@ MotifSet::MotifSet( char* indir,
 			model_length += l_flank + r_flank;
 
 			// construct an initial motif
-			Motif* motif = new Motif( model_length, K, alphas, v_bg, k_bg, glob_q );
+			Motif* motif = new Motif( model_length );
 
 			// initialize motif from file
 			motif->initFromBaMM( indir, l_flank, r_flank );

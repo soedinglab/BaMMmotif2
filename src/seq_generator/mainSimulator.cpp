@@ -43,11 +43,7 @@ int main( int nargs, char* args[] ){
                             Global::addColumns.at(0),
                             Global::addColumns.at(1),
                             Global::initialModelTag,
-                            Global::posSequenceSet,
-                            bgModel->getV(),
-                            Global::bgModelOrder,
-                            Global::modelOrder,
-                            Global::modelAlpha );
+                            Global::posSequenceSet );
 
         for( size_t n = 0; n < motif_set.getN(); n++ ) {
 

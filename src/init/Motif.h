@@ -11,12 +11,7 @@ class Motif {
 
 public:
 
-	Motif( size_t length,
-           size_t order,
-           std::vector<float> alpha,
-           float** v_bg,
-           size_t k_bg,
-           float glob_q );
+	Motif( size_t length );
 
 	Motif( const Motif& other );					// copy constructor
 	~Motif();
