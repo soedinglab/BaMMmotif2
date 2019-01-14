@@ -54,7 +54,7 @@ std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.f );// background mod
 // EM options
 bool				Global::EM = false;						// flag to trigger EM learning
 float               Global::EMepsilon = 0.001f;             // epsilon for EM convergence
-size_t              Global::maxEMIterations = 1000;         // maximal iterations
+size_t              Global::maxIterations = 1000;         // maximal iterations
 float				Global::q = 0.3f;						// prior probability for a positive sequence to contain a motif
 bool 				Global::optimizeQ = false;				// optimize hyper-parameter q in EM algorithm
 float               Global::f = 0.05f;                      // fraction of sequences to be masked
@@ -310,7 +310,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	// EM options
 	opt >> GetOpt::OptionPresent( "EM", EM );
     opt >> GetOpt::Option( "EMepsilon", EMepsilon );
-    opt >> GetOpt::Option( "maxEMIterations", maxEMIterations );
+    opt >> GetOpt::Option( "maxIterations", maxIterations );
 
 	// CGS options
 	if( opt >> GetOpt::OptionPresent( "CGS", CGS ) ){
@@ -572,7 +572,7 @@ void Global::printHelp(){
 			"				sum over the absolute differences in probabilities\n"
 			"				from successive EM rounds is smaller than epsilon.\n"
 			"				The default is 0.001.\n\n");
-	printf("\n 			--maxEMIterations <INTEGER> (*) \n"
+	printf("\n 			--maxIterations <INTEGER> (*) \n"
 			"				Limit the number of EM iterations. *For developers.\n\n");
 	printf("\n 			--noAlphaOptimization (*) \n"
 			"				disable alpha optimization.\n"

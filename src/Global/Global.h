@@ -84,7 +84,7 @@ public:
 	// EM options
 	static bool			EM;						// flag to trigger EM learning
     static float        EMepsilon;              // epsilon for EM convergence
-    static size_t       maxEMIterations;        // maximal iterations
+    static size_t       maxIterations;          // maximal iterations
     static float        f;                      // fraction of sequences to be masked
 
 	// Gibbs sampling options

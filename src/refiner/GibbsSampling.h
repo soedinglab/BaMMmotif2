@@ -5,7 +5,6 @@
 #ifndef GIBBSSAMPLING_H_
 #define GIBBSSAMPLING_H_
 
-#include <random>       // std::mt19937, std::discrete_distribution
 #include "../init/BackgroundModel.h"
 #include "../init/MotifSet.h"
 #include "EM.h"
@@ -14,12 +13,7 @@ class GibbsSampling {
 
 public:
 
-    GibbsSampling( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqs,
-                   bool samplingQ = true,
-				   float beta = 7.0f, float gamma = 3.0f,
-				   bool initializeZ = true, bool samplingZ = true,
-				   bool optimizeA = true, bool GibbsMHalphas = false, bool dissampleAlphas = false,
-                   bool verbose = false );
+    GibbsSampling( Motif* motif, BackgroundModel* bg, std::vector<Sequence*> seqs );
 	~GibbsSampling();
 
 	void 					optimize();			// optimize BaMM model with Gibbs sampling
@@ -55,24 +49,13 @@ private:
 	size_t					N0_ = 0;			// count of sequences that do not contain a motif
 
 	float 					llikelihood_ = 0.0f;// log likelihood for each iteration
-	size_t					maxCGSIterations_ = 100;
-	float					beta_;
-	float					gamma_;
 
 	float 					eta_ = 0.2f;		// learning rate for alpha learning
 	double**				m1_t_;				// first moment for alpha optimizer (ADAM)
 	double**				m2_t_;				// second moment for alpha optimizer (ADAM)
-	std::mt19937			rngx_;
 
 	std::vector<size_t>		Y_;
 
-	bool					initializeZ_;
-	bool					samplingZ_;
-	bool					samplingQ_;
-	bool					optimizeA_;
-	bool					GibbsMHalphas_;
-	bool					dissampleAlphas_;
-    bool                    verbose_;
 
 							// sample motif position z by collapsed Gibbs sampling
 	void					Collapsed_Gibbs_sampling_z();

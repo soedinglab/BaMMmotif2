@@ -66,7 +66,7 @@ void FDR::evaluateMotif( size_t perLoopThreads ){
             }
             updatedQ = model.getQ();
 		} else if ( Global::CGS ){
-			GibbsSampling model( motif, bgModel_, trainSet, Global::optimizeQ );
+			GibbsSampling model( motif, bgModel_, trainSet );
 			model.optimize();
             updatedQ = model.getQ();
 		}

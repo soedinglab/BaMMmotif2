@@ -8,25 +8,12 @@
 #include <boost/math/distributions/beta.hpp>		/* beta distribution */
 
 GibbsSampling::GibbsSampling( Motif* motif, BackgroundModel* bg,
-                              std::vector<Sequence*> seqs,
-                              bool samplingQ,
-                              float beta, float gamma,
-                              bool initializeZ, bool samplingZ,
-                              bool optimizeA, bool GibbsMHalphas, bool dissampleAlphas, bool verbose ){
+                              std::vector<Sequence*> seqs){
 
     motif_              = motif;
     bg_                 = bg;
     q_                  = motif->getQ();
     seqs_               = seqs;
-    beta_               = beta;
-    gamma_              = gamma;
-    initializeZ_        = initializeZ;
-    samplingZ_          = samplingZ;
-    samplingQ_          = samplingQ;
-    optimizeA_          = optimizeA;
-    GibbsMHalphas_      = GibbsMHalphas;
-    dissampleAlphas_    = dissampleAlphas;
-    verbose_            = verbose;
 
     // get motif (hyper-)parameters from motif class
     K_ = motif_->getK();
@@ -34,7 +21,8 @@ GibbsSampling::GibbsSampling( Motif* motif, BackgroundModel* bg,
     Y_ = motif_->getY();
     s_ = motif_->getS();
     A_ = motif_->getA();
-    K_bg_ = ( bg_->getOrder() < K_ ) ?  bg_->getOrder() : K_;
+    //K_bg_ = ( bg_->getOrder() < K_ ) ?  bg_->getOrder() : K_;
+    K_bg_ = Global::bgModelOrder;
 
     // allocate memory for r_[n][i], pos_[n][i], z_[n]
     r_ = ( float** )calloc( seqs_.size(), sizeof( float* ) );
@@ -62,7 +50,6 @@ GibbsSampling::GibbsSampling( Motif* motif, BackgroundModel* bg,
         m2_t_[k] = ( double* )calloc( W_, sizeof( double ) );
     }
 
-    rngx_.seed( 42 );
 }
 
 GibbsSampling::~GibbsSampling(){
@@ -96,7 +83,7 @@ void GibbsSampling::optimize(){
     size_t iteration = 0;
 
     // initialize z for all the sequences
-    if( initializeZ_ ){
+    if( !Global::noInitialZ ){
         EM model( motif_, bg_, seqs_ );
         // E-step: calculate posterior
         model.EStep();
@@ -172,26 +159,26 @@ void GibbsSampling::optimize(){
     }
 
     // iterate over
-    while( iteration < maxCGSIterations_ ){
+    while( iteration < Global::maxIterations ){
 
         iteration++;
 
         // Collapsed Gibbs sampling position z
-        if( samplingZ_ )    Collapsed_Gibbs_sampling_z();
+        if( !Global::noZSampling )    Collapsed_Gibbs_sampling_z();
 
         // Gibbs sampling fraction q
-        if( samplingQ_ )	Gibbs_sample_q();
+        if( !Global::noQSampling )	Gibbs_sample_q();
 
         // update alphas by stochastic optimization
-        if( optimizeA_ ){
+        if( !Global::noAlphaOptimization ){
 
             Optimize_alphas_by_SGD_ADAM( K_, W_, eta_, iteration );
 
-        } else if( GibbsMHalphas_ ){
+        } else if( Global::GibbsMHalphas ){
 
             GibbsMH_sample_alphas( iteration );
 
-            if( iteration > maxCGSIterations_ - 10 ){
+            if( iteration > Global::maxIterations - 10 ){
                 for( size_t k = 0; k < K_+1; k++ ){
                     for( size_t j = 0; j < W_; j++ ){
                         alpha_avg[k][j] += A_[k][j];
@@ -199,11 +186,11 @@ void GibbsSampling::optimize(){
                 }
             }
 
-        } else if( dissampleAlphas_ ){
+        } else if( Global::dissampleAlphas ){
 
             Discrete_sample_alphas( iteration );
 
-            if( iteration > maxCGSIterations_ - 10 ){
+            if( iteration > Global::maxIterations - 10 ){
                 for( size_t k = 0; k < K_+1; k++ ){
                     for( size_t j = 0; j < W_; j++ ){
                         alpha_avg[k][j] += A_[k][j];
@@ -225,7 +212,7 @@ void GibbsSampling::optimize(){
     }
 
     // obtaining a motif model:
-    if( GibbsMHalphas_ || dissampleAlphas_ ){
+    if( Global::GibbsMHalphas || Global::dissampleAlphas ){
         // average alphas over the last few steps for GibbsMH
         for( size_t k = 0; k < K_+1; k++ ){
             for( size_t j = 0; j < W_; j++ ){
@@ -253,7 +240,9 @@ void GibbsSampling::optimize(){
 */
 
     // print out the optimized q
-    if( verbose_ and  samplingQ_ )   std::cout << "The sampled q=" << q_ << std::endl;
+    if( Global::verbose and !Global::noQSampling ){
+        std::cout << "The sampled q=" << q_ << std::endl;
+    }
 
     // calculate probabilities
     motif_->calculateP();
@@ -400,7 +389,7 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
 
         // draw a new position z from the discrete distribution of posterior
         std::discrete_distribution<size_t> posterior_dist( posteriors.begin(), posteriors.end() );
-        z_[n] = posterior_dist( rngx_ );
+        z_[n] = posterior_dist( Global::rngx );
 
         if( z_[n] == 0 ){
             // count sequences which do not contain motifs.
@@ -493,7 +482,7 @@ void GibbsSampling::GibbsMH_sample_alphas( size_t iter ){
             std::normal_distribution<float> norm_dist( a_prev,
                                                        1.0f / ( float )( k+1 ) );
 
-            float a_new = norm_dist( rngx_ );
+            float a_new = norm_dist( Global::rngx );
 
             float lprob_a_new = calc_logCondProb_a( iter, a_new, k, j );
             float accept_ratio;
@@ -504,7 +493,7 @@ void GibbsSampling::GibbsMH_sample_alphas( size_t iter ){
 
                 // draw a random number uniformly between 0 and 1
                 std::uniform_real_distribution<float> uniform_dist( 0.0f, 1.0f );
-                uni_random = uniform_dist( rngx_ );
+                uni_random = uniform_dist( Global::rngx );
 
                 // accept the trial sample if the ratio is not smaller than
                 // a random number between (0,1)
@@ -546,7 +535,7 @@ void GibbsSampling::Discrete_sample_alphas( size_t iter ){
             std::discrete_distribution<> posterior_dist( condProb.begin(),
                                                          condProb.end() );
 
-            A_[k][j] = expf( ( float )posterior_dist( rngx_ ) / 10.0f );
+            A_[k][j] = expf( ( float )posterior_dist( Global::rngx ) / 10.0f );
         }
     }
 }
@@ -565,7 +554,7 @@ float GibbsSampling::calc_gradient_alphas( float** A, size_t k, size_t j ){
     gradient -= 2.0f / A[k][j];
 
     // the second term of equation 47
-    gradient += beta_ * powf( gamma_, ( float )k ) / powf( A[k][j], 2.0f );
+    gradient += Global::modelBeta * powf( Global::modelGamma, ( float )k ) / powf( A[k][j], 2.0f );
 
     // the third term of equation 47
     gradient += static_cast<float>( Y_[k] ) * boost::math::digamma( A[k][j] );
@@ -635,7 +624,7 @@ float GibbsSampling::calc_logCondProb_a( size_t iteration, float a, size_t k, si
     logCondProbA -= a;
 
     // the second term of equation 50
-    logCondProbA -= beta_ * powf( gamma_, ( float )k ) / alpha;
+    logCondProbA -= Global::modelBeta * powf( Global::modelGamma, ( float )k ) / alpha;
 
     if( k == 0 ){
 
@@ -689,7 +678,7 @@ float GibbsSampling::calc_logCondProb_a( size_t iteration, float a, size_t k, si
             // or one k-mer is present
             if( n_[k-1][y][j-1] - 1.0f <= 0.0000001f ){
 
-                logCondProbA = -a - beta_ * powf( gamma_, ( float )k ) / alpha;
+                logCondProbA = -a - Global::modelBeta * powf( Global::modelGamma, ( float )k ) / alpha;
 
             }
 
@@ -711,7 +700,7 @@ float GibbsSampling::calc_prior_alphas( float** alpha, size_t k ){
         logPrior -= 2.0f * logf( alpha[k][j] );
 
         // the second term of equation 46
-        logPrior -= beta_ * powf( gamma_, ( float )k ) / alpha[k][j];
+        logPrior -= Global::modelBeta * powf( Global::modelGamma, ( float )k ) / alpha[k][j];
 
     }
 
@@ -733,7 +722,7 @@ float GibbsSampling::calc_lposterior_alphas( float** A, size_t k ){
         logPosterior -= 2.0f * logf( A[k][j] );
 
         // the prior
-        logPosterior -= beta_ * powf( gamma_, ( float )k ) / A[k][j];
+        logPosterior -= Global::modelBeta * powf( Global::modelGamma, ( float )k ) / A[k][j];
 
         //
         if( k == 0 ){
@@ -764,7 +753,7 @@ float GibbsSampling::calc_lposterior_alphas( float** A, size_t k ){
                 // Note: here it might be problematic when j = 0
                 if( n_[k-1][y][j-1] <= 1.0f ){
 
-                    logPosterior = - 2.0f * logf( A[k][j] ) - beta_ * powf( gamma_, ( float )k ) / A[k][j];
+                    logPosterior = - 2.0f * logf( A[k][j] ) - Global::modelBeta * powf( Global::modelGamma, ( float )k ) / A[k][j];
 
                 } else {
                     // the third term of equation 50

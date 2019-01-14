@@ -122,7 +122,7 @@ int EM::optimize(){
 
     // iterate over
     size_t iteration = 0;
-    while( iterate && ( iteration < Global::maxEMIterations ) ){
+    while( iterate && ( iteration < Global::maxIterations ) ){
 
         // get parameter variables with highest order before EM
         llikelihood_prev = llikelihood_;
@@ -238,7 +238,6 @@ void EM::EStep(){
             for( size_t j = 0; j < W_; j++ ){
                 r_[n][L-ij+j-1] *= s_[y][j];
             }
-
         }
 
         // calculate the responsibilities and sum them up
@@ -521,7 +520,7 @@ int EM::mask() {
     }
 
     // iterate over
-    while( iterate && ( iteration < Global::maxEMIterations ) ){
+    while( iterate && ( iteration < Global::maxIterations ) ){
 
         iteration++;
 
@@ -742,15 +741,14 @@ void EM::optimizePos() {
 /*
         // ========================
         // todo: write out for checking:
-
-        std::string opath_pos = "/home/wanwan/benchmark/art/posPrior/pos.txt";
-        std::string opath_pi = "/home/wanwan/benchmark/art/posPrior/pi.txt";
-        std::string opath_bv = "/home/wanwan/benchmark/art/posPrior/bv.txt";
-        std::string opath_left = "/home/wanwan/benchmark/art/posPrior/left.txt";
-        std::string opath_middle = "/home/wanwan/benchmark/art/posPrior/middle.txt";
-        std::string opath_right = "/home/wanwan/benchmark/art/posPrior/right.txt";
-        std::string opath_grad = "/home/wanwan/benchmark/art/posPrior/grad.txt";
-        std::string opath_ri = "/home/wanwan/benchmark/art/posPrior/ri.txt";
+        std::string opath_pos = std::string( Global::outputDirectory ) + "/debug/pos.txt";
+        std::string opath_pi = std::string( Global::outputDirectory ) + "/debug/pi.txt";
+        std::string opath_bv = std::string( Global::outputDirectory ) + "/debug/bv.txt";
+        std::string opath_left = std::string( Global::outputDirectory ) + "/debug/left.txt";
+        std::string opath_middle = std::string( Global::outputDirectory ) + "/debug/middle.txt";
+        std::string opath_right = std::string( Global::outputDirectory ) + "/debug/right.txt";
+        std::string opath_grad = std::string( Global::outputDirectory ) + "/debug/grad.txt";
+        std::string opath_ri = std::string( Global::outputDirectory ) + "/debug/ri.txt";
 
         std::ofstream ofile_pos( opath_pos );
         std::ofstream ofile_pi( opath_pi );
@@ -1011,7 +1009,6 @@ void EM::print(){
                 sum += motif_->getV()[k][y][j];
             }
             std::cout << "sum=" << sum <<  std::endl;
-            //assert( fabsf( sum-1.0f ) < 1.e-4f );
         }
     }
 
@@ -1029,7 +1026,6 @@ void EM::print(){
                 sum += motif_->getP()[k][y][j];
             }
             std::cout << "sum=" << sum << std::endl;
-            //assert( fabsf( sum-1.0f ) < 1.e-4f );
         }
     }
 
@@ -1046,7 +1042,6 @@ void EM::print(){
             sum += s_[y][j];
         }
         std::cout << "sum=" << sum << std::endl;
-        //assert( fabsf( sum-1.0f ) < 1.e-4f );
     }
 
     std::cout << std::endl << "Fraction parameter q="
