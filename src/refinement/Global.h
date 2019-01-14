@@ -18,7 +18,6 @@
 #include <string.h>
 #include <math.h>
 
-
 #include "../init/SequenceSet.h"
 #include "../init/Alphabet.h"
 #include "../getopt_pp/getopt_pp.h"             // GetOpt function
@@ -26,6 +25,9 @@
 class Global{
 
 public:
+
+    Global( int nopt, char *options[] );
+    ~Global();
 
 	static char*		outputDirectory; 		// output directory
     static std::string	outputFileBasename;	    // basename of output file, if not given,
@@ -123,8 +125,7 @@ public:
     // option for openMP
     static size_t       threads;                // number of threads to use
 
-	static void         init( int nargs, char* args[] );
-	static void         destruct();
+    static void			printPara();
 	static void			printStat();
 	static char* 		String( const char *s );// convert const char* to string, for GetOpt library
 
@@ -143,7 +144,7 @@ inline char* Global::String( const char *s ){
 
 namespace GetOpt{
     template <> inline _Option::Result convert<char*>( const std::string& s,
-                                                       char*& d, std::ios::fmtflags ){
+                                              char*& d, std::ios::fmtflags ) {
         _Option::Result ret = _Option::BadType;
         d = Global::String( s.c_str() );
         ret = _Option::OK;

@@ -19,19 +19,11 @@ int main( int nargs, char* args[] ){
               << "=  http://www.mpibpc.mpg.de/soeding  =" << std::endl
               << "======================================" << std::endl;
 
-	// seed random number
-	srand( 42 );
-	Global::rngx.seed( 42 );
+    /**
+     * initialization
+     */
 
-	// initialization
-	Global::init( nargs, args );
-
-	if( Global::verbose ){
-		std::cout << std::endl
-                  << "************************" << std::endl
-                  << "*   Background Model   *" << std::endl
-                  << "************************" << std::endl;
-	}
+    Global G( nargs, args );
 
     std::vector<Sequence*> posSet = Global::posSequenceSet->getSequences();
 
@@ -42,21 +34,16 @@ int main( int nargs, char* args[] ){
                                        Global::bgModelAlpha,
                                        Global::interpolateBG,
                                        Global::outputFileBasename );
-
     } else {
 		bgModel = new BackgroundModel( Global::bgModelFilename );
-
 	}
 
     // always save the background model
     bgModel->write( Global::outputDirectory, Global::outputFileBasename );
 
-	if( Global::verbose ){
-        std::cout << std::endl
-                  << "***************************" << std::endl
-                  << "*   Initial Motif Model   *" << std::endl
-                  << "***************************" << std::endl;
-	}
+    if( Global::verbose ){
+        bgModel->print();
+    }
 
 	MotifSet motif_set( Global::initialModelFilename,
                         Global::addColumns.at(0),
@@ -70,26 +57,25 @@ int main( int nargs, char* args[] ){
                         Global::maxPWM,
                         Global::q );
 
+    if( Global::verbose ){
+        motif_set.print();
+    }
+
     /**
      * Filter out short sequences
      */
     std::vector<Sequence*>::iterator it = posSet.begin();
     while( it != posSet.end() ){
         if( (*it)->getL() < motif_set.getMaxW() ){
-            //std::cout << "Warning: remove the short sequence: "
-            // << (*it)->getHeader() << std::endl;
+            if( Global::verbose ){
+                std::cout << "Warning: remove the short sequence: "
+                          << (*it)->getHeader() << std::endl;
+            }
             posSet.erase(it);
         } else {
             it++;
         }
     }
-
-	if( Global::verbose ){
-        std::cout << std::endl
-                  << "*********************" << std::endl
-                  << "*   BaMM Training   *" << std::endl
-                  << "*********************" << std::endl;
-	}
 
     /**
      * Generate negative sequence set for training, scoring and cross-validation
@@ -110,19 +96,26 @@ int main( int nargs, char* args[] ){
             Global::mFold = minSeqN / posN + rest;
         }
         negSeqs = negseq.sample_bgseqset_by_fold(Global::mFold);
-        std::cout << negSeqs.size() << " background sequences are generated." << std::endl;
+
+        if( Global::verbose ){
+            std::cout << std::endl << negSeqs.size()
+                      << " background sequences are generated."
+                      << std::endl << std::endl;
+        }
 
         // convert unique_ptr to regular pointer: memory leak will occur:
         for (size_t n = 0; n < negSeqs.size(); n++) {
             negSet.push_back(negSeqs[n].release());
             negSeqs[n].get_deleter();
         }
-
         // save sampled negative sequence set into a file
 //        negseq.write( Global::outputDirectory, Global::outputFileBasename, negSet );
 
     }
 
+    /**
+     * Train the model(s)
+     */
     for( size_t n = 0; n < motif_set.getN(); n++ ){
 		// deep copy each motif in the motif set
 		Motif* motif = new Motif( *motif_set.getMotifs()[n] );
@@ -156,11 +149,13 @@ int main( int nargs, char* args[] ){
                              Global::ss );
 			}
 
-            // print out the optimized q for checking:
-            if( Global::optimizeQ ){
-                std::cout << "Optimized q = " << model.getQ() << std::endl;
-            } else {
-                std::cout << "Given q = " << model.getQ() << std::endl;
+            if( Global::verbose ){
+                std::cout << " ____________________" << std::endl;
+                std::cout << "|*                  *|" << std::endl;
+                std::cout << "|   After training   |" << std::endl;
+                std::cout << "|*__________________*|" << std::endl;
+                std::cout << std::endl;
+                model.print();
             }
 
 		} else if ( Global::CGS ){
@@ -187,14 +182,9 @@ int main( int nargs, char* args[] ){
                       Global::outputFileBasename + "_motif_" + std::to_string( n+1 ) );
 
         if( Global::scoreSeqset ){
-            // score the model on sequence set
-            if( Global::verbose ) {
-                std::cout << std::endl
-                          << "*************************" << std::endl
-                          << "*    Score Sequences    *" << std::endl
-                          << "*************************" << std::endl
-                          << std::endl;
-            }
+            /**
+             *  score the model on sequence set
+             */
 
             // Define bg model depending on motif input, and learning
             // use bgModel generated from input sequences when prediction is turned on
@@ -260,13 +250,6 @@ int main( int nargs, char* args[] ){
 
     // evaluate motifs
 	if( Global::FDR ){
-		if( Global::verbose ){
-            std::cout << std::endl
-                      << "***********************" << std::endl
-                      << "*   BaMM validation   *" << std::endl
-                      << "***********************" << std::endl;
-		}
-
         /**
          * cross-validate the motif model
          */
@@ -286,12 +269,6 @@ int main( int nargs, char* args[] ){
 
     }
 
-    std::cout << std::endl
-              << "******************" << std::endl
-              << "*   Statistics   *" << std::endl
-              << "******************" << std::endl;
-	Global::printStat();
-
     auto t1_wall = std::chrono::high_resolution_clock::now();
     auto t_diff = std::chrono::duration_cast<std::chrono::duration<double>>(t1_wall-t0_wall);
     std::cout << std::endl << "------ Runtime: " << t_diff.count() <<" seconds -------" << std::endl;
@@ -303,7 +280,6 @@ int main( int nargs, char* args[] ){
         //    delete negSet[n];
         }
     }
-	Global::destruct();
 
 	return 0;
 }

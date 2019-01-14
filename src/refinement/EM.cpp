@@ -2,9 +2,6 @@
 // Created by wanwan on 16.08.17.
 //
 #include "EM.h"
-//#include "ObjFun.h"
-//#include "../LBFGS/LBFGS.h"
-#include <chrono>
 
 EM::EM( Motif* motif, BackgroundModel* bgModel,
         std::vector<Sequence*> seqs, bool singleStrand,
@@ -32,7 +29,6 @@ EM::EM( Motif* motif, BackgroundModel* bgModel,
     // todo: this introduces a bug when optimizing the 0th-order model
 //	K_bg_ = ( bgModel_->getOrder() < K_ ) ? bgModel_->getOrder() : K_;
     K_bg_ = bgModel_->getOrder();
-    std::cout << "K_bg=" << K_bg_ << std::endl;
 
 	// allocate memory for r_[n][i], pos_[n][i], z_[n]
 	r_ = ( float** )calloc( seqs_.size(), sizeof( float* ) );
@@ -87,6 +83,14 @@ EM::~EM(){
 
 int EM::optimize(){
 
+    if( verbose_ ) {
+        std::cout << " ______" << std::endl;
+        std::cout << "|*    *|" << std::endl;
+        std::cout << "|  EM  |" << std::endl;
+        std::cout << "|*____*|" << std::endl;
+        std::cout << std::endl;
+    }
+
     auto    t0_wall = std::chrono::high_resolution_clock::now();
 
     bool 	iterate = true;
@@ -122,6 +126,7 @@ int EM::optimize(){
         }
     }
 */
+
 
     // iterate over
     size_t iteration = 0;
@@ -165,12 +170,13 @@ int EM::optimize(){
         // check the change of likelihood for convergence
         llikelihood_diff = llikelihood_ - llikelihood_prev;
 
-        if( verbose_ and iteration > 0 )
-            std::cout << iteration << " iter:"
+        if( verbose_ )
+            std::cout << "it=" << iteration
                       << std::fixed
-                      << "\tllh=" << llikelihood_
+                      << "\tlog likelihood=" << llikelihood_
                       << "\tllh_diff=" << llikelihood_diff
-                      << "\tmodel_diff=" << v_diff << std::endl;
+                      << "\t\tmodel_diff=" << v_diff
+                      << std::endl;
 
         if( v_diff < epsilon_ )							iterate = false;
         if( llikelihood_diff < 0 and iteration > 10 )	iterate = false;
@@ -187,7 +193,9 @@ int EM::optimize(){
         std::strcpy( odir, opath.c_str() );
         motif_->write( odir, filename + std::to_string( iteration ) );
 */
-
+        // todo: print out for checking
+        //print();
+        //printR();
     }
 
     // calculate probabilities
@@ -212,6 +220,7 @@ void EM::EStep(){
     for( size_t n = 0; n < seqs_.size(); n++ ){
 
         size_t 	L = seqs_[n]->getL();
+        size_t  LW1 = L - W_ + 1;
         size_t*	kmer = seqs_[n]->getKmer();
         float 	normFactor = 0.f;
 
@@ -221,40 +230,32 @@ void EM::EStep(){
         //              r_[n][i] is the weight for motif being at position L-i on sequence n
         //              the purpose of doing the reverting is to improve the computation speed
 
-        for( size_t i = 0; i <= L+W_; i++ ){
-            r_[n][i] = 1.0f;
+        for( size_t i = 1; i <= LW1; i++ ){
+            r_[n][L-i] = 1.0f;
         }
 
         // when p(z_n > 0), ij = i+j runs over all positions in sequence
         // r index goes from (0, L]
+
         for( size_t ij = 0; ij < L; ij++ ){
             // extract (K+1)-mer y from positions (ij-K,...,ij)
             size_t y = kmer[ij] % Y_[K_+1];
             for( size_t j = 0; j < W_; j++ ){
-                r_[n][L-ij+j] *= s_[y][j];
+                r_[n][L-ij+j-1] *= s_[y][j];
             }
+
         }
 
         // calculate the responsibilities and sum them up
-        r_[n][0] = pos_[n][0];
-        normFactor += r_[n][0];
-        for( size_t i = W_-1; i <= L-1; i++ ){
-            r_[n][i] *= pos_[n][L-i];
-            normFactor += r_[n][i];
+        normFactor += pos_[n][0];
+        for( size_t i = 1; i <= LW1; i++ ){
+            r_[n][L-i] *= pos_[n][i];
+            normFactor += r_[n][L-i];
         }
 
         // normalize responsibilities
-        for( size_t i = W_-1; i <= L-1; i++ ){
-            r_[n][i] /= normFactor;
-        }
-        r_[n][0] /= normFactor;
-
-        // zero out responsibilities for the unused positions
-        for( size_t i = 1; i <= W_-2; i++ ){
-            r_[n][i] = 0.0f;
-        }
-        for( size_t i = L; i <= L+W_; i++ ){
-            r_[n][i] = 0.0f;
+        for( size_t i = 1; i <= LW1; i++ ){
+            r_[n][L-i] /= normFactor;
         }
 
         // calculate log likelihood over all sequences
@@ -287,10 +288,11 @@ void EM::MStep(){
         for( size_t ij = 0; ij < L; ij++ ){
             size_t y = kmer[ij] % Y_[K_+1];
             for (size_t j = 0; j < W_; j++) {
-                // parallelize for: n_[K_][y][j] += r_[n][L-ij+j];
-                atomic_float_add(&(n_[K_][y][j]), r_[n][L-ij+j]);
+                // parallelize for: n_[K_][y][j] += r_[n][L-ij+j-1];
+                atomic_float_add(&(n_[K_][y][j]), r_[n][L-ij+j-1]);
             }
         }
+
     }
 
     // compute fractional occurrence counts from higher to lower order
@@ -363,7 +365,6 @@ void EM::EStep_slow(){
             r_[n][i] *= pos_[n][i];
             normFactor += r_[n][i];
         }
-
 
         // normalize responsibilities in the region [0, LW1]
         for( size_t i = 0; i <= LW1; i++ ){
@@ -980,25 +981,118 @@ float EM::getQ(){
 
 void EM::print(){
 
-    // print out motif parameter v
+    std::cout << std::fixed << std::setprecision( 2 );
+
+    std::cout << " _________________________" << std::endl;
+    std::cout << "|                         |" << std::endl;
+    std::cout << "| k-mer Fractional Counts |" << std::endl;
+    std::cout << "|_________________________|" << std::endl;
+    std::cout << std::endl;
+
     for( size_t j = 0; j < W_; j++ ){
-        for( size_t y = 0; y < Y_[K_+1]; y++ ){
-            std::cout << std::setprecision( 3 ) << n_[K_][y][j] << '\t';
+        for( size_t k = 0; k < K_+1; k++ ){
+            float sum = 0.f;
+            for( size_t y = 0; y < Y_[k+1]; y++ ) {
+                std::cout << n_[k][y][j] << '\t';
+                sum += n_[k][y][j];
+            }
+            std::cout << "sum=" << sum << std::endl;
         }
-        std::cout << std::endl;
     }
 
+    std::cout << std::fixed << std::setprecision( 4 );
+
+    std::cout << " ____________________________" << std::endl;
+    std::cout << "|                            |" << std::endl;
+    std::cout << "| Conditional Probabilities  |" << std::endl;
+    std::cout << "|____________________________|" << std::endl;
+    std::cout << std::endl;
+
+    for( size_t j = 0; j < W_; j++ ){
+        for( size_t k = 0; k < K_+1; k++ ){
+            float sum = 0.f;
+            for( size_t y = 0; y < Y_[k+1]; y++ ) {
+                std::cout << motif_->getV()[k][y][j] << '\t';
+                sum += motif_->getV()[k][y][j];
+            }
+            std::cout << "sum=" << sum <<  std::endl;
+            //assert( fabsf( sum-1.0f ) < 1.e-4f );
+        }
+    }
+
+    std::cout << " ______________________" << std::endl;
+    std::cout << "|                      |" << std::endl;
+    std::cout << "| Total Probabilities  |" << std::endl;
+    std::cout << "|______________________|" << std::endl;
+    std::cout << std::endl;
+
+    for( size_t j = 0; j < W_; j++ ){
+        for( size_t k = 0; k < K_+1; k++ ){
+            float sum = 0.f;
+            for( size_t y = 0; y < Y_[k+1]; y++ ) {
+                std::cout << motif_->getP()[k][y][j] << '\t';
+                sum += motif_->getP()[k][y][j];
+            }
+            std::cout << "sum=" << sum << std::endl;
+            //assert( fabsf( sum-1.0f ) < 1.e-4f );
+        }
+    }
+
+    std::cout << " ________________" << std::endl;
+    std::cout << "|                |" << std::endl;
+    std::cout << "| Motifs Scores  |" << std::endl;
+    std::cout << "|________________|" << std::endl;
+    std::cout << std::endl;
+
+    for( size_t j = 0; j < W_; j++ ){
+        float sum = 0.f;
+        for( size_t y = 0; y < Y_[K_+1]; y++ ) {
+            std::cout << s_[y][j] << '\t';
+            sum += s_[y][j];
+        }
+        std::cout << "sum=" << sum << std::endl;
+        //assert( fabsf( sum-1.0f ) < 1.e-4f );
+    }
+
+    std::cout << std::endl << "Fraction parameter q="
+              << std::setprecision( 4 ) << q_ << std::endl;
 }
 
 void EM::printR(){
 
     // print out weights r for each position on each sequence
+
+    std::cout << " ____________" << std::endl;
+    std::cout << "|            |" << std::endl;
+    std::cout << "| Posterior  |" << std::endl;
+    std::cout << "|____________|" << std::endl;
+    std::cout << std::endl;
+
     for( size_t n = 0; n < seqs_.size(); n++ ){
         std::cout << "seq " << n << ":" << std::endl;
-        for( size_t i = 0; i < seqs_[n]->getL(); i++ ){
-            std::cout << r_[n][seqs_[n]->getL()-W_-i] << '\t';
+        size_t L = seqs_[n]->getL();
+        float sum = 0.f;
+        std::cout << r_[n][0] << '\t';
+        sum += r_[n][0];
+        for( size_t i = 1; i <= L-W_+1; i++ ){
+            std::cout << r_[n][L-i] << '\t';
+            sum += r_[n][L-i];
+//            std::cout << r_[n][i] << '\t';
+//            sum += r_[n][i];
         }
-        std::cout << std::endl;
+/*
+        // the unused positions
+        for( size_t i = 1; i <= W_-2; i++ ){
+            std::cout << r_[n][i] << '\t';
+            sum += r_[n][i];
+        }
+        for( size_t i = L; i <= L+W_; i++ ){
+            std::cout << r_[n][i] << '\t';
+            sum += r_[n][i];
+        }
+*/
+        std::cout << /*"sum=" << sum <<*/ std::endl;
+        assert( fabsf( sum-1.0f ) < 1.e-4f );
     }
 }
 

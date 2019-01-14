@@ -19,6 +19,7 @@ public:
 	SequenceSet( std::string sequenceFilepath,
 			bool singleStrand = false,
 			std::string intensityFilepath = "" );
+
 	~SequenceSet();
 
 	std::string				getSequenceFilepath();
@@ -26,6 +27,7 @@ public:
 	std::vector<Sequence*> 	getSequences();
 	size_t 					getMinL();
 	size_t					getMaxL();
+    size_t                  getBaseSum();
 	float* 					getBaseFrequencies();
     bool                    isSingleStranded();
 	void					print();			// print sequences
@@ -38,6 +40,7 @@ private:
 	std::vector<Sequence*>	sequences_;			// sequences
 	size_t 					minL_;				// length of the shortest sequence
 	size_t 					maxL_;				// length of the longest sequence
+    size_t                  baseSum_;           // sum of all the bases
 	float*	 				baseFrequencies_;	// kmer frequencies
     bool                    isSingleStranded_;  // flag for searching on single strand
 	std::vector<size_t>		Y_;					// contains 1 at position 0

@@ -242,21 +242,23 @@ size_t MotifSet::getMaxW(){
 
 void MotifSet::print(){
 
-	fprintf(stderr, " ____________________________\n"
-					"|                            |\n"
-					"| PROBABILITIES for MotifSet |\n"
-					"|____________________________|\n\n" );
-
+    std::cout << std::endl
+              << "****************************" << std::endl
+              << "*   Initial Motif Models   *" << std::endl
+              << "****************************" << std::endl;
 
 	for( size_t i = 0; i < N_; i++ ){
-		fprintf(stderr, " ________________________________________\n"
-						"|                                        |\n"
-						"| INITIALIZED PROBABILITIES for Motif %d  |\n"
-						"|________________________________________|\n\n",
-						( int )i+1 );
+
+        std::cout << " ___________________________________" << std::endl;
+        std::cout << "|                                   |" << std::endl;
+        std::cout << "| INITIAL PROBABILITIES for Motif " << ( int )i+1 << " |" << std::endl;
+        std::cout << "|___________________________________|" << std::endl;
+        std::cout << std::endl;
+
 		motifs_[i]->print();
 	}
 }
+
 void MotifSet::write( char* outdir ){
 
 }

@@ -32,7 +32,8 @@ public:
     float               getQ();                     // get estimated motif fraction on the sequences q
 	float**				getA();						// get motif hyperparameter alpha
 	float***    		getV();						// get conditional probabilities v
-	float**				getS();						// get log odds scores for the highest order K at position j
+    float***    		getP();						// get probabilities v
+    float**				getS();						// get log odds scores for the highest order K at position j
 	std::vector<size_t> getY();
 
 	void        		updateV( float*** n, float** alpha, size_t k );
@@ -87,6 +88,10 @@ inline float*** Motif::getV(){
 	return v_;
 }
 
+inline float*** Motif::getP(){
+    return v_;
+}
+
 inline std::vector<size_t> Motif::getY(){
 	return Y_;
 }
@@ -97,7 +102,7 @@ inline void Motif::updateV( float*** n, float** alpha, size_t K ){
 	assert( isInitialized_ );
 
 	// sum up the n over (k+1)-mers at different position of motif
-	std::vector<float> sumN(W_);
+	std::vector<float> sumN( W_ );
     for( size_t j = 0; j < W_; j++ ) {
         sumN[j] = 0.f;
     }
@@ -113,7 +118,7 @@ inline void Motif::updateV( float*** n, float** alpha, size_t K ){
 		for( size_t j = 0; j < W_; j++ ){
 			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * v_bg_[0][y] )
 						/ ( sumN[j] + alpha[0][j] );
-            assert( v_[0][y][j] <= 1 );
+            assert( v_[0][y][j] <= 1.f );
 		}
 	}
 
@@ -122,7 +127,8 @@ inline void Motif::updateV( float*** n, float** alpha, size_t K ){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
 			size_t y2 = y % Y_[k];				// cut off the first nucleotide
 			size_t yk = y / Y_[1];				// cut off the last nucleotide
-			// todo: Merge first loop into second one (by allowing contexts to extend left of the motif)
+			// todo: Merge first loop into second one
+            // (by allowing contexts to extend left of the motif)
 			for( size_t j = 0; j < k; j++ ){	// when j < k, p(A|CG) = p(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
 			}

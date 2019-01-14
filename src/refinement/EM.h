@@ -5,13 +5,17 @@
 #ifndef EM_H_
 #define EM_H_
 
-#include "../init/BackgroundModel.h"
-#include "../init/MotifSet.h"
 #include <random>
+#include <chrono>
 //#include <eigen3/Eigen/Dense>   // e.g. conjugate gradient solver
 //#include <eigen3/Eigen/IterativeLinearSolvers>
 //#include <eigen3/Eigen/Core>    // e.g. used for LBFGS++
+//#include "ObjFun.h"
+//#include "../LBFGS/LBFGS.h"
 
+#include "../init/BackgroundModel.h"
+#include "../init/MotifSet.h"
+#include "Global.h"
 
 class EM {
     /**
@@ -94,7 +98,7 @@ private:
 
     float 					llikelihood_        = 0.0f;     // log likelihood for each iteration
     float					epsilon_            = 0.001f;	// threshold for parameter v convergence
-    size_t					maxEMIterations_    = 1000;
+    size_t					maxEMIterations_    = 2;
     bool                    optimizeQ_;
     bool                    optimizePos_;
 

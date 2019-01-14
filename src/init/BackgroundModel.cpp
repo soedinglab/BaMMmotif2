@@ -297,6 +297,11 @@ void BackgroundModel::calculatePosLikelihoods( std::vector<Sequence*> seqs,
 
 void BackgroundModel::print(){
 
+    std::cout << std::endl
+              << "************************" << std::endl
+              << "*   Background Model   *" << std::endl
+              << "************************" << std::endl;
+
 	if( interpolate_ ){
 		std::cout << " ___________________________________" << std::endl;
 		std::cout << "|*                                 *|" << std::endl;
@@ -311,7 +316,7 @@ void BackgroundModel::print(){
 		std::cout << std::endl;
 	}
 
-	std::cout << "name = " << basename_ << std::endl << std::endl;
+	std::cout << "filename = " << basename_ << std::endl << std::endl;
 	std::cout << "K = " << K_ << std::endl;
 	std::cout << "A =";
 	for( size_t k = 0; k <= K_; k++ ){
@@ -329,7 +334,7 @@ void BackgroundModel::print(){
 
 		for( size_t k = 0; k <= K_; k++ ){
 			for( size_t y = 0; y < Y_[k+1]; y++ ){
-				std::cout << n_[k][y] << " ";
+				std::cout << n_[k][y] << "\t";
 			}
 			std::cout << std::endl;
 		}
@@ -341,10 +346,11 @@ void BackgroundModel::print(){
 	std::cout << "|___________________________|" << std::endl;
 	std::cout << std::endl;
 
+    std::cout << std::fixed << std::setprecision( 4 );
 	for( size_t k = 0; k <= K_; k++ ){
-		std::cout << std::fixed << std::setprecision( 3 ) << v_[k][0];
+		std::cout << v_[k][0];
 		for( size_t y = 1; y < Y_[k+1]; y++ ){
-			std::cout << " " << std::fixed << std::setprecision( 3 ) << v_[k][y];
+			std::cout << " "<< v_[k][y];
 		}
 		std::cout << std::endl;
 	}
@@ -370,7 +376,7 @@ void BackgroundModel::write( char* odir, std::string basename ){
 		for( size_t k = 0; k <= K_; k++ ){
 			for( size_t y = 0; y < Y_[k+1]; y++ ){
 				file << std::scientific << std::setprecision( 6 )
-					<< v_[k][y] << " ";
+                     << v_[k][y] << " ";
 			}
 			file << std::endl;
 		}
@@ -419,7 +425,7 @@ void BackgroundModel::write( char* odir, std::string basename ){
 		for( size_t k = 0; k <= K_; k++ ){
 			for( size_t y = 0; y < Y_[k+1]; y++ ){
 				file << std::scientific << std::setprecision( 6 )
-					<< p[k][y] << " " ;
+                     << p[k][y] << " " ;
 			}
 			file << std::endl;
 		}
@@ -428,7 +434,7 @@ void BackgroundModel::write( char* odir, std::string basename ){
 	} else {
 
 		std::cerr << "Error: Cannot write into output directory: "
-				<< odir << std::endl;
+                  << odir << std::endl;
 		exit( 1 );
 	}
 

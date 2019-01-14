@@ -17,6 +17,8 @@ SequenceSet::SequenceSet( std::string sequenceFilepath,
 		Y_.push_back( ipow( Alphabet::getSize(), i ) );
 	}
 
+    baseSum_ = 0;
+
 	baseFrequencies_ = new float[Y_[1]];
 
     isSingleStranded_ = singleStrand;
@@ -57,6 +59,10 @@ size_t SequenceSet::getMinL(){
 
 size_t SequenceSet::getMaxL(){
 	return maxL_;
+}
+
+size_t SequenceSet::getBaseSum(){
+    return baseSum_;
 }
 
 float* SequenceSet::getBaseFrequencies(){
@@ -218,14 +224,14 @@ int SequenceSet::readFASTA(){
 	minL_ = minL;
 
 	 // calculate the sum of bases
-	size_t sumCounts = 0;
+	baseSum_ = 0;
 	for( size_t i = 0; i < Y_[1]; i++ ){
-		sumCounts += baseCounts[i];
+		baseSum_ += baseCounts[i];
 	}
 
 	// calculate base frequencies
 	for( size_t i = 0; i < Y_[1]; i++ ){
-		baseFrequencies_[i] = static_cast<float>( baseCounts[i] ) / static_cast<float>( sumCounts );
+		baseFrequencies_[i] = static_cast<float>( baseCounts[i] ) / static_cast<float>( baseSum_ );
 	}
 
 	return 0;

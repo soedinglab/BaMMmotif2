@@ -300,7 +300,8 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, floa
         // todo: possible solution is to implement this function on our own and pre-generated n random numbers
         // todo: for drawing z
 		// draw a new position z from discrete posterior distribution
-		std::discrete_distribution<size_t> posterior_dist( posteriors.begin(), posteriors.end() );
+		std::discrete_distribution<size_t> posterior_dist( posteriors.begin(),
+                                                           posteriors.end() );
 
 		// draw a sample z randomly
 		z = posterior_dist( rngx );
@@ -462,13 +463,13 @@ void Motif::calculateP(){
 			for( size_t j = k; j < W_; j++ ){
 				p_[k][y][j] = v_[k][y][j] * p_[k-1][yk][j-1];
 			}
-
 		}
 	}
 }
 
 void Motif::calculateLogS( float** Vbg, size_t K_bg ){
 
+    std::cout << "K_bg=" << K_bg << std::endl;
 	for( size_t y = 0; y < Y_[K_+1]; y++ ){
 		size_t y_bg = y % Y_[K_bg+1];
 		for( size_t j = 0; j < W_; j++ ){
@@ -480,8 +481,11 @@ void Motif::calculateLogS( float** Vbg, size_t K_bg ){
 
 void Motif::calculateLinearS( float** Vbg, size_t K_bg ){
 
+    std::cout << "K_bg=" << K_bg << std::endl;
 	for( size_t y = 0; y < Y_[K_+1]; y++ ){
 		size_t y_bg = y % Y_[K_bg+1];
+        std::cout << "Vbg["<<K_bg<<"][" << y_bg <<"]="
+                  << Vbg[K_bg][y_bg] << std::endl;
 		for( size_t j = 0; j < W_; j++ ){
 			s_[y][j] = v_[K_][y][j] / Vbg[K_bg][y_bg];
 		}
@@ -491,21 +495,61 @@ void Motif::calculateLinearS( float** Vbg, size_t K_bg ){
 
 void Motif::print(){
 
-	fprintf( stderr," _______________________\n"
-					"|                       |\n"
-					"|  v for Initial Model  |\n"
-					"|_______________________|\n\n" );
+    std::cout << std::fixed << std::setprecision( 4 );
+
+    std::cout << " _______________" << std::endl;
+    std::cout << "|               |" << std::endl;
+    std::cout << "| k-mer Counts  |" << std::endl;
+    std::cout << "|_______________|" << std::endl;
+    std::cout << std::endl;
+
+    for( size_t j = 0; j < W_; j++ ){
+        for( size_t k = 0; k < K_+1; k++ ){
+            int sum = 0;
+            for( size_t y = 0; y < Y_[k+1]; y++ ) {
+                std::cout << n_[k][y][j] << '\t';
+                sum += n_[k][y][j];
+            }
+            std::cout << "sum=" << sum << std::endl;
+        }
+    }
+
+    std::cout << " ____________________________" << std::endl;
+    std::cout << "|                            |" << std::endl;
+    std::cout << "| Conditional Probabilities  |" << std::endl;
+    std::cout << "|____________________________|" << std::endl;
+    std::cout << std::endl;
+
 	for( size_t j = 0; j < W_; j++ ){
 		for( size_t k = 0; k < K_+1; k++ ){
             float sum = 0.f;
 			for( size_t y = 0; y < Y_[k+1]; y++ ) {
-                std::cout << std::scientific << v_[k][y][j] << '\t';
+                std::cout << v_[k][y][j] << '\t';
                 sum += v_[k][y][j];
             }
-			std::cout << "\t sum = " << sum << std::endl;
+			std::cout << "sum=" << sum <<  std::endl;
+//            assert( fabsf( sum-1.0f ) < 1.e-4f );
 		}
-		std::cout << std::endl;
 	}
+
+    std::cout << " ______________________" << std::endl;
+    std::cout << "|                      |" << std::endl;
+    std::cout << "| Total Probabilities  |" << std::endl;
+    std::cout << "|______________________|" << std::endl;
+    std::cout << std::endl;
+
+    for( size_t j = 0; j < W_; j++ ){
+        for( size_t k = 0; k < K_+1; k++ ){
+            float sum = 0.f;
+            for( size_t y = 0; y < Y_[k+1]; y++ ) {
+                std::cout << p_[k][y][j] << '\t';
+                sum += p_[k][y][j];
+            }
+            std::cout << "sum=" << sum << std::endl;
+//            assert( fabsf( sum-1.0f ) < 1.e-4f );
+        }
+    }
+
 }
 
 void Motif::write( char* odir, std::string basename ){

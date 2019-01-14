@@ -66,7 +66,7 @@ bool				Global::debugAlphas = false;
 
 // FDR options
 bool				Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation
-size_t				Global::mFold = 1;						// number of negative sequences as multiple of positive sequences
+size_t				Global::mFold = 10;						// number of negative sequences as multiple of positive sequences
 size_t				Global::cvFold = 4;						// size of cross-validation folds
 size_t				Global::sOrder = 2;						// the k-mer order for sampling negative sequence set
 
@@ -96,15 +96,19 @@ bool                Global::advanceEM = false;
 // option for openMP
 size_t              Global::threads = 4;                   // number of threads to use
 
-void Global::init( int nargs, char* args[] ){
+Global::Global( int nargs, char* args[] ){
 
-	readArguments( nargs, args );
+    // seed random number
+    srand( 42 );
+    rngx.seed( 42 );
 
-	Alphabet::init( alphabetType );
+    readArguments( nargs, args );
 
-	// read in positive and negative sequence set
-	posSequenceSet = new SequenceSet( posSequenceFilename, ss );
-	negSequenceSet = new SequenceSet( negSequenceFilename, ss );
+    Alphabet::init( alphabetType );
+
+    // read in positive and negative sequence set
+    posSequenceSet = new SequenceSet( posSequenceFilename, ss );
+    negSequenceSet = new SequenceSet( negSequenceFilename, ss );
 
     // check if the input sequences are too few
     if( posSequenceSet->getSequences().size() < cvFold ){
@@ -112,10 +116,14 @@ void Global::init( int nargs, char* args[] ){
         exit( 1 );
     }
 
-	// optional: read in sequence intensities (header and intensity columns?)
-	if( intensityFilename != 0 ){
-		;// read in sequence intensity
-	}
+    // optional: read in sequence intensities (header and intensity columns?)
+    if( intensityFilename != 0 ){
+        ;// read in sequence intensity
+    }
+
+    if( verbose ){
+        printPara();
+    }
 }
 
 int Global::readArguments( int nargs, char* args[] ){
@@ -150,7 +158,7 @@ int Global::readArguments( int nargs, char* args[] ){
     // read in the basename of output file,
     // if not given, take the basename of input FASTA file
     if( opt >> GetOpt::OptionPresent( "basename" ) ){
-        opt >> GetOpt::Option("basename", outputFileBasename);
+        opt >> GetOpt::Option( "basename", outputFileBasename );
     } else {
         outputFileBasename = posSequenceBasename;
     }
@@ -346,52 +354,102 @@ int Global::readArguments( int nargs, char* args[] ){
 	return 0;
 }
 
+void Global::printPara(){
+
+    std::cout << " ____________________" << std::endl;
+    std::cout << "|*                  *|" << std::endl;
+    std::cout << "| Parameter Settings |" << std::endl;
+    std::cout << "|*__________________*|" << std::endl;
+    std::cout << std::endl;
+
+    std::cout << "Alphabet type\t\t\t\t" << Alphabet::getAlphabet() << std::endl;
+
+    // for positive sequence set
+    std::cout << "Positive sequence set\t\t\t"
+              << Global::posSequenceFilename << std::endl
+              << "Sequence counts\t\t\t\t"
+              << Global::posSequenceSet->getSequences().size()
+              << " (max.length: "   << Global::posSequenceSet->getMaxL()
+              << ", min.length: "   << Global::posSequenceSet->getMinL()
+              << ", total bases: "  << Global::posSequenceSet->getBaseSum()
+              << ")" << std::endl
+              << "Base frequencies\t\t\t";
+    for( size_t i = 0; i < Alphabet::getSize(); i++ ){
+        std::cout << Global::posSequenceSet->getBaseFrequencies()[i]
+                  << "(" << Alphabet::getAlphabet()[i] << ")"
+                  << ' ';
+    }
+    std::cout << std::endl << std::endl;
+
+    if( Global::advanceEM ){
+        std::cout << "\n    " << Global::f * 100
+                  << "% of the sequences are used for EM after masking."
+                  << std::endl;
+    }
+
+    // for negative sequence set
+    if( Global::negSeqGiven ){
+        std::cout << "Negative sequence set\t\t\t"
+                  << Global::negSequenceFilename << std::endl
+                  << "Sequence counts\t\t\t\t"
+                  << Global::negSequenceSet->getSequences().size()
+                  << " (max.length: "   << Global::negSequenceSet->getMaxL()
+                  << ", min.length: "   << Global::negSequenceSet->getMinL()
+                  << ", total bases: "  << Global::negSequenceSet->getBaseSum()
+                  << ")" << std::endl
+                  << "Base frequencies\t\t\t";
+        for( size_t i = 0; i < Alphabet::getSize(); i++ ){
+            std::cout << Global::negSequenceSet->getBaseFrequencies()[i]
+                      << "(" << Alphabet::getAlphabet()[i] << ")"
+                      << ' ';
+        }
+        std::cout << std::endl << std::endl;
+    } else {
+        std::cout << "Negative sequence set\t\t\t"
+                  << "generated based on conditional probabilities of "
+                  << Global::sOrder << "-mers from the positive set"
+                  << std::endl << std::endl;
+    }
+
+    // for initial model
+    std::cout << "Given initial model\t\t\t"    << Global::initialModelFilename << std::endl
+              << "Given model type\t\t\t"       << Global::initialModelTag << std::endl
+              << "Model parameters:"            << std::endl
+              << "BaMM model order\t\t\t"       << Global::modelOrder << std::endl
+              << "Background model order\t\t\t" << Global::bgModelOrder << std::endl
+              << "BaMM is trained on\t\t\t";
+    if( Global::ss ){
+        std::cout << "single-stranded sequences" << std::endl << std::endl;
+    } else{
+        std::cout << "double-stranded sequences" << std::endl << std::endl;
+    }
+
+
+    // for further functionalities
+    std::cout << "Cross-Validation\t\t\t";
+    if( Global::FDR ){
+        std::cout << "True ("<< Global::cvFold << " folds)" << std::endl;
+    } else {
+        std::cout << "False" << std::endl;
+    }
+
+    std::cout << "Score positive sequence set\t\t";
+    if( Global::scoreSeqset ){
+        std::cout << "True" << std::endl;
+    } else {
+        std::cout << "False" << std::endl;
+    }
+
+}
+
 void Global::printStat(){
 
-	std::cout << "Alphabet type is " << Alphabet::getAlphabet();
-	std::cout << "\nGiven initial model is " << Global::initialModelBasename
-              << ", BaMM order: " << Global::modelOrder
-              << ", bgmodel order: " << Global::bgModelOrder;
-	std::cout << "\nBaMM is learned from ";
-	if( Global::ss ){
-		std::cout << "single-stranded sequences.";
-	} else {
-		std::cout << "double-stranded sequences.";
-	}
+    std::cout << " ____________" << std::endl;
+    std::cout << "|*          *|" << std::endl;
+    std::cout << "| Statistics |" << std::endl;
+    std::cout << "|*__________*|" << std::endl;
+    std::cout << std::endl;
 
-	// for positive sequence set
-	std::cout << "\nGiven positive sequence set is "
-              << Global::outputFileBasename << ".\n	"
-              << Global::posSequenceSet->getSequences().size()
-              << " sequences, max.length: " << Global::posSequenceSet->getMaxL()
-              << ", min.length: " << Global::posSequenceSet->getMinL()
-              << "\n	base frequencies:";
-	for( size_t i = 0; i < Alphabet::getSize(); i++ ){
-		std::cout << ' ' << Global::posSequenceSet->getBaseFrequencies()[i]
-		          << "(" << Alphabet::getAlphabet()[i] << ")";
-	}
-    if( Global::advanceEM ){
-        std::cout << "\n    " << Global::f * 100 << "% of the sequences are used for EM after masking.";
-    }
-	// for negative sequence set
-	if( Global::negSeqGiven ){
-		std::cout << "\nGiven negative sequence set is " << Global::negSequenceBasename
-                  << ".\n	" << Global::negSequenceSet->getSequences().size()
-                  << " sequences, max.length: " << Global::negSequenceSet->getMaxL()
-                  << ", min.length: " << Global::negSequenceSet->getMinL()
-                  << "\n	base frequencies:";
-		for( size_t i = 0; i < Alphabet::getSize(); i++ )
-			std::cout << ' ' << Global::negSequenceSet->getBaseFrequencies()[i]
-					  << "(" << Alphabet::getAlphabet()[i] << ")";
-	} else {
-		std::cout << "\nThe background model is generated based on cond.prob of "
-                  << Global::sOrder << "-mers.";
-	}
-
-	if( Global::FDR ){
-		std::cout << "\nFolds for cross-validation (FDR estimation): "
-                  << Global::cvFold;
-	}
 }
 
 void Global::printHelp(){
@@ -555,7 +613,7 @@ void Global::printHelp(){
 	printf("\n==================================================================\n");
 }
 
-void Global::destruct(){
+Global::~Global(){
     Alphabet::destruct();
     if( alphabetType ) 			delete[] alphabetType;
     if( posSequenceSet )	 	delete posSequenceSet;
