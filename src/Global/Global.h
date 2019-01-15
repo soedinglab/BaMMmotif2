@@ -115,7 +115,7 @@ public:
 
 	// other options
 	static bool			verbose;				// verbose printouts, defaults to false
-	static bool         debugMode;				// verbose printouts for debugging, defaults to false
+	static bool         debug;				    // verbose printouts for debugging, defaults to false
 	static bool			saveBaMMs;				// write optimized BaMM(s) to disk
 	static bool			savePRs;				// write the precision, recall, TP and FP
 	static bool			savePvalues;			// write p-values for each log odds score from sequence set
@@ -132,6 +132,7 @@ public:
     static bool         B3;
     static bool         B3prime;
     static bool         advanceEM;
+    static bool         slowEM;                 // flag for the slow version of EM
 
     // option for openMP
     static size_t       threads;                // number of threads to use

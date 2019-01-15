@@ -39,20 +39,16 @@ ScoreSeqSet::~ScoreSeqSet(){
 
 }
 
-
 void ScoreSeqSet::calcLogOdds(){
 
 	/**
 	 * store the log odds scores at all positions of each sequence
 	 */
-
 	size_t K = motif_->getK();
 	size_t W = motif_->getW();
-	//size_t K_bg = ( bg_->getOrder() < K ) ? bg_->getOrder() : K;
-    size_t K_bg = bg_->getOrder();
 
     // pre-calculate log odds scores given motif and bg model
-	motif_->calculateLogS( bg_->getV(), K_bg );
+	motif_->calculateLogS( bg_->getV() );
 	float** s = motif_->getS();
 
     size_t seqN = seqSet_.size();
@@ -95,7 +91,6 @@ void ScoreSeqSet::calcPvalues( std::vector<std::vector<float>> pos_scores,
 	/**
 	 * calculate P-values for motif occurrences
 	 */
-
     size_t seqN = seqSet_.size();
 
     // copy all scores from positive set into one vector
@@ -109,7 +104,9 @@ void ScoreSeqSet::calcPvalues( std::vector<std::vector<float>> pos_scores,
     size_t posN = pos_all_scores.size();
     size_t negN = neg_all_scores.size();
 
-    std::cout << "There are " << posN << " positions in the given set." << std::endl;
+    if( Global::verbose ){
+        std::cout << "There are " << posN << " positions in the given set." << std::endl;
+    }
 
     float eps = 1.0e-5f; // to avoid 0 in the denominator
 

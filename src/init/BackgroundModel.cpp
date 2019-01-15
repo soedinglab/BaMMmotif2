@@ -348,7 +348,7 @@ void BackgroundModel::print(){
 	for( size_t k = 0; k <= K_; k++ ){
 		std::cout << v_[k][0];
 		for( size_t y = 1; y < Y_[k+1]; y++ ){
-			std::cout << " "<< v_[k][y];
+			std::cout << "\t"<< v_[k][y];
 		}
 		std::cout << std::endl;
 	}

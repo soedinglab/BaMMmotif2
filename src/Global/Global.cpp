@@ -89,7 +89,7 @@ size_t              Global::at = 0;
 
 // printout options
 bool                Global::verbose = false;
-bool                Global::debugMode = false;              // debug-mode: prints out everything.
+bool                Global::debug = false;              // debug-mode: prints out everything.
 bool				Global::saveBaMMs = true;
 bool				Global::savePRs = true;					// write the precision, recall, TP and FP
 bool				Global::savePvalues = false;			// write p-values for each log odds score from sequence set
@@ -105,6 +105,7 @@ bool 				Global::B2 = false;
 bool 				Global::B3 = false;
 bool 				Global::B3prime = false;
 bool                Global::advanceEM = false;
+bool                Global::slowEM = false;
 
 // option for openMP
 size_t              Global::threads = 4;                   // number of threads to use
@@ -349,7 +350,9 @@ int Global::readArguments( int nargs, char* args[] ){
 
     // printout options
 	opt >> GetOpt::OptionPresent( "verbose", verbose );
-	opt >> GetOpt::OptionPresent( "debug", debugMode );
+	if( opt >> GetOpt::OptionPresent( "debug", debug ) ){
+        verbose = true;
+    }
 	opt >> GetOpt::OptionPresent( "saveBaMMs", saveBaMMs );
 	opt >> GetOpt::OptionPresent( "saveInitialBaMMs", saveInitialBaMMs );
 	opt >> GetOpt::OptionPresent( "savePRs", savePRs );
@@ -365,6 +368,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "B3", B3 );
 	opt >> GetOpt::OptionPresent( "B3prime", B3prime );
     opt >> GetOpt::OptionPresent( "advanceEM", advanceEM );
+    opt >> GetOpt::OptionPresent( "slowEM", slowEM );
 
     // option for openMP
     opt >> GetOpt::Option( "threads", threads );

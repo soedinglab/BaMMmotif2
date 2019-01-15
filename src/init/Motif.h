@@ -34,8 +34,8 @@ public:
 	void        		updateV( float*** n, float** alpha, size_t k );
 
 	void				calculateP();				// calculate probabilities p
-	void				calculateLogS( float** Vbg, size_t K_bg );
-	void				calculateLinearS( float** Vbg, size_t K_bg ); // calculate S in linear space for speeding up
+	void				calculateLogS( float** Vbg );
+	void				calculateLinearS( float** Vbg ); // calculate S in linear space for speeding up
 
 	void 				print();					// print v to console
 	void 				write( char* odir, std::string basename );
@@ -50,7 +50,7 @@ private:
     float_t             q_;                         // estimated motif fraction on the sequences
 	float**			 	A_;							// hyperparameter alphas
 	float***    		v_;				        	// conditional probabilities for (k+1)-mers y at motif position j
-    float**	            v_bg_;			            // conditional probabilities of background model
+    float**	            v_null_;			            // conditional probabilities of background model
     size_t              k_bg_;                      // order of background model
 	float***			p_;							// probabilities for (k+1)-mers y at motif position j
 	float**				s_;							// log odds scores for (K+1)-mers y at motif position j
@@ -111,7 +111,7 @@ inline void Motif::updateV( float*** n, float** alpha, size_t K ){
 	// for k = 0, v_ = freqs:
 	for( size_t y = 0; y < Y_[1]; y++ ){
 		for( size_t j = 0; j < W_; j++ ){
-			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * v_bg_[0][y] )
+			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * v_null_[0][y] )
 						/ ( sumN[j] + alpha[0][j] );
             assert( v_[0][y][j] <= 1.f );
 		}

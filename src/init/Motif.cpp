@@ -1,5 +1,5 @@
+#include <random>
 #include <fstream>		// std::fstream
-#include <random>       // std::mt19937, std::discrete_distribution
 #include "Motif.h"
 #include "../Global/Global.h"
 
@@ -14,13 +14,14 @@ Motif::Motif( size_t length ){
 		Y_.push_back( ipow( Alphabet::getSize(), k ) );
 	}
 
-
     k_bg_ = Global::bgModelOrder;
-    v_bg_ = ( float** )calloc( k_bg_ + 1, sizeof( float* ) );
+
+    // build a null model
+    v_null_ = ( float** )calloc( k_bg_ + 1, sizeof( float* ) );
     for( size_t k = 0; k <= k_bg_; k++ ){
-        v_bg_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
+        v_null_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
         for( size_t y = 0; y < Y_[k+1]; y++ ){
-            v_bg_[k][y] = powf( 1.0f / Y_[1], (float)(k+1) );
+            v_null_[k][y] = powf( 1.0f / Y_[1], (float)(k+1) );
         }
     }
 
@@ -48,6 +49,7 @@ Motif::Motif( size_t length ){
 		s_[y] = ( float* )calloc( W_, sizeof( float ) );
 	}
 
+    srand( 42 );
 }
 
 Motif::Motif( const Motif& other ){ 		// copy constructor
@@ -92,7 +94,7 @@ Motif::Motif( const Motif& other ){ 		// copy constructor
 	}
 
 	k_bg_ = other.k_bg_;
-    v_bg_ = other.v_bg_;
+    v_null_ = other.v_null_;
 
 	isInitialized_ = true;
 }
@@ -199,8 +201,8 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, floa
 	for( size_t j = 0; j < W_; j++ ){
 		float norm = 0.0f;
 		for( size_t y = 0; y < asize; y++ ){
-			if( PWM[y][j] <= 1.e-8 ){
-                v_[0][y][j] = 1.e-8;
+			if( PWM[y][j] <= 1.e-8f ){
+                v_[0][y][j] = 1.e-8f;
             } else {
                 v_[0][y][j] = PWM[y][j];
             }
@@ -221,20 +223,19 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, floa
 	}
 	for( size_t y = 0; y < asize; y++ ){
 		for( size_t j = 0; j < W_; j++ ){
-			score[y][j] = v_[0][y][j] / v_bg_[0][y];
+			score[y][j] = v_[0][y][j] / v_null_[0][y];
 		}
 	}
 
 	// sampling z from each sequence of the sequence set based on the weights:
 	std::vector<Sequence*> posSet = posSeqset->getSequences();
-	std::mt19937 rngx;
-    rngx.seed( 42 );
 
     size_t count = 0;
     std::vector<Sequence*>::iterator it = posSet.begin();
     while( it != posSet.end() ){
         if( (*it)->getL() < W_ ){
-            //std::cout << "Warning: remove the short sequence: " << (*it)->getHeader() << std::endl;
+            //std::cout << "Warning: remove the short sequence: "
+            // << (*it)->getHeader() << std::endl;
             posSet.erase(it);
             count++;
         } else {
@@ -288,15 +289,16 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, floa
 			posteriors.push_back( r[i] );
 		}
 
-        // todo: with random drawing from std::discrete_distribution, it is difficult to parallelize the code
-        // todo: possible solution is to implement this function on our own and pre-generated n random numbers
-        // todo: for drawing z
+        // todo: with random drawing from std::discrete_distribution,
+        // todo: it is difficult to parallelize the code
+        // todo: possible solution is to implement this function on our
+        // todo: own and pre-generated n random numbers for drawing z
 		// draw a new position z from discrete posterior distribution
 		std::discrete_distribution<size_t> posterior_dist( posteriors.begin(),
                                                            posteriors.end() );
 
 		// draw a sample z randomly
-		z = posterior_dist( rngx );
+		z = posterior_dist( Global::rngx );
 
 		// count kmers with sampled z
 		if( z > 0 ){
@@ -399,7 +401,7 @@ void Motif::calculateV( int*** n ){
     // for k = 0, v_ = freqs:
 	for( size_t y = 0; y < Y_[1]; y++ ){
 		for( size_t j = 0; j < W_; j++ ){
-			v_[0][y][j] = ( n[0][y][j] + A_[0][j] * v_bg_[0][y] )
+			v_[0][y][j] = ( n[0][y][j] + A_[0][j] * v_null_[0][y] )
 						/ ( static_cast<float>( C_ ) + A_[0][j] );
         }
 	}
@@ -436,7 +438,7 @@ void Motif::calculateP(){
 			size_t yk = y / Y_[1];				// cut off last nucleotide in (k+1)-mer
 			// when j < k:
 			for( size_t j = 0; j < k; j++ ){
-				p_[k][y][j] = 1;	            // i.e. p_j(ACG) = p_j(G|AC) x p_j-1(C|A) x p_j-2(A)
+				p_[k][y][j] = 1.f;	            // i.e. p_j(ACG) = p_j(G|AC) x p_j-1(C|A) x p_j-2(A)
                 for( size_t i = 0; i <= j; i++ ){
                     size_t yi = y / Y_[i];
                     p_[k][y][j] *= v_[k-i][yi][j-i];
@@ -444,10 +446,10 @@ void Motif::calculateP(){
                 for( size_t i = j+1; i <= k; i++ ){
                     if( (k - i) <= k_bg_ or k <= k_bg_ ){
                         size_t yi = y / Y_[i];
-                        p_[k][y][j] *= v_bg_[k-i][yi];
+                        p_[k][y][j] *= v_null_[k-i][yi];
                     } else {
                         size_t yi = y / Y_[1] % Y_[k_bg_+1];
-                        p_[k][y][j] *= v_bg_[k_bg_][yi];
+                        p_[k][y][j] *= v_null_[k_bg_][yi];
                     }
                 }
 			}
@@ -459,24 +461,24 @@ void Motif::calculateP(){
 	}
 }
 
-void Motif::calculateLogS( float** Vbg, size_t K_bg ){
+void Motif::calculateLogS( float** Vbg ){
 
-    std::cout << "K_bg=" << K_bg << std::endl;
 	for( size_t y = 0; y < Y_[K_+1]; y++ ){
-		size_t y_bg = y % Y_[K_bg+1];
+		size_t y_bg = y % Y_[k_bg_+1];
 		for( size_t j = 0; j < W_; j++ ){
-			s_[y][j] = logf( v_[K_][y][j] + 1.e-8f ) - logf( Vbg[K_bg][y_bg] );
+			s_[y][j] = logf( v_[K_][y][j] + 1.e-8f ) - logf( Vbg[k_bg_][y_bg] );
 		}
 	}
 
 }
 
-void Motif::calculateLinearS( float** Vbg, size_t K_bg ){
+void Motif::calculateLinearS( float** Vbg ){
 
 	for( size_t y = 0; y < Y_[K_+1]; y++ ){
-		size_t y_bg = y % Y_[K_bg+1];
+		size_t y_bg = y % Y_[k_bg_+1];
 		for( size_t j = 0; j < W_; j++ ){
-			s_[y][j] = v_[K_][y][j] / Vbg[K_bg][y_bg];
+            s_[y][j] = v_[K_][y][j] / Vbg[k_bg_][y_bg];
+            //std::cout << "s["<<y<<"][" << j <<"]=" << s_[y][j] << std::endl;
 		}
 	}
 
@@ -517,7 +519,6 @@ void Motif::print(){
                 sum += v_[k][y][j];
             }
 			std::cout << "sum=" << sum <<  std::endl;
-//            assert( fabsf( sum-1.0f ) < 1.e-4f );
 		}
 	}
 

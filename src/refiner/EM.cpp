@@ -133,11 +133,13 @@ int EM::optimize(){
             }
         }
 
-        // E-step: calculate posterior
-        EStep();
-
-        // M-step: update model parameters
-        MStep();
+        if( !Global::slowEM ){
+            EStep();        // E-step: calculate posterior
+            MStep();        // M-step: update model parameters
+        } else {
+            EStep_slow();    // E-step: calculate posterior
+            MStep_slow();    // M-step: update model parameters
+        }
 
         // optimize hyper-parameter q in the first step
         if( Global::optimizeQ and iteration < 1 ) {
@@ -187,7 +189,7 @@ int EM::optimize(){
             motif_->write(odir, filename + std::to_string(iteration));
         }
         // todo: print out for checking
-        if( Global::debugMode ) {
+        if( Global::debug ) {
             print();
             printR();
         }
@@ -207,7 +209,7 @@ void EM::EStep(){
 
     float llikelihood = 0.0f;
 
-    motif_->calculateLinearS( bgModel_->getV(), K_bg_ );
+    motif_->calculateLinearS( bgModel_->getV() );
 
     // calculate responsibilities r at all LW1 positions on sequence n
     // n runs over all sequences
@@ -283,10 +285,9 @@ void EM::MStep(){
             size_t y = kmer[ij] % Y_[K_+1];
             for (size_t j = 0; j < W_; j++) {
                 // parallelize for: n_[K_][y][j] += r_[n][L-ij+j-1];
-                atomic_float_add(&(n_[K_][y][j]), r_[n][L-ij+j-1]);
+                atomic_float_add( &(n_[K_][y][j]), r_[n][L-ij+j-1] );
             }
         }
-
     }
 
     // compute fractional occurrence counts from higher to lower order
@@ -325,7 +326,7 @@ void EM::EStep_slow(){
 
     float llikelihood = 0.f;
 
-    motif_->calculateLinearS( bgModel_->getV(), K_bg_ );
+    motif_->calculateLinearS( bgModel_->getV() );
 
     // calculate responsibilities r at all LW1 positions on sequence n
     // n runs over all sequences
@@ -537,7 +538,7 @@ int EM::mask() {
          */
         float llikelihood = 0.0f;
 
-        motif_->calculateLinearS( bgModel_->getV(), K_bg_ );
+        motif_->calculateLinearS( bgModel_->getV() );
 
         // calculate responsibilities r at all LW1 positions on sequence n
         // n runs over all sequences
@@ -1051,38 +1052,39 @@ void EM::print(){
 void EM::printR(){
 
     // print out weights r for each position on each sequence
-
     std::cout << " ____________" << std::endl;
     std::cout << "|            |" << std::endl;
     std::cout << "| Posterior  |" << std::endl;
     std::cout << "|____________|" << std::endl;
     std::cout << std::endl;
 
-    for( size_t n = 0; n < seqs_.size(); n++ ){
-        std::cout << "seq " << n << ":" << std::endl;
-        size_t L = seqs_[n]->getL();
-        float sum = 0.f;
-        std::cout << r_[n][0] << '\t';
-        sum += r_[n][0];
-        for( size_t i = 1; i <= L-W_+1; i++ ){
-            std::cout << r_[n][L-i] << '\t';
-            sum += r_[n][L-i];
-//            std::cout << r_[n][i] << '\t';
-//            sum += r_[n][i];
+    if( !Global::slowEM ){
+        for( size_t n = 0; n < seqs_.size(); n++ ){
+            std::cout << "seq " << n << ":" << std::endl;
+            size_t L = seqs_[n]->getL();
+            float sum = 0.f;
+            std::cout << r_[n][0] << '\t';
+            sum += r_[n][0];
+            for( size_t i = 1; i <= L-W_+1; i++ ){
+                std::cout << r_[n][L-i] << '\t';
+                sum += r_[n][L-i];
+            }
+
+            std::cout << "sum=" << sum << std::endl;
+            //assert( fabsf( sum-1.0f ) < 1.e-4f );
         }
-/*
-        // the unused positions
-        for( size_t i = 1; i <= W_-2; i++ ){
-            std::cout << r_[n][i] << '\t';
-            sum += r_[n][i];
+    } else {
+        for( size_t n = 0; n < seqs_.size(); n++ ){
+            std::cout << "seq " << n << ":" << std::endl;
+            size_t L = seqs_[n]->getL();
+            float sum = 0.f;
+            for( size_t i = 0; i <= L-W_+1; i++ ){
+                std::cout << r_[n][i] << '\t';
+                sum += r_[n][i];
+            }
+            std::cout << /*"sum=" << sum <<*/ std::endl;
+            assert( fabsf( sum-1.0f ) < 1.e-4f );
         }
-        for( size_t i = L; i <= L+W_; i++ ){
-            std::cout << r_[n][i] << '\t';
-            sum += r_[n][i];
-        }
-*/
-        std::cout << /*"sum=" << sum <<*/ std::endl;
-        assert( fabsf( sum-1.0f ) < 1.e-4f );
     }
 }
 

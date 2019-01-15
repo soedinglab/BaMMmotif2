@@ -43,7 +43,7 @@ public:
 	// calculate positional likelihoods for the sequence set
 	// and write likelihoods to file
 	void 	calculatePosLikelihoods( std::vector<Sequence*> sequenceSet,
-			                      	  char* odir  );
+                                     char* odir  );
 
 
 	void 	print();
@@ -54,6 +54,7 @@ private:
 
 	// calculate probabilities from conditional probabilities
 	void	calculateProbabilities( float** p );
+
 	// calculate conditional probabilities from counts
 	void 	calculateV();
 

@@ -264,7 +264,7 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
     float** v_bg = bg_->getV();
 
     // compute log odd scores s[y][j], log likelihoods of the highest order K
-    motif_->calculateLinearS( v_bg, K_bg_ );
+    motif_->calculateLinearS( v_bg );
 
     // sampling z:
     bool remove_kmer_slowly = false;	// a flag to switch between slow and fast versions for counting k-mers
@@ -339,7 +339,7 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
             // updated model parameters v excluding the n'th sequence
             motif_->updateV( n_, A_, K_ );
             // compute log odd scores s[y][j] of the highest order K
-            motif_->calculateLinearS( bg_->getV(), K_bg_ );
+            motif_->calculateLinearS( bg_->getV() );
 
         }
 
