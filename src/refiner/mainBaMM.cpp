@@ -138,6 +138,7 @@ int main( int nargs, char* args[] ){
                 std::cout << "|   After training   |" << std::endl;
                 std::cout << "|*__________________*|" << std::endl;
                 std::cout << std::endl;
+
                 model.print();
             }
 

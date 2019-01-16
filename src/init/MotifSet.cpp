@@ -36,9 +36,6 @@ MotifSet::MotifSet( char* indir,
 
         maxW_ = motif->getW();
 
-		// todo: here to delete motif
-		// delete motif;  // Error
-
 	} else if( tag.compare( "PWM" ) == 0 ){
 
 		// read file to calculate motif length
@@ -243,10 +240,10 @@ void MotifSet::print(){
 
 	for( size_t i = 0; i < N_; i++ ){
 
-        std::cout << " ___________________________________" << std::endl;
-        std::cout << "|                                   |" << std::endl;
-        std::cout << "| INITIAL PROBABILITIES for Motif " << ( int )i+1 << " |" << std::endl;
-        std::cout << "|___________________________________|" << std::endl;
+        std::cout << " ___________" << std::endl;
+        std::cout << "|*         *|" << std::endl;
+        std::cout << "|  Motif " << ( int )i+1 << "  |" << std::endl;
+        std::cout << "|*_________*|" << std::endl;
         std::cout << std::endl;
 
 		motifs_[i]->print();

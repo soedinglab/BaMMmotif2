@@ -20,7 +20,8 @@ int main( int nargs, char* args[] ){
 
     if( Global::sampleBgset ){
         /**
-         * Sample background sequence set based on s-mer frequencies from the input sequence set
+         * Sample background sequence set based on s-mer frequencies
+         * from the input sequence set
          */
         SeqGenerator negseq( Global::posSequenceSet->getSequences(), NULL);
         negseq.write( Global::outputDirectory,
@@ -43,7 +44,7 @@ int main( int nargs, char* args[] ){
 
         for( size_t n = 0; n < motif_set.getN(); n++ ) {
 
-            Motif *motif = new Motif(*motif_set.getMotifs()[n]);
+            Motif *motif = new Motif( *motif_set.getMotifs()[n] );
 
             if ( Global::maskSeqset ) {
                 /**
@@ -54,7 +55,7 @@ int main( int nargs, char* args[] ){
                 /**
                  * Mask the given motif from the input sequence set
                  */
-                SeqGenerator seq_generator( Global::posSequenceSet->getSequences(), motif);
+                SeqGenerator seq_generator( Global::posSequenceSet->getSequences(), motif );
                 seq_generator.write(Global::outputDirectory,
                                     Global::posSequenceBasename + "_motif_" + std::to_string(n + 1) + "_masked",
                                     seq_generator.seqset_with_motif_masked( model.getR() ));

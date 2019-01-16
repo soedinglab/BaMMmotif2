@@ -212,7 +212,7 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_bgseqset_by_num(size
 
     calculate_kmer_frequency();
 
-    // todo: can be parallised
+    // todo: can be parallelized
     for( size_t n = 0; n < negN; n++ ){
         negset.push_back( bg_sequence(maxL) );
     }

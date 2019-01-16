@@ -163,11 +163,16 @@ void Motif::initFromBindingSites( char* indir, size_t l_flank, size_t r_flank ){
 
 		// scan the binding sites and calculate k-mer counts n
 		for( size_t k = 0; k < K_+1; k++ ){
-			for( size_t j = k; j < bindingSiteWidth; j++ ){
+			for( size_t j = 0; j < bindingSiteWidth; j++ ){
 				size_t y = 0;
 				for( size_t a = 0; a < k+1; a++ ){
 					// calculate y based on (k+1)-mer bases
-					y += Y_[a] * ( Alphabet::getCode( bindingsite[j-a] ) - 1 );
+                    if( j >= a ) {
+                        y += Y_[a] * (Alphabet::getCode(bindingsite[j-a]) - 1);
+                    } else {
+                        y += Y_[a] * (static_cast<uint8_t>( rand() )
+                                      % static_cast<uint8_t>( Y_[1] ));
+                    }
 				}
 				n_[k][y][j]++;
 			}
@@ -242,6 +247,7 @@ void Motif::initFromPWM( float** PWM, size_t asize, SequenceSet* posSeqset, floa
             it++;
         }
     }
+
     if( count > 0 ){
         std::cout << "Note: " << count << " short sequences have been neglected for sampling PWM."
                   << std::endl;
@@ -438,20 +444,7 @@ void Motif::calculateP(){
 			size_t yk = y / Y_[1];				// cut off last nucleotide in (k+1)-mer
 			// when j < k:
 			for( size_t j = 0; j < k; j++ ){
-				p_[k][y][j] = 1.f;	            // i.e. p_j(ACG) = p_j(G|AC) x p_j-1(C|A) x p_j-2(A)
-                for( size_t i = 0; i <= j; i++ ){
-                    size_t yi = y / Y_[i];
-                    p_[k][y][j] *= v_[k-i][yi][j-i];
-                }
-                for( size_t i = j+1; i <= k; i++ ){
-                    if( (k - i) <= k_bg_ or k <= k_bg_ ){
-                        size_t yi = y / Y_[i];
-                        p_[k][y][j] *= v_null_[k-i][yi];
-                    } else {
-                        size_t yi = y / Y_[1] % Y_[k_bg_+1];
-                        p_[k][y][j] *= v_null_[k_bg_][yi];
-                    }
-                }
+                p_[k][y][j] = v_[k][y][j] / Y_[k];
 			}
             // when j >= k:
 			for( size_t j = k; j < W_; j++ ){
@@ -463,10 +456,12 @@ void Motif::calculateP(){
 
 void Motif::calculateLogS( float** Vbg ){
 
+//    size_t k_bg = (K_ > k_bg_ ) ? k_bg_ : K_;
+    size_t k_bg = k_bg_;
 	for( size_t y = 0; y < Y_[K_+1]; y++ ){
-		size_t y_bg = y % Y_[k_bg_+1];
+		size_t y_bg = y % Y_[k_bg+1];
 		for( size_t j = 0; j < W_; j++ ){
-			s_[y][j] = logf( v_[K_][y][j] + 1.e-8f ) - logf( Vbg[k_bg_][y_bg] );
+			s_[y][j] = logf( v_[K_][y][j] + 1.e-8f ) - logf( Vbg[k_bg][y_bg] );
 		}
 	}
 
@@ -474,10 +469,12 @@ void Motif::calculateLogS( float** Vbg ){
 
 void Motif::calculateLinearS( float** Vbg ){
 
+//    size_t k_bg = (K_ > k_bg_ ) ? k_bg_ : K_;
+    size_t k_bg = k_bg_;
 	for( size_t y = 0; y < Y_[K_+1]; y++ ){
-		size_t y_bg = y % Y_[k_bg_+1];
+		size_t y_bg = y % Y_[k_bg+1];
 		for( size_t j = 0; j < W_; j++ ){
-            s_[y][j] = v_[K_][y][j] / Vbg[k_bg_][y_bg];
+            s_[y][j] = v_[K_][y][j] / Vbg[k_bg][y_bg];
             //std::cout << "s["<<y<<"][" << j <<"]=" << s_[y][j] << std::endl;
 		}
 	}
@@ -488,10 +485,10 @@ void Motif::print(){
 
     std::cout << std::fixed << std::setprecision( 4 );
 
-    std::cout << " _______________" << std::endl;
-    std::cout << "|               |" << std::endl;
-    std::cout << "| k-mer Counts  |" << std::endl;
-    std::cout << "|_______________|" << std::endl;
+    std::cout << " ______________" << std::endl;
+    std::cout << "|              |" << std::endl;
+    std::cout << "| k-mer Counts |" << std::endl;
+    std::cout << "|______________|" << std::endl;
     std::cout << std::endl;
 
     for( size_t j = 0; j < W_; j++ ){
@@ -505,10 +502,10 @@ void Motif::print(){
         }
     }
 
-    std::cout << " ____________________________" << std::endl;
-    std::cout << "|                            |" << std::endl;
-    std::cout << "| Conditional Probabilities  |" << std::endl;
-    std::cout << "|____________________________|" << std::endl;
+    std::cout << " ___________________________" << std::endl;
+    std::cout << "|                           |" << std::endl;
+    std::cout << "| Conditional Probabilities |" << std::endl;
+    std::cout << "|___________________________|" << std::endl;
     std::cout << std::endl;
 
 	for( size_t j = 0; j < W_; j++ ){
@@ -518,14 +515,15 @@ void Motif::print(){
                 std::cout << v_[k][y][j] << '\t';
                 sum += v_[k][y][j];
             }
-			std::cout << "sum=" << sum <<  std::endl;
+			std::cout << /*"sum=" << sum << */std::endl;
+            assert( fabsf( sum - Y_[k] ) < 1.e-3f );
 		}
 	}
 
-    std::cout << " ______________________" << std::endl;
-    std::cout << "|                      |" << std::endl;
-    std::cout << "| Total Probabilities  |" << std::endl;
-    std::cout << "|______________________|" << std::endl;
+    std::cout << " ____________________" << std::endl;
+    std::cout << "|                    |" << std::endl;
+    std::cout << "| Full Probabilities |" << std::endl;
+    std::cout << "|____________________|" << std::endl;
     std::cout << std::endl;
 
     for( size_t j = 0; j < W_; j++ ){
@@ -535,8 +533,8 @@ void Motif::print(){
                 std::cout << p_[k][y][j] << '\t';
                 sum += p_[k][y][j];
             }
-            std::cout << "sum=" << sum << std::endl;
-//            assert( fabsf( sum-1.0f ) < 1.e-4f );
+            std::cout << /*"sum=" << sum <<*/ std::endl;
+            assert( fabsf( sum-1.0f ) < 1.e-4f );
         }
     }
 
@@ -552,7 +550,8 @@ void Motif::write( char* odir, std::string basename ){
 
 	std::string opath = std::string( odir )  + '/' + basename;
 
-	// output conditional probabilities v[k][y][j] and probabilities p[k][y][j]
+	// output conditional probabilities v[k][y][j]
+    // and probabilities p[k][y][j]
 	std::string opath_v = opath + ".ihbcp"; 	// ihbcp: inhomogeneous bamm
 												// conditional probabilities
 	std::string opath_p = opath + ".ihbp";		// ihbp: inhomogeneous bamm

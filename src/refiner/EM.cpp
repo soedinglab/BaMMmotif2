@@ -4,29 +4,23 @@
 #include "EM.h"
 
 EM::EM( Motif* motif, BackgroundModel* bgModel,
-        std::vector<Sequence*> seqs/*, bool singleStrand,
-        bool optimizeQ,
-        bool optimizePos, bool verbose, float f */){
+        std::vector<Sequence*> seqs ){
 
     motif_      = motif;
 	bgModel_    = bgModel;
-	q_          = motif->getQ();    // get fractional prior q from initial motifs
 	seqs_       = seqs;
-    beta1_      = 5;                // a hyper-parameter for estimating the positional prior
-    beta2_      = 400;              // for method 2 and 3
 
     // get motif (hyper-)parameters from motif class
-	K_ = Global::modelOrder;
-	W_ = motif_->getW();
-	Y_ = motif_->getY();
-	s_ = motif_->getS();
-	A_ = motif_->getA();
-    // todo: this introduces a bug when optimizing the 0th-order model
-//	K_bg_ = ( bgModel_->getOrder() < K_ ) ? bgModel_->getOrder() : K_;
-    K_bg_ = Global::bgModelOrder;
+	K_          = Global::modelOrder;
+	W_          = motif_->getW();
+	Y_          = motif_->getY();
+	s_          = motif_->getS();
+	A_          = motif_->getA();
+    q_          = motif->getQ();    // get fractional prior q from initial motifs
 
-    padding_ = 1;
-	// allocate memory for r_[n][i], pos_[n][i], z_[n]
+    // allocate memory for r_[n][i],
+    // pos_[n][i], z_[n]
+    padding_ = 1;                   // add to reserve enough memory in r for fast EM version
 	r_ = ( float** )calloc( seqs_.size(), sizeof( float* ) );
 	pos_ = ( float** )calloc( seqs_.size(), sizeof( float* ) );
 	for( size_t n = 0; n < seqs_.size(); n++ ){
@@ -43,6 +37,8 @@ EM::EM( Motif* motif, BackgroundModel* bgModel,
 		}
 	}
 
+    beta1_      = 5;                // a hyper-parameter for estimating the positional prior
+    beta2_      = 400;              // for method 2 and 3
     // allocate memory for pi_[i]
     N0_         = 0.f;
     LW1_        = seqs_[0]->getL()-W_+1;
@@ -135,11 +131,11 @@ int EM::optimize(){
         }
 
         if( !Global::slowEM ){
-            EStep();        // E-step: calculate posterior
-            MStep();        // M-step: update model parameters
+            EStep();            // E-step: calculate posterior
+            MStep();            // M-step: update model parameters
         } else {
-            EStep_slow();    // E-step: calculate posterior
-            MStep_slow();    // M-step: update model parameters
+            EStep_slow();
+            MStep_slow();
         }
 
         // optimize hyper-parameter q in the first step
@@ -173,7 +169,7 @@ int EM::optimize(){
                       << "\t\tmodel_diff=" << v_diff
                       << std::endl;
 
-        if( v_diff < Global::EMepsilon )					iterate = false;
+        if( v_diff < Global::EMepsilon )				iterate = false;
         if( llikelihood_diff < 0 and iteration > 10 )	iterate = false;
 
         iteration++;
@@ -191,12 +187,13 @@ int EM::optimize(){
         }
         // todo: print out for checking
         if( Global::debug ) {
+            motif_->calculateP();
             print();
             printR();
         }
     }
 
-    // calculate probabilities
+    // update probabilities
     motif_->calculateP();
 
     auto t1_wall = std::chrono::high_resolution_clock::now();
@@ -999,10 +996,10 @@ void EM::print(){
 
     std::cout << std::fixed << std::setprecision( 4 );
 
-    std::cout << " ____________________________" << std::endl;
-    std::cout << "|                            |" << std::endl;
-    std::cout << "| Conditional Probabilities  |" << std::endl;
-    std::cout << "|____________________________|" << std::endl;
+    std::cout << " ___________________________" << std::endl;
+    std::cout << "|                           |" << std::endl;
+    std::cout << "| Conditional Probabilities |" << std::endl;
+    std::cout << "|___________________________|" << std::endl;
     std::cout << std::endl;
 
     for( size_t j = 0; j < W_; j++ ){
@@ -1012,14 +1009,15 @@ void EM::print(){
                 sum += motif_->getV()[k][y][j];
                 std::cout << motif_->getV()[k][y][j] << '\t';
             }
-            std::cout << "sum=" << sum <<  std::endl;
+            std::cout << /*"sum=" << sum <<*/ std::endl;
+            assert( fabsf( sum - Y_[k] ) < 1.e-3f );
         }
     }
 
-    std::cout << " ______________________" << std::endl;
-    std::cout << "|                      |" << std::endl;
-    std::cout << "| Total Probabilities  |" << std::endl;
-    std::cout << "|______________________|" << std::endl;
+    std::cout << " ____________________" << std::endl;
+    std::cout << "|                    |" << std::endl;
+    std::cout << "| Full Probabilities |" << std::endl;
+    std::cout << "|____________________|" << std::endl;
     std::cout << std::endl;
 
     for( size_t j = 0; j < W_; j++ ){
@@ -1029,14 +1027,15 @@ void EM::print(){
                 sum += motif_->getP()[k][y][j];
                 std::cout << motif_->getP()[k][y][j] << '\t';
             }
-            std::cout << "sum=" << sum << std::endl;
+            std::cout << /*"sum=" << sum <<*/ std::endl;
+            assert( fabsf( sum-1.0f ) < 1.e-4f );
         }
     }
 
-    std::cout << " ________________" << std::endl;
-    std::cout << "|                |" << std::endl;
-    std::cout << "| Motifs Scores  |" << std::endl;
-    std::cout << "|________________|" << std::endl;
+    std::cout << " _______________" << std::endl;
+    std::cout << "|               |" << std::endl;
+    std::cout << "| Motifs Scores |" << std::endl;
+    std::cout << "|_______________|" << std::endl;
     std::cout << std::endl;
 
     for( size_t j = 0; j < W_; j++ ){
@@ -1055,10 +1054,10 @@ void EM::print(){
 void EM::printR(){
 
     // print out weights r for each position on each sequence
-    std::cout << " ____________" << std::endl;
-    std::cout << "|            |" << std::endl;
-    std::cout << "| Posterior  |" << std::endl;
-    std::cout << "|____________|" << std::endl;
+    std::cout << " _____________" << std::endl;
+    std::cout << "|             |" << std::endl;
+    std::cout << "|  Posterior  |" << std::endl;
+    std::cout << "|_____________|" << std::endl;
     std::cout << std::endl;
 
     if( !Global::slowEM ){
@@ -1125,13 +1124,12 @@ void EM::write( char* odir, std::string basename ){
     for( size_t n = 0; n < seqs_.size(); n++ ){
 
         size_t L = seqs_[n]->getL();
-        L = Global::ss ? L : ( L - 1 ) / 2;
+        size_t raw_L = Global::ss ? L : ( L-1 ) / 2;
 
-        for( size_t i = 0; i < seqs_[n]->getL()-W_+1; i++ ){
-
-            if( r_[n][seqs_[n]->getL() -W_-i] >= cutoff ){
-                ofile_pos << seqs_[n]->getHeader() << '\t' << L << '\t'
-                          << ( ( i < L ) ? '+' : '-' ) << '\t' << i + 1 << ".." << i+W_ << '\t';
+        for( size_t i = 0; i < L-W_+1; i++ ){
+            if( r_[n][L+padding_+1-i] >= cutoff ){
+                ofile_pos << seqs_[n]->getHeader() << '\t' << raw_L << '\t'
+                          << ( ( i < raw_L ) ? '+' : '-' ) << '\t' << i+1 << ".." << i+W_ << '\t';
                 for( size_t b = i; b < i+W_; b++ ){
                     ofile_pos << Alphabet::getBase( seqs_[n]->getSequence()[b] );
                 }
@@ -1139,19 +1137,5 @@ void EM::write( char* odir, std::string basename ){
             }
         }
     }
-
-	// output responsibilities r[n][i]
-	bool write_r = false;		// flag for writing out the responsibilities
-	if( write_r ){
-		std::string opath_r = opath + ".weights";
-		std::ofstream ofile_r( opath_r.c_str() );
-		for( size_t n = 0; n < seqs_.size(); n++ ){
-            ofile_r << std::setprecision( 2 ) << r_[n][0] << ' ';
-			for( size_t i = 1; i <= seqs_[n]->getL()-W_+1; i++ ){
-				ofile_r << std::setprecision( 2 ) << r_[n][seqs_[n]->getL()-i] << ' ';
-			}
-			ofile_r << std::endl;
-		}
-	}
 }
 

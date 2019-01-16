@@ -34,9 +34,10 @@ public:
 
 	void        		updateV( float*** n, float** alpha, size_t k );
 
-	void				calculateP();				// calculate probabilities p
-	void				calculateLogS( float** Vbg );
-	void				calculateLinearS( float** Vbg ); // calculate S in linear space for speeding up
+	void				calculateP();				// calculate probabilities p with null model
+
+	void				calculateLogS( float** v_bg );
+	void				calculateLinearS( float** v_bg ); // calculate S in linear space for speeding up
 
 	void 				print();					// print v to console
 	void 				write( char* odir, std::string basename );
@@ -85,7 +86,7 @@ inline float*** Motif::getV(){
 }
 
 inline float*** Motif::getP(){
-    return v_;
+    return p_;
 }
 
 inline std::vector<size_t> Motif::getY(){

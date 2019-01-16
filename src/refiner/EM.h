@@ -57,13 +57,11 @@ private:
 
     Motif* 					motif_;				// motif to optimize within the EM
     BackgroundModel*		bgModel_;			// background model
+    std::vector<Sequence*>	seqs_;				// copy positive sequences
 
     size_t 					K_;					// the order of the motif model
     size_t					W_;					// the width of the motif pattern
-    size_t                  padding_;
     float** 				A_;	        		// pseudo-count hyper-parameter for order k and motif position j
-    size_t 					K_bg_;				// the order of the background model
-
 
     float** 				r_;		        	// responsibilities at all the positions in sequence n
                                                 // Note: here the r_[n][0] indicates the responsibility of not having
@@ -73,6 +71,7 @@ private:
     float**					s_;					// log odds scores
     float*** 				n_;	            	// fractional counts n for (k+1)-mers y at motif position j
     float**					pos_;				// positional prior, pos[i][0] indicates the prior for no motif present on sequence i
+
     float                   beta1_;             // hyper-parameter for smoothness on positional prior
     float                   beta2_;             // hyper-parameter for smoothness on positional prior
     float                   norm_;
@@ -87,8 +86,7 @@ private:
 //    Eigen::MatrixXf         A_matrix_;
 
     float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif
-    std::vector<Sequence*>	seqs_;				// copy positive sequences
-
+    size_t                  padding_;
     float 					llikelihood_        = 0.0f;     // log likelihood for each iteration
     std::vector<size_t>		Y_;
 
