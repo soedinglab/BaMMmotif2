@@ -990,8 +990,8 @@ void EM::print(){
         for( size_t k = 0; k < K_+1; k++ ){
             float sum = 0.f;
             for( size_t y = 0; y < Y_[k+1]; y++ ) {
-                std::cout << n_[k][y][j] << '\t';
                 sum += n_[k][y][j];
+                std::cout << n_[k][y][j] << '\t';
             }
             std::cout << "sum=" << sum << std::endl;
         }
@@ -1009,8 +1009,8 @@ void EM::print(){
         for( size_t k = 0; k < K_+1; k++ ){
             float sum = 0.f;
             for( size_t y = 0; y < Y_[k+1]; y++ ) {
-                std::cout << motif_->getV()[k][y][j] << '\t';
                 sum += motif_->getV()[k][y][j];
+                std::cout << motif_->getV()[k][y][j] << '\t';
             }
             std::cout << "sum=" << sum <<  std::endl;
         }
@@ -1026,8 +1026,8 @@ void EM::print(){
         for( size_t k = 0; k < K_+1; k++ ){
             float sum = 0.f;
             for( size_t y = 0; y < Y_[k+1]; y++ ) {
-                std::cout << motif_->getP()[k][y][j] << '\t';
                 sum += motif_->getP()[k][y][j];
+                std::cout << motif_->getP()[k][y][j] << '\t';
             }
             std::cout << "sum=" << sum << std::endl;
         }
@@ -1042,8 +1042,8 @@ void EM::print(){
     for( size_t j = 0; j < W_; j++ ){
         float sum = 0.f;
         for( size_t y = 0; y < Y_[K_+1]; y++ ) {
-            std::cout << s_[y][j] << '\t';
             sum += s_[y][j];
+            std::cout << s_[y][j] << '\t';
         }
         std::cout << "sum=" << sum << std::endl;
     }
@@ -1069,8 +1069,8 @@ void EM::printR(){
             std::cout << r_[n][0] << '\t';
             sum += r_[n][0];
             for( size_t i = 1; i <= L-W_+1; i++ ){
-                std::cout << r_[n][L+padding_-i] << '\t';
                 sum += r_[n][L+padding_-i];
+                std::cout << r_[n][L+padding_-i] << '\t';
             }
             std::cout << /*"sum=" << sum << */std::endl;
             assert( fabsf( sum-1.0f ) < 1.e-4f );
@@ -1081,8 +1081,8 @@ void EM::printR(){
             size_t L = seqs_[n]->getL();
             float sum = 0.f;
             for( size_t i = 0; i <= L-W_+1; i++ ){
-                std::cout << r_[n][i] << '\t';
                 sum += r_[n][i];
+                std::cout << r_[n][i] << '\t';
             }
             std::cout << /*"sum=" << sum <<*/ std::endl;
             assert( fabsf( sum-1.0f ) < 1.e-4f );
