@@ -73,11 +73,11 @@ EM::~EM(){
 int EM::optimize(){
 
     if( Global::verbose ) {
-        std::cout << " ______" << std::endl;
-        std::cout << "|*    *|" << std::endl;
-        std::cout << "|  EM  |" << std::endl;
-        std::cout << "|*____*|" << std::endl;
-        std::cout << std::endl;
+        std::cout << " ______" << std::endl
+                  << "|*    *|" << std::endl
+                  << "|  EM  |" << std::endl
+                  << "|*____*|" << std::endl
+                  << std::endl;
     }
 
     auto    t0_wall = std::chrono::high_resolution_clock::now();
@@ -115,7 +115,6 @@ int EM::optimize(){
         }
     }
 */
-
 
     // iterate over
     size_t iteration = 0;
@@ -164,9 +163,9 @@ int EM::optimize(){
         if( Global::verbose )
             std::cout << "it=" << iteration
                       << std::fixed
-                      << "\tlog likelihood=" << llikelihood_
-                      << "\tllh_diff=" << llikelihood_diff
-                      << "\t\tmodel_diff=" << v_diff
+                      << "\tlog likelihood="<< llikelihood_
+                      << "\tllh_diff="      << llikelihood_diff
+                      << "\t\tmodel_diff="  << v_diff
                       << std::endl;
 
         if( v_diff < Global::EMepsilon )				iterate = false;
@@ -301,7 +300,8 @@ void EM::MStep(){
         }
     }
 
-    // update model parameters v[k][y][j] with updated k-mer counts, alphas and model order
+    // update model parameters v[k][y][j] with updated k-mer counts,
+    // alphas and model order
     motif_->updateV( n_, A_, K_ );
 }
 
@@ -977,11 +977,11 @@ void EM::print(){
 
     std::cout << std::fixed << std::setprecision( 2 );
 
-    std::cout << " _________________________" << std::endl;
-    std::cout << "|                         |" << std::endl;
-    std::cout << "| k-mer Fractional Counts |" << std::endl;
-    std::cout << "|_________________________|" << std::endl;
-    std::cout << std::endl;
+    std::cout << " _________________________" << std::endl
+              << "|                         |" << std::endl
+              << "| k-mer Fractional Counts |" << std::endl
+              << "|_________________________|" << std::endl
+              << std::endl;
 
     for( size_t j = 0; j < W_; j++ ){
         for( size_t k = 0; k < K_+1; k++ ){
@@ -996,11 +996,11 @@ void EM::print(){
 
     std::cout << std::fixed << std::setprecision( 4 );
 
-    std::cout << " ___________________________" << std::endl;
-    std::cout << "|                           |" << std::endl;
-    std::cout << "| Conditional Probabilities |" << std::endl;
-    std::cout << "|___________________________|" << std::endl;
-    std::cout << std::endl;
+    std::cout << " ___________________________" << std::endl
+              << "|                           |" << std::endl
+              << "| Conditional Probabilities |" << std::endl
+              << "|___________________________|" << std::endl
+              << std::endl;
 
     for( size_t j = 0; j < W_; j++ ){
         for( size_t k = 0; k < K_+1; k++ ){
@@ -1014,11 +1014,11 @@ void EM::print(){
         }
     }
 
-    std::cout << " ____________________" << std::endl;
-    std::cout << "|                    |" << std::endl;
-    std::cout << "| Full Probabilities |" << std::endl;
-    std::cout << "|____________________|" << std::endl;
-    std::cout << std::endl;
+    std::cout << " ____________________" << std::endl
+              << "|                    |" << std::endl
+              << "| Full Probabilities |" << std::endl
+              << "|____________________|" << std::endl
+              << std::endl;
 
     for( size_t j = 0; j < W_; j++ ){
         for( size_t k = 0; k < K_+1; k++ ){
@@ -1032,11 +1032,11 @@ void EM::print(){
         }
     }
 
-    std::cout << " _______________" << std::endl;
-    std::cout << "|               |" << std::endl;
-    std::cout << "| Motifs Scores |" << std::endl;
-    std::cout << "|_______________|" << std::endl;
-    std::cout << std::endl;
+    std::cout << " _______________" << std::endl
+              << "|               |" << std::endl
+              << "| Motifs Scores |" << std::endl
+              << "|_______________|" << std::endl
+              << std::endl;
 
     for( size_t j = 0; j < W_; j++ ){
         float sum = 0.f;
@@ -1054,11 +1054,11 @@ void EM::print(){
 void EM::printR(){
 
     // print out weights r for each position on each sequence
-    std::cout << " _____________" << std::endl;
-    std::cout << "|             |" << std::endl;
-    std::cout << "|  Posterior  |" << std::endl;
-    std::cout << "|_____________|" << std::endl;
-    std::cout << std::endl;
+    std::cout << " _____________" << std::endl
+              << "|             |" << std::endl
+              << "|  Posterior  |" << std::endl
+              << "|_____________|" << std::endl
+              << std::endl;
 
     if( !Global::slowEM ){
         for( size_t n = 0; n < seqs_.size(); n++ ){
@@ -1138,4 +1138,3 @@ void EM::write( char* odir, std::string basename ){
         }
     }
 }
-

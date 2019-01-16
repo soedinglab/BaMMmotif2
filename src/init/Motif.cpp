@@ -456,26 +456,12 @@ void Motif::calculateP(){
 
 void Motif::calculateLogS( float** Vbg ){
 
-//    size_t k_bg = (K_ > k_bg_ ) ? k_bg_ : K_;
-    size_t k_bg = k_bg_;
+    size_t k_bg = (K_ > k_bg_ ) ? k_bg_ : K_;
+//    size_t k_bg = k_bg_;
 	for( size_t y = 0; y < Y_[K_+1]; y++ ){
 		size_t y_bg = y % Y_[k_bg+1];
 		for( size_t j = 0; j < W_; j++ ){
 			s_[y][j] = logf( v_[K_][y][j] + 1.e-8f ) - logf( Vbg[k_bg][y_bg] );
-		}
-	}
-
-}
-
-void Motif::calculateLinearS( float** Vbg ){
-
-//    size_t k_bg = (K_ > k_bg_ ) ? k_bg_ : K_;
-    size_t k_bg = k_bg_;
-	for( size_t y = 0; y < Y_[K_+1]; y++ ){
-		size_t y_bg = y % Y_[k_bg+1];
-		for( size_t j = 0; j < W_; j++ ){
-            s_[y][j] = v_[K_][y][j] / Vbg[k_bg][y_bg];
-            //std::cout << "s["<<y<<"][" << j <<"]=" << s_[y][j] << std::endl;
 		}
 	}
 

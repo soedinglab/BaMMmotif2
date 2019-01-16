@@ -14,10 +14,11 @@ int main( int nargs, char* args[] ){
     std::cout << std::endl
               << "======================================" << std::endl
               << "=      Welcome to use BaMM!motif     =" << std::endl
-              << "=                   Version 2.0      =" << std::endl
-              << "=              by Soeding Group      =" << std::endl
+              << "=                    Version 2.0     =" << std::endl
+              << "=               by Soeding Group     =" << std::endl
               << "=  http://www.mpibpc.mpg.de/soeding  =" << std::endl
-              << "======================================" << std::endl;
+              << "======================================" << std::endl
+              << std::endl;
 
     /**
      * initialization
@@ -133,11 +134,11 @@ int main( int nargs, char* args[] ){
 			}
 
             if( Global::verbose ){
-                std::cout << " ____________________" << std::endl;
-                std::cout << "|*                  *|" << std::endl;
-                std::cout << "|   After training   |" << std::endl;
-                std::cout << "|*__________________*|" << std::endl;
-                std::cout << std::endl;
+                std::cout << " ____________________" << std::endl
+                          << "|*                  *|" << std::endl
+                          << "|   After training   |" << std::endl
+                          << "|*__________________*|" << std::endl
+                          << std::endl;
 
                 model.print();
             }
