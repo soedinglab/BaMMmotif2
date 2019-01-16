@@ -25,11 +25,12 @@ EM::EM( Motif* motif, BackgroundModel* bgModel,
 //	K_bg_ = ( bgModel_->getOrder() < K_ ) ? bgModel_->getOrder() : K_;
     K_bg_ = Global::bgModelOrder;
 
+    padding_ = 1;
 	// allocate memory for r_[n][i], pos_[n][i], z_[n]
 	r_ = ( float** )calloc( seqs_.size(), sizeof( float* ) );
 	pos_ = ( float** )calloc( seqs_.size(), sizeof( float* ) );
 	for( size_t n = 0; n < seqs_.size(); n++ ){
-		r_[n] = ( float* )calloc( seqs_[n]->getL()+W_+1, sizeof( float ) );
+		r_[n] = ( float* )calloc( seqs_[n]->getL()+padding_+W_+1, sizeof( float ) );
 		pos_[n] = ( float* )calloc( seqs_[n]->getL()+1, sizeof( float ) );
 	}
 
@@ -228,7 +229,7 @@ void EM::EStep(){
         //              the purpose of doing the reverting is to improve the computation speed
 
         for( size_t i = 1; i <= LW1; i++ ){
-            r_[n][L-i] = 1.0f;
+            r_[n][L+padding_-i] = 1.0f;
         }
 
         // when p(z_n > 0), ij = i+j runs over all positions in sequence
@@ -238,20 +239,22 @@ void EM::EStep(){
             // extract (K+1)-mer y from positions (ij-K,...,ij)
             size_t y = kmer[ij] % Y_[K_+1];
             for( size_t j = 0; j < W_; j++ ){
-                r_[n][L-ij+j-1] *= s_[y][j];
+                r_[n][L+padding_-ij+j-1] *= s_[y][j];
             }
         }
 
         // calculate the responsibilities and sum them up
-        normFactor += pos_[n][0];
+        r_[n][0] = pos_[n][0];
+        normFactor += r_[n][0];
         for( size_t i = 1; i <= LW1; i++ ){
-            r_[n][L-i] *= pos_[n][i];
-            normFactor += r_[n][L-i];
+            r_[n][L+padding_-i] *= pos_[n][i];
+            normFactor += r_[n][L+padding_-i];
         }
 
         // normalize responsibilities
+        r_[n][0] /= normFactor;
         for( size_t i = 1; i <= LW1; i++ ){
-            r_[n][L-i] /= normFactor;
+            r_[n][L+padding_-i] /= normFactor;
         }
 
         // calculate log likelihood over all sequences
@@ -285,7 +288,7 @@ void EM::MStep(){
             size_t y = kmer[ij] % Y_[K_+1];
             for (size_t j = 0; j < W_; j++) {
                 // parallelize for: n_[K_][y][j] += r_[n][L-ij+j-1];
-                atomic_float_add( &(n_[K_][y][j]), r_[n][L-ij+j-1] );
+                atomic_float_add( &(n_[K_][y][j]), r_[n][L+padding_-ij+j-1] );
             }
         }
     }
@@ -1066,12 +1069,11 @@ void EM::printR(){
             std::cout << r_[n][0] << '\t';
             sum += r_[n][0];
             for( size_t i = 1; i <= L-W_+1; i++ ){
-                std::cout << r_[n][L-i] << '\t';
-                sum += r_[n][L-i];
+                std::cout << r_[n][L+padding_-i] << '\t';
+                sum += r_[n][L+padding_-i];
             }
-
-            std::cout << "sum=" << sum << std::endl;
-            //assert( fabsf( sum-1.0f ) < 1.e-4f );
+            std::cout << /*"sum=" << sum << */std::endl;
+            assert( fabsf( sum-1.0f ) < 1.e-4f );
         }
     } else {
         for( size_t n = 0; n < seqs_.size(); n++ ){

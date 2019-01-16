@@ -5,6 +5,7 @@
 #include <math.h>	// e.g. logf
 
 #include "BackgroundModel.h"
+
 #include "../Global/utils.h"
 
 class Motif {
@@ -50,16 +51,16 @@ private:
     float_t             q_;                         // estimated motif fraction on the sequences
 	float**			 	A_;							// hyperparameter alphas
 	float***    		v_;				        	// conditional probabilities for (k+1)-mers y at motif position j
-    float**	            v_null_;			            // conditional probabilities of background model
+    float**	            v_null_;			        // conditional probabilities of background model
     size_t              k_bg_;                      // order of background model
 	float***			p_;							// probabilities for (k+1)-mers y at motif position j
 	float**				s_;							// log odds scores for (K+1)-mers y at motif position j
-	int***			    n_;							// fractional counts of (k+1)-mer for all y at motif position j
+	int***			    n_;							// exact counts of (k+1)-mer for all y at motif position j
 	std::vector<size_t>	Y_;							// contains 1 at position 0
 													// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
 													// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
 
-	void 				calculateV( int*** n );	// calculate v from k-mer counts n and global alphas
+	void 				calculateV( int*** n );	    // calculate v from k-mer counts n and global alphas
 
 };
 

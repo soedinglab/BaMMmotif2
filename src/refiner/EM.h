@@ -60,6 +60,7 @@ private:
 
     size_t 					K_;					// the order of the motif model
     size_t					W_;					// the width of the motif pattern
+    size_t                  padding_;
     float** 				A_;	        		// pseudo-count hyper-parameter for order k and motif position j
     size_t 					K_bg_;				// the order of the background model
 
