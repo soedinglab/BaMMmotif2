@@ -87,7 +87,7 @@ private:
 
     float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif
     size_t                  padding_;
-    float 					llikelihood_        = 0.0f;     // log likelihood for each iteration
+    float 					llikelihood_= 0.0f; // log likelihood for each iteration
     std::vector<size_t>		Y_;
 
 };

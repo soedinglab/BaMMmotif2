@@ -222,7 +222,7 @@ void GibbsSampling::optimize(){
     }
 
     // update model parameter v
-    motif_->updateV( n_, A_, K_ );
+    motif_->updateV( n_, A_ );
 
 /*
     // run five steps of EM to optimize the final model with
@@ -258,7 +258,7 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
     llikelihood_ = 0.0f;
 
     // updated model parameters v excluding the n'th sequence
-    motif_->updateV( n_, A_, K_ );
+    motif_->updateV( n_, A_ );
 
     float*** v = motif_->getV();
     float** v_bg = bg_->getV();
@@ -337,7 +337,7 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
             }
 
             // updated model parameters v excluding the n'th sequence
-            motif_->updateV( n_, A_, K_ );
+            motif_->updateV( n_, A_ );
             // compute log odd scores s[y][j] of the highest order K
             motif_->calculateLinearS( bg_->getV() );
 
