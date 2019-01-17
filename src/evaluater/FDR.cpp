@@ -204,10 +204,10 @@ void FDR::calculatePR(){
 		size_t idx_posMax = 0;
 		size_t idx_negMax = 0;
 		size_t min_idx_pos = 0;
-		size_t posN_est = static_cast<size_t>( q_ * ( float )posN );
+		size_t posN_est = size_t( q_ * ( float )posN );
 
         // set limit for using the exponential extrapolation for p-value calculation
-        size_t n_top = std::fmin(100, negN / 10);
+        size_t n_top = ( size_t )std::fmin(100, negN / 10);
 
         float lambda = 1e-16f;
         for( size_t l = 0; l < n_top; l++ ){
@@ -220,11 +220,13 @@ void FDR::calculatePR(){
 
 		for( size_t i = 0; i < posN + negN; i++ ){
 
-            if( (posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax] || idx_posMax == 0 || idx_negMax == negN )
+            if( (posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax]
+                 || idx_posMax == 0 || idx_negMax == negN )
                 && idx_posMax < posN ){
                 Sl = posScoreMax_[idx_posMax];
                 idx_posMax++;
-            } else if( posScoreMax_[idx_posMax] == negScoreMax_[idx_negMax] && rand() % 2 == 0 && idx_posMax < posN ){
+            } else if( posScoreMax_[idx_posMax] == negScoreMax_[idx_negMax]
+                       && rand() % 2 == 0 && idx_posMax < posN ){
                 Sl = posScoreMax_[idx_posMax];
                 idx_posMax++;
             } else {
@@ -242,9 +244,14 @@ void FDR::calculatePR(){
             // calculate p-values in two different ways:
             if( Sl <= negScoreMax_[n_top] ){
 
-                float Sl_upper = *(std::lower_bound( negScoreMax_.begin(), negScoreMax_.end(), Sl, std::greater<float>() )-1);
-                float Sl_lower = *std::upper_bound( negScoreMax_.begin(), negScoreMax_.end(), Sl, std::greater<float>() );
-                p_value = ( idx_negMax + ( Sl_upper- Sl) / (Sl_upper - Sl_lower + 1e-5)) / (float)negN;
+                float Sl_upper = *(std::lower_bound( negScoreMax_.begin(),
+                                                     negScoreMax_.end(), Sl,
+                                                     std::greater<float>() )-1);
+                float Sl_lower = *std::upper_bound( negScoreMax_.begin(),
+                                                    negScoreMax_.end(), Sl,
+                                                    std::greater<float>() );
+                p_value = ( idx_negMax + ( Sl_upper- Sl) / (Sl_upper - Sl_lower + 1.e-5f))
+                          / (float)negN;
 
             } else {
                 // p-value is calculated by relying on a parametric fit of the exponentially cumulative distribution
@@ -283,15 +290,14 @@ void FDR::calculatePvalues(){
         std::sort( posScoreAll_.begin(), posScoreAll_.end(), std::less<float>() );
         for( size_t i = 0; i < posScoreAll_.size(); i++ ){
             // Return iterator to lower/upper bound
-            size_t low, up;
-            low = std::distance( negScoreAll_.begin(),
-                                 std::lower_bound( negScoreAll_.begin(),
-                                                   negScoreAll_.end(),
-                                                   posScoreAll_[i] ) );
-            up = std::distance( negScoreAll_.begin(),
-                                std::upper_bound( negScoreAll_.begin(),
-                                                  negScoreAll_.end(),
-                                                  posScoreAll_[i] ) );
+            size_t low = ( size_t )std::distance( negScoreAll_.begin(),
+                                                  std::lower_bound( negScoreAll_.begin(),
+                                                                    negScoreAll_.end(),
+                                                                    posScoreAll_[i] ) );
+            size_t up = ( size_t )std::distance( negScoreAll_.begin(),
+                                                 std::upper_bound( negScoreAll_.begin(),
+                                                                   negScoreAll_.end(),
+                                                                   posScoreAll_[i] ) );
             float p = 1.0f - ( float )( up + low ) / ( 2.0f * ( float ) negScoreAll_.size() );
             // avoid the rounding errors, such as p-value = 0 or p-value > 1
             if( p < 1.e-6 ) p = 1.e-6;
@@ -307,19 +313,18 @@ void FDR::calculatePvalues(){
         std::sort( posScoreMax_.begin(), posScoreMax_.end(), std::less<float>() );
         for( size_t i = 0; i < posScoreMax_.size(); i++ ){
             // Return iterator to lower/upper bound
-            size_t low, up;
-            low = std::distance( negScoreMax_.begin(),
-                                 std::lower_bound( negScoreMax_.begin(),
-                                                   negScoreMax_.end(),
-                                                   posScoreMax_[i] ) );
-            up = std::distance( negScoreMax_.begin(),
-                                std::upper_bound( negScoreMax_.begin(),
-                                                  negScoreMax_.end(),
-                                                  posScoreMax_[i] ) );
+            size_t low = ( size_t )std::distance( negScoreMax_.begin(),
+                                                  std::lower_bound( negScoreMax_.begin(),
+                                                                    negScoreMax_.end(),
+                                                                    posScoreMax_[i] ) );
+            size_t up = ( size_t )std::distance( negScoreMax_.begin(),
+                                                 std::upper_bound( negScoreMax_.begin(),
+                                                                   negScoreMax_.end(),
+                                                                   posScoreMax_[i] ) );
             float p = 1.0f - ( float )( up + low ) / ( 2.0f * ( float )negScoreMax_.size() );
             // avoid the rounding errors, such as p-value = 0 or p-value > 1
-            if( p < 1.e-6 ) p = 1.e-6;
-            if( p > 1.0f )  p = 1.0f;
+            if( p < 1.e-6f )    p = 1.e-6f;
+            if( p > 1.0f )      p = 1.0f;
             ZOOPS_Pvalue_.push_back( p );
         }
     }
@@ -335,7 +340,7 @@ void FDR::write( char* odir, std::string basename ){
 
 	if( Global::savePRs ){
 		/**
-		 * save FDR results in two flat files for obtaining AUSFC:
+		 * save FDR results in two flat files for obtaining AvRec:
 		 * (1) posSequenceBasename.zoops.stats:
 		 * TP, FP, FDR, recall, p-values, mFold and fractional occurrence for ZOOPS model
 		 * (2) posSequenceBasename.mops.stats:
@@ -408,13 +413,13 @@ void FDR::write( char* odir, std::string basename ){
 	}
 
 	if( Global::saveLogOdds ){
-
 		/**
 		 * save log odds scores into two files for
 		 * plotting the distribution of log odds scores:
 		 * (1) posSequenceBasename.zoops.logOdds
 		 * (2) posSequenceBasename.mops.logOdds
 		 */
+
 		if( Global::zoops ){
 			std::string opath_zoops_logOdds = opath + ".zoops.logOdds";
 			std::ofstream ofile_zoops_logOdds( opath_zoops_logOdds );

@@ -1027,8 +1027,8 @@ void EM::print(){
                 sum += motif_->getP()[k][y][j];
                 std::cout << motif_->getP()[k][y][j] << '\t';
             }
-            std::cout << /*"sum=" << sum <<*/ std::endl;
-            assert( fabsf( sum-1.0f ) < 1.e-4f );
+            std::cout << "sum=" << sum << std::endl;
+//            assert( fabsf( sum-1.0f ) < 1.e-4f );
         }
     }
 
