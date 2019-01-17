@@ -501,8 +501,8 @@ void Motif::print(){
                 std::cout << v_[k][y][j] << '\t';
                 sum += v_[k][y][j];
             }
-			std::cout << /*"sum=" << sum << */std::endl;
-            assert( fabsf( sum - Y_[k] ) < 1.e-3f );
+			std::cout << "sum=" << sum << std::endl;
+//            assert( fabsf( sum - Y_[k] ) < 1.e-3f );
 		}
 	}
 

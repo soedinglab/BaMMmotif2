@@ -89,8 +89,8 @@ size_t              Global::at = 0;
 
 // printout options
 bool                Global::verbose = false;
-bool                Global::debug = false;              // debug-mode: prints out everything.
-bool				Global::saveBaMMs = true;
+bool                Global::debug = false;                  // debug-mode: prints out everything.
+bool				Global::saveBaMMs = false;
 bool				Global::savePRs = true;					// write the precision, recall, TP and FP
 bool				Global::savePvalues = false;			// write p-values for each log odds score from sequence set
 bool				Global::saveLogOdds = false;			// write the log odds of positive and negative sets to disk
@@ -229,7 +229,6 @@ int Global::readArguments( int nargs, char* args[] ){
 
 	opt >> GetOpt::Option( "maxPWM", maxPWM );
 	opt >> GetOpt::OptionPresent( "mops", mops );
-	opt >> GetOpt::Option( "zoops", zoops );
 
 	// model options
 	opt >> GetOpt::Option( 'k', "order", modelOrder );
@@ -353,9 +352,9 @@ int Global::readArguments( int nargs, char* args[] ){
 	if( opt >> GetOpt::OptionPresent( "debug", debug ) ){
         verbose = true;
     }
+
 	opt >> GetOpt::OptionPresent( "saveBaMMs", saveBaMMs );
 	opt >> GetOpt::OptionPresent( "saveInitialBaMMs", saveInitialBaMMs );
-	opt >> GetOpt::OptionPresent( "savePRs", savePRs );
 	opt >> GetOpt::OptionPresent( "savePvalues", savePvalues );
 	opt >> GetOpt::OptionPresent( "saveLogOdds", saveLogOdds );
 	opt >> GetOpt::OptionPresent( "saveBgModel", saveBgModel );
