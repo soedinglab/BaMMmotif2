@@ -7,6 +7,7 @@
 #include "BackgroundModel.h"
 
 #include "../Global/utils.h"
+#include "../Global/Global.h"
 
 class Motif {
 
@@ -32,7 +33,7 @@ public:
     float**				getS();						// get log odds scores for the highest order K at position j
 	std::vector<size_t> getY();
 
-	void        		updateV( float*** n, float** alpha, size_t k );
+	void        		updateV( float*** n, float** alpha );
 
 	void				calculateP();				// calculate probabilities p with null model
 
@@ -94,7 +95,7 @@ inline std::vector<size_t> Motif::getY(){
 }
 
 // update v from fractional k-mer counts n and current alphas
-inline void Motif::updateV( float*** n, float** alpha, size_t K ){
+inline void Motif::updateV( float*** n, float** alpha ){
 
 	assert( isInitialized_ );
 
@@ -120,7 +121,7 @@ inline void Motif::updateV( float*** n, float** alpha, size_t K ){
 	}
 
 	// for k > 0:
-	for( size_t k = 1; k < K+1; k++ ){
+	for( size_t k = 1; k < Global::modelOrder+1; k++ ){
 		for( size_t y = 0; y < Y_[k+1]; y++ ){
 			size_t y2 = y % Y_[k];				// cut off the first nucleotide
 			size_t yk = y / Y_[1];				// cut off the last nucleotide

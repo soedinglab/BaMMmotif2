@@ -456,7 +456,7 @@ void Motif::calculateP(){
 
 void Motif::calculateLogS( float** Vbg ){
 
-    size_t k_bg = (K_ > k_bg_ ) ? k_bg_ : K_;
+    size_t k_bg = ( K_ > k_bg_ ) ? k_bg_ : K_;
 //    size_t k_bg = k_bg_;
 	for( size_t y = 0; y < Y_[K_+1]; y++ ){
 		size_t y_bg = y % Y_[k_bg+1];

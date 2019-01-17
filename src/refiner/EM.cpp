@@ -302,7 +302,7 @@ void EM::MStep(){
 
     // update model parameters v[k][y][j] with updated k-mer counts,
     // alphas and model order
-    motif_->updateV( n_, A_, K_ );
+    motif_->updateV( n_, A_ );
 }
 
 void EM::updatePos(){
