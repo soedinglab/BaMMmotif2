@@ -333,8 +333,6 @@ void FDR::write( char* odir, std::string basename ){
 
 	std::string opath = std::string( odir ) + '/' + basename;
 
-    std::cout << "1\n" << Global::savePRs << Global::zoops;
-
 	if( Global::savePRs ){
 		/**
 		 * save FDR results in two flat files for obtaining AUSFC:
@@ -343,10 +341,9 @@ void FDR::write( char* odir, std::string basename ){
 		 * (2) posSequenceBasename.mops.stats:
 		 * TP, FP, FDR, recall and multiple occurrence for MOPS model
 		 */
-        std::cout << "2\n";
+
 		// for ZOOPS model:
 		if( Global::zoops ){
-            std::cout << "3\n";
 			std::string opath_zoops_stats = opath + ".zoops.stats";
 			std::ofstream ofile_zoops( opath_zoops_stats );
 			// the headers:

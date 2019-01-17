@@ -54,7 +54,7 @@ std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.f );// background mod
 // EM options
 bool				Global::EM = false;						// flag to trigger EM learning
 float               Global::EMepsilon = 0.001f;             // epsilon for EM convergence
-size_t              Global::maxIterations = 1000;         // maximal iterations
+size_t              Global::maxIterations = 1000;           // maximal iterations
 float				Global::q = 0.3f;						// prior probability for a positive sequence to contain a motif
 bool 				Global::optimizeQ = false;				// optimize hyper-parameter q in EM algorithm
 float               Global::f = 0.05f;                      // fraction of sequences to be masked
