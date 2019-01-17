@@ -418,7 +418,7 @@ void EM::MStep_slow(){
     }
 
     // update model parameters v[k][y][j] with updated k-mer counts, alphas and model order
-    motif_->updateV( n_, A_, K_ );
+    motif_->updateV( n_, A_ );
 }
 
 int EM::mask() {
@@ -615,7 +615,7 @@ int EM::mask() {
         }
 
         // update model parameters v[k][y][j], due to the k-mer counts, alphas and model order
-        motif_->updateV( n_, A_, K_ );
+        motif_->updateV( n_, A_ );
 
         /**
          * check parameter difference for convergence
