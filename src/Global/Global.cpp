@@ -17,7 +17,8 @@ char*               Global::negSequenceFilename = NULL;		// filename of negative
 std::string			Global::negSequenceBasename;			// basename of negative sequence FASTA file
 SequenceSet*        Global::negSequenceSet = NULL;			// negative sequence set
 bool				Global::negSeqGiven = false;			// a flag for the negative sequence given by users
-size_t              Global::negSeqNum = 5000;                    // number of negative sequences to be generated
+size_t              Global::negN = 5000;                    // number of negative sequences to be generated
+size_t              Global::minNegN = 5000;
 bool                Global::fixedNegN = false;              // flag for using fixed number of negative sequences
 bool                Global::genericNeg = false;             // flag for generating negative sequences based on generic 2nd-bgModel
 
@@ -26,6 +27,7 @@ char*               Global::intensityFilename = NULL;		// filename of intensity 
 
 char*				Global::alphabetType = NULL;			// alphabet type is defaulted to standard which is ACGT
 bool                Global::ss = false;						// only search on single strand sequences
+std::vector<size_t> Global:: A2powerK;
 
 // initial model(s) options
 char*				Global::initialModelFilename = NULL; 	// filename of initial model
@@ -37,6 +39,7 @@ bool				Global::zoops = true;					// learn ZOOPS model
 
 // model options
 size_t     			Global::modelOrder = 2;					// model order
+size_t              Global::maxOrder = 8;                   // maximal model order
 std::vector<float> 	Global::modelAlpha( modelOrder+1, 1.f );// initial alphas
 float				Global::modelBeta = 7.0f;				// alpha_k = beta x gamma^k for k > 0
 float				Global::modelGamma = 3.0f;
@@ -108,8 +111,8 @@ bool                Global::advanceEM = false;
 bool                Global::slowEM = false;
 
 // option for openMP
-size_t              Global::threads = 4;                   // number of threads to use
-bool                Global::parallelOverMotif = false;     // flag for parallelizing over motifs
+size_t              Global::threads = 4;                    // number of threads to use
+bool                Global::parallelizeOverMotifs = false;  // flag for parallelizing over motifs
 
 Global::Global( int nargs, char* args[] ){
 
@@ -121,6 +124,11 @@ Global::Global( int nargs, char* args[] ){
 
     Alphabet::init( alphabetType );
 
+    // initialize A2powerK vector
+    for( size_t i = 0; i < modelOrder + maxOrder; i++ ){
+        A2powerK.push_back( ipow( Alphabet::getSize(), i ) );
+    }
+
     // read in positive and negative sequence set
     posSequenceSet = new SequenceSet( posSequenceFilename, ss );
     negSequenceSet = new SequenceSet( negSequenceFilename, ss );
@@ -131,14 +139,26 @@ Global::Global( int nargs, char* args[] ){
         exit( 1 );
     }
 
+    // check if the amount of negative sequences are enough
+    if( !negSeqGiven ){
+        size_t posN = posSequenceSet->getSequences().size();
+        bool rest = minNegN % posN;
+        if ( posN * mFold < minNegN ) {
+            mFold = minNegN / posN + rest;
+        }
+    }
+
     // optional: read in sequence intensities (header and intensity columns?)
     if( intensityFilename != 0 ){
         ;// read in sequence intensity
     }
 
-    if( verbose ){
-        printPara();
+    if( debug ) {
+        verbose = true;
     }
+
+    // print out the input parameters
+    printPara();
 }
 
 int Global::readArguments( int nargs, char* args[] ){
@@ -192,7 +212,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	}
 	negSequenceBasename = baseName( negSequenceFilename );
 
-    if( opt >> GetOpt::Option( "negSeqNum", negSeqNum ) ){
+    if( opt >> GetOpt::Option( "negN", negN ) ){
         fixedNegN = true;
     }
     opt >> GetOpt::OptionPresent( "genericNeg", genericNeg );
@@ -349,9 +369,7 @@ int Global::readArguments( int nargs, char* args[] ){
 
     // printout options
 	opt >> GetOpt::OptionPresent( "verbose", verbose );
-	if( opt >> GetOpt::OptionPresent( "debug", debug ) ){
-        verbose = true;
-    }
+	opt >> GetOpt::OptionPresent( "debug", debug );
 
 	opt >> GetOpt::OptionPresent( "saveBaMMs", saveBaMMs );
 	opt >> GetOpt::OptionPresent( "saveInitialBaMMs", saveInitialBaMMs );
@@ -371,7 +389,7 @@ int Global::readArguments( int nargs, char* args[] ){
 
     // option for openMP
     opt >> GetOpt::Option( "threads", threads );
-    opt >> GetOpt::OptionPresent( "parallelOverMotif", parallelOverMotif );
+    opt >> GetOpt::OptionPresent( "parallizeOverMotifs", parallelizeOverMotifs );
 
 #ifdef OPENMP
     omp_set_num_threads( threads );
@@ -389,69 +407,70 @@ int Global::readArguments( int nargs, char* args[] ){
 
 void Global::printPara(){
 
-    std::cout << " ____________________" << std::endl;
-    std::cout << "|*                  *|" << std::endl;
-    std::cout << "| Parameter Settings |" << std::endl;
-    std::cout << "|*__________________*|" << std::endl;
-    std::cout << std::endl;
+    std::cout << " ____________________" << std::endl
+              << "|*                  *|" << std::endl
+              << "| Parameter Settings |" << std::endl
+              << "|*__________________*|" << std::endl
+              << std::endl;
 
     std::cout << "Alphabet type\t\t\t\t" << Alphabet::getAlphabet() << std::endl;
 
     // for positive sequence set
     std::cout << "Positive sequence set\t\t\t"
-              << Global::posSequenceFilename << std::endl
+              << posSequenceFilename << std::endl
               << "Sequence counts\t\t\t\t"
-              << Global::posSequenceSet->getSequences().size()
-              << " (max.length: "   << Global::posSequenceSet->getMaxL()
-              << ", min.length: "   << Global::posSequenceSet->getMinL()
-              << ", total bases: "  << Global::posSequenceSet->getBaseSum()
+              << posSequenceSet->getSequences().size()
+              << " (max.length: "   << posSequenceSet->getMaxL()
+              << ", min.length: "   << posSequenceSet->getMinL()
+              << ", total bases: "  << posSequenceSet->getBaseSum()
               << ")" << std::endl
               << "Base frequencies\t\t\t";
     for( size_t i = 0; i < Alphabet::getSize(); i++ ){
-        std::cout << Global::posSequenceSet->getBaseFrequencies()[i]
+        std::cout << posSequenceSet->getBaseFrequencies()[i]
                   << "(" << Alphabet::getAlphabet()[i] << ")"
                   << ' ';
     }
     std::cout << std::endl << std::endl;
 
-    if( Global::advanceEM ){
-        std::cout << "\n    " << Global::f * 100
+    if( advanceEM ){
+        std::cout << "\n    " << f * 100
                   << "% of the sequences are used for EM after masking."
                   << std::endl;
     }
 
     // for negative sequence set
-    if( Global::negSeqGiven ){
+    if( negSeqGiven ){
         std::cout << "Negative sequence set\t\t\t"
-                  << Global::negSequenceFilename << std::endl
+                  << negSequenceBasename << std::endl
                   << "Sequence counts\t\t\t\t"
-                  << Global::negSequenceSet->getSequences().size()
-                  << " (max.length: "   << Global::negSequenceSet->getMaxL()
-                  << ", min.length: "   << Global::negSequenceSet->getMinL()
-                  << ", total bases: "  << Global::negSequenceSet->getBaseSum()
+                  << negSequenceSet->getSequences().size()
+                  << " (max.length: "   << negSequenceSet->getMaxL()
+                  << ", min.length: "   << negSequenceSet->getMinL()
+                  << ", total bases: "  << negSequenceSet->getBaseSum()
                   << ")" << std::endl
                   << "Base frequencies\t\t\t";
         for( size_t i = 0; i < Alphabet::getSize(); i++ ){
-            std::cout << Global::negSequenceSet->getBaseFrequencies()[i]
+            std::cout << negSequenceSet->getBaseFrequencies()[i]
                       << "(" << Alphabet::getAlphabet()[i] << ")"
                       << ' ';
         }
         std::cout << std::endl << std::endl;
     } else {
         std::cout << "Negative sequence set\t\t\t"
-                  << "generated based on conditional probabilities of "
-                  << Global::sOrder << "-mers from the positive set"
+                  << posSequenceSet->getSequences().size() << " x "<< mFold
+                  << " sequences are generated based on cond. prob. of "
+                  << sOrder+1 << "-mers in positive set"
                   << std::endl << std::endl;
     }
 
     // for initial model
-    std::cout << "Given initial model\t\t\t"    << Global::initialModelFilename << std::endl
-              << "Given model type\t\t\t"       << Global::initialModelTag << std::endl
+    std::cout << "Given initial model\t\t\t"    << initialModelBasename << std::endl
+              << "Given model type\t\t\t"       << initialModelTag << std::endl
               << "Model parameters:"            << std::endl
-              << "BaMM model order\t\t\t"       << Global::modelOrder << std::endl
-              << "Background model order\t\t\t" << Global::bgModelOrder << std::endl
+              << "BaMM model order\t\t\t"       << modelOrder << std::endl
+              << "Background model order\t\t\t" << bgModelOrder << std::endl
               << "BaMM is trained on\t\t\t";
-    if( Global::ss ){
+    if( ss ){
         std::cout << "single-stranded sequences" << std::endl << std::endl;
     } else{
         std::cout << "double-stranded sequences" << std::endl << std::endl;
@@ -460,14 +479,14 @@ void Global::printPara(){
 
     // for further functionalities
     std::cout << "Cross-Validation\t\t\t";
-    if( Global::FDR ){
-        std::cout << "True ("<< Global::cvFold << " folds)" << std::endl;
+    if( FDR ){
+        std::cout << "True ("<< cvFold << " folds)" << std::endl;
     } else {
         std::cout << "False" << std::endl;
     }
 
-    std::cout << "Score positive sequence set\t\t";
-    if( Global::scoreSeqset ){
+    std::cout << "Scan positive sequence set\t\t";
+    if( scoreSeqset ){
         std::cout << "True" << std::endl;
     } else {
         std::cout << "False" << std::endl;
@@ -477,11 +496,11 @@ void Global::printPara(){
 
 void Global::printStat(){
 
-    std::cout << " ____________" << std::endl;
-    std::cout << "|*          *|" << std::endl;
-    std::cout << "| Statistics |" << std::endl;
-    std::cout << "|*__________*|" << std::endl;
-    std::cout << std::endl;
+    std::cout << " ____________" << std::endl
+              << "|*          *|" << std::endl
+              << "| Statistics |" << std::endl
+              << "|*__________*|" << std::endl
+              << std::endl;
 
 }
 

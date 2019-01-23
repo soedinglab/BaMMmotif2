@@ -33,6 +33,7 @@ public:
 	void write( char* odir,
 				std::string basename,
 				std::vector<std::unique_ptr<Sequence>> seqset );
+
     void write( char* odir,
                 std::string basename,
                 std::vector<Sequence*> seqset );
@@ -61,10 +62,9 @@ private:
 	Motif* 						motif_;			// the optimized motif
 	size_t						sOrder_;	    // the order of k-mers for generating negative/pseudo sequence set
     float                       q_;             // portion of sequences in the set that are masked/embedded with the motif
-    bool                        genericNeg_;   // flag for generating sequence specific negative sequences
+    bool                        genericNeg_;    // flag for generating sequence specific negative sequences
 
     std::mt19937                rngx_;
-    std::vector<size_t>			Y_;
     size_t                      N_;             // input sequence number
     bool                        kmer_freq_is_calculated_;
     bool                        kmer_freq_is_rescaled_;

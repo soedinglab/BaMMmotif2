@@ -9,15 +9,11 @@ BackgroundModel::BackgroundModel( std::vector<Sequence*> seqs,
 	A_ = Global::bgModelAlpha;
 	interpolate_ = Global::interpolateBG;
 
-	for( size_t k = 0; k < K_+8; k++ ){
-		Y_.push_back( ipow( Alphabet::getSize(), k ) );
-	}
-
 	n_ = ( size_t** )malloc( ( K_+1 ) * sizeof( size_t* ) );
     v_ = ( float** )malloc( ( K_+1 ) * sizeof( float* ) );
 	for( size_t k = 0; k <= K_; k++ ){
-		n_[k] = ( size_t* )calloc( Y_[k+1], sizeof( size_t ) );
-        v_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
+		n_[k] = ( size_t* )calloc( Global::A2powerK[k+1], sizeof( size_t ) );
+        v_[k] = ( float* )calloc( Global::A2powerK[k+1], sizeof( float ) );
 	}
 
 	// calculate counts
@@ -32,7 +28,7 @@ BackgroundModel::BackgroundModel( std::vector<Sequence*> seqs,
 			// loop over order
 			for( size_t k = 0; k <= K_; k++ ){
 				// extract (k+1)mer
-				size_t y = kmer[i] % Y_[k+1];
+				size_t y = kmer[i] % Global::A2powerK[k+1];
 				// count (k+1)mer
 				n_[k][y]++;
 			}
@@ -91,18 +87,14 @@ BackgroundModel::BackgroundModel( std::string filePath ){
 				}
 			}
 
-			for( size_t k = 0; k < K_+8; k++ ){
-				Y_.push_back( ipow( Alphabet::getSize(), k ) );
-			}
-
 			v_ = ( float** )malloc( ( K_+1 ) * sizeof( float* ) );
 			for( size_t k = 0; k <= K_; k++ ){
-				v_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
+				v_[k] = ( float* )calloc( Global::A2powerK[k+1], sizeof( float ) );
 			}
 
 			float value;
 			for( size_t k = 0; k <= K_; k++ ){
-				for( size_t y = 0; y < Y_[k+1]; y++ ){
+				for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
 
 					if( fscanf( file, "%e", &value ) != EOF ){
 						v_[k][y] = value;
@@ -140,13 +132,9 @@ BackgroundModel::BackgroundModel(char* filePath , int K, float A ){
 	A_.resize( K_+1 );
 	A_[0] = A;
 
-	for( size_t k = 0; k < K_+2; k++ ){
-		Y_.push_back( ipow( Alphabet::getSize(), k ) );
-	}
-
 	v_ = ( float** )malloc( ( K_+1 ) * sizeof( float* ) );
 	for( size_t k = 0; k <= K_; k++ ){
-		v_[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
+		v_[k] = ( float* )calloc( Global::A2powerK[k+1], sizeof( float ) );
 	}
 
 	std::ifstream file;
@@ -206,7 +194,7 @@ size_t BackgroundModel::getOrder(){
 void BackgroundModel::expV(){
 
 	for( size_t k = 0; k <= K_; k++ ){
-		for( size_t y = 0; y < Y_[k+1]; y++ ){
+		for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
 			v_[k][y] = expf( v_[k][y] );
 		}
 	}
@@ -216,7 +204,7 @@ void BackgroundModel::expV(){
 void BackgroundModel::logV(){
 
 	for( size_t k = 0; k <= K_; k++ ){
-		for( size_t y = 0; y < Y_[k+1]; y++ ){
+		for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
 			v_[k][y] = logf( v_[k][y] );
 		}
 	}
@@ -246,7 +234,7 @@ double BackgroundModel::calculateLogLikelihood( std::vector<Sequence*> seqs ){
 			// calculate k
 			size_t k = std::min( i, K_ );
 			// extract (k+1)mer
-			size_t y = kmer[i] % Y_[k+1];
+			size_t y = kmer[i] % Global::A2powerK[k+1];
 			// add log probabilities
 			lLikelihood += v_[k][y];
 		}
@@ -276,7 +264,7 @@ void BackgroundModel::calculatePosLikelihoods( std::vector<Sequence*> seqs,
 				// calculate k
 				size_t k = std::min( i, K_ );
 				// extract (k+1)mer
-				size_t y = kmer[i] % Y_[k+1];
+				size_t y = kmer[i] % Global::A2powerK[k+1];
 				file << ( i == 0 ? "" : " " );
 				file << std::scientific << std::setprecision( 6 ) << v_[k][y];
 			}
@@ -331,7 +319,7 @@ void BackgroundModel::print(){
 		std::cout << std::endl;
 
 		for( size_t k = 0; k <= K_; k++ ){
-			for( size_t y = 0; y < Y_[k+1]; y++ ){
+			for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
 				std::cout << n_[k][y] << "\t";
 			}
 			std::cout << std::endl;
@@ -347,7 +335,7 @@ void BackgroundModel::print(){
     std::cout << std::fixed << std::setprecision( 4 );
 	for( size_t k = 0; k <= K_; k++ ){
 		std::cout << v_[k][0];
-		for( size_t y = 1; y < Y_[k+1]; y++ ){
+		for( size_t y = 1; y < Global::A2powerK[k+1]; y++ ){
 			std::cout << "\t"<< v_[k][y];
 		}
 		std::cout << std::endl;
@@ -372,7 +360,7 @@ void BackgroundModel::write( char* odir, std::string basename ){
 		file << std::endl;
 
 		for( size_t k = 0; k <= K_; k++ ){
-			for( size_t y = 0; y < Y_[k+1]; y++ ){
+			for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
 				file << std::scientific << std::setprecision( 6 )
                      << v_[k][y] << " ";
 			}
@@ -390,20 +378,20 @@ void BackgroundModel::write( char* odir, std::string basename ){
 	// calculate probabilities from conditional probabilities
 	float** p = ( float** )malloc( ( K_+1 ) * sizeof( float* ) );
 	for( size_t k = 0; k <= K_; k++ ){
-		p[k] = ( float* )calloc( Y_[k+1], sizeof( float ) );
+		p[k] = ( float* )calloc( Global::A2powerK[k+1], sizeof( float ) );
 	}
 
 	// calculate probabilities for order k = 0
-	for( size_t y = 0; y < Y_[1]; y++ ){
+	for( size_t y = 0; y < Global::A2powerK[1]; y++ ){
 		p[0][y] = v_[0][y];
 	}
 
 	// calculate probabilities for order k > 0
 	// e.g. p(ACGT) = p(T|ACG) * p(ACG)
 	for( size_t k = 1; k <= K_; k++ ){
-		for( size_t y = 0; y < Y_[k+1]; y++ ){
+		for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
 			// omit last base (e.g. ACG) from y (e.g. ACGT)
-			size_t yk = y / Y_[1];
+			size_t yk = y / Global::A2powerK[1];
 			p[k][y] = v_[k][y] * p[k-1][yk];
 		}
 	}
@@ -421,7 +409,7 @@ void BackgroundModel::write( char* odir, std::string basename ){
 		file << std::endl;
 
 		for( size_t k = 0; k <= K_; k++ ){
-			for( size_t y = 0; y < Y_[k+1]; y++ ){
+			for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
 				file << std::scientific << std::setprecision( 6 )
                      << p[k][y] << " " ;
 			}
@@ -445,12 +433,12 @@ void BackgroundModel::write( char* odir, std::string basename ){
 void BackgroundModel::calculateV(){
 
 	size_t baseCounts = 0;
-	for( size_t y = 0; y < Y_[1]; y++ ){
+	for( size_t y = 0; y < Global::A2powerK[1]; y++ ){
 		baseCounts += n_[0][y];
 	}
 
 	// calculate probabilities for order k = 0
-	for( size_t y = 0; y < Y_[1]; y++ ){
+	for( size_t y = 0; y < Global::A2powerK[1]; y++ ){
 		// cope with absent bases using pseudocounts
 		v_[0][y] = ( static_cast<float>( n_[0][y] ) + A_[0] * 0.25f )
 				   / ( static_cast<float>( baseCounts ) + A_[0] );
@@ -459,11 +447,11 @@ void BackgroundModel::calculateV(){
 	// calculate probabilities for order k > 0
 	for( size_t k = 1; k <= K_; k++ ){
 
-		for( size_t y = 0; y < Y_[k+1]; y++ ){
+		for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
 			// omit first base (e.g. CGT) from y (e.g. ACGT)
-			size_t y2 = y % Y_[k];
+			size_t y2 = y % Global::A2powerK[k];
 			// omit last base (e.g. ACG) from y (e.g. ACGT)
-			size_t yk = y / Y_[1];
+			size_t yk = y / Global::A2powerK[1];
 			if( interpolate_ ){
 				v_[k][y] = ( static_cast<float>( n_[k][y] ) + A_[k] * v_[k-1][y2] )
 						   / ( static_cast<float>( n_[k-1][yk] ) + A_[k] );

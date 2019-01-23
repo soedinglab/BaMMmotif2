@@ -447,6 +447,7 @@ int CG(const Matrix &A, Vector &x, const Vector &b,
     tol = resid;
     return 1;
 }
+/*
 
 // free allocation memory for sequence
 struct deleter{
@@ -455,6 +456,7 @@ struct deleter{
         std::cout<< "hi" << std::endl;
     };
 };
+*/
 
 namespace util {
 #if __cplusplus == 201402L // C++14

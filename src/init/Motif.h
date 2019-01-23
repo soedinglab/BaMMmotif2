@@ -20,7 +20,7 @@ public:
 
 	void initFromBindingSites( char* indir, size_t l_flank, size_t r_flank );
 
-	void initFromPWM( float** PWM, size_t asize, SequenceSet* posSet, float q );
+	void initFromPWM( float** PWM, SequenceSet* posSet, float q );
 
 	void initFromBaMM( char* indir, size_t l_flank, size_t r_flank );
 
@@ -31,7 +31,6 @@ public:
 	float***    		getV();						// get conditional probabilities v
     float***    		getP();						// get probabilities v
     float**				getS();						// get log odds scores for the highest order K at position j
-	std::vector<size_t> getY();
 
 	void        		updateV( float*** n, float** alpha );
 
@@ -58,9 +57,6 @@ private:
 	float***			p_;							// probabilities for (k+1)-mers y at motif position j
 	float**				s_;							// log odds scores for (K+1)-mers y at motif position j
 	int***			    n_;							// exact counts of (k+1)-mer for all y at motif position j
-	std::vector<size_t>	Y_;							// contains 1 at position 0
-													// and the number of oligomers y for increasing order k (from 0 to K_) at positions k+1
-													// e.g. alphabet size_ = 4 and K_ = 2: Y_ = 1 4 16 64
 
 	void 				calculateV( int*** n );	    // calculate v from k-mer counts n and global alphas
 
@@ -90,10 +86,6 @@ inline float*** Motif::getP(){
     return p_;
 }
 
-inline std::vector<size_t> Motif::getY(){
-	return Y_;
-}
-
 // update v from fractional k-mer counts n and current alphas
 inline void Motif::updateV( float*** n, float** alpha ){
 
@@ -105,14 +97,14 @@ inline void Motif::updateV( float*** n, float** alpha ){
         sumN[j] = 0.f;
     }
 
-	for( size_t y = 0; y < Y_[1]; y++ ){
+	for( size_t y = 0; y < Global::A2powerK[1]; y++ ){
         for( size_t j = 0; j < W_; j++ ) {
             sumN[j] += n[0][y][j];
         }
 	}
 
 	// for k = 0, v_ = freqs:
-	for( size_t y = 0; y < Y_[1]; y++ ){
+	for( size_t y = 0; y < Global::A2powerK[1]; y++ ){
 		for( size_t j = 0; j < W_; j++ ){
 			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * v_null_[0][y] )
 						/ ( sumN[j] + alpha[0][j] );
@@ -122,9 +114,9 @@ inline void Motif::updateV( float*** n, float** alpha ){
 
 	// for k > 0:
 	for( size_t k = 1; k < Global::modelOrder+1; k++ ){
-		for( size_t y = 0; y < Y_[k+1]; y++ ){
-			size_t y2 = y % Y_[k];				// cut off the first nucleotide
-			size_t yk = y / Y_[1];				// cut off the last nucleotide
+		for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
+			size_t y2 = y % Global::A2powerK[k];				// cut off the first nucleotide
+			size_t yk = y / Global::A2powerK[1];				// cut off the last nucleotide
 			// todo: Merge first loop into second one
             // (by allowing contexts to extend left of the motif)
 			for( size_t j = 0; j < k; j++ ){	// when j < k, p(A|CG) = p(A|C)
@@ -143,8 +135,8 @@ inline void Motif::calculateLinearS( float** Vbg ){
 
     size_t k_bg = ( K_ > k_bg_ ) ? k_bg_ : K_;
 //    size_t k_bg = k_bg_;
-    for( size_t y = 0; y < Y_[K_+1]; y++ ){
-        size_t y_bg = y % Y_[k_bg+1];
+    for( size_t y = 0; y < Global::A2powerK[K_+1]; y++ ){
+        size_t y_bg = y % Global::A2powerK[k_bg+1];
         for( size_t j = 0; j < W_; j++ ){
             s_[y][j] = v_[K_][y][j] / Vbg[k_bg][y_bg];
             //std::cout << "s["<<y<<"][" << j <<"]=" << s_[y][j] << std::endl;

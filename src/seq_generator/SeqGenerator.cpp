@@ -7,22 +7,18 @@ SeqGenerator::SeqGenerator( std::vector<Sequence*> seqs, Motif* motif ){
     motif_ = motif;
     q_ = Global::q;
     genericNeg_ = Global::genericNeg;
-
-	for( size_t k = 0; k < sOrder_ + 8; k++ ){
-		Y_.push_back( ipow( Alphabet::getSize(), k ) );
-	}
-
+    
     v_ = ( float** )calloc( sOrder_+1, sizeof( float* ) );
 	n_ = ( size_t** )calloc( sOrder_+1, sizeof( size_t* ) );
     range_bar_ = ( float** )calloc( sOrder_+1, sizeof( float* ) );
     v_seq_ = ( float** )calloc( sOrder_+1, sizeof( float* ) );
     n_seq_ = ( size_t** )calloc( sOrder_+1, sizeof( size_t* ) );
 	for( size_t k = 0; k < sOrder_+1; k++ ) {
-        v_[k] = (float *) calloc(Y_[k + 1], sizeof(float));
-        n_[k] = (size_t *) calloc(Y_[k + 1], sizeof(size_t));
-        range_bar_[k] = (float *) calloc(Y_[k + 1], sizeof(float));
-        v_seq_[k] = (float *) calloc(Y_[k + 1], sizeof(float));
-        n_seq_[k] = (size_t *) calloc(Y_[k + 1], sizeof(size_t));
+        v_[k] = (float *) calloc(Global::A2powerK[k + 1], sizeof(float));
+        n_[k] = (size_t *) calloc(Global::A2powerK[k + 1], sizeof(size_t));
+        range_bar_[k] = (float *) calloc(Global::A2powerK[k + 1], sizeof(float));
+        v_seq_[k] = (float *) calloc(Global::A2powerK[k + 1], sizeof(float));
+        n_seq_[k] = (size_t *) calloc(Global::A2powerK[k + 1], sizeof(size_t));
     }
 
     A_ = ( float* )calloc( sOrder_+1, sizeof( float ) );
@@ -64,7 +60,7 @@ void SeqGenerator::calculate_kmer_frequency(){
 
 	// reset counts for k-mers
 	for( size_t k = 0; k < sOrder_+1; k++ ){
-		for( size_t y = 0; y < Y_[k+1]; y++ ){
+		for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
 			n_[k][y] = 0;
 		}
 	}
@@ -76,7 +72,7 @@ void SeqGenerator::calculate_kmer_frequency(){
 		for( size_t k = 0; k < sOrder_+1; k++ ){
 			for( size_t j = k; j < L; j++ ){
 				// extract (k+1)-mer
-				size_t y = kmer[j] % Y_[k+1];
+				size_t y = kmer[j] % Global::A2powerK[k+1];
 				// count (k+1)mer
 				n_[k][y]++;
 			}
@@ -85,12 +81,12 @@ void SeqGenerator::calculate_kmer_frequency(){
 
 	// calculate frequencies
 	size_t normFactor = 0;
-	for( size_t y = 0; y < Y_[1]; y++ )
+	for( size_t y = 0; y < Global::A2powerK[1]; y++ )
         normFactor += n_[0][y];
 
     float sum = 0.0f;
     // calculate probabilities for order k = 0
-    for( size_t y = 0; y < Y_[1]; y++ ){
+    for( size_t y = 0; y < Global::A2powerK[1]; y++ ){
         v_[0][y] = ( ( float )n_[0][y] + A_[0] * 0.25f ) / ( ( float )normFactor + A_[0] );
         sum += v_[0][y];
         range_bar_[0][y] = sum;
@@ -98,12 +94,12 @@ void SeqGenerator::calculate_kmer_frequency(){
 
     for( size_t k = 1; k < sOrder_+1; k++ ){
         sum = 0.f;
-		for( size_t y = 0; y < Y_[k+1]; y++ ){
-			size_t yk = y / Y_[1];
-            size_t y2 = y % Y_[k];
+		for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
+			size_t yk = y / Global::A2powerK[1];
+            size_t y2 = y % Global::A2powerK[k];
             v_[k][y] = ( ( float )n_[k][y] + A_[k] * v_[k-1][y2] )/ ( ( float )n_[k-1][yk] + A_[k] );
 
-            if( y % Y_[1] == 0 ) sum = 0.f;
+            if( y % Global::A2powerK[1] == 0 ) sum = 0.f;
             sum += v_[k][y];
             range_bar_[k][y] = sum;
 		}
@@ -117,7 +113,7 @@ void SeqGenerator::rescale_kmer_frequency( Sequence* refSeq ) {
     // count k-mers for each sequence
     // reset counts for k-mers
     for( size_t k = 0; k < sOrder_+1; k++ ){
-        for( size_t y = 0; y < Y_[k+1]; y++ ){
+        for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
             n_seq_[k][y] = 0;
         }
     }
@@ -127,7 +123,7 @@ void SeqGenerator::rescale_kmer_frequency( Sequence* refSeq ) {
         // loop over sequence positions
         for( size_t j = k; j < L; j++ ){
             // extract (k+1)-mer
-            size_t y = kmer[j] % Y_[k+1];
+            size_t y = kmer[j] % Global::A2powerK[k+1];
             // count (k+1)mer
             n_seq_[k][y]++;
         }
@@ -137,7 +133,7 @@ void SeqGenerator::rescale_kmer_frequency( Sequence* refSeq ) {
     // when k = 0:
     size_t k =0;
     float sum = 0.f;
-    for( size_t y = 0; y < Y_[k+1]; y++ ){
+    for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
         v_seq_[k][y] = v_[k][y];
         sum += v_seq_[k][y];
         range_bar_[k][y] = sum;
@@ -146,25 +142,25 @@ void SeqGenerator::rescale_kmer_frequency( Sequence* refSeq ) {
     // when k = 1:
     k = 1;
 
-    for( size_t y = 0; y < Y_[k+1]; y++ ){
-        size_t y2 = y % Y_[k];
+    for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
+        size_t y2 = y % Global::A2powerK[k];
         v_seq_[k][y] = v_[k][y] * ( n_seq_[k][y] + A_[k-1] * v_[k-1][y2] ) / v_[k-1][y2] / ( L + A_[k-1] );
     }
     // re-scale 1st-order background model
-    std::vector<float> normFactors( Y_[k], 0.0f );
-    for( size_t y = 0; y < Y_[k+1]; y++ ){
-        size_t yk = y / Y_[1];
+    std::vector<float> normFactors( Global::A2powerK[k], 0.0f );
+    for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
+        size_t yk = y / Global::A2powerK[1];
         v_seq_[k][y] = ( n_seq_[k][y] + A_[k] * v_seq_[k][y] ) / ( n_seq_[k-1][yk] + A_[k] );
         normFactors[yk] += v_seq_[k][y];
     }
     // normalization:
-    for( size_t y = 0; y < Y_[k+1]; y++ ){
-        size_t yk = y / Y_[1];
+    for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
+        size_t yk = y / Global::A2powerK[1];
         v_seq_[k][y] /= normFactors[yk];
     }
 
-    for( size_t y = 0; y < Y_[k+1]; y++ ){
-        if( y % Y_[1] == 0 )    sum = 0.0f;
+    for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
+        if( y % Global::A2powerK[1] == 0 )    sum = 0.0f;
         sum += v_seq_[k][y];
         range_bar_[k][y] = sum;
     }
@@ -172,11 +168,11 @@ void SeqGenerator::rescale_kmer_frequency( Sequence* refSeq ) {
     // for k= 2:
     k = 2;
     // re-scale 2nd-order background model
-    for( size_t y = 0; y < Y_[k+1]; y++ ){
-        size_t y2 = y % Y_[k];
-        size_t yk = y / Y_[1];
+    for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
+        size_t y2 = y % Global::A2powerK[k];
+        size_t yk = y / Global::A2powerK[1];
         v_seq_[k][y] = ( n_seq_[k][y] + A_[k] * v_seq_[k-1][y2] ) / ( n_seq_[k-1][yk] + A_[k] );
-        if( y % Y_[1] == 0 ) sum = 0.0f;
+        if( y % Global::A2powerK[1] == 0 ) sum = 0.0f;
         sum += v_seq_[k][y];
         range_bar_[k][y] = sum;
     }
@@ -231,7 +227,7 @@ std::unique_ptr<Sequence> SeqGenerator::bg_sequence(size_t L){
 
 	// sample the first nucleotide
 	float random = ( float )rand() / ( float )RAND_MAX;
-	for( uint8_t y = 0; y < Y_[1]; y++ ){
+	for( uint8_t y = 0; y < Global::A2powerK[1]; y++ ){
 		if( random <= range_bar_[0][y] ){
 			sequence[0] = y+1;
 			break;
@@ -244,12 +240,12 @@ std::unique_ptr<Sequence> SeqGenerator::bg_sequence(size_t L){
 		// extract y from k-mer
 		size_t yk = 0;
 		for( size_t k = i; k > 0; k-- ){
-			yk += ( sequence[i-k] - 1 ) * Y_[k];
+			yk += ( sequence[i-k] - 1 ) * Global::A2powerK[k];
 		}
 
 		// sample a nucleotide based on k-mer frequency
 		random = ( float )rand() / ( float )RAND_MAX;
-        for( size_t y = yk, a = 1; y < yk+Y_[1]; y++, a++ ){
+        for( size_t y = yk, a = 1; y < yk+Global::A2powerK[1]; y++, a++ ){
             sequence[i] = a;
             if( random <= range_bar_[i][y] ){
                 break;
@@ -263,11 +259,11 @@ std::unique_ptr<Sequence> SeqGenerator::bg_sequence(size_t L){
 		// calculate y of K-mer
 		size_t yk = 0;
 		for( size_t k = sOrder_; k > 0; k-- ){
-			yk += ( sequence[i-k] - 1 ) * Y_[k];
+			yk += ( sequence[i-k] - 1 ) * Global::A2powerK[k];
 		}
 
         random = ( float )rand() / ( float )RAND_MAX;
-        for( size_t y = yk, a = 1; y < yk+Y_[1]; y++, a++ ){
+        for( size_t y = yk, a = 1; y < yk+Global::A2powerK[1]; y++, a++ ){
             sequence[i] = a;
             if( random <= range_bar_[sOrder_][y] ){
 			    break;
@@ -275,7 +271,7 @@ std::unique_ptr<Sequence> SeqGenerator::bg_sequence(size_t L){
         }
 	}
 
-    std::unique_ptr<Sequence> bg_seq = util::make_unique<Sequence>( sequence, L, header, Y_, true );
+    std::unique_ptr<Sequence> bg_seq = util::make_unique<Sequence>( sequence, L, header, true );
 	if( sequence ) free( sequence );
 
 	return bg_seq;
@@ -296,7 +292,7 @@ std::unique_ptr<Sequence> SeqGenerator::bgseq_on_rescaled_v( Sequence* refSeq ) 
 
     // sample the first nucleotide
     float random = ( float )rand() / ( float )RAND_MAX;
-    for( uint8_t y = 0; y < Y_[1]; y++ ){
+    for( uint8_t y = 0; y < Global::A2powerK[1]; y++ ){
         if( random <= range_bar_[0][y] ){
             sequence[0] = y+1;
             break;
@@ -309,12 +305,12 @@ std::unique_ptr<Sequence> SeqGenerator::bgseq_on_rescaled_v( Sequence* refSeq ) 
         // extract y from k-mer
         size_t yk = 0;
         for( size_t k = i; k > 0; k-- ){
-            yk += ( sequence[i-k] - 1 ) * Y_[k];
+            yk += ( sequence[i-k] - 1 ) * Global::A2powerK[k];
         }
 
         // sample a nucleotide based on k-mer frequency
         random = ( float )rand() / ( float )RAND_MAX;
-        for( size_t y = yk, a = 1; y < yk+Y_[1]; y++, a++ ){
+        for( size_t y = yk, a = 1; y < yk+Global::A2powerK[1]; y++, a++ ){
             sequence[i] = a;
             if( random <= range_bar_[i][y] ){
                 break;
@@ -328,11 +324,11 @@ std::unique_ptr<Sequence> SeqGenerator::bgseq_on_rescaled_v( Sequence* refSeq ) 
         // calculate y of K-mer
         size_t yk = 0;
         for( size_t k = sOrder_; k > 0; k-- ){
-            yk += ( sequence[i-k] - 1 ) * Y_[k];
+            yk += ( sequence[i-k] - 1 ) * Global::A2powerK[k];
         }
 
         random = ( float )rand() / ( float )RAND_MAX;
-        for( size_t y = yk, a = 1; y < yk+Y_[1]; y++, a++ ){
+        for( size_t y = yk, a = 1; y < yk+Global::A2powerK[1]; y++, a++ ){
             sequence[i] = a;
             if( random <= range_bar_[sOrder_][y] ){
                 break;
@@ -340,7 +336,7 @@ std::unique_ptr<Sequence> SeqGenerator::bgseq_on_rescaled_v( Sequence* refSeq ) 
         }
     }
 
-    std::unique_ptr<Sequence> bg_seq = util::make_unique<Sequence>( sequence, L, header, Y_, true );
+    std::unique_ptr<Sequence> bg_seq = util::make_unique<Sequence>( sequence, L, header, true );
     if( sequence ) free( sequence );
 
     return bg_seq;
@@ -359,7 +355,7 @@ std::unique_ptr<Sequence> SeqGenerator::raw_sequence( Sequence* seq ){
         sequence[i] = seq->getSequence()[i];
     }
 
-    std::unique_ptr<Sequence> raw_seq = util::make_unique<Sequence>( sequence, L, header, Y_, true );
+    std::unique_ptr<Sequence> raw_seq = util::make_unique<Sequence>( sequence, L, header, true );
 
     if( sequence ) free( sequence );
 
@@ -423,12 +419,12 @@ std::unique_ptr<Sequence> SeqGenerator::posseq_motif_embedded( Sequence* seq, si
         // extract y from K-mer
         size_t yk = 0;
         for( size_t k = sOrder_; k > 0; k-- ){
-            yk += ( sequence[j+at-k] - 1 ) * Y_[k];
+            yk += ( sequence[j+at-k] - 1 ) * Global::A2powerK[k];
         }
         // sample a nucleotide based on k-mer frequency
         float random = ( float )rand() / ( float )RAND_MAX;
         float f = 0.0f;
-        for( uint8_t a = 1; a <= Y_[1]; a++ ){
+        for( uint8_t a = 1; a <= Global::A2powerK[1]; a++ ){
             f += motif_->getV()[sOrder_][yk+a-1][j];
             sequence[j+at] = a;
             if( random <= f ){
@@ -444,7 +440,7 @@ std::unique_ptr<Sequence> SeqGenerator::posseq_motif_embedded( Sequence* seq, si
         sequence[i] = seq->getSequence()[i-W];
     }
 
-    std::unique_ptr<Sequence> seq_with_motif = util::make_unique<Sequence>( sequence, L, header, Y_, true );
+    std::unique_ptr<Sequence> seq_with_motif = util::make_unique<Sequence>( sequence, L, header, true );
 
     return seq_with_motif;
 
@@ -485,7 +481,7 @@ std::unique_ptr<Sequence> SeqGenerator::sequence_with_motif_masked(Sequence *pos
 
 	std::string header = "> seq with motif masked";
 
-    std::unique_ptr<Sequence> seq_mask_motif = util::make_unique<Sequence>( masked_seq, L, header, Y_, true );
+    std::unique_ptr<Sequence> seq_mask_motif = util::make_unique<Sequence>( masked_seq, L, header, true );
 
 	return seq_mask_motif;
 }

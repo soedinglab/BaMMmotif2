@@ -72,8 +72,6 @@ private:
 											// from lower-order probabilities
 											// instead of background frequencies
 											// of mononucleotides
-
-	std::vector<size_t>	Y_;
 };
 
 inline float** BackgroundModel::getV(){

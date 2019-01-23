@@ -6,9 +6,9 @@ FDR::FDR( std::vector<Sequence*> posSeqs, std::vector<Sequence*> negSeqs,
 	posSeqs_	= posSeqs;
 	negSeqs_	= negSeqs;
 
-    q_          = Global::q;
 	motif_ 		= motif;
     bgModel_    = bgModel;
+    q_          = motif_->getQ();
 
 	occ_frac_	= 0.0f;
 	occ_mult_	= 0.0f;
@@ -40,7 +40,7 @@ void FDR::evaluateMotif( size_t perLoopThreads ){
 		std::vector<Sequence*> testSet;
 		std::vector<Sequence*> trainSet;
         std::vector<Sequence*> negSet;
-		for( size_t n = 0; n <= posSeqs_.size()-Global::cvFold; n+=Global::cvFold ){
+		for( size_t n = 0; n <= posSeqs_.size() - Global::cvFold; n += Global::cvFold ){
 			for( size_t f = 0; f < Global::cvFold; f++ ){
 				if( f != fold ){
 					trainSet.push_back( posSeqs_[n+f] );
@@ -49,7 +49,7 @@ void FDR::evaluateMotif( size_t perLoopThreads ){
 				}
 			}
 		}
-		for( size_t n = 0; n <= negSeqs_.size()-Global::cvFold; n+=Global::cvFold ){
+		for( size_t n = 0; n <= negSeqs_.size() - Global::cvFold; n += Global::cvFold ){
             negSet.push_back( negSeqs_[n] );
 		}
 
@@ -142,6 +142,7 @@ void FDR::calculatePR(){
 
 	size_t posN = posSeqs_.size();
 	size_t negN = negSeqs_.size();
+
 	float mFold = ( float )negN / ( float )posN;
 
     srand(42);
@@ -194,8 +195,6 @@ void FDR::calculatePR(){
 
 	// for ZOOPS model:
 	if( Global::zoops ){
-		PN_Pvalue_.clear();
-
 		// Sort log odds scores in descending order
 		std::sort( posScoreMax_.begin(), posScoreMax_.end(), std::greater<float>() );
 		std::sort( negScoreMax_.begin(), negScoreMax_.end(), std::greater<float>() );
@@ -209,14 +208,14 @@ void FDR::calculatePR(){
         // set limit for using the exponential extrapolation for p-value calculation
         size_t n_top = ( size_t )std::fmin(100, negN / 10);
 
-        float lambda = 1e-16f;
+        float lambda = 1.e-8f;
         for( size_t l = 0; l < n_top; l++ ){
             lambda += negScoreMax_[l] - negScoreMax_[n_top];
         }
         lambda /= n_top;
         assert( lambda > 0.f );
 
-        float Sl = 0.f;
+        float Sl;
 
 		for( size_t i = 0; i < posN + negN; i++ ){
 
@@ -234,43 +233,41 @@ void FDR::calculatePR(){
                 idx_negMax++;
             }
 
-            float TP = ( float )idx_posMax;
-            float FP = ( float )idx_negMax / mFold;
-			ZOOPS_TP_.push_back( TP );
-			ZOOPS_FP_.push_back( FP );
-
-            float p_value;
-
             // calculate p-values in two different ways:
+            float p_value;
             if( Sl <= negScoreMax_[n_top] ){
-
                 float Sl_upper = *(std::lower_bound( negScoreMax_.begin(),
                                                      negScoreMax_.end(), Sl,
                                                      std::greater<float>() )-1);
                 float Sl_lower = *std::upper_bound( negScoreMax_.begin(),
                                                     negScoreMax_.end(), Sl,
                                                     std::greater<float>() );
-                p_value = ( idx_negMax + ( Sl_upper- Sl) / (Sl_upper - Sl_lower + 1.e-5f))
+                p_value = (idx_negMax + ( Sl_upper- Sl) / (Sl_upper - Sl_lower + 1.e-5f))
                           / (float)negN;
 
             } else {
                 // p-value is calculated by relying on a parametric fit of the exponentially cumulative distribution
                 p_value = n_top * expf( ( negScoreMax_[n_top] - Sl ) / lambda ) / negN;
-//                std::cout << i<<'\t'<< n_top << '\t' << negScoreMax_[n_top] << '\t' << Sl << '\t' << p_value << '\t'<< std::endl;
             }
+            if( p_value < 1.e-6f )    p_value = 1.e-6f;
+            if( p_value > 1.0f )      p_value = 1.0f;
+            //assert( p_value >= 0.f && p_value <= 1.f );
 
 			PN_Pvalue_.push_back( p_value );
 
+            // calculate TP, FP, FDR and Recall
+            float TP = ( float )idx_posMax;
+            float FP = ( float )idx_negMax / mFold;
+            ZOOPS_TP_.push_back( TP );
+            ZOOPS_FP_.push_back( FP );
+            ZOOPS_FDR_.push_back( FP / ( TP + FP ) );
+            ZOOPS_Rec_.push_back( TP / ( float )posN );
+
 			// take the faction of q sequences as real positives
 			if( idx_posMax == posN_est ){
-				min_idx_pos = i;
+                min_idx_pos = i;
 			}
-
-			ZOOPS_FDR_.push_back( FP / ( TP + FP ) );
-			ZOOPS_Rec_.push_back( TP / ( float )posN );
-
 		}
-
         // the fraction of motif occurrence
 		occ_frac_ = 1.0f - ZOOPS_FP_[min_idx_pos] / ( float )posN;
 	}
@@ -300,8 +297,8 @@ void FDR::calculatePvalues(){
                                                                    posScoreAll_[i] ) );
             float p = 1.0f - ( float )( up + low ) / ( 2.0f * ( float ) negScoreAll_.size() );
             // avoid the rounding errors, such as p-value = 0 or p-value > 1
-            if( p < 1.e-6 ) p = 1.e-6;
-            if( p > 1.0f )  p = 1.0f;
+            if( p < 1.e-6f )    p = 1.e-6f;
+            if( p > 1.0f )      p = 1.0f;
             MOPS_Pvalue_.push_back( p );
         }
     }

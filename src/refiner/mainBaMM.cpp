@@ -17,8 +17,7 @@ int main( int nargs, char* args[] ){
               << "=                    Version 2.0     =" << std::endl
               << "=               by Soeding Group     =" << std::endl
               << "=  http://www.mpibpc.mpg.de/soeding  =" << std::endl
-              << "======================================" << std::endl
-              << std::endl;
+              << "======================================" << std::endl;
 
     /**
      * initialization
@@ -79,19 +78,7 @@ int main( int nargs, char* args[] ){
         // from positive training sequence set
         std::vector<std::unique_ptr<Sequence>> negSeqs;
         SeqGenerator negseq(posSet, NULL);
-        size_t posN = posSet.size();
-        size_t minSeqN = 5000;
-        bool rest = minSeqN % posN;
-        if ( posN * Global::mFold < minSeqN ) {
-            Global::mFold = minSeqN / posN + rest;
-        }
-        negSeqs = negseq.sample_bgseqset_by_fold(Global::mFold);
-
-        if( Global::verbose ){
-            std::cout << std::endl << negSeqs.size()
-                      << " background sequences are generated."
-                      << std::endl << std::endl;
-        }
+        negSeqs = negseq.sample_bgseqset_by_fold( Global::mFold );
 
         // convert unique_ptr to regular pointer: memory leak will occur:
         for (size_t n = 0; n < negSeqs.size(); n++) {
@@ -120,6 +107,8 @@ int main( int nargs, char* args[] ){
 		if( Global::EM ){
 			EM model( motif, bgModel, posSet );
 
+            std::cout << std::endl << "Before, fraction parameter q="
+                      << std::setprecision( 4 ) << model.getQ() << std::endl;
 			// learn motifs by EM
 			if( !Global::advanceEM ) {
                 model.optimize();
@@ -142,9 +131,12 @@ int main( int nargs, char* args[] ){
 
                 model.print();
             }
+            std::cout << std::endl << "After, fraction parameter q="
+                      << std::setprecision( 4 ) << model.getQ() << std::endl;
 
 		} else if ( Global::CGS ){
 			GibbsSampling model( motif, bgModel, posSet );
+
 			// learn motifs by collapsed Gibbs sampling
 			model.optimize();
 			// write model parameters on the disc
@@ -251,7 +243,7 @@ int main( int nargs, char* args[] ){
 
     auto t1_wall = std::chrono::high_resolution_clock::now();
     auto t_diff = std::chrono::duration_cast<std::chrono::duration<double>>(t1_wall-t0_wall);
-    std::cout << std::endl << "------ Runtime: " << t_diff.count() <<" seconds -------" << std::endl;
+    std::cout << std::endl << "---- Total Runtime: " << t_diff.count() <<" seconds ----" << std::endl;
 
 	// free memory
 	if( bgModel ) delete bgModel;

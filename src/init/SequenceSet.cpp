@@ -13,13 +13,9 @@ SequenceSet::SequenceSet( std::string sequenceFilepath,
 
 	sequenceFilepath_ = sequenceFilepath;
 
-	for( size_t i = 0; i <= 11; i++ ){
-		Y_.push_back( ipow( Alphabet::getSize(), i ) );
-	}
-
     baseSum_ = 0;
 
-	baseFrequencies_ = new float[Y_[1]];
+	baseFrequencies_ = new float[Alphabet::getSize()];
 
     isSingleStranded_ = singleStrand;
 
@@ -127,7 +123,7 @@ int SequenceSet::readFASTA(){
                                 baseCounts[encoding[i]-1]++; // count base
 							}
 
-                            sequences_.push_back( new Sequence( encoding, L, header, Y_, isSingleStranded_ ) );
+                            sequences_.push_back( new Sequence( encoding, L, header, isSingleStranded_ ) );
 
 							sequence.clear();
 							header.clear();
@@ -198,7 +194,7 @@ int SequenceSet::readFASTA(){
                     baseCounts[encoding[i]-1]++; // count base
                 }
 
-                sequences_.push_back( new Sequence( encoding, L, header, Y_, isSingleStranded_ ) );
+                sequences_.push_back( new Sequence( encoding, L, header, isSingleStranded_ ) );
 
 				sequence.clear();
 				header.clear();
@@ -225,12 +221,12 @@ int SequenceSet::readFASTA(){
 
 	 // calculate the sum of bases
 	baseSum_ = 0;
-	for( size_t i = 0; i < Y_[1]; i++ ){
+	for( size_t i = 0; i < Alphabet::getSize(); i++ ){
 		baseSum_ += baseCounts[i];
 	}
 
 	// calculate base frequencies
-	for( size_t i = 0; i < Y_[1]; i++ ){
+	for( size_t i = 0; i < Alphabet::getSize(); i++ ){
 		baseFrequencies_[i] = static_cast<float>( baseCounts[i] ) / static_cast<float>( baseSum_ );
 	}
 

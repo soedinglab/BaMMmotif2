@@ -64,6 +64,12 @@ MotifSet::MotifSet( char* indir,
 					// get the size of alphabet after "alength= "
 					std::stringstream A( line.substr( line.find( "h=" ) + 2 ) );
 					A >> asize;
+                    if( asize != Alphabet::getSize() ){
+                        std::cerr << "The Alphabet size (" << std::to_string( asize )
+                                  << ") in the initial PWM model differs from the defined alphabet size ("
+                                  << std::to_string( Alphabet::getSize() ) << ") in sequence set!"
+                                  << std::endl;
+                    }
 
 					// get the length of motif after "w= "
 					std::stringstream W( line.substr( line.find( "w=" ) + 2 ) );
@@ -117,7 +123,7 @@ MotifSet::MotifSet( char* indir,
 					}
 
 					// initialize each motif with a PWM
-					motif->initFromPWM( PWM, asize, posSet, q );
+					motif->initFromPWM( PWM, posSet, q );
 
                     // count the number of motifs
                     N_++;
@@ -190,7 +196,7 @@ MotifSet::MotifSet( char* indir,
 
             // adjust model order, extra 1
             model_order -= 1;
-            if( model_order > 8 ){
+            if( model_order > Global::maxOrder ){
                 std::cerr << "The input BaMM model order is too high: " << indir << std::endl;
                 exit( 1 );
             }

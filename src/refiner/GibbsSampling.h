@@ -54,9 +54,6 @@ private:
 	double**				m1_t_;				// first moment for alpha optimizer (ADAM)
 	double**				m2_t_;				// second moment for alpha optimizer (ADAM)
 
-	std::vector<size_t>		Y_;
-
-
 							// sample motif position z by collapsed Gibbs sampling
 	void					Collapsed_Gibbs_sampling_z();
 

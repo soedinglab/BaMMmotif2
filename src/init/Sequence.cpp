@@ -1,10 +1,10 @@
 #include "Sequence.h"
 #include "../Global/utils.h"
+#include "../Global/Global.h"
 
 Sequence::Sequence( uint8_t* sequence,
 					size_t L,
 					std::string header,
-					std::vector<size_t> Y,
 					bool singleStrand ){
 
 	if( !singleStrand ){
@@ -18,10 +18,6 @@ Sequence::Sequence( uint8_t* sequence,
 	}
 	header_ = header;
 
-	for( size_t i = 0; i < 12; i++ ){
-		Y_.push_back( ipow( Alphabet::getSize(), i ) );
-	}
-
 	/**
 	 *  extract (k+1)-mer y from positions (i-k,...,i) of the sequence
 	 *  e.g.		| monomer |                      dimer                      |      trimer     ... | ...
@@ -33,10 +29,11 @@ Sequence::Sequence( uint8_t* sequence,
 	 */
 
 	kmer_ = ( size_t* )calloc( L_, sizeof( size_t ) );
+    size_t maxL = Global::modelOrder + Global::maxOrder;
 	for( size_t i = 0; i < L_; i++ ){
-		for( size_t k = i < 10 ? i+1 : 11; k > 0; k-- ){
-			kmer_[i] += ( ( sequence_[i-k+1] == 0 ) ? ( size_t )rand() % Y_[1] :
-						( sequence_[i-k+1] - 1 ) ) * Y_[k-1];
+		for( size_t k = i < maxL ? i+1 : maxL+1; k > 0; k-- ){
+			kmer_[i] += ( ( sequence_[i-k+1] == 0 ) ? ( size_t )rand() % Global::A2powerK[1] :
+						( sequence_[i-k+1] - 1 ) ) * Global::A2powerK[k-1];
 		}
 	}
 
@@ -83,7 +80,6 @@ void Sequence::print(){
 	std::cout << ">" << header_ << std::endl;
 	for( size_t i = 0; i < L_; i++ ){
 		std::cout << Alphabet::getBase( sequence_[i] );
-//		std::cout << kmer_[i] << '\t';
 	}
 	std::cout << std::endl;
 }

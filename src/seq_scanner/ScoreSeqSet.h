@@ -52,7 +52,7 @@ private:
     std::vector<size_t>             z_;
 
     bool                            pval_is_calulated_;
-	std::vector<size_t>				Y_;
+
 };
 
 

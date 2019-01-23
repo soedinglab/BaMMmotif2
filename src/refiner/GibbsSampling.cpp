@@ -18,7 +18,6 @@ GibbsSampling::GibbsSampling( Motif* motif, BackgroundModel* bg,
     // get motif (hyper-)parameters from motif class
     K_ = motif_->getK();
     W_ = motif_->getW();
-    Y_ = motif_->getY();
     s_ = motif_->getS();
     A_ = motif_->getA();
     //K_bg_ = ( bg_->getOrder() < K_ ) ?  bg_->getOrder() : K_;
@@ -36,8 +35,8 @@ GibbsSampling::GibbsSampling( Motif* motif, BackgroundModel* bg,
     // allocate memory for n_[k][y][j] and probs_[k][y][j]
     n_ = ( float*** )calloc( K_+1, sizeof( float** ) );
     for( size_t k = 0; k < K_+1; k++ ){
-        n_[k] = ( float** )calloc( Y_[k+1], sizeof( float* ) );
-        for( size_t y = 0; y < Y_[k+1]; y++ ){
+        n_[k] = ( float** )calloc( Global::A2powerK[k+1], sizeof( float* ) );
+        for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
             n_[k][y] = ( float* )calloc( W_, sizeof( float ) );
         }
     }
@@ -63,7 +62,7 @@ GibbsSampling::~GibbsSampling(){
     free( z_ );
 
     for( size_t k = 0; k < K_+1; k++ ){
-        for( size_t y = 0; y < Y_[k+1]; y++ ){
+        for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
             free( n_[k][y] );
         }
         free( n_[k] );
@@ -113,7 +112,7 @@ void GibbsSampling::optimize(){
     // count the k-mers
     // 1. reset n_z_[k][y][j] to 0
     for( size_t k = 0; k < K_+1; k++ ){
-        for( size_t y = 0; y < Y_[k+1]; y++ ){
+        for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
             for( size_t j = 0; j < W_; j++ ){
                 n_[k][y][j] = 0.0f;
             }
@@ -125,7 +124,7 @@ void GibbsSampling::optimize(){
         if( z_[n] > 0 ){
             size_t* kmer = seqs_[n]->getKmer();
             for( size_t j = 0; j < W_; j++ ){
-                size_t y = kmer[z_[n]-1+j] % Y_[K_+1];
+                size_t y = kmer[z_[n]-1+j] % Global::A2powerK[K_+1];
                 n_[K_][y][j]++;
             }
         }
@@ -133,8 +132,8 @@ void GibbsSampling::optimize(){
 
     // compute k-mer counts for all the lower orders
     for( size_t k = K_; k > 0; k-- ){
-        for( size_t y = 0; y < Y_[k+1]; y++ ){
-            size_t y2 = y % Y_[k];
+        for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
+            size_t y2 = y % Global::A2powerK[k];
             for( size_t j = 0; j < W_; j++ ){
                 n_[k-1][y2][j] += n_[k][y][j];
             }
@@ -283,7 +282,7 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
          * -------------- faster version of removing k-mer ------------------
          */
         float sumN = 0.0f;
-        for( size_t a = 0; a < Y_[1]; a++ ){
+        for( size_t a = 0; a < Global::A2powerK[1]; a++ ){
             sumN += n_[0][a][0];
         }
 
@@ -292,8 +291,8 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
             for( size_t j = 0; j < W_; j++ ){
 
                 // for k = 0:
-                size_t y = kmer[z_[n]-1+j] % Y_[1];
-                size_t y_bg = y % Y_[K_bg_+1];
+                size_t y = kmer[z_[n]-1+j] % Global::A2powerK[1];
+                size_t y_bg = y % Global::A2powerK[K_bg_+1];
                 n_[0][y][j]--;
 
                 v[0][y][j]= ( n_[0][y][j] + A_[0][j] * v_bg[0][y] ) / ( sumN + A_[0][j] );
@@ -302,10 +301,10 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
 
                 // for 1 <= k <= K_:
                 for( size_t k = 1; k < K_+1; k++ ){
-                    y = kmer[z_[n]-1+j] % Y_[k+1];
-                    size_t y2 = y % Y_[k];
-                    size_t yk = y / Y_[1];
-                    y_bg = y % Y_[K_bg_+1];
+                    y = kmer[z_[n]-1+j] % Global::A2powerK[k+1];
+                    size_t y2 = y % Global::A2powerK[k];
+                    size_t yk = y / Global::A2powerK[1];
+                    y_bg = y % Global::A2powerK[K_bg_+1];
                     n_[k][y][j]--;
 
                     if( j < K_ ){
@@ -330,7 +329,7 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
             if( z_[n] > 0 ){
                 for( size_t j = 0; j < W_; j++ ){
                     for( size_t k = 0; k < K_+1; k++ ){
-                        size_t y = kmer[z_[n]-1+j] % Y_[k+1];
+                        size_t y = kmer[z_[n]-1+j] % Global::A2powerK[k+1];
                         n_[k][y][j]--;
                     }
                 }
@@ -360,7 +359,7 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
         // ij = i+j runs over all positions in sequence
         for( size_t ij = 0; ij < LW1; ij++ ){
             // extract (K+1)-mer y from positions (i-k,...,i)
-            size_t y = kmer[ij] % Y_[K_+1];
+            size_t y = kmer[ij] % Global::A2powerK[K_+1];
             // j runs over all motif positions
             for( size_t j = 0; j < W_; j++ ){
                 r_[n][L-W_-ij+j] *= s_[y][j];
@@ -399,7 +398,7 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
             // add the k-mer counts from the current sequence with the updated z
             for( size_t j = 0; j < W_; j++ ){
                 for( size_t k = 0; k < K_+1; k++ ){
-                    size_t y = kmer[z_[n]-1+j] % Y_[k+1];
+                    size_t y = kmer[z_[n]-1+j] % Global::A2powerK[k+1];
                     n_[k][y][j]++;
                 }
             }
@@ -557,10 +556,10 @@ float GibbsSampling::calc_gradient_alphas( float** A, size_t k, size_t j ){
     gradient += Global::modelBeta * powf( Global::modelGamma, ( float )k ) / powf( A[k][j], 2.0f );
 
     // the third term of equation 47
-    gradient += static_cast<float>( Y_[k] ) * boost::math::digamma( A[k][j] );
+    gradient += static_cast<float>( Global::A2powerK[k] ) * boost::math::digamma( A[k][j] );
 
     // the forth term of equation 47
-    for( size_t y = 0; y < Y_[k+1]; y++ ){
+    for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
 
         if( k == 0 ){
             // the first part
@@ -571,7 +570,7 @@ float GibbsSampling::calc_gradient_alphas( float** A, size_t k, size_t j ){
 
         } else {
 
-            size_t y2 = y % Y_[k];
+            size_t y2 = y % Global::A2powerK[k];
 
             // the first part
             gradient += v[k-1][y2][j] * boost::math::digamma( n_[k][y][j] + A[k][j] * v[k-1][y2][j] );
@@ -584,7 +583,7 @@ float GibbsSampling::calc_gradient_alphas( float** A, size_t k, size_t j ){
     }
 
     // the last term of equation 47
-    for( size_t y = 0; y < Y_[k]; y++ ){
+    for( size_t y = 0; y < Global::A2powerK[k]; y++ ){
 
         if( k == 0 ){
 
@@ -593,8 +592,8 @@ float GibbsSampling::calc_gradient_alphas( float** A, size_t k, size_t j ){
         } else if( j == 0 ){
 
             float sum = 0.0f;
-            for( size_t a = 0; a < Y_[1]; a++ ){
-                size_t ya = y * Y_[1] + a;
+            for( size_t a = 0; a < Global::A2powerK[1]; a++ ){
+                size_t ya = y * Global::A2powerK[1] + a;
                 sum += n_[k][ya][j];
             }
             gradient -= boost::math::digamma( sum + A[k][j] );
@@ -628,7 +627,7 @@ float GibbsSampling::calc_logCondProb_a( size_t iteration, float a, size_t k, si
 
     if( k == 0 ){
 
-        for( size_t y = 0; y < Y_[k]; y++ ){
+        for( size_t y = 0; y < Global::A2powerK[k]; y++ ){
 
             // the third term of equation 50
             logCondProbA += boost::math::lgamma( alpha );
@@ -647,17 +646,17 @@ float GibbsSampling::calc_logCondProb_a( size_t iteration, float a, size_t k, si
     } else {
 
         // the third, forth and fifth terms of equation 50
-        for( size_t y = 0; y < Y_[k]; y++ ){
+        for( size_t y = 0; y < Global::A2powerK[k]; y++ ){
 
             // the third term of equation 50
             logCondProbA += boost::math::lgamma( alpha );
 
             // the forth term of equation 50
-            for( size_t A = 0; A < Y_[1]; A++ ){
+            for( size_t A = 0; A < Global::A2powerK[1]; A++ ){
 
-                size_t ya = y * Y_[1] + A;
+                size_t ya = y * Global::A2powerK[1] + A;
 
-                size_t y2 = ya % Y_[k];
+                size_t y2 = ya % Global::A2powerK[k];
 
                 if( n_[k][ya][j] > 0.0f ){
 
@@ -727,7 +726,7 @@ float GibbsSampling::calc_lposterior_alphas( float** A, size_t k ){
         //
         if( k == 0 ){
 
-            for( size_t y = 0; y < Y_[k]; y++ ){
+            for( size_t y = 0; y < Global::A2powerK[k]; y++ ){
 
                 // the third term of equation 50
                 logPosterior += boost::math::lgamma( A[k][j] );
@@ -746,7 +745,7 @@ float GibbsSampling::calc_lposterior_alphas( float** A, size_t k ){
         } else {
 
             // the third, forth and fifth terms of equation 50
-            for( size_t y = 0; y < Y_[k]; y++ ){
+            for( size_t y = 0; y < Global::A2powerK[k]; y++ ){
 
                 // !!! important: correction for the occasions
                 // when zero or one k-mer is present
@@ -760,11 +759,11 @@ float GibbsSampling::calc_lposterior_alphas( float** A, size_t k ){
                     logPosterior += boost::math::lgamma( A[k][j] );
 
                     // the forth term of equation 50
-                    for( size_t a = 0; a < Y_[1]; a++ ){
+                    for( size_t a = 0; a < Global::A2powerK[1]; a++ ){
 
-                        size_t ya = y * Y_[1] + a;
+                        size_t ya = y * Global::A2powerK[1] + a;
 
-                        size_t y2 = ya % Y_[k];
+                        size_t y2 = ya % Global::A2powerK[k];
 
                         if( n_[k][ya][j] > 0 ){
 
@@ -799,7 +798,7 @@ float GibbsSampling::calc_llikelihood_alphas( float** A, size_t k ){
 
         for( size_t j = 0; j < W_; j++ ){
 
-            for( size_t y = 0; y < Y_[k]; y++ ){
+            for( size_t y = 0; y < Global::A2powerK[k]; y++ ){
 
                 // the third term of equation 50
                 logLikelihood += boost::math::lgamma( A[k][j] );
@@ -820,19 +819,19 @@ float GibbsSampling::calc_llikelihood_alphas( float** A, size_t k ){
 
         for( size_t j = 0; j < W_; j++ ){
             // the third, forth and fifth terms of equation 50
-            for( size_t y = 0; y < Y_[k]; y++ ){
+            for( size_t y = 0; y < Global::A2powerK[k]; y++ ){
 
                 // the third term of equation 50
                 logLikelihood += boost::math::lgamma( A[k][j] );
 
                 // the forth term of equation 50
-                for( size_t a = 0; a < Y_[1]; a++ ){
+                for( size_t a = 0; a < Global::A2powerK[1]; a++ ){
 
-                    size_t ya = y * Y_[1] + a;
+                    size_t ya = y * Global::A2powerK[1] + a;
 
-                    size_t y2 = ya % Y_[k];
+                    size_t y2 = ya % Global::A2powerK[k];
 
-                    if( n_[k][ya][j] > 0.0000001f ){
+                    if( n_[k][ya][j] > 1.e-6f ){
 
                         // the first part of the forth term
                         logLikelihood += boost::math::lgamma( n_[k][ya][j] + A[k][j] * v[k-1][y2][j] );
@@ -862,7 +861,7 @@ void GibbsSampling::print(){
     // print out motif parameter v
     for( size_t j = 0; j < W_; j++ ){
         for( size_t k = 0; k < K_+1; k++ ){
-            for( size_t y = 0; y < Y_[k+1]; y++ ){
+            for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
                 std::cout << std::setprecision(5) <<
                           motif_->getV()[k][y][j] << '\t';
             }
@@ -890,7 +889,7 @@ void GibbsSampling::write( char* odir, std::string basename, bool ss ){
     std::ofstream ofile_n( opath_n.c_str() );
     for( size_t j = 0; j < W_; j++ ){
         for( size_t k = 0; k < K_+1; k++ ){
-            for( size_t y = 0; y < Y_[k+1]; y++ ){
+            for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
                 ofile_n << static_cast<int>( n_[k][y][j] ) << '\t';
             }
             ofile_n << std::endl;

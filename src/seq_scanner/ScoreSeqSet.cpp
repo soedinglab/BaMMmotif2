@@ -13,7 +13,6 @@ ScoreSeqSet::ScoreSeqSet( Motif* motif, BackgroundModel* bg, std::vector<Sequenc
 	motif_	= motif;
 	bg_ 	= bg;
 	seqSet_	= seqSet;
-	Y_ 		= motif->getY();
 
     size_t seqN = seqSet_.size();
     mops_p_values_.resize( seqN );
@@ -66,7 +65,7 @@ void ScoreSeqSet::calcLogOdds(){
 		for( size_t i = 0; i < LW1; i++ ){
 			float logOdds = 0.0f;
 			for( size_t j = 0; j < W; j++ ){
-				size_t y = kmer[i+j] % Y_[K+1];
+				size_t y = kmer[i+j] % Global::A2powerK[K+1];
 				logOdds += s[y][j];
 			}
 			// take all the log odds scores for MOPS model:
@@ -160,7 +159,7 @@ void ScoreSeqSet::calcPvalues( std::vector<std::vector<float>> pos_scores,
                         std::cout << "n=" << n << ",i=" << i
                                   << ", pval=" << pVal
                                   << ", nTop=" << nTop
-                                  << ", negSeqNum=" << negN
+                                  << ", negN=" << negN
                                   << ", FPl = " << FPl
                                   << ", Sl=" << Sl
                                   << ", S_ntop=" << S_ntop
@@ -192,7 +191,7 @@ void ScoreSeqSet::calcPvalues( std::vector<std::vector<float>> pos_scores,
                         std::cout << "n=" << n << ",i=" << i
                                   << ", pval=" << pVal
                                   << ", eps=" << eps
-                                  << ", negSeqNum=" << negN
+                                  << ", negN=" << negN
                                   << ", Sl=" << Sl
                                   << ", S_higher=" << Sl_higher
                                   << ", S_lower=" << Sl_lower

@@ -13,10 +13,9 @@ EM::EM( Motif* motif, BackgroundModel* bgModel,
     // get motif (hyper-)parameters from motif class
 	K_          = Global::modelOrder;
 	W_          = motif_->getW();
-	Y_          = motif_->getY();
 	s_          = motif_->getS();
 	A_          = motif_->getA();
-    q_          = motif->getQ();    // get fractional prior q from initial motifs
+    q_          = motif_->getQ();    // get fractional prior q from initial motifs
 
     // allocate memory for r_[n][i],
     // pos_[n][i], z_[n]
@@ -31,8 +30,8 @@ EM::EM( Motif* motif, BackgroundModel* bgModel,
 	// allocate memory for n_[k][y][j]
 	n_ = ( float*** )calloc( K_+1, sizeof( float** ) );
 	for( size_t k = 0; k < K_+1; k++ ){
-		n_[k] = ( float** )calloc( Y_[k+1], sizeof( float* ) );
-		for( size_t y = 0; y < Y_[k+1]; y++ ){
+		n_[k] = ( float** )calloc( Global::A2powerK[k+1], sizeof( float* ) );
+		for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
 			n_[k][y] = ( float* )calloc( W_, sizeof( float ) );
 		}
 	}
@@ -60,7 +59,7 @@ EM::~EM(){
     free( pos_ );
 
     for( size_t k = 0; k < K_+1; k++ ){
-        for( size_t y = 0; y < Y_[k+1]; y++ ){
+        for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
             free( n_[k][y] );
         }
         free( n_[k] );
@@ -84,12 +83,10 @@ int EM::optimize(){
 
     bool 	iterate = true;
 
-    float 	v_diff, llikelihood_prev, llikelihood_diff;
-
     // store model probs before each optimization step
     std::vector<std::vector<float>> v_before;
-    v_before.resize( Y_[K_+1] );
-    for( size_t y = 0; y < Y_[K_+1]; y++ ){
+    v_before.resize( Global::A2powerK[K_+1] );
+    for( size_t y = 0; y < Global::A2powerK[K_+1]; y++ ){
         v_before[y].resize( W_ );
     }
 
@@ -121,9 +118,9 @@ int EM::optimize(){
     while( iterate && ( iteration < Global::maxIterations ) ){
 
         // get parameter variables with highest order before EM
-        llikelihood_prev = llikelihood_;
+        float llikelihood_prev = llikelihood_;
 
-        for( size_t y = 0; y < Y_[K_+1]; y++ ){
+        for( size_t y = 0; y < Global::A2powerK[K_+1]; y++ ){
             for( size_t j = 0; j < W_; j++ ){
                 v_before[y][j] = motif_->getV()[K_][y][j];
             }
@@ -138,7 +135,7 @@ int EM::optimize(){
         }
 
         // optimize hyper-parameter q in the first step
-        if( Global::optimizeQ and iteration < 1 ) {
+        if( Global::optimizeQ and iteration == 2 ) {
             optimizeQ();
             updatePos();
         }
@@ -150,15 +147,15 @@ int EM::optimize(){
         }
 
         // check parameter difference for convergence
-        v_diff = 0.0f;
-        for( size_t y = 0; y < Y_[K_+1]; y++ ){
+        float v_diff = 0.0f;
+        for( size_t y = 0; y < Global::A2powerK[K_+1]; y++ ){
             for( size_t j = 0; j < W_; j++ ){
                 v_diff += fabsf( motif_->getV()[K_][y][j] - v_before[y][j] );
             }
         }
 
         // check the change of likelihood for convergence
-        llikelihood_diff = llikelihood_ - llikelihood_prev;
+        float llikelihood_diff = llikelihood_ - llikelihood_prev;
 
         if( Global::verbose )
             std::cout << "it=" << iteration
@@ -233,7 +230,7 @@ void EM::EStep(){
 
         for( size_t ij = 0; ij < L; ij++ ){
             // extract (K+1)-mer y from positions (ij-K,...,ij)
-            size_t y = kmer[ij] % Y_[K_+1];
+            size_t y = kmer[ij] % Global::A2powerK[K_+1];
             for( size_t j = 0; j < W_; j++ ){
                 r_[n][L+padding_-ij+j-1] *= s_[y][j];
             }
@@ -264,7 +261,7 @@ void EM::MStep(){
 
     // reset the fractional counts n
     for( size_t k = 0; k < K_+1; k++ ){
-        for( size_t y = 0; y < Y_[k+1]; y++ ){
+        for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
             for( size_t j = 0; j < W_; j++ ){
                 n_[k][y][j] = 0.0f;
             }
@@ -281,7 +278,7 @@ void EM::MStep(){
         // ij = i+j runs over all positions i on sequence n
         // r index goes from (0, L]
         for( size_t ij = 0; ij < L; ij++ ){
-            size_t y = kmer[ij] % Y_[K_+1];
+            size_t y = kmer[ij] % Global::A2powerK[K_+1];
             for (size_t j = 0; j < W_; j++) {
                 // parallelize for: n_[K_][y][j] += r_[n][L-ij+j-1];
                 atomic_float_add( &(n_[K_][y][j]), r_[n][L+padding_-ij+j-1] );
@@ -292,8 +289,8 @@ void EM::MStep(){
     // compute fractional occurrence counts from higher to lower order
     // k runs over all lower orders
     for( size_t k = K_; k > 0; k-- ){
-        for( size_t y = 0; y < Y_[k+1]; y++ ){
-            size_t y2 = y % Y_[k];
+        for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
+            size_t y2 = y % Global::A2powerK[k];
             for( size_t j = 0; j < W_; j++ ){
                 n_[k-1][y2][j] += n_[k][y][j];
             }
@@ -350,7 +347,7 @@ void EM::EStep_slow(){
         for( size_t i = 1; i <= LW1; i++ ){
             for( size_t j = 0; j < W_; j++ ){
                 // extract (K+1)-mer y from positions (ij-K,...,ij)
-                size_t y = kmer[i-1+j] % Y_[K_+1];
+                size_t y = kmer[i-1+j] % Global::A2powerK[K_+1];
                 r_[n][i] *= s_[y][j];
             }
         }
@@ -381,7 +378,7 @@ void EM::MStep_slow(){
 
     // reset the fractional counts n
     for( size_t k = 0; k < K_+1; k++ ){
-        for( size_t y = 0; y < Y_[k+1]; y++ ){
+        for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
             for( size_t j = 0; j < W_; j++ ){
                 n_[k][y][j] = 0.0f;
             }
@@ -399,7 +396,7 @@ void EM::MStep_slow(){
         // it runs over all positions i on sequence n in the region of [1, LW1]
         for( size_t i = 1; i <= LW1; i++ ){
             for (size_t j = 0; j < W_; j++) {
-                size_t y = kmer[i-1+j] % Y_[K_+1];
+                size_t y = kmer[i-1+j] % Global::A2powerK[K_+1];
                 //n_[K_][y][j] += r_[n][i];
                 atomic_float_add(&(n_[K_][y][j]), r_[n][i]);
             }
@@ -409,8 +406,8 @@ void EM::MStep_slow(){
     // compute fractional occurrence counts from higher to lower order
     // k runs over all lower orders
     for( size_t k = K_; k > 0; k-- ){
-        for( size_t y = 0; y < Y_[k+1]; y++ ){
-            size_t y2 = y % Y_[k];
+        for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
+            size_t y2 = y % Global::A2powerK[k];
             for( size_t j = 0; j < W_; j++ ){
                 n_[k-1][y2][j] += n_[k][y][j];
             }
@@ -421,7 +418,7 @@ void EM::MStep_slow(){
     motif_->updateV( n_, A_ );
 }
 
-int EM::mask() {
+int EM::mask(){
     /**
      * upgraded version of EM to eliminate the effect of unrelated motifs
      */
@@ -431,7 +428,7 @@ int EM::mask() {
      * E-step for k = 0 to estimate weights r
      */
     // calculate the log odds ratio for k=0
-    for( size_t y = 0; y < Y_[1]; y++ ){
+    for( size_t y = 0; y < Global::A2powerK[1]; y++ ){
         for( size_t j = 0; j < W_; j++ ){
             s_[y][j] = motif_->getV()[0][y][j] / bgModel_->getV()[0][y];
         }
@@ -461,7 +458,7 @@ int EM::mask() {
         for (size_t ij = 0; ij < L; ij++) {
 
             // extract monomer y at position i
-            size_t y = kmer[ij] % Y_[1];
+            size_t y = kmer[ij] % Global::A2powerK[1];
 
             for( size_t j = 0; j < W_; j++ ){
                 r_[n][L-ij+j] *= s_[y][j];
@@ -515,8 +512,8 @@ int EM::mask() {
     float 	v_diff, llikelihood_prev, llikelihood_diff;
 
     std::vector<std::vector<float>> v_before;
-    v_before.resize( Y_[K_+1] );
-    for( size_t y = 0; y < Y_[K_+1]; y++ ){
+    v_before.resize( Global::A2powerK[K_+1] );
+    for( size_t y = 0; y < Global::A2powerK[K_+1]; y++ ){
         v_before[y].resize( W_ );
     }
 
@@ -527,7 +524,7 @@ int EM::mask() {
 
         // get parameter variables with highest order before EM
         llikelihood_prev = llikelihood_;
-        for( size_t y = 0; y < Y_[K_+1]; y++ ){
+        for( size_t y = 0; y < Global::A2powerK[K_+1]; y++ ){
             for( size_t j = 0; j < W_; j++ ){
                 v_before[y][j] = motif_->getV()[K_][y][j];
             }
@@ -556,7 +553,7 @@ int EM::mask() {
             // update r based on the log odd ratios
             for( size_t idx = 0; idx < ridx[n].size(); idx++ ){
                 for( size_t j = 0; j < W_; j++ ){
-                    size_t y = kmer[L-ridx[n][idx]+j] % Y_[K_+1];
+                    size_t y = kmer[L-ridx[n][idx]+j] % Global::A2powerK[K_+1];
                     r_[n][ridx[n][idx]] *= s_[y][j];
                 }
                 // calculate the responsibilities and sum them up
@@ -581,7 +578,7 @@ int EM::mask() {
          */
         // reset the fractional counts n
         for( size_t k = 0; k < K_+1; k++ ){
-            for( size_t y = 0; y < Y_[k+1]; y++ ){
+            for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
                 for( size_t j = 0; j < W_; j++ ){
                     n_[k][y][j] = 0.0f;
                 }
@@ -597,7 +594,7 @@ int EM::mask() {
 
             for( size_t idx = 0; idx < ridx[n].size(); idx++ ){
                 for( size_t j = 0; j < W_; j++ ){
-                    size_t y = kmer[L-ridx[n][idx]+j] % Y_[K_+1];
+                    size_t y = kmer[L-ridx[n][idx]+j] % Global::A2powerK[K_+1];
                     n_[K_][y][j] += r_[n][ridx[n][idx]];
                 }
             }
@@ -606,8 +603,8 @@ int EM::mask() {
         // compute fractional occurrence counts from higher to lower order
         // k runs over all orders
         for( size_t k = K_; k > 0; k-- ){
-            for( size_t y = 0; y < Y_[k+1]; y++ ){
-                size_t y2 = y % Y_[k];
+            for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
+                size_t y2 = y % Global::A2powerK[k];
                 for( size_t j = 0; j < W_; j++ ){
                     n_[k-1][y2][j] += n_[k][y][j];
                 }
@@ -621,7 +618,7 @@ int EM::mask() {
          * check parameter difference for convergence
          */
         v_diff = 0.0f;
-        for( size_t y = 0; y < Y_[K_+1]; y++ ){
+        for( size_t y = 0; y < Global::A2powerK[K_+1]; y++ ){
             for( size_t j = 0; j < W_; j++ ){
                 v_diff += fabsf( motif_->getV()[K_][y][j] - v_before[y][j] );
             }
@@ -655,13 +652,9 @@ void EM::optimizeQ(){
         N_0 += r_[n][0];
     }
 
+    std::cout << "N_0 = " << N_0 << std::endl;
+
     q_ = ( posN - N_0 + 1.f ) / ( posN + 2.f );
-
-    if( !Global::ss ) q_ /= 2;
-
-    if( Global::verbose ){
-        std::cout << "optimized q=" << q_ << std::endl;
-    }
 
 }
 
@@ -986,7 +979,7 @@ void EM::print(){
     for( size_t j = 0; j < W_; j++ ){
         for( size_t k = 0; k < K_+1; k++ ){
             float sum = 0.f;
-            for( size_t y = 0; y < Y_[k+1]; y++ ) {
+            for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ) {
                 sum += n_[k][y][j];
                 std::cout << n_[k][y][j] << '\t';
             }
@@ -1005,12 +998,12 @@ void EM::print(){
     for( size_t j = 0; j < W_; j++ ){
         for( size_t k = 0; k < K_+1; k++ ){
             float sum = 0.f;
-            for( size_t y = 0; y < Y_[k+1]; y++ ) {
+            for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ) {
                 sum += motif_->getV()[k][y][j];
                 std::cout << motif_->getV()[k][y][j] << '\t';
             }
             std::cout << "sum=" << sum << std::endl;
-//            assert( fabsf( sum - Y_[k] ) < 1.e-3f );
+//            assert( fabsf( sum - Global::A2powerK[k] ) < 1.e-3f );
         }
     }
 
@@ -1023,7 +1016,7 @@ void EM::print(){
     for( size_t j = 0; j < W_; j++ ){
         for( size_t k = 0; k < K_+1; k++ ){
             float sum = 0.f;
-            for( size_t y = 0; y < Y_[k+1]; y++ ) {
+            for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ) {
                 sum += motif_->getP()[k][y][j];
                 std::cout << motif_->getP()[k][y][j] << '\t';
             }
@@ -1040,7 +1033,7 @@ void EM::print(){
 
     for( size_t j = 0; j < W_; j++ ){
         float sum = 0.f;
-        for( size_t y = 0; y < Y_[K_+1]; y++ ) {
+        for( size_t y = 0; y < Global::A2powerK[K_+1]; y++ ) {
             sum += s_[y][j];
             std::cout << s_[y][j] << '\t';
         }
@@ -1105,7 +1098,7 @@ void EM::write( char* odir, std::string basename ){
 	std::ofstream ofile_n( opath_n.c_str() );
 	for( size_t j = 0; j < W_; j++ ){
 		for( size_t k = 0; k < K_+1; k++ ){
-			for( size_t y = 0; y < Y_[k+1]; y++ ){
+			for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
 				ofile_n << static_cast<int>( n_[k][y][j] ) << '\t';
 			}
 			ofile_n << std::endl;

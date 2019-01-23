@@ -85,19 +85,19 @@ int main( int nargs, char* args[] ){
         posN = posSet.size();   // update the size of positive sequences after filtering
         std::vector<std::unique_ptr<Sequence>> negSeqs;
         SeqGenerator negseq( posSet, NULL );
-        if( !Global::fixedNegN and posN >= Global::negSeqNum ){
+        if( !Global::fixedNegN and posN >= Global::negN ){
             negSeqs = negseq.sample_bgseqset_by_fold( Global::mFold );
             std::cout << Global::mFold << " x " << posN
                       << " background sequences are generated." << std::endl;
-        } else if( !Global::fixedNegN and posN < Global::negSeqNum ){
-            bool rest = Global::negSeqNum % posN;
-            Global::mFold = Global::negSeqNum / posN + rest;
+        } else if( !Global::fixedNegN and posN < Global::negN ){
+            bool rest = Global::negN % posN;
+            Global::mFold = Global::negN / posN + rest;
             negSeqs = negseq.sample_bgseqset_by_fold( Global::mFold );
             std::cout << Global::mFold << " x " << posN
                       << " background sequences are generated." << std::endl;
         } else {
-            negSeqs = negseq.sample_bgseqset_by_num( Global::negSeqNum, Global::posSequenceSet->getMaxL() );
-            std::cout << Global::negSeqNum << " (fixed) background sequences are generated." << std::endl;
+            negSeqs = negseq.sample_bgseqset_by_num( Global::negN, Global::posSequenceSet->getMaxL() );
+            std::cout << Global::negN << " (fixed) background sequences are generated." << std::endl;
         }
 
         // convert unique_ptr to regular pointer
@@ -114,7 +114,7 @@ int main( int nargs, char* args[] ){
     // or over optimization steps within a motif
     size_t mainLoopThreads;
     size_t perLoopThreads;
-    if( Global::parallelOverMotif ){
+    if( Global::parallelizeOverMotifs ){
         mainLoopThreads = Global::threads;
         perLoopThreads = 1;
     } else {
@@ -132,7 +132,7 @@ int main( int nargs, char* args[] ){
 
         fdr.evaluateMotif( perLoopThreads );
 
-        if(Global::saveInitialBaMMs){
+        if( Global::saveInitialBaMMs ){
             // write out the foreground model
             motif->write( Global::outputDirectory,
                           Global::outputFileBasename + "_init_motif_" + std::to_string( n+1 ) );

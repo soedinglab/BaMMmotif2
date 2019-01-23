@@ -45,7 +45,8 @@ public:
 	static SequenceSet*	negSequenceSet;			// negative sequence set
 	static bool			negSeqGiven;			// a flag for the negative sequence given by users
     static bool         genericNeg;             // flag for generating negative sequences based on generic 2nd-bgModel
-    static size_t       negSeqNum;                   // number of negative sequences to be generated
+    static size_t       negN;                   // number of negative sequences to be generated
+    static size_t       minNegN;                // minimal number of negative sequences to be generated
     static bool         fixedNegN;              // flag for using fixed number of negative sequences
 
 	// weighting options
@@ -54,8 +55,11 @@ public:
 	// sequence set options
 	static char* 		alphabetType;			// provide alphabet type
 	static bool			ss;						// only search on single strand sequences
+    static std::vector<size_t> A2powerK;        // contains 1 at position 0
+                                                // and the number of oligomers for increasing order k (from 0 to K_) at positions k+1
+                                                // e.g. for alphabet size_ = 4 and K_ = 2: A2powerK = 1 4 16 64 ...
 
-	// initial model(s) options
+    // initial model(s) options
 	static char*		initialModelFilename;	// filename of initial model
 	static std::string	initialModelBasename;	// basename of initial model
 	static std::string	initialModelTag;		// tag for initializing the model
@@ -65,6 +69,7 @@ public:
 
 	// model options
 	static size_t		modelOrder;				// model order
+    static size_t       maxOrder;               // maximal model order
 	static std::vector<float> modelAlpha;		// initial alphas
 	static float		modelBeta;				// alpha_k = beta x gamma^k for k > 0
 	static float		modelGamma;
@@ -126,7 +131,7 @@ public:
 
 	// flags for developers
 	static bool			makeMovie;				// print out bamms in each iteration while optimizing
-	static bool 		optimizeQ;				// optimize hyperparameter q in EM algorithm
+	static bool 		optimizeQ;				// optimize hyper-parameter q in EM algorithm
     static bool         optimizePos;            // optimize positional prior in the EM algorithm
     static bool         B2;
     static bool         B3;
@@ -136,7 +141,7 @@ public:
 
     // option for openMP
     static size_t       threads;                // number of threads to use
-    static bool         parallelOverMotif;      // flag for parallelizing over motifs
+    static bool         parallelizeOverMotifs;  // flag for parallelizing over motifs
 
     // functions
     static void			printPara();
