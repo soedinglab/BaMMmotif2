@@ -15,10 +15,10 @@ include_directories (${Boost_INCLUDE_DIR})
 link_libraries (${Boost_LIBRARIES})
 
 # link to Eigen library
-#include(FindEigen3)
-#find_package(Eigen3 REQUIRED)
-#include_directories(${EIGEN3_INCLUDE_DIR})
-#include_directories("lib")
+include(FindEigen3)
+find_package(Eigen3 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})
+include_directories("lib")
 
 # set the version of BaMM!motif
 set (BAMMMOTIF_MAJOR_VERSION 2)
