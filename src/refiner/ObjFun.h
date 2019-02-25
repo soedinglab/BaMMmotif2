@@ -42,7 +42,7 @@ public:
             p1 += Ni_[i] * (si[i] - logf(sumexp));
         }
         for (size_t i = 2; i < LW1_; i++) {
-            p2 += beta2_ * powf(si[i] - si[i - 1], 2.f);
+            p2 += beta2_ * powf(si[i] - si[i-1], 2.f);
         }
 
         Q = p2 - p1;
@@ -55,8 +55,10 @@ public:
                         beta2_ * dot_product[i]);
         }
 
+        std::cout << "Q=" << Q << std::endl;
         return Q;
     }
+
 };
 
 #endif // end OBJFUN_H_

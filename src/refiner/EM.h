@@ -7,15 +7,17 @@
 
 #include <random>
 #include <chrono>
-//#include <eigen3/Eigen/Dense>   // e.g. conjugate gradient solver
-//#include <eigen3/Eigen/IterativeLinearSolvers>
-//#include <eigen3/Eigen/Core>    // e.g. used for LBFGS++
-//#include "ObjFun.h"
-//#include "../LBFGS/LBFGS.h"
 
 #include "../init/BackgroundModel.h"
 #include "../init/MotifSet.h"
 #include "../Global/Global.h"
+
+// todo: for positional prior
+#include <eigen3/Eigen/Dense>   // e.g. conjugate gradient solver
+#include <eigen3/Eigen/IterativeLinearSolvers>
+#include <eigen3/Eigen/Core>    // e.g. used for LBFGS++
+#include "ObjFun.h"
+#include "../LBFGS/LBFGS.h"
 
 class EM {
     /**
@@ -42,12 +44,14 @@ public:
     void 					MStep_slow();		// M-step: slow version
 
     void                    optimizeQ();        // optimize the hyper-parameter q
-//    void                    optimizePos();      // optimize the positional prior pos_i
+
     void                    updatePos();        // initialize the positional prior pos_i
 
-//    Eigen::MatrixXf         getAmatrix( size_t w );
-//    Eigen::MatrixXf         getBmatrix( size_t w );
-//    float                   obj_fun( Eigen::VectorXf& si, Eigen::VectorXf& grad );
+    // todo: for positional prior
+    void                    optimizePos();      // optimize the positional prior pos_i
+    Eigen::MatrixXf         getAmatrix( size_t w );
+    Eigen::MatrixXf         getBmatrix( size_t w );
+    float                   obj_fun( Eigen::VectorXf& si, Eigen::VectorXf& grad );
 
     float**                 getR();             // get the responsibility parameter r
     float                   getQ();             // get the optimized positional prior q
@@ -72,22 +76,22 @@ private:
     float*** 				n_;	            	// fractional counts n for (k+1)-mers y at motif position j
     float**					pos_;				// positional prior, pos[i][0] indicates the prior for no motif present on sequence i
 
+    float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif
+    size_t                  padding_;
+    float 					llikelihood_= 0.0f; // log likelihood for each iteration
+
+    // todo: for positional prior
     float                   beta1_;             // hyper-parameter for smoothness on positional prior
     float                   beta2_;             // hyper-parameter for smoothness on positional prior
     float                   norm_;
     float*                  pi_;                // probability of a motif to start at position i on the longest sequence
 
     float                   N0_;
-    size_t                  LW1_;
 
-//    Eigen::VectorXf         b_vector_;
-//    Eigen::VectorXf         si_;
-//    Eigen::VectorXf         Ni_;
-//    Eigen::MatrixXf         A_matrix_;
-
-    float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif
-    size_t                  padding_;
-    float 					llikelihood_= 0.0f; // log likelihood for each iteration
+    Eigen::VectorXf         b_vector_;
+    Eigen::VectorXf         si_;
+    Eigen::VectorXf         Ni_;
+    Eigen::MatrixXf         A_matrix_;
 
 };
 

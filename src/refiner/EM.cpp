@@ -15,15 +15,14 @@ EM::EM( Motif* motif, BackgroundModel* bgModel,
 	W_          = motif_->getW();
 	s_          = motif_->getS();
 	A_          = motif_->getA();
-    q_          = motif_->getQ();    // get fractional prior q from initial motifs
+    q_          = motif_->getQ();   // get fractional prior q from initial motifs
 
-    // allocate memory for r_[n][i],
-    // pos_[n][i], z_[n]
-    padding_ = 1;                   // add to reserve enough memory in r for fast EM version
-	r_ = ( float** )calloc( seqs_.size(), sizeof( float* ) );
-	pos_ = ( float** )calloc( seqs_.size(), sizeof( float* ) );
+    // allocate memory for r_[n][i], pos_[n][i], z_[n]
+    padding_    = 1;                // add to reserve enough memory in r for fast EM version
+	r_      = ( float** )calloc( seqs_.size(), sizeof( float* ) );
+	pos_    = ( float** )calloc( seqs_.size(), sizeof( float* ) );
 	for( size_t n = 0; n < seqs_.size(); n++ ){
-		r_[n] = ( float* )calloc( seqs_[n]->getL()+padding_+W_+1, sizeof( float ) );
+		r_[n]   = ( float* )calloc( seqs_[n]->getL()+padding_+W_+1, sizeof( float ) );
 		pos_[n] = ( float* )calloc( seqs_[n]->getL()+1, sizeof( float ) );
 	}
 
@@ -36,17 +35,17 @@ EM::EM( Motif* motif, BackgroundModel* bgModel,
 		}
 	}
 
+    // todo: for positional prior
     beta1_      = 5;                // a hyper-parameter for estimating the positional prior
-    beta2_      = 400;              // for method 2 and 3
-    // allocate memory for pi_[i]
+    beta2_      = 1000;             // for method 2 and 3
     N0_         = 0.f;
-    LW1_        = seqs_[0]->getL()-W_+1;
-    pi_         = ( float* )calloc( LW1_+1, sizeof( float ) );
 
-//    b_vector_   = Eigen::VectorXf::Zero( LW1_ );
-//    si_         = Eigen::VectorXf::Zero( LW1_ );
-//    Ni_         = Eigen::VectorXf::Zero( LW1_ );
-//    A_matrix_   = getAmatrix( LW1_ );
+    size_t LW1_ = seqs_[0]->getL()-W_+1;
+    pi_         = ( float* )calloc( LW1_+1, sizeof( float ) );
+    b_vector_   = Eigen::VectorXf::Zero( LW1_ );
+    si_         = Eigen::VectorXf::Zero( LW1_ );
+    Ni_         = Eigen::VectorXf::Zero( LW1_ );
+    A_matrix_   = getAmatrix( LW1_ );
 
 }
 
@@ -72,7 +71,7 @@ EM::~EM(){
 int EM::optimize(){
 
     if( Global::verbose ) {
-        std::cout << " ______" << std::endl
+        std::cout << " ______"  << std::endl
                   << "|*    *|" << std::endl
                   << "|  EM  |" << std::endl
                   << "|*____*|" << std::endl
@@ -93,25 +92,24 @@ int EM::optimize(){
     // initialized positional priors
     updatePos();
 
-/*
-    if( optimizePos_ ) {
+    // todo: for positional prior
+    // todo:=====================================================
+    if( Global::optimizePos ) {
         // pre-define hyper-parameters for optimizing position priors
-        size_t L = seqs_[0]->getL();
-        size_t LW1 = L - W_ + 1;
+        size_t LW1 = seqs_[0]->getL()-W_+1;
 
         norm_ = 0.0f;
         for (size_t i = 1; i <= LW1; i++) {
             std::normal_distribution<> nd{LW1 / 2.0f, (float) LW1};
-            si_[i-1] = nd(rngx_) / LW1;
+            si_[i-1] = nd( Global::rngx ) / LW1;
             pi_[i] = expf(si_[i-1]);
             norm_ += pi_[i];
         }
         for (size_t i = 1; i <= LW1; i++) {
             pi_[i] /= norm_;
-            //si_[i-1] = logf( pi_[i] );
         }
     }
-*/
+    // todo:=====================================================
 
     // iterate over
     size_t iteration = 0;
@@ -135,16 +133,18 @@ int EM::optimize(){
         }
 
         // optimize hyper-parameter q in the first step
-        if( Global::optimizeQ and iteration == 2 ) {
+        if( Global::optimizeQ and iteration == 0 ) {
             optimizeQ();
             updatePos();
         }
 
-        // optimize positional prior pos_
+        // todo: optimize positional prior pos
+        // todo:=====================================================
         // note: this only works for sequences with the same length
-        if( Global::optimizePos and iteration == 1 ){
-//            optimizePos();
+        if( Global::optimizePos and iteration == 0 ){
+            optimizePos();
         }
+        // todo:=====================================================
 
         // check parameter difference for convergence
         float v_diff = 0.0f;
@@ -157,16 +157,16 @@ int EM::optimize(){
         // check the change of likelihood for convergence
         float llikelihood_diff = llikelihood_ - llikelihood_prev;
 
-        if( Global::verbose )
+        if( Global::verbose ) {
             std::cout << "it=" << iteration
                       << std::fixed
-                      << "\tlog likelihood="<< llikelihood_
-                      << "\tllh_diff="      << llikelihood_diff
-                      << "\t\tmodel_diff="  << v_diff
+                      << "\tlog likelihood=" << llikelihood_
+                      << "\tllh_diff=" << llikelihood_diff
+                      << "\t\tmodel_diff=" << v_diff
                       << std::endl;
-
-        if( v_diff < Global::EMepsilon )				iterate = false;
-        if( llikelihood_diff < 0 and iteration > 10 )	iterate = false;
+        }
+        if( v_diff < Global::EMepsilon ){				iterate = false; }
+        if( llikelihood_diff < 0 and iteration > 10 ){	iterate = false; }
 
         iteration++;
 
@@ -181,6 +181,7 @@ int EM::optimize(){
             std::strcpy(odir, opath.c_str());
             motif_->write(odir, filename + std::to_string(iteration));
         }
+
         // todo: print out for checking
         if( Global::debug ) {
             motif_->calculateP();
@@ -658,22 +659,23 @@ void EM::optimizeQ(){
 
 }
 
-/*
 void EM::optimizePos() {
 
     // todo: note this function currently only works for sequences of the same length
 
+    size_t posN = seqs_.size();
+    size_t LW1_ = seqs_[0]->getL()-W_+1;
     // update positional prior using the smoothness parameter beta
     // according to Eq. 149
     // calculate the value N0 and Ni_i:
     N0_ = 0.f;
-    for (size_t n = 0; n < posN_; n++) {
+    for (size_t n = 0; n < posN; n++) {
         N0_ += r_[n][0];
     }
 
     for( size_t i = 0; i < LW1_; i++ ) {
-        for (size_t n = 0; n < posN_; n++) {
-            Ni_[i] += r_[n][seqs_[0]->getL()-i];
+        for (size_t n = 0; n < posN; n++) {
+            Ni_[i] += r_[n][seqs_[n]->getL()-i];
         }
     }
 
@@ -685,7 +687,7 @@ void EM::optimizePos() {
         // according to Eq. 149
         for( size_t i = 0; i < LW1_; i++ ) {
             // update pi according to Eq. 149
-            pi_[i+1] = (Ni_[i] + beta1_ - 1.f) / (posN_ - N0_ + LW1_ * (beta1_ - 1.f));
+            pi_[i+1] = (Ni_[i] + beta1_ - 1.f) / (posN - N0_ + LW1_ * (beta1_ - 1.f));
         }
 
     } else if ( method_flag == 2 ){
@@ -694,7 +696,7 @@ void EM::optimizePos() {
         // preference profile
         // run a few iterations of conjugate gradients (e.g. 5~10)
         for( size_t i = 0; i < LW1_; i++ ) {
-            b_vector_[i] = ( Ni_[i] - ( posN_ - N0_ ) * pi_[i+1] ) / beta2_;
+            b_vector_[i] = ( Ni_[i] - ( posN - N0_ ) * pi_[i+1] ) / beta2_;
         }
 
         Eigen::ConjugateGradient<Eigen::MatrixXf, Eigen::Lower | Eigen::Upper> cg;
@@ -728,53 +730,11 @@ void EM::optimizePos() {
         for (size_t i = 2; i < LW1_; i++) {
             p2 += beta2_ * powf(si_[i] - si_[i - 1], 2.f);
         }
+
         Q = p1 - p2;
+
         std::cout << "cost function = " << Q << std::endl;
         // ======== end of objfun calculation =======
-*/
-/*
-        // ========================
-        // todo: write out for checking:
-        std::string opath_pos = std::string( Global::outputDirectory ) + "/debug/pos.txt";
-        std::string opath_pi = std::string( Global::outputDirectory ) + "/debug/pi.txt";
-        std::string opath_bv = std::string( Global::outputDirectory ) + "/debug/bv.txt";
-        std::string opath_left = std::string( Global::outputDirectory ) + "/debug/left.txt";
-        std::string opath_middle = std::string( Global::outputDirectory ) + "/debug/middle.txt";
-        std::string opath_right = std::string( Global::outputDirectory ) + "/debug/right.txt";
-        std::string opath_grad = std::string( Global::outputDirectory ) + "/debug/grad.txt";
-        std::string opath_ri = std::string( Global::outputDirectory ) + "/debug/ri.txt";
-
-        std::ofstream ofile_pos( opath_pos );
-        std::ofstream ofile_pi( opath_pi );
-        std::ofstream ofile_bv( opath_bv );
-        std::ofstream ofile_left( opath_left );
-        std::ofstream ofile_middle( opath_middle );
-        std::ofstream ofile_right( opath_right );
-        std::ofstream ofile_grad( opath_grad );
-        std::ofstream ofile_ri( opath_ri );
-
-        Eigen::VectorXf right_vector = beta2_ * ( getAmatrix(LW1) * si_ );
-
-        for( size_t i = 1; i <= LW1; i++ ) {
-            ofile_pos << pi_[i] * q_ << std::endl;
-            ofile_pi << pi_[i] << std::endl;
-            ofile_bv << b_vector_[i-1] << std::endl;
-            ofile_left << N_i[i] << std::endl;
-            float middle = (posN - N_0) * pi_[i];
-            ofile_middle << middle << std::endl;
-            ofile_right << right_vector[i-1] << std::endl;
-            ofile_grad << N_i[i] - middle - right_vector[i-1] << std::endl;
-        }
-
-        for( size_t n = 0; n < posN; n++ ){
-            for( size_t i = 1; i < LW1; i++ ){
-                ofile_ri << std::setprecision( 2 ) << r_[n][L-i] << '\t';
-            }
-            ofile_ri << r_[n][L-LW1] << std::endl;
-        }
-        // ========================
-*//*
-
 
         // method 2b: update smoothness parameter beta using positional prior distribution
         // from the data
@@ -788,15 +748,11 @@ void EM::optimizePos() {
         //beta2_ = LW1_+1 / sum;
 
         // b) sample beta2 from the Gamma distribution
-*/
-/*
         std::default_random_engine generator;
         std::gamma_distribution<double> distribution( (LW1_+1)/2, sum/2);
         beta2_ = distribution(generator);
-*//*
 
-
-        std::cout << "N0=" << N0_ << ", N=" << posN_
+        std::cout << "N0=" << N0_ << ", N=" << posN
                   << ", LW1=" << LW1_ << ", norm=" << norm_
                   << ", sum=" << sum << ", beta=" << (LW1_+1) / sum
                   << std::endl;
@@ -804,7 +760,7 @@ void EM::optimizePos() {
     } else if( method_flag == 3 ) {
         // prior penalising kinks in the positional preference profile
         for (size_t i = 0; i < LW1_; i++) {
-            b_vector_[i] = (Ni_[i] - (posN_ - N0_) * pi_[i+1]) * 4 / beta2_;
+            b_vector_[i] = (Ni_[i] - (posN - N0_) * pi_[i+1]) * 4 / beta2_;
         }
 
         Eigen::ConjugateGradient<Eigen::MatrixXf, Eigen::Lower | Eigen::Upper> cg;
@@ -833,22 +789,23 @@ void EM::optimizePos() {
         // b) update beta by its expectation value 2
         //beta2_ = ( LW1-2 ) / sum;
 
-        std::cout << "N0=" << N0_ << ", N=" << posN_
+        std::cout << "N0=" << N0_ << ", N=" << posN
                   << ", LW1=" << LW1_ << ", norm=" << norm_
                   << ", sum=" << sum << ", beta=" << (LW1_+1) / sum
                   << std::endl;
 
     } else if( method_flag == 4 ){
-        */
-/**
+
+        // todo:=====================================================
+        /**
          * Use L-BFGS as optimizer
-         *//*
-
-
+         */
         // pre-define parameters
         LBFGSpp::LBFGSParam<float> param;
-        param.epsilon = 1e-6f;
-        param.max_iterations = 100;
+        param.epsilon   = 1.e-2f;
+        param.delta     = 1.e-4f;
+        param.past      = 1;
+        param.max_iterations = 1000;
 
         // create colver and function object
         LBFGSpp::LBFGSSolver<float> solver( param );
@@ -856,30 +813,41 @@ void EM::optimizePos() {
         // solve the function
         Eigen::VectorXf grad = Eigen::VectorXf::Zero( LW1_ );
 
-        ObjFun func( LW1_, posN_, N0_, beta2_, Ni_, A_matrix_ );
+        // set up the objective function
+        ObjFun func( LW1_, posN, N0_, beta2_, Ni_, A_matrix_ );
 
         float fx;
         int niter;
         niter = solver.minimize( func, si_, fx );
-        if( verbose_ ){
+        if( Global::verbose ){
             std::cout << niter << " iterations, f(x)=" << fx << std::endl;
         }
 
-        float beta2 = 0.f;
+        // calculate beta2 after optimization of si
+        float sumS = 0.f;
         for( size_t i = 1; i < LW1_; i++){
-            beta2 += powf(si_[i] - si_[i-1], 2.f);
+            sumS += powf(si_[i] - si_[i-1], 2.f);
         }
-        beta2 = ( LW1_-1 ) / beta2;
-        //beta2_ = beta2;
-        if( verbose_ ){
-            std::cout << "Optimized beta2 = " << beta2 << std::endl;
-        }
+        beta2_ = ( LW1_-1 ) / sumS;
 
+        if( Global::verbose ){
+            std::cout << "Optimized beta2 = " << beta2_ << std::endl;
+        }
+        // update pi
+        norm_ = 1.e-5f;
+        for (size_t i = 1; i <= LW1_; i++) {
+            pi_[i] = expf(si_[i-1]);
+            norm_ += pi_[i];
+        }
+        for (size_t i = 1; i <= LW1_; i++) {
+            pi_[i] /= norm_;
+        }
+        // todo:=====================================================
     }
 
     // update pos_ni by pi_i
     for( size_t i = 1; i <= LW1_; i++ ) {
-        for (size_t n = 0; n < posN_; n++) {
+        for (size_t n = 0; n < posN; n++) {
             pos_[n][i] = pi_[i] * q_;
         }
     }
@@ -892,6 +860,7 @@ float EM::obj_fun( Eigen::VectorXf& si, Eigen::VectorXf& grad ){
     float p1 = 0.f;
     float p2 = 0.f;
     float sumexp = 0.f;
+    size_t LW1_ = seqs_[0]->getL()-W_+1;
 
     // calculate objective function
     for( size_t i = 0; i < LW1_; i++ ){
@@ -909,7 +878,7 @@ float EM::obj_fun( Eigen::VectorXf& si, Eigen::VectorXf& grad ){
     // update the gradients
     Eigen::VectorXf dot_product = A_matrix_ * si;
     for( size_t i = 0; i < LW1_; i++ ){
-        grad[i] = - ( Ni_[i] - (posN_ - N0_) * expf( si[i] ) / sumexp -
+        grad[i] = - ( Ni_[i] - (seqs_.size() - N0_) * expf( si[i] ) / sumexp -
                 beta2_ * dot_product[i] );
     }
 
@@ -956,7 +925,6 @@ Eigen::MatrixXf EM::getBmatrix( size_t w ) {
     return B_matrix;
 }
 
-*/
 
 float** EM::getR(){
     return r_;

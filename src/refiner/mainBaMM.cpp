@@ -24,6 +24,9 @@ int main( int nargs, char* args[] ){
      */
     Global G( nargs, args );
 
+    /**
+     * Build up the background model
+     */
 	BackgroundModel* bgModel;
 	if( !Global::bgModelGiven ){
 		bgModel = new BackgroundModel( Global::posSequenceSet->getSequences(),
@@ -39,6 +42,9 @@ int main( int nargs, char* args[] ){
         bgModel->print();
     }
 
+    /**
+     * Initialize the model
+     */
 	MotifSet motif_set( Global::initialModelFilename,
                         Global::addColumns.at(0),
                         Global::addColumns.at(1),
@@ -67,7 +73,8 @@ int main( int nargs, char* args[] ){
     }
 
     /**
-     * Generate negative sequence set for training, scoring and cross-validation
+     * Generate negative sequence set
+     * for training, scoring and cross-validation
      */
     std::vector<Sequence*> negSet;
     if( Global::negSeqGiven ){
@@ -80,13 +87,11 @@ int main( int nargs, char* args[] ){
         SeqGenerator negseq(posSet, NULL);
         negSeqs = negseq.sample_bgseqset_by_fold( Global::mFold );
 
-        // convert unique_ptr to regular pointer: memory leak will occur:
+        // convert unique_ptr to regular pointer
         for (size_t n = 0; n < negSeqs.size(); n++) {
             negSet.push_back(negSeqs[n].release());
             negSeqs[n].get_deleter();
         }
-        // save sampled negative sequence set into a file
-//        negseq.write( Global::outputDirectory, Global::outputFileBasename, negSet );
 
     }
 

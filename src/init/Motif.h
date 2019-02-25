@@ -119,7 +119,7 @@ inline void Motif::updateV( float*** n, float** alpha ){
 			size_t yk = y / Global::A2powerK[1];				// cut off the last nucleotide
 			// todo: Merge first loop into second one
             // (by allowing contexts to extend left of the motif)
-			for( size_t j = 0; j < k; j++ ){	// when j < k, p(A|CG) = p(A|C)
+			for( size_t j = 0; j < k; j++ ){	                // when j < k, p(A|CG) = p(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
 			}
 			// todo: Vectorize in AVX2 / SSE2
@@ -139,7 +139,7 @@ inline void Motif::calculateLinearS( float** Vbg ){
         size_t y_bg = y % Global::A2powerK[k_bg+1];
         for( size_t j = 0; j < W_; j++ ){
             s_[y][j] = v_[K_][y][j] / Vbg[k_bg][y_bg];
-            //std::cout << "s["<<y<<"][" << j <<"]=" << s_[y][j] << std::endl;
+//            std::cout << "s["<<y<<"][" << j <<"]=" << s_[y][j] << std::endl;
         }
     }
 

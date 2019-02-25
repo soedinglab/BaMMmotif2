@@ -346,7 +346,7 @@ void Motif::initFromBaMM( char* indir, size_t l_flank, size_t r_flank ){
         // set each v to 0.25f in the flanking region
         for (size_t j = 0; j < l_flank; j++) {
             for (size_t k = 0; k < K_ + 1; k++) {
-                for (size_t y = 0; y < Global::A2powerK[k + 1]; y++) {
+                for (size_t y = 0; y < Global::A2powerK[k+1]; y++) {
                     v_[k][y][j] = 1.0f / static_cast<float>( Global::A2powerK[1] );
                 }
             }
@@ -411,7 +411,7 @@ void Motif::calculateV( int*** n ){
 		for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
 			size_t y2 = y % Global::A2powerK[k];				// cut off first nucleotide in (k+1)-mer y
 			size_t yk = y / Global::A2powerK[1];				// cut off last nucleotide in (k+1)-mer y
-			for( size_t j = 0; j < k; j++ ){	// when j < k, i.e. p_j(A|CG) = p_j(A|C)
+			for( size_t j = 0; j < k; j++ ){	                // when j < k, i.e. p_j(A|CG) = p_j(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
 			}
 			for( size_t j = k; j < W_; j++ ){

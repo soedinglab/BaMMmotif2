@@ -465,8 +465,8 @@ void Global::printPara(){
 
     // for initial model
     std::cout << "Given initial model\t\t\t"    << initialModelBasename << std::endl
-              << "Given model type\t\t\t"       << initialModelTag << std::endl
-              << "Model parameters:"            << std::endl
+              << "Given model type\t\t\t"       << initialModelTag << std::endl << std::endl
+              << "MODEL PARAMETERS"             << std::endl
               << "BaMM model order\t\t\t"       << modelOrder << std::endl
               << "Background model order\t\t\t" << bgModelOrder << std::endl
               << "BaMM is trained on\t\t\t";

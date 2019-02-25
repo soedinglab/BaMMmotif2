@@ -10,7 +10,6 @@ int main( int nargs, char* args[] ){
     /**
      * initialization
      */
-
 	Global G( nargs, args );
 
     /**
@@ -57,7 +56,8 @@ int main( int nargs, char* args[] ){
         }
     }
     if( count > 0 ){
-        std::cout << "Note: " << count << " short sequences have been filtered out." << std::endl;
+        std::cout << "Note: " << count << " short sequences have been filtered out."
+                  << std::endl;
     }
 
     /**
@@ -74,10 +74,10 @@ int main( int nargs, char* args[] ){
     /**
      * Generate negative sequence set for cross-validation
      */
-    std::vector<Sequence*>  negset;
+    std::vector<Sequence*>  negSet;
     if( Global::B3 ){
         // take the given negative sequence set
-        negset = Global::negSequenceSet->getSequences();
+        negSet = Global::negSequenceSet->getSequences();
 
     } else {
         // generate negative sequence set based on s-mer frequencies
@@ -96,13 +96,15 @@ int main( int nargs, char* args[] ){
             std::cout << Global::mFold << " x " << posN
                       << " background sequences are generated." << std::endl;
         } else {
-            negSeqs = negseq.sample_bgseqset_by_num( Global::negN, Global::posSequenceSet->getMaxL() );
-            std::cout << Global::negN << " (fixed) background sequences are generated." << std::endl;
+            negSeqs = negseq.sample_bgseqset_by_num( Global::negN,
+                                                     Global::posSequenceSet->getMaxL() );
+            std::cout << Global::negN << " (fixed) background sequences are generated."
+                      << std::endl;
         }
 
         // convert unique_ptr to regular pointer
         for (size_t n = 0; n < negSeqs.size(); n++) {
-            negset.push_back(negSeqs[n].release());
+            negSet.push_back(negSeqs[n].release());
             negSeqs[n].get_deleter();
         }
     }
@@ -128,14 +130,15 @@ int main( int nargs, char* args[] ){
 
         Motif* motif = new Motif( *motif_set.getMotifs()[n] );
 
-        FDR fdr( posSet, negset, motif, bgModel );
+        FDR fdr( posSet, negSet, motif, bgModel );
 
         fdr.evaluateMotif( perLoopThreads );
 
         if( Global::saveInitialBaMMs ){
             // write out the foreground model
             motif->write( Global::outputDirectory,
-                          Global::outputFileBasename + "_init_motif_" + std::to_string( n+1 ) );
+                          Global::outputFileBasename + "_init_motif_"
+                          + std::to_string( n+1 ) );
         }
 
         std::string fileExtension;
@@ -148,13 +151,14 @@ int main( int nargs, char* args[] ){
         if( motif )		delete motif;
     }
 
-    // free memory
-    if( !Global::B3 and negset.size() ) {
-        for (size_t n = 0; n < negset.size(); n++) {
-            delete negset[n];
+    /**
+     * free memory
+     */
+    if( !Global::B3 and negSet.size() ) {
+        for (size_t n = 0; n < negSet.size(); n++) {
+            delete negSet[n];
         }
     }
-
     if( bgModel ) delete bgModel;
 
     return 0;
