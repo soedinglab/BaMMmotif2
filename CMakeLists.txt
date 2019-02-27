@@ -15,11 +15,11 @@ include_directories (${Boost_INCLUDE_DIR})
 link_libraries (${Boost_LIBRARIES})
 
 # link to Eigen library
-SET( EIGEN3_INCLUDE_DIR "$ENV{EIGEN3_INCLUDE_DIR}" )
-IF( NOT EIGEN3_INCLUDE_DIR )
-    MESSAGE( FATAL_ERROR "Please point the environment variable EIGEN3_INCLUDE_DIR to the include directory of your Eigen3 installation.")
-ENDIF()
-INCLUDE_DIRECTORIES ( "${EIGEN3_INCLUDE_DIR}" )
+set(EIGEN3_INCLUDE_DIR "~/opt/include/eigen3/")
+if(NOT EIGEN3_INCLUDE_DIR )
+    MESSAGE( INSTALLATION_ERROR "Please install eigen3 using ./eigen3.downloader .")
+endif()
+include_directories (${EIGEN3_INCLUDE_DIR})
 
 # set the version of BaMM!motif
 set (BAMMMOTIF_MAJOR_VERSION 2)

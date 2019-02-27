@@ -5,7 +5,6 @@
 # Created by: Anja Kiesel and modified by Wanwan Ge
 # Created on: 01.09.17
 
-
 #-----------------------------
 #
 # R sources
@@ -71,16 +70,14 @@ for( file in Sys.glob(full_glob) ){
     motif_id <- sub(file_suffix, "", motif_id)
 
     # get a filename for each motif
-    file_name = paste(c(file_prefix, motif_id, file_suffix), collapse="")
-    filename = file.path(maindir, file_name)
+    file_name   = paste(c(file_prefix, motif_id, file_suffix), collapse="")
+    filename    = file.path(maindir, file_name)
     line_number = as.integer(system2("wc", args=c("-l", filename, " | awk '{print $1}'" ), stdout = TRUE))
 
     if( line_number <= 2 ){
 
         # print out an empty image
-
         print("Warning: The input file is empty. No query motif is found in the sequence set.")
-
 	    picname <- paste(c(file_prefix, motif_id, "_distribution.png"), collapse="")
 	    picname <- file.path(maindir, picname)
 
@@ -113,12 +110,12 @@ for( file in Sys.glob(full_glob) ){
     } else {
         # read in the data
         table <- try(read.table(filename,
-                            fileEncoding="latin1", as.is=TRUE, na.strings = "NA",
-                            fill = TRUE, strip.white = TRUE, skip=1, sep = '\t'))
+                                fileEncoding="latin1", as.is=TRUE, na.strings = "NA",
+                                fill = TRUE, strip.white = TRUE, skip=1, sep = '\t'))
 
         seqCount            = line_number - 1
         strand_length       = c(table$V2)
-        max_strand_length = max(strand_length)
+        max_strand_length   = max(strand_length)
 
         # define the starting point of the sequences
         if( is.null(anchor) ){
@@ -136,6 +133,7 @@ for( file in Sys.glob(full_glob) ){
         pos_positions       <- rep(NA, posCount)
         neg_positions       <- rep(NA, negCount)
 
+        norm_factor         = 1
         if( is.null(anchor) ){
             if( negCount!= 0 ){
                 pos_idx = 1
@@ -149,6 +147,7 @@ for( file in Sys.glob(full_glob) ){
                         neg_idx = neg_idx + 1
                     }
                 }
+                norm_factor = pos_idx / neg_idx
             } else {
                 # shift the positions if sequences have different lengths
                 pos_positions = strand_center + start - strand_length / 2
@@ -167,15 +166,16 @@ for( file in Sys.glob(full_glob) ){
                         neg_idx = neg_idx + 1
                     }
                 }
+                norm_factor = pos_idx / neg_idx
             } else {
                 # shift the positions if sequences have different lengths
                 pos_positions = start
             }
         }
 
-        whole_region = max_strand_length
-        interval_left = strand_center
-        interval_right = whole_region - strand_center
+        whole_region    = max_strand_length
+        interval_left   = strand_center
+        interval_right  = whole_region - strand_center
 
 	    picname <- paste(c(file_prefix, motif_id, "_distribution.png"), collapse="")
 	    picname <- file.path(maindir, picname)
@@ -189,9 +189,15 @@ for( file in Sys.glob(full_glob) ){
         if(negCount > 1 && posCount > 1){
             ## use 'counts / n' as weights:
             #neg.strand = density(unique(neg_positions), weights=table(neg_positions)/length(neg_positions))
-            pos.strand = density((pos_positions))
-            neg.strand = density((neg_positions))
-            # turn neg strand upside down
+
+            pos.strand  = density(pos_positions)
+            neg.strand  = density(neg_positions)
+            #neg.strand = density((neg_positions), weights=table(neg_positions)/length(neg_positions))
+            #pos.strand = density((pos_positions), weights=table(pos_positions)/length(pos_positions))
+
+            neg.strand$y <- neg.strand$y / norm_factor
+
+            # turn negative strand upside down
             neg.strand$y <- neg.strand$y*-1
 
             # for plotting distribution on positive strand
@@ -200,7 +206,9 @@ for( file in Sys.glob(full_glob) ){
                 xlab="", ylab="",
                 type="l", lwd=lwd_size*3,
                 col="darkblue",
-                axes=FALSE, cex.axis=label_size, cex.main=label_size,
+                axes=FALSE,
+                cex.axis=label_size,
+                cex.main=label_size,
                 xlim = c(0, whole_region),
                 ylim = c(min(neg.strand$y), max(pos.strand$y))
             )
@@ -208,15 +216,16 @@ for( file in Sys.glob(full_glob) ){
             # for plotting distribution on negative strand
             lines(neg.strand, type="l", lwd=lwd_size*3, col="darkred")
             polygon(neg.strand, col=convertcolor("darkred",30), border = NA)
-            legend("bottomright",legend="- strand", col="darkred", cex=label_size, bty="n", text.col="darkred")
+            legend("bottomright", legend="- strand", col="darkred", cex=label_size, bty="n", text.col="darkred")
+
             polygon(pos.strand, col=convertcolor("darkblue", 30), border = NA)
-            legend("topright",legend="+ strand", col="darkblue", cex=label_size, bty="n", text.col="darkblue")
+            legend("topright", legend="+ strand", col="darkblue", cex=label_size, bty="n", text.col="darkblue")
 
         } else if(negCount > 1 && posCount <= 1) {
 
             # only plot motif distribution on negative strand
             neg.strand = density((neg_positions))
-            # turn neg strand upside down
+            # turn negative strand upside down
             neg.strand$y <- neg.strand$y*-1
 
             plot(neg.strand,

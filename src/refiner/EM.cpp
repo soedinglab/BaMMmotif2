@@ -19,8 +19,8 @@ EM::EM( Motif* motif, BackgroundModel* bgModel,
 
     // allocate memory for r_[n][i], pos_[n][i], z_[n]
     padding_    = 1;                // add to reserve enough memory in r for fast EM version
-	r_      = ( float** )calloc( seqs_.size(), sizeof( float* ) );
-	pos_    = ( float** )calloc( seqs_.size(), sizeof( float* ) );
+	r_          = ( float** )calloc( seqs_.size(), sizeof( float* ) );
+	pos_        = ( float** )calloc( seqs_.size(), sizeof( float* ) );
 	for( size_t n = 0; n < seqs_.size(); n++ ){
 		r_[n]   = ( float* )calloc( seqs_[n]->getL()+padding_+W_+1, sizeof( float ) );
 		pos_[n] = ( float* )calloc( seqs_[n]->getL()+1, sizeof( float ) );
@@ -133,7 +133,7 @@ int EM::optimize(){
         }
 
         // optimize hyper-parameter q in the first step
-        if( Global::optimizeQ and iteration == 0 ) {
+        if( Global::optimizeQ and iteration <= 5 ) {
             optimizeQ();
             updatePos();
         }
@@ -141,7 +141,7 @@ int EM::optimize(){
         // todo: optimize positional prior pos
         // todo:=====================================================
         // note: this only works for sequences with the same length
-        if( Global::optimizePos and iteration == 0 ){
+        if( Global::optimizePos /*and iteration <= 5*/ ){
             optimizePos();
         }
         // todo:=====================================================
