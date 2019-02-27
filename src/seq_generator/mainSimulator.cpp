@@ -57,7 +57,7 @@ int main( int nargs, char* args[] ){
                  */
                 SeqGenerator seq_generator( Global::posSequenceSet->getSequences(), motif );
                 seq_generator.write(Global::outputDirectory,
-                                    Global::posSequenceBasename + "_motif_" + std::to_string(n + 1) + "_masked",
+                                    Global::posSequenceBasename + "_motif_" + std::to_string(n+1) + "_masked",
                                     seq_generator.seqset_with_motif_masked( model.getR() ));
             } else if ( Global::embedSeqset ) {
                 /**
@@ -65,7 +65,7 @@ int main( int nargs, char* args[] ){
                  */
                 SeqGenerator seq_generator(Global::posSequenceSet->getSequences(), motif);
                 seq_generator.write(Global::outputDirectory,
-                                    Global::posSequenceBasename + "_motif_" + std::to_string(n + 1) + "_embedded",
+                                    Global::posSequenceBasename + "_motif_" + std::to_string(n+1) + "_embedded",
                                     seq_generator.arti_posset_motif_embedded( Global::at ));
             } else {
                 std::cout << "No artificial sequence set is generated. "

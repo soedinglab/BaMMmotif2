@@ -2,10 +2,10 @@
 
 SeqGenerator::SeqGenerator( std::vector<Sequence*> seqs, Motif* motif ){
 
-	seqs_ = seqs;
-	sOrder_ = Global::sOrder;
-    motif_ = motif;
-    q_ = Global::q;
+	seqs_       = seqs;
+	sOrder_     = Global::sOrder;
+    motif_      = motif;
+    q_          = Global::q;
     genericNeg_ = Global::genericNeg;
     
     v_ = ( float** )calloc( sOrder_+1, sizeof( float* ) );
@@ -29,8 +29,8 @@ SeqGenerator::SeqGenerator( std::vector<Sequence*> seqs, Motif* motif ){
     rngx_.seed( 42 );
     srand( 42 );
 
-    kmer_freq_is_calculated_ = false;
-    kmer_freq_is_rescaled_ = false;
+    kmer_freq_is_calculated_    = false;
+    kmer_freq_is_rescaled_      = false;
 
     N_ = seqs_.size();
 
@@ -370,7 +370,7 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::arti_posset_motif_embedded(
 
 	calculate_kmer_frequency();
 
-    size_t seq_size = static_cast<size_t>( (float)seqs_.size() * q_ );
+    size_t seq_size = (size_t)( (float)seqs_.size() * q_ );
 
     // generative sequence with motif embedded for the q portion
 	for( size_t i = 0; i < seq_size; i++ ){
@@ -399,13 +399,15 @@ std::unique_ptr<Sequence> SeqGenerator::posseq_motif_embedded( Sequence* seq, si
     // due to k-mer frequencies
     if( at == 0 ) {
         // implant motif due to uniform distribution
-        std::uniform_int_distribution<> range(sOrder_, L - W + 1);
-        at = range(rngx_);
+        std::uniform_int_distribution<> range((int)sOrder_, (int)(L-W+1));
+        at = (size_t) range(rngx_);
     } else{
         // implant motif around the given position due to normal distribution
         // set mean as the given position and variance as 10
         std::normal_distribution<> nd{(float)at, 10.f};
-        at = std::round( nd(rngx_) );
+        at = (size_t) std::round( nd(rngx_) );
+        at = (at > 0) ? at : 0;
+        at = (at < L) ? at : L;
     }
 
     // copy the left part of the given sequence
@@ -430,9 +432,7 @@ std::unique_ptr<Sequence> SeqGenerator::posseq_motif_embedded( Sequence* seq, si
             if( random <= f ){
                 break;
             }
-
         }
-
     }
 
     // copy the right part of the given sequence
@@ -452,7 +452,6 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::seqset_with_motif_masked(fl
 	size_t W = motif_->getW();
 
 	for( size_t n = 0; n < seqs_.size(); n++ ){
-
 		seqset.push_back(sequence_with_motif_masked( seqs_[n], W, r[n]) );
 	}
 
