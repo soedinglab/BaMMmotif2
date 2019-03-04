@@ -1,7 +1,8 @@
+#!/usr/bin/env python3
 import argparse
+import numpy as np
 from collections import defaultdict
 from enum import IntEnum
-import numpy as np
 
 IUPAC_ALPHABET_SIZE = 11
 

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 '''
  This script is for converting .occurrence file to .bed file
  The output file contains:

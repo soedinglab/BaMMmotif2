@@ -1,18 +1,22 @@
+#!/usr/bin/env python3
 '''
-This script is used for comparing a given motif to motifs in a given database.
+This script is used for comparing a query motif to
+motifs in a searching database.
 Prerequisite: all motifs in database must be in BaMM format.
+The query motif can be either a PWM or a BaMM.
 Note: currently it only compares motifs by 0th-order.
 '''
 
-import argparse
-from multiprocessing import Pool
-import numpy as np
 import logging
 import sys
+import argparse
+import numpy as np
+from multiprocessing import Pool
 
 
-from utils import calculate_H_model_bg, calculate_H_model, model_sim, update_models, \
-    parse_meme, parse_bamm_db, parse_bamm_file
+from utils import calculate_H_model_bg, \
+    calculate_H_model, model_sim, update_pwms, \
+    update_bamms, parse_meme, parse_bamm_db, parse_bamm_file
 
 
 def create_parser():
@@ -21,10 +25,12 @@ def create_parser():
     parser.add_argument('db_path', help="specify the path to database that you want to search for")
     parser.add_argument('output_score_file', default=None, help="name the output file with path")
 
-    parser.add_argument('--input_format', default="PWM",
+    parser.add_argument('--query_format', default="PWM",
                         help="declare input format: PWM or BaMM. This needs to be consistent with your input model! "
                              "Default: PWM")
-
+    parser.add_argument('--db_format', default="PWM",
+                        help="declare DB format: PWM or BaMM. This needs to be consistent with your input model! "
+                             "Default: PWM")
     parser.add_argument('--n_neg_perm', type=int, default=10, help="number of negative permutations. Default: 10")
     parser.add_argument('--highscore_fraction', type=float, default=0.1)
     parser.add_argument('--pvalue_threshold', type=float, default=0.01,
@@ -56,29 +62,34 @@ def main():
     logger.setLevel(logging.INFO)
 
     # parse input query file
-    model_format = args.input_format
+    query_format = args.query_format
     query_model_set = []
-    if model_format == "PWM":
+    if query_format == "PWM":
         # parse input meme file
         query_model_set = parse_meme(query_file)['models']
-    elif model_format == "BaMM":
+        # pre-compute entropy for all query meme models
+        models = update_pwms(query_model_set)
+    elif query_format == "BaMM":
         # parse input bamm file
         query_model_set = parse_bamm_file(query_file)
-
+        # pre-compute entropy for all query meme models
+        models = update_bamms(query_model_set)
     else:
         logger.info('Input model file is not recognised. ')
 
-    # pre-compute entropy for all query meme models
-    models = update_models(query_model_set)
-
     # parse bamms from the target database
+    db_format = args.db_format
+    logger.info("DB models are in "+db_format+" format.")
+
     logger.info('Reading in BaMMs from the target database')
     target_db = parse_bamm_db(target_db_path)
 
     # pre-compute entropy for all models in target database
-    db_models = update_models(target_db)
+    db_models = update_pwms(target_db)
 
     db_size = len(db_models)
+
+    logger.info("There are "+str(db_size)+" motif models in the motif DB.")
 
     # initialize task for paralleling jobs
     def init_workers():
@@ -106,8 +117,8 @@ def main():
             for model in models:
                 job = pool.apply_async(motif_search, args=(model,))
                 jobs.append(job)
-
             total_jobs = len(jobs)
+
             for job_index, job in enumerate(jobs, start=1):
                 hits = job.get()
                 hits.sort(key=lambda x: x[3])

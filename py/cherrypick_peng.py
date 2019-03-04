@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 '''
 This script is used for filtering out motifs from shoot_peng with low occurrences
 command for running: python3 cherrypick_peng.py input_file output_file

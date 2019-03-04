@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 '''
 This script is for reducing the redundancy of PWMs by filtering similar PWMs out
 and only keep one PWM from each cluster.
@@ -9,7 +10,7 @@ import logging
 import sys
 import shutil
 
-from utils import update_models, reduce_pwms, parse_meme, write_meme
+from utils import update_pwms, reduce_pwms, parse_meme, write_meme
 
 
 def create_parser():
@@ -47,7 +48,7 @@ def main():
         return
 
     # pre-compute entropy for all the models
-    models = update_models(model_set['models'])
+    models = update_pwms(model_set['models'])
 
     #filter models using affinity propagation
     new_models = reduce_pwms(models, min_overlap)

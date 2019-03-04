@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 '''
 This is a script to convert PWMs from a MEME-formatted file to BaMM-formatted file(s).
 Prerequisite: The input file must be in MEME-format (version 4).
