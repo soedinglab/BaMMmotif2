@@ -121,7 +121,7 @@ def model_sim(model1, model2, min_overlap=2):
 
         cross_score = 0
         # and the contributions of model1 vs. model2
-        cross_score += H_model1[sl1].sum()  # entropy of model1
+        cross_score += H_model1[sl1].sum()      # entropy of model1
         cross_score += H_model2_rev[sl2].sum()  # entropy of model2
 
         # cross entropy part

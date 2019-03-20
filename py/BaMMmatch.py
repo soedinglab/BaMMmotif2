@@ -68,12 +68,14 @@ def main():
         # parse input meme file
         query_model_set = parse_meme(query_file)['models']
         # pre-compute entropy for all query meme models
-        models = update_pwms(query_model_set)
+        query_models = update_pwms(query_model_set)
     elif query_format == "BaMM":
         # parse input bamm file
         query_model_set = parse_bamm_file(query_file)
+        logger.info('There are %s query motif(s) parsed.', len(query_model_set))
         # pre-compute entropy for all query meme models
-        models = update_bamms(query_model_set)
+        query_models = update_bamms(query_model_set)
+
     else:
         logger.info('Input model file is not recognised. ')
 
@@ -81,7 +83,7 @@ def main():
     db_format = args.db_format
     logger.info("DB models are in "+db_format+" format.")
 
-    logger.info('Reading in BaMMs from the target database')
+    logger.info('Reading in BaMMs from the target database.')
     target_db = parse_bamm_db(target_db_path)
 
     # pre-compute entropy for all models in target database
@@ -107,16 +109,17 @@ def main():
         global min_overlap_g
         min_overlap_g = args.min_overlap
 
-    logger.info('Queuing %s search jobs', len(models))
+    logger.info('Queuing %s search job(s)', len(query_models))
 
     with open(output_score_file, 'w') as out:
         print('model_id', 'db_id', 'p-value', 'e-value', 'sim_score',
               'model_width', sep='\t', file=out)
         with Pool(args.n_processes, initializer=init_workers) as pool:
             jobs = []
-            for model in models:
+            for model in query_models:
                 job = pool.apply_async(motif_search, args=(model,))
                 jobs.append(job)
+
             total_jobs = len(jobs)
 
             for job_index, job in enumerate(jobs, start=1):

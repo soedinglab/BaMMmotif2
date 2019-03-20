@@ -75,7 +75,7 @@ int main( int nargs, char* args[] ){
      * Generate negative sequence set for cross-validation
      */
     std::vector<Sequence*>  negSet;
-    if( Global::B3 ){
+    if( Global::negSeqGiven ){
         // take the given negative sequence set
         negSet = Global::negSequenceSet->getSequences();
 
@@ -129,9 +129,7 @@ int main( int nargs, char* args[] ){
     for( size_t n = 0; n < motif_set.getN(); n++ ){
 
         Motif* motif = new Motif( *motif_set.getMotifs()[n] );
-
         FDR fdr( posSet, negSet, motif, bgModel );
-
         fdr.evaluateMotif( perLoopThreads );
 
         if( Global::saveInitialBaMMs ){

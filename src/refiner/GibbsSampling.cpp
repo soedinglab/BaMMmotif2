@@ -16,12 +16,11 @@ GibbsSampling::GibbsSampling( Motif* motif, BackgroundModel* bg,
     seqs_               = seqs;
 
     // get motif (hyper-)parameters from motif class
-    K_ = motif_->getK();
-    W_ = motif_->getW();
-    s_ = motif_->getS();
-    A_ = motif_->getA();
-    //K_bg_ = ( bg_->getOrder() < K_ ) ?  bg_->getOrder() : K_;
-    K_bg_ = Global::bgModelOrder;
+    K_      = motif_->getK();
+    W_      = motif_->getW();
+    s_      = motif_->getS();
+    A_      = motif_->getA();
+    K_bg_   = Global::bgModelOrder;
 
     // allocate memory for r_[n][i], pos_[n][i], z_[n]
     r_ = ( float** )calloc( seqs_.size(), sizeof( float* ) );
@@ -200,13 +199,14 @@ void GibbsSampling::optimize(){
             std::cout << "Alphas are not optimized." << std::endl;
         }
 
-/*
-        // for making a movie out of all iterations
-        // calculate probabilities
-        motif_->calculateP();
-        motif_->write( Global::outputDirectory,
-                       Global::outputFileBasename + "_iter_" + std::to_string( iteration ) );
-*/
+
+        if( Global::makeMovie ) {
+            // for making a movie out of all iterations
+            // calculate probabilities
+            motif_->calculateP();
+            motif_->write(Global::outputDirectory,
+                          Global::outputFileBasename + "_iter_" + std::to_string(iteration));
+        }
 
     }
 
