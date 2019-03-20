@@ -52,7 +52,6 @@ private:
     float_t             q_;                         // estimated motif fraction on the sequences
 	float**			 	A_;							// hyperparameter alphas
 	float***    		v_;				        	// conditional probabilities for (k+1)-mers y at motif position j
-    float**	            v_null_;			        // conditional probabilities of background model
     size_t              k_bg_;                      // order of background model
 	float***			p_;							// probabilities for (k+1)-mers y at motif position j
 	float**				s_;							// log odds scores for (K+1)-mers y at motif position j
@@ -106,7 +105,7 @@ inline void Motif::updateV( float*** n, float** alpha ){
 	// for k = 0, v_ = freqs:
 	for( size_t y = 0; y < Global::A2powerK[1]; y++ ){
 		for( size_t j = 0; j < W_; j++ ){
-			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] * v_null_[0][y] )
+			v_[0][y][j] = ( n[0][y][j] + alpha[0][j] / Global::A2powerK[1] )
 						/ ( sumN[j] + alpha[0][j] );
             assert( v_[0][y][j] <= 1.f );
 		}

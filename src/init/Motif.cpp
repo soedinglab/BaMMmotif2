@@ -11,15 +11,6 @@ Motif::Motif( size_t length ){
 
     k_bg_ = Global::bgModelOrder;
 
-    // build a null model
-    v_null_ = ( float** )calloc( k_bg_ + 1, sizeof( float* ) );
-    for( size_t k = 0; k <= k_bg_; k++ ){
-        v_null_[k] = ( float* )calloc( Global::A2powerK[k+1], sizeof( float ) );
-        for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
-            v_null_[k][y] = powf( 1.0f / Global::A2powerK[1], (float)(k+1) );
-        }
-    }
-
 	v_ = ( float*** )calloc( K_+1, sizeof( float** ) );
 	n_ = ( int*** )calloc( K_+1, sizeof( int** ) );
 	p_ = ( float*** )calloc( K_+1, sizeof( float** ) );
@@ -88,7 +79,6 @@ Motif::Motif( const Motif& other ){ 		// copy constructor
 	}
 
 	k_bg_ = other.k_bg_;
-    v_null_ = other.v_null_;
 
 	isInitialized_ = true;
 }
@@ -133,14 +123,11 @@ void Motif::initFromBindingSites( char* indir, size_t l_flank, size_t r_flank ){
 		// add alphabets randomly at the beginning of each binding site
 		for( size_t i = 0; i < l_flank; i++ )
 			bindingsite.insert( bindingsite.begin(),
-                                Alphabet::getBase( static_cast<uint8_t>( rand() )
-                                                   % static_cast<uint8_t>( Global::A2powerK[1] ) + 1 ) );
-
+                                Alphabet::getBase( (uint8_t) ( rand() % ( Global::A2powerK[1]+1 ))));
 		// add alphabets randomly at the end of each binding site
 		for( size_t i = 0; i < r_flank; i++ )
 			bindingsite.insert( bindingsite.end(),
-                                Alphabet::getBase( static_cast<uint8_t>( rand() )
-                                                   % static_cast<uint8_t>( Global::A2powerK[1] ) + 1 ) );
+                                Alphabet::getBase( (uint8_t) ( rand() % ( Global::A2powerK[1]+1 ))));
 
 		bindingSiteWidth = bindingsite.length();
 
@@ -200,8 +187,8 @@ void Motif::initFromPWM( float** PWM, SequenceSet* posSeqset, float q ){
 	for( size_t j = 0; j < W_; j++ ){
 		float norm = 0.0f;
 		for( size_t y = 0; y < Global::A2powerK[1]; y++ ){
-			if( PWM[y][j] <= 1.e-8f ){
-                v_[0][y][j] = 1.e-8f;
+			if( PWM[y][j] <= Global::epsilon ){
+                v_[0][y][j] = Global::epsilon;
             } else {
                 v_[0][y][j] = PWM[y][j];
             }
@@ -222,7 +209,7 @@ void Motif::initFromPWM( float** PWM, SequenceSet* posSeqset, float q ){
 	}
 	for( size_t y = 0; y < Global::A2powerK[1]; y++ ){
 		for( size_t j = 0; j < W_; j++ ){
-			score[y][j] = v_[0][y][j] / v_null_[0][y];
+			score[y][j] = v_[0][y][j] * Global::A2powerK[1];
 		}
 	}
 
@@ -401,7 +388,7 @@ void Motif::calculateV( int*** n ){
     // for k = 0, v_ = freqs:
 	for( size_t y = 0; y < Global::A2powerK[1]; y++ ){
 		for( size_t j = 0; j < W_; j++ ){
-			v_[0][y][j] = ( n[0][y][j] + A_[0][j] * v_null_[0][y] )
+			v_[0][y][j] = ( n[0][y][j] + A_[0][j] / Global::A2powerK[1] )
 						/ ( static_cast<float>( C_ ) + A_[0][j] );
         }
 	}
@@ -454,7 +441,7 @@ void Motif::calculateLogS( float** Vbg ){
 	for( size_t y = 0; y < Global::A2powerK[K_+1]; y++ ){
 		size_t y_bg = y % Global::A2powerK[k_bg+1];
 		for( size_t j = 0; j < W_; j++ ){
-			s_[y][j] = logf( v_[K_][y][j] + 1.e-8f ) - logf( Vbg[k_bg][y_bg] );
+			s_[y][j] = logf( v_[K_][y][j] + Global::epsilon ) - logf( Vbg[k_bg][y_bg] );
 		}
 	}
 
