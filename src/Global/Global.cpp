@@ -39,7 +39,7 @@ bool				Global::zoops = true;					// learn ZOOPS model
 
 // model options
 size_t     			Global::modelOrder = 2;					// model order
-size_t              Global::maxOrder = 8;                   // maximal model order
+size_t              Global::maxOrder = sizeof(size_t);      // maximal model order
 std::vector<float> 	Global::modelAlpha( modelOrder+1, 1.f );// initial alphas
 float				Global::modelBeta = 7.0f;				// alpha_k = beta x gamma^k for k > 0
 float				Global::modelGamma = 3.0f;
@@ -101,6 +101,7 @@ bool				Global::saveInitialBaMMs = false;		// write out the initial model to dis
 bool				Global::saveBgModel = false;			// write out the background model to disk
 bool				Global::generatePseudoSet = false;		// test for alpha learning
 std::mt19937		Global::rngx;
+float               Global::epsilon = 1.e-6f;
 
 // flags for developers
 bool			    Global::makeMovie = false;              // print out bamms in each iteration while optimizing
@@ -125,13 +126,17 @@ Global::Global( int nargs, char* args[] ){
     Alphabet::init( alphabetType );
 
     // initialize A2powerK vector
-    for( size_t i = 0; i < modelOrder + maxOrder; i++ ){
+    for( size_t i = 0; i <= maxOrder; i++ ){
         A2powerK.push_back( ipow( Alphabet::getSize(), i ) );
     }
 
     // read in positive and negative sequence set
     posSequenceSet = new SequenceSet( posSequenceFilename, ss );
-    negSequenceSet = new SequenceSet( negSequenceFilename, ss );
+    if( negSeqGiven ) {
+        negSequenceSet = new SequenceSet(negSequenceFilename, ss);
+    } else {
+        negSequenceSet = posSequenceSet;
+    }
 
     // check if the input sequences are too few
     if( posSequenceSet->getSequences().size() < cvFold ){
@@ -392,7 +397,7 @@ int Global::readArguments( int nargs, char* args[] ){
     opt >> GetOpt::OptionPresent( "parallizeOverMotifs", parallelizeOverMotifs );
 
 #ifdef OPENMP
-    omp_set_num_threads( threads );
+    omp_set_num_threads( (int)threads );
 #endif
 
 	// for remaining unknown options
@@ -667,7 +672,7 @@ void Global::printHelp(){
 
 Global::~Global(){
     Alphabet::destruct();
-    if( alphabetType ) 			delete[] alphabetType;
-    if( posSequenceSet )	 	delete posSequenceSet;
-    if( negSequenceSet ) 		delete negSequenceSet;
+    if( alphabetType ) 			            delete[] alphabetType;
+    if( posSequenceSet )	 	            delete posSequenceSet;
+    if( negSeqGiven and negSequenceSet )    delete negSequenceSet;
 }

@@ -149,6 +149,7 @@ public:
 	static char* 		String( const char *s );// convert const char* to string, for GetOpt library
 
 	static std::mt19937	rngx;
+    static float        epsilon;
 
 private:
 
