@@ -40,16 +40,18 @@ void FDR::evaluateMotif( size_t perLoopThreads ){
 		std::vector<Sequence*> testSet;
 		std::vector<Sequence*> trainSet;
         std::vector<Sequence*> negSet;
-		for( size_t n = 0; n <= posSeqs_.size() - Global::cvFold; n += Global::cvFold ){
+		for( size_t n = 0; n <= posSeqs_.size() - 1; n += Global::cvFold ){
 			for( size_t f = 0; f < Global::cvFold; f++ ){
-				if( f != fold ){
-					trainSet.push_back( posSeqs_[n+f] );
-				} else {
-					testSet.push_back( posSeqs_[n+f] );
-				}
+				if( n+f < posSeqs_.size() ){
+                    if( f != fold ){
+                        trainSet.push_back( posSeqs_[n+f] );
+                    } else {
+                        testSet.push_back( posSeqs_[n+f] );
+                    }
+                }
 			}
 		}
-		for( size_t n = 0; n <= negSeqs_.size() - Global::cvFold; n += Global::cvFold ){
+		for( size_t n = 0; n <= negSeqs_.size()-Global::cvFold; n += Global::cvFold ){
             negSet.push_back( negSeqs_[n] );
 		}
 
@@ -208,29 +210,35 @@ void FDR::calculatePR(){
         // set limit for using the exponential extrapolation for p-value calculation
         size_t n_top = ( size_t )std::fmin(100, negN / 10);
 
-        float lambda = 1.e-8f;
+        float lambda = Global::epsilon;
         for( size_t l = 0; l < n_top; l++ ){
             lambda += negScoreMax_[l] - negScoreMax_[n_top];
         }
         lambda /= n_top;
-        assert( lambda > 0.f );
 
         float Sl;
 
+        // dynamic programming for scoring both positive and negative sets
 		for( size_t i = 0; i < posN + negN; i++ ){
 
-            if( (posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax]
-                 || idx_posMax == 0 || idx_negMax == negN )
-                && idx_posMax < posN ){
+            if( idx_posMax == 0 || idx_negMax == negN ){
                 Sl = posScoreMax_[idx_posMax];
                 idx_posMax++;
-            } else if( posScoreMax_[idx_posMax] == negScoreMax_[idx_negMax]
-                       && rand() % 2 == 0 && idx_posMax < posN ){
-                Sl = posScoreMax_[idx_posMax];
-                idx_posMax++;
-            } else {
+            } else if( idx_posMax == posN ){
                 Sl = negScoreMax_[idx_negMax];
                 idx_negMax++;
+            } else if( idx_posMax < posN and idx_negMax < negN ) {
+                if (posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax]) {
+                    Sl = posScoreMax_[idx_posMax];
+                    idx_posMax++;
+                } else if (posScoreMax_[idx_posMax] == negScoreMax_[idx_negMax]
+                           and rand() % 2 == 0) {
+                    Sl = posScoreMax_[idx_posMax];
+                    idx_posMax++;
+                } else {
+                    Sl = negScoreMax_[idx_negMax];
+                    idx_negMax++;
+                }
             }
 
             // calculate p-values in two different ways:
@@ -242,15 +250,17 @@ void FDR::calculatePR(){
                 float Sl_lower = *std::upper_bound( negScoreMax_.begin(),
                                                     negScoreMax_.end(), Sl,
                                                     std::greater<float>() );
-                p_value = (idx_negMax + ( Sl_upper- Sl) / (Sl_upper - Sl_lower + 1.e-5f))
+                p_value = (idx_negMax + ( Sl_upper- Sl)
+                                        / (Sl_upper - Sl_lower + Global::epsilon))
                           / (float)negN;
 
             } else {
-                // p-value is calculated by relying on a parametric fit of the exponentially cumulative distribution
+                // p-value is calculated by relying on a parametric fit
+                // of the exponentially cumulative distribution
                 p_value = n_top * expf( ( negScoreMax_[n_top] - Sl ) / lambda ) / negN;
             }
-            if( p_value < 1.e-6f )    p_value = 1.e-6f;
-            if( p_value > 1.0f )      p_value = 1.0f;
+            if( p_value < Global::epsilon ) p_value = Global::epsilon;
+            if( p_value > 1.0f )            p_value = 1.0f;
             //assert( p_value >= 0.f && p_value <= 1.f );
 
 			PN_Pvalue_.push_back( p_value );
@@ -297,8 +307,8 @@ void FDR::calculatePvalues(){
                                                                    posScoreAll_[i] ) );
             float p = 1.0f - ( float )( up + low ) / ( 2.0f * ( float ) negScoreAll_.size() );
             // avoid the rounding errors, such as p-value = 0 or p-value > 1
-            if( p < 1.e-6f )    p = 1.e-6f;
-            if( p > 1.0f )      p = 1.0f;
+            if( p < Global::epsilon )   p = Global::epsilon;
+            if( p > 1.0f )              p = 1.0f;
             MOPS_Pvalue_.push_back( p );
         }
     }
@@ -320,8 +330,8 @@ void FDR::calculatePvalues(){
                                                                    posScoreMax_[i] ) );
             float p = 1.0f - ( float )( up + low ) / ( 2.0f * ( float )negScoreMax_.size() );
             // avoid the rounding errors, such as p-value = 0 or p-value > 1
-            if( p < 1.e-6f )    p = 1.e-6f;
-            if( p > 1.0f )      p = 1.0f;
+            if( p < Global::epsilon )   p = Global::epsilon;
+            if( p > 1.0f )              p = 1.0f;
             ZOOPS_Pvalue_.push_back( p );
         }
     }
