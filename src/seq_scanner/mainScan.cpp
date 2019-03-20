@@ -81,7 +81,7 @@ int main( int nargs, char* args[] ) {
     if ( posN * Global::mFold < minSeqN ) {
         Global::mFold = minSeqN / posN + rest;
     }
-    negSeqs = negseq.sample_bgseqset_by_fold( Global::mFold );
+    negSeqs = negseq.sample_bgset_by_fold(Global::mFold);
     if(Global::verbose) {
         std::cout << "\n" << negSeqs.size()
                   << " background sequences are generated."

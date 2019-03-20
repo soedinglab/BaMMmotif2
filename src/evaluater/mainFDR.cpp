@@ -86,18 +86,18 @@ int main( int nargs, char* args[] ){
         std::vector<std::unique_ptr<Sequence>> negSeqs;
         SeqGenerator negseq( posSet, NULL );
         if( !Global::fixedNegN and posN >= Global::negN ){
-            negSeqs = negseq.sample_bgseqset_by_fold( Global::mFold );
+            negSeqs = negseq.sample_bgset_by_fold(Global::mFold);
             std::cout << Global::mFold << " x " << posN
                       << " background sequences are generated." << std::endl;
         } else if( !Global::fixedNegN and posN < Global::negN ){
             bool rest = Global::negN % posN;
             Global::mFold = Global::negN / posN + rest;
-            negSeqs = negseq.sample_bgseqset_by_fold( Global::mFold );
+            negSeqs = negseq.sample_bgset_by_fold(Global::mFold);
             std::cout << Global::mFold << " x " << posN
                       << " background sequences are generated." << std::endl;
         } else {
-            negSeqs = negseq.sample_bgseqset_by_num( Global::negN,
-                                                     Global::posSequenceSet->getMaxL() );
+            negSeqs = negseq.sample_bgset_by_num(Global::negN,
+                                                 Global::posSequenceSet->getMaxL());
             std::cout << Global::negN << " (fixed) background sequences are generated."
                       << std::endl;
         }

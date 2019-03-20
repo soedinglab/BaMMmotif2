@@ -26,7 +26,7 @@ int main( int nargs, char* args[] ){
         SeqGenerator negseq( Global::posSequenceSet->getSequences(), NULL);
         negseq.write( Global::outputDirectory,
                       Global::posSequenceBasename + "_bgset",
-                      negseq.sample_bgseqset_by_fold(Global::mFold) );
+                      negseq.sample_bgset_by_fold(Global::mFold) );
     } else {
         /**
          * Build up the background model

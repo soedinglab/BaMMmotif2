@@ -85,7 +85,7 @@ int main( int nargs, char* args[] ){
         // from positive training sequence set
         std::vector<std::unique_ptr<Sequence>> negSeqs;
         SeqGenerator negseq(posSet, NULL);
-        negSeqs = negseq.sample_bgseqset_by_fold( Global::mFold );
+        negSeqs = negseq.sample_bgset_by_fold(Global::mFold);
 
         // convert unique_ptr to regular pointer
         for (size_t n = 0; n < negSeqs.size(); n++) {

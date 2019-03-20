@@ -3,8 +3,8 @@
 SeqGenerator::SeqGenerator( std::vector<Sequence*> seqs, Motif* motif ){
 
 	seqs_       = seqs;
-	sOrder_     = Global::sOrder;
     motif_      = motif;
+	sOrder_     = Global::sOrder;
     q_          = Global::q;
     genericNeg_ = Global::genericNeg;
     
@@ -14,20 +14,17 @@ SeqGenerator::SeqGenerator( std::vector<Sequence*> seqs, Motif* motif ){
     v_seq_ = ( float** )calloc( sOrder_+1, sizeof( float* ) );
     n_seq_ = ( size_t** )calloc( sOrder_+1, sizeof( size_t* ) );
 	for( size_t k = 0; k < sOrder_+1; k++ ) {
-        v_[k] = (float *) calloc(Global::A2powerK[k + 1], sizeof(float));
-        n_[k] = (size_t *) calloc(Global::A2powerK[k + 1], sizeof(size_t));
-        range_bar_[k] = (float *) calloc(Global::A2powerK[k + 1], sizeof(float));
-        v_seq_[k] = (float *) calloc(Global::A2powerK[k + 1], sizeof(float));
-        n_seq_[k] = (size_t *) calloc(Global::A2powerK[k + 1], sizeof(size_t));
+        v_[k] = (float *) calloc(Global::A2powerK[k+1], sizeof(float));
+        n_[k] = (size_t *) calloc(Global::A2powerK[k+1], sizeof(size_t));
+        range_bar_[k] = (float *) calloc(Global::A2powerK[k+1], sizeof(float));
+        v_seq_[k] = (float *) calloc(Global::A2powerK[k+1], sizeof(float));
+        n_seq_[k] = (size_t *) calloc(Global::A2powerK[k+1], sizeof(size_t));
     }
 
     A_ = ( float* )calloc( sOrder_+1, sizeof( float ) );
     for( size_t k = 0; k < sOrder_+1; k++ ){
         A_[k] = 20.f;
     }
-
-    rngx_.seed( 42 );
-    srand( 42 );
 
     kmer_freq_is_calculated_    = false;
     kmer_freq_is_rescaled_      = false;
@@ -67,7 +64,7 @@ void SeqGenerator::calculate_kmer_frequency(){
 
 	// count k-mers
 	for( size_t i = 0; i < seqs_.size(); i++ ){
-		size_t L = seqs_[i]->getL();
+		size_t  L = seqs_[i]->getL();
 		size_t* kmer = seqs_[i]->getKmer();
 		for( size_t k = 0; k < sOrder_+1; k++ ){
 			for( size_t j = k; j < L; j++ ){
@@ -87,7 +84,8 @@ void SeqGenerator::calculate_kmer_frequency(){
     float sum = 0.0f;
     // calculate probabilities for order k = 0
     for( size_t y = 0; y < Global::A2powerK[1]; y++ ){
-        v_[0][y] = ( ( float )n_[0][y] + A_[0] * 0.25f ) / ( ( float )normFactor + A_[0] );
+        v_[0][y] = ( ( float )n_[0][y] + A_[0] / Global::A2powerK[1] )
+                   / ( ( float )normFactor + A_[0] );
         sum += v_[0][y];
         range_bar_[0][y] = sum;
     }
@@ -97,7 +95,8 @@ void SeqGenerator::calculate_kmer_frequency(){
 		for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
 			size_t yk = y / Global::A2powerK[1];
             size_t y2 = y % Global::A2powerK[k];
-            v_[k][y] = ( ( float )n_[k][y] + A_[k] * v_[k-1][y2] )/ ( ( float )n_[k-1][yk] + A_[k] );
+            v_[k][y] = ( ( float )n_[k][y] + A_[k] * v_[k-1][y2] )
+                       / ( ( float )n_[k-1][yk] + A_[k] );
 
             if( y % Global::A2powerK[1] == 0 ) sum = 0.f;
             sum += v_[k][y];
@@ -144,13 +143,15 @@ void SeqGenerator::rescale_kmer_frequency( Sequence* refSeq ) {
 
     for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
         size_t y2 = y % Global::A2powerK[k];
-        v_seq_[k][y] = v_[k][y] * ( n_seq_[k][y] + A_[k-1] * v_[k-1][y2] ) / v_[k-1][y2] / ( L + A_[k-1] );
+        v_seq_[k][y] = v_[k][y] * ( n_seq_[k][y] + A_[k-1] * v_[k-1][y2] )
+                       / v_[k-1][y2] / ( L + A_[k-1] );
     }
     // re-scale 1st-order background model
     std::vector<float> normFactors( Global::A2powerK[k], 0.0f );
     for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
         size_t yk = y / Global::A2powerK[1];
-        v_seq_[k][y] = ( n_seq_[k][y] + A_[k] * v_seq_[k][y] ) / ( n_seq_[k-1][yk] + A_[k] );
+        v_seq_[k][y] = ( n_seq_[k][y] + A_[k] * v_seq_[k][y] )
+                       / ( n_seq_[k-1][yk] + A_[k] );
         normFactors[yk] += v_seq_[k][y];
     }
     // normalization:
@@ -171,7 +172,8 @@ void SeqGenerator::rescale_kmer_frequency( Sequence* refSeq ) {
     for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
         size_t y2 = y % Global::A2powerK[k];
         size_t yk = y / Global::A2powerK[1];
-        v_seq_[k][y] = ( n_seq_[k][y] + A_[k] * v_seq_[k-1][y2] ) / ( n_seq_[k-1][yk] + A_[k] );
+        v_seq_[k][y] = ( n_seq_[k][y] + A_[k] * v_seq_[k-1][y2] )
+                       / ( n_seq_[k-1][yk] + A_[k] );
         if( y % Global::A2powerK[1] == 0 ) sum = 0.0f;
         sum += v_seq_[k][y];
         range_bar_[k][y] = sum;
@@ -181,7 +183,7 @@ void SeqGenerator::rescale_kmer_frequency( Sequence* refSeq ) {
 }
 
 // generate negative sequences based on k-mer frequencies, given m-fold
-std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_bgseqset_by_fold(size_t fold){
+std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_bgset_by_fold(size_t fold){
 
 	std::vector<std::unique_ptr<Sequence>> negset;
 
@@ -202,7 +204,7 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_bgseqset_by_fold(siz
 }
 
 // generate negative sequences based on k-mer frequencies, given negative sequence number and max length of input seqs
-std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_bgseqset_by_num(size_t negN, size_t maxL){
+std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_bgset_by_num(size_t negN, size_t maxL){
 
     std::vector<std::unique_ptr<Sequence>> negset;
 
@@ -344,7 +346,7 @@ std::unique_ptr<Sequence> SeqGenerator::bgseq_on_rescaled_v( Sequence* refSeq ) 
 }
 
 // copy sequences from positive set
-std::unique_ptr<Sequence> SeqGenerator::raw_sequence( Sequence* seq ){
+std::unique_ptr<Sequence> SeqGenerator::raw_seq(Sequence *seq){
 
     size_t L = seq->getL();
     uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
@@ -378,7 +380,7 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::arti_posset_motif_embedded(
 	}
     // copy the original sequences for the rest 1-q portion
     for( size_t i = seq_size; i < seqs_.size(); i++ ){
-        posset_with_motif_embedded.push_back( raw_sequence( seqs_[i] ) );
+        posset_with_motif_embedded.push_back(raw_seq(seqs_[i]) );
     }
 
     // randomly shuffle the sequence set after implantation
@@ -400,12 +402,12 @@ std::unique_ptr<Sequence> SeqGenerator::posseq_motif_embedded( Sequence* seq, si
     if( at == 0 ) {
         // implant motif due to uniform distribution
         std::uniform_int_distribution<> range((int)sOrder_, (int)(L-W+1));
-        at = (size_t) range(rngx_);
+        at = (size_t) range( Global::rngx );
     } else{
         // implant motif around the given position due to normal distribution
         // set mean as the given position and variance as 10
         std::normal_distribution<> nd{(float)at, 10.f};
-        at = (size_t) std::round( nd(rngx_) );
+        at = (size_t) std::round( nd(Global::rngx) );
         at = (at > 0) ? at : 0;
         at = (at < L) ? at : L;
     }
@@ -452,13 +454,13 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::seqset_with_motif_masked(fl
 	size_t W = motif_->getW();
 
 	for( size_t n = 0; n < seqs_.size(); n++ ){
-		seqset.push_back(sequence_with_motif_masked( seqs_[n], W, r[n]) );
+		seqset.push_back(posseq_motif_masked(seqs_[n], W, r[n]) );
 	}
 
 	return seqset;
 }
 
-std::unique_ptr<Sequence> SeqGenerator::sequence_with_motif_masked(Sequence *posseq, size_t W, float *r){
+std::unique_ptr<Sequence> SeqGenerator::posseq_motif_masked(Sequence *posseq, size_t W, float *r){
 
 	float cutoff = 0.3f;
     size_t L = posseq->getL();
@@ -485,7 +487,9 @@ std::unique_ptr<Sequence> SeqGenerator::sequence_with_motif_masked(Sequence *pos
 	return seq_mask_motif;
 }
 
-void SeqGenerator::write( char* odir, std::string basename, std::vector<std::unique_ptr<Sequence>> seqset ){
+void SeqGenerator::write( char* odir,
+                          std::string basename,
+                          std::vector<std::unique_ptr<Sequence>> seqset ){
 	/**
 	 * save the generated sequence set in fasta file:
 	 */
@@ -503,7 +507,9 @@ void SeqGenerator::write( char* odir, std::string basename, std::vector<std::uni
 
 }
 
-void SeqGenerator::write( char* odir, std::string basename, std::vector<Sequence*> seqset ){
+void SeqGenerator::write( char* odir,
+                          std::string basename,
+                          std::vector<Sequence*> seqset ){
     /**
      * save the generated sequence set in fasta file:
      */
