@@ -14,9 +14,10 @@ class Sequence{
 public:
 
 	Sequence( uint8_t* sequence,
-				size_t L,
-				std::string header,
-				bool singleStrand = false );
+              size_t L,
+              std::string header,
+              bool singleStrand = false );
+
 	~Sequence();
 
 	uint8_t*		getSequence();
@@ -41,8 +42,8 @@ private:
 	size_t			L_;				    // sequence length
 	std::string		header_;		    // sequence header
 
-	float			intensity_ = 0.0f;	// sequence intensity
-	float			weight_ = 0.0f;	    // sequence weight calculated from its intensity
+	float			intensity_  = 0.0f;	// sequence intensity
+	float			weight_     = 0.0f;	// sequence weight calculated from its intensity
 	size_t*			kmer_;
 };
 

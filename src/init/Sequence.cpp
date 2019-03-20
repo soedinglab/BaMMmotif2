@@ -29,18 +29,18 @@ Sequence::Sequence( uint8_t* sequence,
 	 */
 
 	kmer_ = ( size_t* )calloc( L_, sizeof( size_t ) );
-    size_t maxL = Global::modelOrder + Global::maxOrder;
 	for( size_t i = 0; i < L_; i++ ){
-		for( size_t k = i < maxL ? i+1 : maxL+1; k > 0; k-- ){
-			kmer_[i] += ( ( sequence_[i-k+1] == 0 ) ? ( size_t )rand() % Global::A2powerK[1] :
-						( sequence_[i-k+1] - 1 ) ) * Global::A2powerK[k-1];
+		for( size_t k = i < Global::maxOrder ? i+1 : Global::maxOrder+1; k > 0; k-- ){
+			kmer_[i] += ( ( sequence_[i-k+1] == 0 ) ?
+                          ( size_t )rand() % Global::A2powerK[1] :
+                          ( size_t )( sequence_[i-k+1] - 1 ) ) * Global::A2powerK[k-1];
 		}
 	}
 
 }
 
 Sequence::~Sequence(){
-	if( sequence_ != NULL ){
+	if( sequence_ != nullptr ){
 		free( sequence_ );
 	}
 

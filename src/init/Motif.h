@@ -133,12 +133,10 @@ inline void Motif::updateV( float*** n, float** alpha ){
 inline void Motif::calculateLinearS( float** Vbg ){
 
     size_t k_bg = ( K_ > k_bg_ ) ? k_bg_ : K_;
-//    size_t k_bg = k_bg_;
     for( size_t y = 0; y < Global::A2powerK[K_+1]; y++ ){
         size_t y_bg = y % Global::A2powerK[k_bg+1];
         for( size_t j = 0; j < W_; j++ ){
             s_[y][j] = v_[K_][y][j] / Vbg[k_bg][y_bg];
-//            std::cout << "s["<<y<<"][" << j <<"]=" << s_[y][j] << std::endl;
         }
     }
 
