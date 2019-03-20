@@ -131,7 +131,7 @@ Global::Global( int nargs, char* args[] ){
     }
 
     // read in positive and negative sequence set
-    posSequenceSet = new SequenceSet( posSequenceFilename, ss );
+    posSequenceSet = new SequenceSet(posSequenceFilename, ss ;
     if( negSeqGiven ) {
         negSequenceSet = new SequenceSet(negSequenceFilename, ss);
     } else {
@@ -140,7 +140,8 @@ Global::Global( int nargs, char* args[] ){
 
     // check if the input sequences are too few
     if( posSequenceSet->getSequences().size() < cvFold ){
-        std::cerr << "Error: Input sequences are too few for training! \n" << std::endl;
+        std::cerr << "Error: Input sequences are too few for training! \n"
+                  << std::endl;
         exit( 1 );
     }
 
