@@ -84,7 +84,7 @@ int main( int nargs, char* args[] ){
         // generate negative sequence set based on s-mer frequencies
         // from positive training sequence set
         std::vector<std::unique_ptr<Sequence>> negSeqs;
-        SeqGenerator negseq(posSet, NULL);
+        SeqGenerator negseq(posSet, nullptr);
         negSeqs = negseq.sample_bgset_by_fold(Global::mFold);
 
         // convert unique_ptr to regular pointer

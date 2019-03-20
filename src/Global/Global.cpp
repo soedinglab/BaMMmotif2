@@ -131,7 +131,7 @@ Global::Global( int nargs, char* args[] ){
     }
 
     // read in positive and negative sequence set
-    posSequenceSet = new SequenceSet(posSequenceFilename, ss ;
+    posSequenceSet = new SequenceSet(posSequenceFilename, ss );
     if( negSeqGiven ) {
         negSequenceSet = new SequenceSet(negSequenceFilename, ss);
     } else {
