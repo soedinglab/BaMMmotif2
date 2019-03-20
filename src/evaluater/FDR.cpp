@@ -1,13 +1,15 @@
 #include "FDR.h"
 
-FDR::FDR( std::vector<Sequence*> posSeqs, std::vector<Sequence*> negSeqs,
-          Motif* motif, BackgroundModel* bgModel){
+FDR::FDR( std::vector<Sequence*> posSeqs,
+          std::vector<Sequence*> negSeqs,
+          Motif* motif,
+          BackgroundModel* bgModel){
 
 	posSeqs_	= posSeqs;
 	negSeqs_	= negSeqs;
-
 	motif_ 		= motif;
     bgModel_    = bgModel;
+
     q_          = motif_->getQ();
 
 	occ_frac_	= 0.0f;
@@ -40,7 +42,7 @@ void FDR::evaluateMotif( size_t perLoopThreads ){
 		std::vector<Sequence*> testSet;
 		std::vector<Sequence*> trainSet;
         std::vector<Sequence*> negSet;
-		for( size_t n = 0; n <= posSeqs_.size() - 1; n += Global::cvFold ){
+		for( size_t n = 0; n < posSeqs_.size()-1; n += Global::cvFold ){
 			for( size_t f = 0; f < Global::cvFold; f++ ){
 				if( n+f < posSeqs_.size() ){
                     if( f != fold ){
@@ -147,8 +149,6 @@ void FDR::calculatePR(){
 
 	float mFold = ( float )negN / ( float )posN;
 
-    srand(42);
-
 	// for MOPS model:
 	if( Global::mops ){
 		// Sort log odds scores in descending order
@@ -201,6 +201,9 @@ void FDR::calculatePR(){
 		std::sort( posScoreMax_.begin(), posScoreMax_.end(), std::greater<float>() );
 		std::sort( negScoreMax_.begin(), negScoreMax_.end(), std::greater<float>() );
 
+        posScoreMax_.push_back(-INT8_MAX);
+        negScoreMax_.push_back(-INT8_MAX);
+
 		// Rank and score these log odds score values
 		size_t idx_posMax = 0;
 		size_t idx_negMax = 0;
@@ -217,28 +220,25 @@ void FDR::calculatePR(){
         lambda /= n_top;
 
         float Sl;
-
         // dynamic programming for scoring both positive and negative sets
-		for( size_t i = 0; i < posN + negN; i++ ){
+		for( size_t i = 0; i < posN+negN; i++ ){
 
-            if( idx_posMax == 0 || idx_negMax == negN ){
+            if(idx_posMax == 0 || idx_negMax == negN){
                 Sl = posScoreMax_[idx_posMax];
                 idx_posMax++;
-            } else if( idx_posMax == posN ){
+            } else if(idx_posMax == posN){
                 Sl = negScoreMax_[idx_negMax];
                 idx_negMax++;
-            } else if( idx_posMax < posN and idx_negMax < negN ) {
-                if (posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax]) {
-                    Sl = posScoreMax_[idx_posMax];
-                    idx_posMax++;
-                } else if (posScoreMax_[idx_posMax] == negScoreMax_[idx_negMax]
-                           and rand() % 2 == 0) {
-                    Sl = posScoreMax_[idx_posMax];
-                    idx_posMax++;
-                } else {
-                    Sl = negScoreMax_[idx_negMax];
-                    idx_negMax++;
-                }
+            } else if(posScoreMax_[idx_posMax] > negScoreMax_[idx_negMax]) {
+                Sl = posScoreMax_[idx_posMax];
+                idx_posMax++;
+            } else if(posScoreMax_[idx_posMax] == negScoreMax_[idx_negMax]
+                       and rand() % 2 == 0) {
+                Sl = posScoreMax_[idx_posMax];
+                idx_posMax++;
+            } else {
+                Sl = negScoreMax_[idx_negMax];
+                idx_negMax++;
             }
 
             // calculate p-values in two different ways:
@@ -246,12 +246,12 @@ void FDR::calculatePR(){
             if( Sl <= negScoreMax_[n_top] ){
                 float Sl_upper = *(std::lower_bound( negScoreMax_.begin(),
                                                      negScoreMax_.end(), Sl,
-                                                     std::greater<float>() )-1);
-                float Sl_lower = *std::upper_bound( negScoreMax_.begin(),
-                                                    negScoreMax_.end(), Sl,
-                                                    std::greater<float>() );
-                p_value = (idx_negMax + ( Sl_upper- Sl)
-                                        / (Sl_upper - Sl_lower + Global::epsilon))
+                                                     std::greater<float>())-1);
+                float Sl_lower = *(std::upper_bound( negScoreMax_.begin(),
+                                                     negScoreMax_.end(), Sl,
+                                                     std::greater<float>())-1);
+                p_value = (idx_negMax + ( Sl_upper-Sl )
+                                        / (Sl_upper-Sl_lower + Global::epsilon))
                           / (float)negN;
 
             } else {

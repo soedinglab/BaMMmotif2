@@ -24,8 +24,10 @@ class FDR {
 
 public:
 
-	FDR( std::vector<Sequence*> posSeqs, std::vector<Sequence*> negSeqs,
-         Motif* motif = NULL, BackgroundModel* bgmodel = NULL );
+	FDR( std::vector<Sequence*> posSeqs,
+         std::vector<Sequence*> negSeqs,
+         Motif* motif = NULL,
+         BackgroundModel* bgmodel = NULL );
 	~FDR();
 
 	void 	evaluateMotif( size_t perLoopThreads = 4 );
