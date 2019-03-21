@@ -249,7 +249,7 @@ void FDR::calculatePR(){
                                                      std::greater<float>())-1);
                 float Sl_lower = *(std::upper_bound( negScoreMax_.begin(),
                                                      negScoreMax_.end(), Sl,
-                                                     std::greater<float>())-1);
+                                                     std::greater<float>())/*-1*/);
                 p_value = (idx_negMax + ( Sl_upper-Sl )
                                         / (Sl_upper-Sl_lower + Global::epsilon))
                           / (float)negN;
