@@ -55,7 +55,7 @@ public:
                         beta2_ * dot_product[i]);
         }
 
-        std::cout << "Q=" << Q << std::endl;
+        //std::cout << "Q=" << Q << std::endl;
         return Q;
     }
 

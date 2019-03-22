@@ -733,7 +733,9 @@ void EM::optimizePos() {
 
         Q = p1 - p2;
 
-        std::cout << "cost function = " << Q << std::endl;
+        if( Global::verbose ){
+            std::cout << "cost function = " << Q << std::endl;
+        }
         // ======== end of objfun calculation =======
 
         // method 2b: update smoothness parameter beta using positional prior distribution
@@ -752,10 +754,12 @@ void EM::optimizePos() {
         std::gamma_distribution<double> distribution( (LW1_+1)/2, sum/2);
         beta2_ = distribution(generator);
 
-        std::cout << "N0=" << N0_ << ", N=" << posN
-                  << ", LW1=" << LW1_ << ", norm=" << norm_
-                  << ", sum=" << sum << ", beta=" << (LW1_+1) / sum
-                  << std::endl;
+        if( Global::verbose ) {
+            std::cout << "N0=" << N0_ << ", N=" << posN
+                      << ", LW1=" << LW1_ << ", norm=" << norm_
+                      << ", sum=" << sum << ", beta=" << (LW1_ + 1) / sum
+                      << std::endl;
+        }
 
     } else if( method_flag == 3 ) {
         // prior penalising kinks in the positional preference profile
@@ -789,11 +793,12 @@ void EM::optimizePos() {
         // b) update beta by its expectation value 2
         //beta2_ = ( LW1-2 ) / sum;
 
-        std::cout << "N0=" << N0_ << ", N=" << posN
-                  << ", LW1=" << LW1_ << ", norm=" << norm_
-                  << ", sum=" << sum << ", beta=" << (LW1_+1) / sum
-                  << std::endl;
-
+        if( Global::verbose ) {
+            std::cout << "N0=" << N0_ << ", N=" << posN
+                      << ", LW1=" << LW1_ << ", norm=" << norm_
+                      << ", sum=" << sum << ", beta=" << (LW1_ + 1) / sum
+                      << std::endl;
+        }
     } else if( method_flag == 4 ){
 
         // todo:=====================================================
@@ -842,6 +847,7 @@ void EM::optimizePos() {
         for (size_t i = 1; i <= LW1_; i++) {
             pi_[i] /= norm_;
         }
+        
         // todo:=====================================================
     }
 
@@ -878,8 +884,8 @@ float EM::obj_fun( Eigen::VectorXf& si, Eigen::VectorXf& grad ){
     // update the gradients
     Eigen::VectorXf dot_product = A_matrix_ * si;
     for( size_t i = 0; i < LW1_; i++ ){
-        grad[i] = - ( Ni_[i] - (seqs_.size() - N0_) * expf( si[i] ) / sumexp -
-                beta2_ * dot_product[i] );
+        grad[i] = - ( Ni_[i] - (seqs_.size() - N0_) * expf( si[i] )
+                               / sumexp - beta2_ * dot_product[i] );
     }
 
     return Q;

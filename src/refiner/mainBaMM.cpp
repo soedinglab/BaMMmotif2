@@ -112,8 +112,10 @@ int main( int nargs, char* args[] ){
         if (Global::EM) {
             EM model(motif, bgModel, posSet);
 
-            std::cout << std::endl << "Before, fraction parameter q="
-                      << std::setprecision(4) << model.getQ() << std::endl;
+            if( Global::optimizeQ ) {
+                std::cout << std::endl << "Before, fraction parameter q="
+                          << std::setprecision(4) << model.getQ() << std::endl;
+            }
             // learn motifs by EM
             if (!Global::advanceEM) {
                 model.optimize();
@@ -151,9 +153,10 @@ int main( int nargs, char* args[] ){
                             Global::ss);
             }
 
-            // print out the optimized q for checking:
-            std::cout << "optimized q = " << model.getQ() << std::endl;
-
+            if( Global::optimizeQ ) {
+                // print out the optimized q for checking:
+                std::cout << "optimized q = " << model.getQ() << std::endl;
+            }
         } else {
             std::cout << "Note: the model is not optimized!\n";
         }
