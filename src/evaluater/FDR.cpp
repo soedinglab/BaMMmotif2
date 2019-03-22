@@ -10,10 +10,9 @@ FDR::FDR( std::vector<Sequence*> posSeqs,
 	motif_ 		= motif;
     bgModel_    = bgModel;
 
-    q_          = motif_->getQ();
-
 	occ_frac_	= 0.0f;
 	occ_mult_	= 0.0f;
+    q_          = motif_->getQ();
 
 }
 
@@ -42,19 +41,20 @@ void FDR::evaluateMotif( size_t perLoopThreads ){
 		std::vector<Sequence*> testSet;
 		std::vector<Sequence*> trainSet;
         std::vector<Sequence*> negSet;
-		for( size_t n = 0; n < posSeqs_.size()-1; n += Global::cvFold ){
-			for( size_t f = 0; f < Global::cvFold; f++ ){
-				if( n+f < posSeqs_.size() ){
-                    if( f != fold ){
-                        trainSet.push_back( posSeqs_[n+f] );
-                    } else {
-                        testSet.push_back( posSeqs_[n+f] );
-                    }
-                }
-			}
-		}
-		for( size_t n = 0; n <= negSeqs_.size()-Global::cvFold; n += Global::cvFold ){
-            negSet.push_back( negSeqs_[n] );
+
+        // split input set into training and test sets
+        for( size_t n = 0; n < posSeqs_.size(); n++ ){
+            if( n % Global::cvFold == fold ){
+                testSet.push_back( posSeqs_[n] );
+            } else {
+                trainSet.push_back( posSeqs_[n] );
+            }
+        }
+        // split negative set into 'cvFold' pieces
+		for( size_t n = 0; n < negSeqs_.size(); n++ ){
+            if( n % Global::cvFold == fold ){
+                negSet.push_back( negSeqs_[n] );
+            }
 		}
 
 		/**
@@ -201,6 +201,7 @@ void FDR::calculatePR(){
 		std::sort( posScoreMax_.begin(), posScoreMax_.end(), std::greater<float>() );
 		std::sort( negScoreMax_.begin(), negScoreMax_.end(), std::greater<float>() );
 
+        // to avoid the overflow in the dynamic programming
         posScoreMax_.push_back(-INT8_MAX);
         negScoreMax_.push_back(-INT8_MAX);
 
@@ -213,7 +214,7 @@ void FDR::calculatePR(){
         // set limit for using the exponential extrapolation for p-value calculation
         size_t n_top = ( size_t )std::fmin(100, negN / 10);
 
-        float lambda = Global::epsilon;
+        float lambda = Global::eps;
         for( size_t l = 0; l < n_top; l++ ){
             lambda += negScoreMax_[l] - negScoreMax_[n_top];
         }
@@ -250,8 +251,7 @@ void FDR::calculatePR(){
                 float Sl_lower = *(std::upper_bound( negScoreMax_.begin(),
                                                      negScoreMax_.end(), Sl,
                                                      std::greater<float>())/*-1*/);
-                p_value = (idx_negMax + ( Sl_upper-Sl )
-                                        / (Sl_upper-Sl_lower + Global::epsilon))
+                p_value = (idx_negMax + ( Sl_upper-Sl ) / (Sl_upper-Sl_lower+Global::eps))
                           / (float)negN;
 
             } else {
@@ -259,7 +259,7 @@ void FDR::calculatePR(){
                 // of the exponentially cumulative distribution
                 p_value = n_top * expf( ( negScoreMax_[n_top] - Sl ) / lambda ) / negN;
             }
-            if( p_value < Global::epsilon ) p_value = Global::epsilon;
+            if( p_value < Global::eps )     p_value = Global::eps;
             if( p_value > 1.0f )            p_value = 1.0f;
             //assert( p_value >= 0.f && p_value <= 1.f );
 
@@ -307,8 +307,8 @@ void FDR::calculatePvalues(){
                                                                    posScoreAll_[i] ) );
             float p = 1.0f - ( float )( up + low ) / ( 2.0f * ( float ) negScoreAll_.size() );
             // avoid the rounding errors, such as p-value = 0 or p-value > 1
-            if( p < Global::epsilon )   p = Global::epsilon;
-            if( p > 1.0f )              p = 1.0f;
+            if( p < Global::eps )   p = Global::eps;
+            if( p > 1.0f )          p = 1.0f;
             MOPS_Pvalue_.push_back( p );
         }
     }
@@ -330,8 +330,8 @@ void FDR::calculatePvalues(){
                                                                    posScoreMax_[i] ) );
             float p = 1.0f - ( float )( up + low ) / ( 2.0f * ( float )negScoreMax_.size() );
             // avoid the rounding errors, such as p-value = 0 or p-value > 1
-            if( p < Global::epsilon )   p = Global::epsilon;
-            if( p > 1.0f )              p = 1.0f;
+            if( p < Global::eps )   p = Global::eps;
+            if( p > 1.0f )          p = 1.0f;
             ZOOPS_Pvalue_.push_back( p );
         }
     }

@@ -98,36 +98,36 @@ int main( int nargs, char* args[] ){
     /**
      * Train the model(s)
      */
-    for( size_t n = 0; n < motif_set.getN(); n++ ){
-		// deep copy each motif in the motif set
-		Motif* motif = new Motif( *motif_set.getMotifs()[n] );
+    for( size_t n = 0; n < motif_set.getN(); n++ ) {
+        // deep copy each motif in the motif set
+        Motif *motif = new Motif(*motif_set.getMotifs()[n]);
 
-		if( Global::saveInitialBaMMs ){
-			// optional: save initial model
-			motif->write( Global::outputDirectory,
-                          Global::outputFileBasename + "_init_motif_" + std::to_string( n+1 ) );
-		}
+        if (Global::saveInitialBaMMs) {
+            // optional: save initial model
+            motif->write(Global::outputDirectory,
+                         Global::outputFileBasename + "_init_motif_" + std::to_string(n + 1));
+        }
 
-		// optimize the model with either EM or Gibbs sampling
-		if( Global::EM ){
-			EM model( motif, bgModel, posSet );
+        // optimize the model with either EM or Gibbs sampling
+        if (Global::EM) {
+            EM model(motif, bgModel, posSet);
 
             std::cout << std::endl << "Before, fraction parameter q="
-                      << std::setprecision( 4 ) << model.getQ() << std::endl;
-			// learn motifs by EM
-			if( !Global::advanceEM ) {
+                      << std::setprecision(4) << model.getQ() << std::endl;
+            // learn motifs by EM
+            if (!Global::advanceEM) {
                 model.optimize();
             } else {
                 model.mask();
             }
 
             // write model parameters on the disc
-			if( Global::saveBaMMs ){
-				model.write( Global::outputDirectory,
-                             Global::outputFileBasename + "_motif_" + std::to_string( n+1 ) );
-			}
+            if (Global::saveBaMMs) {
+                model.write(Global::outputDirectory,
+                            Global::outputFileBasename + "_motif_" + std::to_string(n + 1));
+            }
 
-            if( Global::verbose ){
+            if (Global::verbose) {
                 std::cout << " ____________________" << std::endl
                           << "|*                  *|" << std::endl
                           << "|   After training   |" << std::endl
@@ -137,97 +137,97 @@ int main( int nargs, char* args[] ){
                 model.print();
             }
             std::cout << std::endl << "After, fraction parameter q="
-                      << std::setprecision( 4 ) << model.getQ() << std::endl;
+                      << std::setprecision(4) << model.getQ() << std::endl;
 
-		} else if ( Global::CGS ){
-			GibbsSampling model( motif, bgModel, posSet );
+        } else if (Global::CGS) {
+            GibbsSampling model(motif, bgModel, posSet);
 
-			// learn motifs by collapsed Gibbs sampling
-			model.optimize();
-			// write model parameters on the disc
-			if( Global::saveBaMMs ){
-				model.write( Global::outputDirectory,
-                             Global::outputFileBasename + "_motif_" + std::to_string( n+1 ),
-                             Global::ss );
-			}
+            // learn motifs by collapsed Gibbs sampling
+            model.optimize();
+            // write model parameters on the disc
+            if (Global::saveBaMMs) {
+                model.write(Global::outputDirectory,
+                            Global::outputFileBasename + "_motif_" + std::to_string(n + 1),
+                            Global::ss);
+            }
 
             // print out the optimized q for checking:
             std::cout << "optimized q = " << model.getQ() << std::endl;
 
-		} else {
-			std::cout << "Note: the model is not optimized!\n";
-		}
+        } else {
+            std::cout << "Note: the model is not optimized!\n";
+        }
 
         // write out the (learned) foreground model
-        motif->write( Global::outputDirectory,
-                      Global::outputFileBasename + "_motif_" + std::to_string( n+1 ) );
+        motif->write(Global::outputDirectory,
+                     Global::outputFileBasename + "_motif_" + std::to_string(n + 1));
 
-        if( Global::scoreSeqset ){
+        if (Global::scoreSeqset) {
             /**
              *  score the model on sequence set
              */
 
             // Define bg model depending on motif input, and learning
             // use bgModel generated from input sequences when prediction is turned on
-            BackgroundModel* bg = bgModel;
+            BackgroundModel *bg = bgModel;
             // if no optimization is applied, get bgModel from the input
-            if( !Global::EM and !Global::CGS ) {
+            if (!Global::EM and !Global::CGS) {
                 // use provided bgModelFile if initialized with bamm format
-                if( Global::initialModelTag == "BaMM" ) {
-                    if( Global::bgModelFilename == NULL ) {
+                if (Global::initialModelTag == "BaMM") {
+                    if (Global::bgModelFilename == NULL) {
                         std::cout << "No background Model file provided for initial search motif!\n";
-                        exit( 1 );
+                        exit(1);
                     }
-                    bg = new BackgroundModel( Global::bgModelFilename );
-                } else if( Global::initialModelTag == "PWM" ){
+                    bg = new BackgroundModel(Global::bgModelFilename);
+                } else if (Global::initialModelTag == "PWM") {
                     // this means that also the global motif order needs to be adjusted;
                     Global::modelOrder = 0;
                 }
             }
 
-            ScoreSeqSet scoreNegSet( motif, bg, negSet );
+            ScoreSeqSet scoreNegSet(motif, bg, negSet);
 
             scoreNegSet.calcLogOdds();
 
             // print out log odds scores for checking before re-ranking
-            if( Global::saveLogOdds ){
+            if (Global::saveLogOdds) {
                 scoreNegSet.writeLogOdds(Global::outputDirectory,
                                          Global::outputFileBasename + ".negSet",
-                                         Global::ss );
+                                         Global::ss);
             }
 
             std::vector<std::vector<float>> negAllScores = scoreNegSet.getMopsScores();
             std::vector<float> negScores;
-            for( size_t n = 0; n < negSet.size(); n++ ){
-                negScores.insert( std::end( negScores ),
-                                  std::begin( negAllScores[n] ),
-                                  std::end( negAllScores[n] ) );
+            for (size_t n = 0; n < negSet.size(); n++) {
+                negScores.insert(std::end(negScores),
+                                 std::begin(negAllScores[n]),
+                                 std::end(negAllScores[n]));
             }
 
             // calculate p-values based on positive and negative scores
-            ScoreSeqSet scorePosSet( motif, bg, posSet );
+            ScoreSeqSet scorePosSet(motif, bg, posSet);
             scorePosSet.calcLogOdds();
 
             // print out log odds scores for checking before re-ranking
-            if( Global::saveLogOdds ){
+            if (Global::saveLogOdds) {
                 scorePosSet.writeLogOdds(Global::outputDirectory,
-                                         Global::outputFileBasename + "_motif_" + std::to_string( n+1 ),
-                                         Global::ss );
+                                         Global::outputFileBasename + "_motif_" + std::to_string(n + 1),
+                                         Global::ss);
             }
 
             std::vector<std::vector<float>> posScores = scorePosSet.getMopsScores();
-            scorePosSet.calcPvalues( posScores, negScores );
+            scorePosSet.calcPvalues(posScores, negScores);
 
             // save the occurrences that has a p-value above certain cutoff
-            scorePosSet.write( Global::outputDirectory,
-                               Global::outputFileBasename + "_motif_" + std::to_string( n+1 ),
-                               Global::pvalCutoff,
-                               Global::ss );
+            scorePosSet.write(Global::outputDirectory,
+                              Global::outputFileBasename + "_motif_" + std::to_string(n + 1),
+                              Global::pvalCutoff,
+                              Global::ss);
 
         }
 
-        if( motif )		delete motif;
-	}
+        if (motif) delete motif;
+    }
 
     // evaluate motifs
 	if( Global::FDR ){
@@ -254,7 +254,7 @@ int main( int nargs, char* args[] ){
 	if( bgModel ) delete bgModel;
     if( !Global::negSeqGiven and negSet.size() ){
         for (size_t n = 0; n < negSet.size(); n++) {
-        //    delete negSet[n];
+            delete negSet[n];
         }
     }
 

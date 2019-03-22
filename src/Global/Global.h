@@ -88,7 +88,7 @@ public:
 
 	// EM options
 	static bool			EM;						// flag to trigger EM learning
-    static float        EMepsilon;              // epsilon for EM convergence
+    static float        EMepsilon;              // eps for EM convergence
     static size_t       maxIterations;          // maximal iterations
     static float        f;                      // fraction of sequences to be masked
 
@@ -149,7 +149,7 @@ public:
 	static char* 		String( const char *s );// convert const char* to string, for GetOpt library
 
 	static std::mt19937	rngx;
-    static float        epsilon;
+    static float        eps;
 
 private:
 

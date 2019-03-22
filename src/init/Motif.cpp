@@ -187,8 +187,8 @@ void Motif::initFromPWM( float** PWM, SequenceSet* posSeqset, float q ){
 	for( size_t j = 0; j < W_; j++ ){
 		float norm = 0.0f;
 		for( size_t y = 0; y < Global::A2powerK[1]; y++ ){
-			if( PWM[y][j] <= Global::epsilon ){
-                v_[0][y][j] = Global::epsilon;
+			if( PWM[y][j] <= Global::eps ){
+                v_[0][y][j] = Global::eps;
             } else {
                 v_[0][y][j] = PWM[y][j];
             }
@@ -441,7 +441,7 @@ void Motif::calculateLogS( float** Vbg ){
 	for( size_t y = 0; y < Global::A2powerK[K_+1]; y++ ){
 		size_t y_bg = y % Global::A2powerK[k_bg+1];
 		for( size_t j = 0; j < W_; j++ ){
-			s_[y][j] = logf( v_[K_][y][j] + Global::epsilon ) - logf( Vbg[k_bg][y_bg] );
+			s_[y][j] = logf( v_[K_][y][j] + Global::eps ) - logf( Vbg[k_bg][y_bg] );
 		}
 	}
 

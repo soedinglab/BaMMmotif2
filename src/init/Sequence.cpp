@@ -44,7 +44,10 @@ Sequence::~Sequence(){
 		free( sequence_ );
 	}
 
-	free( kmer_ );
+    if( kmer_ != nullptr ){
+        free( kmer_ );
+    }
+
 }
 
 uint8_t* Sequence::getSequence(){

@@ -33,7 +33,7 @@ std::vector<size_t> Global:: A2powerK;
 char*				Global::initialModelFilename = NULL; 	// filename of initial model
 std::string			Global::initialModelBasename;			// basename of initial model
 std::string			Global::initialModelTag;				// tag for initializing the model
-size_t				Global::maxPWM = 100;                   // number of initial models that are to be optimized
+size_t				Global::maxPWM = 20;                    // number of initial models that are to be optimized
 bool				Global::mops = false;					// learn MOPS model
 bool				Global::zoops = true;					// learn ZOOPS model
 
@@ -56,7 +56,7 @@ std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.f );// background mod
 
 // EM options
 bool				Global::EM = false;						// flag to trigger EM learning
-float               Global::EMepsilon = 0.001f;             // epsilon for EM convergence
+float               Global::EMepsilon = 0.001f;             // eps for EM convergence
 size_t              Global::maxIterations = 1000;           // maximal iterations
 float				Global::q = 0.3f;						// prior probability for a positive sequence to contain a motif
 bool 				Global::optimizeQ = false;				// optimize hyper-parameter q in EM algorithm
@@ -101,7 +101,7 @@ bool				Global::saveInitialBaMMs = false;		// write out the initial model to dis
 bool				Global::saveBgModel = false;			// write out the background model to disk
 bool				Global::generatePseudoSet = false;		// test for alpha learning
 std::mt19937		Global::rngx;
-float               Global::epsilon = 1.e-6f;
+float               Global::eps = 1.e-6f;
 
 // flags for developers
 bool			    Global::makeMovie = false;              // print out bamms in each iteration while optimizing
@@ -131,7 +131,7 @@ Global::Global( int nargs, char* args[] ){
     }
 
     // read in positive and negative sequence set
-    posSequenceSet = new SequenceSet(posSequenceFilename, ss );
+    posSequenceSet = new SequenceSet(posSequenceFilename, ss);
     if( negSeqGiven ) {
         negSequenceSet = new SequenceSet(negSequenceFilename, ss);
     } else {
@@ -595,10 +595,10 @@ void Global::printHelp(){
 	printf("\n 			-q <FLOAT> \n"
 			"				Prior probability for a positive sequence to contain\n"
 			"				a motif. The default value is 0.9.\n\n");
-	printf("\n 			-e, --epsilon <FLOAT> \n"
+	printf("\n 			--EMepsilon <FLOAT> \n"
 			"				The EM algorithm is deemed to be converged when the\n"
 			"				sum over the absolute differences in probabilities\n"
-			"				from successive EM rounds is smaller than epsilon.\n"
+			"				from successive EM rounds is smaller than eps.\n"
 			"				The default is 0.001.\n\n");
 	printf("\n 			--maxIterations <INTEGER> (*) \n"
 			"				Limit the number of EM iterations. *For developers.\n\n");
