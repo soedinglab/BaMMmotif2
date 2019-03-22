@@ -114,7 +114,6 @@ void Motif::initFromBindingSites( char* indir, size_t l_flank, size_t r_flank ){
 	std::ifstream file( indir );			// read file
 	std::string bindingsite;				// get binding site sequence from each line
 	size_t bindingSiteWidth;				// length of binding site
-    srand( 42 );
 
 	while( getline( file, bindingsite ).good() ){
 
@@ -123,12 +122,14 @@ void Motif::initFromBindingSites( char* indir, size_t l_flank, size_t r_flank ){
 		// add alphabets randomly at the beginning of each binding site
 		for( size_t i = 0; i < l_flank; i++ )
 			bindingsite.insert( bindingsite.begin(),
-                                Alphabet::getBase( (uint8_t) ( rand() % ( Global::A2powerK[1]+1 ))));
+                                Alphabet::getBase( static_cast<uint8_t>( rand() )
+                                                   % static_cast<uint8_t>( Global::A2powerK[1] ) + 1 ));
+
 		// add alphabets randomly at the end of each binding site
 		for( size_t i = 0; i < r_flank; i++ )
 			bindingsite.insert( bindingsite.end(),
-                                Alphabet::getBase( (uint8_t) ( rand() % ( Global::A2powerK[1]+1 ))));
-
+                                Alphabet::getBase( static_cast<uint8_t>( rand() )
+                                                   % static_cast<uint8_t>( Global::A2powerK[1] ) + 1 ));
 		bindingSiteWidth = bindingsite.length();
 
 		if( bindingSiteWidth != W_ ){	// all binding sites have the same length
