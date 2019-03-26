@@ -50,6 +50,7 @@ private:
 
 	float 					llikelihood_ = 0.0f;// log likelihood for each iteration
 
+    size_t                  padding_;
 	float 					eta_ = 0.2f;		// learning rate for alpha learning
 	double**				m1_t_;				// first moment for alpha optimizer (ADAM)
 	double**				m2_t_;				// second moment for alpha optimizer (ADAM)

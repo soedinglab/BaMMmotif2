@@ -7,13 +7,15 @@
 #include <boost/math/special_functions.hpp>			/* gamma and digamma function */
 #include <boost/math/distributions/beta.hpp>		/* beta distribution */
 
-GibbsSampling::GibbsSampling( Motif* motif, BackgroundModel* bg,
-                              std::vector<Sequence*> seqs){
+GibbsSampling::GibbsSampling( Motif* motif,
+                              BackgroundModel* bg,
+                              std::vector<Sequence*> seqs)
+{
 
-    motif_              = motif;
-    bg_                 = bg;
-    q_                  = motif->getQ();
-    seqs_               = seqs;
+    motif_  = motif;
+    bg_     = bg;
+    seqs_   = seqs;
+    q_      = motif->getQ();
 
     // get motif (hyper-)parameters from motif class
     K_      = motif_->getK();
@@ -21,13 +23,14 @@ GibbsSampling::GibbsSampling( Motif* motif, BackgroundModel* bg,
     s_      = motif_->getS();
     A_      = motif_->getA();
     K_bg_   = Global::bgModelOrder;
+    padding_= 1;
 
     // allocate memory for r_[n][i], pos_[n][i], z_[n]
     r_ = ( float** )calloc( seqs_.size(), sizeof( float* ) );
     pos_ = ( float** )calloc( seqs_.size(), sizeof( float* ) );
     z_ = ( size_t* )calloc( seqs_.size(), sizeof( size_t ) );
     for( size_t n = 0; n < seqs_.size(); n++ ){
-        r_[n] = ( float* )calloc( seqs_[n]->getL(), sizeof( float ) );
+        r_[n] = ( float* )calloc( seqs_[n]->getL()+padding_+W_+1, sizeof( float ) );
         pos_[n] = ( float* )calloc( seqs_[n]->getL(), sizeof( float ) );
     }
 
@@ -91,9 +94,9 @@ void GibbsSampling::optimize(){
             size_t L = seqs_[n]->getL();
             float maxR = 0.f;
             size_t maxIdx = 0;
-            for( size_t i = 0; i < L-W_+1; i++ ){
-                if( model.getR()[n][L-W_-i] > maxR ){
-                    maxR = model.getR()[n][L-W_-i];
+            for( size_t i = 0; i < L/*-W_*/+1; i++ ){
+                if( model.getR()[n][L/*-W_*/-i] > maxR ){
+                    maxR = model.getR()[n][L/*-W_*/-i];
                     maxIdx = i+1;
                 }
             }
@@ -162,10 +165,14 @@ void GibbsSampling::optimize(){
         iteration++;
 
         // Collapsed Gibbs sampling position z
-        if( !Global::noZSampling )    Collapsed_Gibbs_sampling_z();
+        if( !Global::noZSampling ) {
+            Collapsed_Gibbs_sampling_z();
+        }
 
         // Gibbs sampling fraction q
-        if( !Global::noQSampling )	Gibbs_sample_q();
+        if( !Global::noQSampling ){
+            Gibbs_sample_q();
+        }
 
         // update alphas by stochastic optimization
         if( !Global::noAlphaOptimization ){
@@ -212,7 +219,7 @@ void GibbsSampling::optimize(){
 
     // obtaining a motif model:
     if( Global::GibbsMHalphas || Global::dissampleAlphas ){
-        // average alphas over the last few steps for GibbsMH
+        // average alphas over the last few (10) steps for GibbsMH
         for( size_t k = 0; k < K_+1; k++ ){
             for( size_t j = 0; j < W_; j++ ){
                 A_[k][j] = alpha_avg[k][j] / 10.0f;
@@ -350,44 +357,50 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
         // over all LW1 positions on n'th sequence:
         float normFactor = 1.0f - q_;
         float pos_i = q_ / static_cast<float>( LW1 );
-        for( size_t i = 0; i < LW1; i++ ){
+        for( size_t i = 1; i <= LW1; i++ ){
             pos_[n][i] = pos_i;
-            r_[n][i] = 1.0f;
+            r_[n][L+padding_-i] = 1.0f;
         }
 
         // todo: could be parallelized by extracting 8 sequences at once
         // ij = i+j runs over all positions in sequence
-        for( size_t ij = 0; ij < LW1; ij++ ){
+        for( size_t ij = 0; ij < L; ij++ ){
             // extract (K+1)-mer y from positions (i-k,...,i)
             size_t y = kmer[ij] % Global::A2powerK[K_+1];
             // j runs over all motif positions
             for( size_t j = 0; j < W_; j++ ){
-                r_[n][L-W_-ij+j] *= s_[y][j];
+                r_[n][L+padding_-ij+j-1] *= s_[y][j];
             }
         }
 
         // calculate responsibilities and normalize them
-        for( size_t i = 0; i < LW1; i++ ){
-            r_[n][i] *= pos_[n][L-W_-i];
-            normFactor += r_[n][i];
+        r_[n][0] = pos_[n][0];
+        normFactor += r_[n][0];
+        for( size_t i = 1; i <= LW1; i++ ){
+            r_[n][L+padding_-i] *= pos_[n][i];
+            normFactor += r_[n][L+padding_-i];
         }
-        for( size_t i = LW1; i < L; i++){
-            r_[n][i] = 0.f;
-        }
+
         // calculate log likelihood of sequences
         llikelihood_ += logf( normFactor );
+
+        // normalize responsibilities
+        r_[n][0] /= normFactor;
+        for( size_t i = 1; i <= LW1; i++ ){
+            r_[n][L+padding_-i] /= normFactor;
+        }
 
         // normalize responsibilities and append them to a vector of posteriors
         std::vector<float> posteriors;
         // append the posterior of not having any motif on the sequence
-        posteriors.push_back( ( 1.f - q_ ) / normFactor );
-        for( int i = L-W_; i>=0; i-- ){
-            r_[n][i] /= normFactor;
-            posteriors.push_back( r_[n][i] );
+        posteriors.push_back( r_[n][0] );
+        for( size_t i = 1; i <= LW1; i++ ){
+            posteriors.push_back( r_[n][L+padding_-i] );
         }
 
         // draw a new position z from the discrete distribution of posterior
-        std::discrete_distribution<size_t> posterior_dist( posteriors.begin(), posteriors.end() );
+        std::discrete_distribution<size_t> posterior_dist( posteriors.begin(),
+                                                           posteriors.end() );
         z_[n] = posterior_dist( Global::rngx );
 
         if( z_[n] == 0 ){
@@ -472,7 +485,7 @@ void GibbsSampling::GibbsMH_sample_alphas( size_t iter ){
             // draw 10 times in a row and take record of the last accepted sample
 //		for( int step = 0; step < 10; step++ ){
 
-            // Metropolis-Hasting sheme
+            // Metropolis-Hasting scheme
             float a_prev = logf( A_[k][j] );
 
             float lprob_a_prev = calc_logCondProb_a( iter, a_prev, k, j );
@@ -675,9 +688,9 @@ float GibbsSampling::calc_logCondProb_a( size_t iteration, float a, size_t k, si
 
             // !!! important: correction for the occasions when zero
             // or one k-mer is present
-            if( n_[k-1][y][j-1] - 1.0f <= 0.0000001f ){
+            if( n_[k-1][y][j-1] - 1.0f <= Global::eps ){
 
-                logCondProbA = -a - Global::modelBeta * powf( Global::modelGamma, ( float )k ) / alpha;
+                logCondProbA = - a - Global::modelBeta * powf( Global::modelGamma, ( float )k ) / alpha;
 
             }
 
@@ -721,7 +734,8 @@ float GibbsSampling::calc_lposterior_alphas( float** A, size_t k ){
         logPosterior -= 2.0f * logf( A[k][j] );
 
         // the prior
-        logPosterior -= Global::modelBeta * powf( Global::modelGamma, ( float )k ) / A[k][j];
+        logPosterior -= Global::modelBeta * powf( Global::modelGamma,
+                                                  ( float )k ) / A[k][j];
 
         //
         if( k == 0 ){
@@ -752,7 +766,8 @@ float GibbsSampling::calc_lposterior_alphas( float** A, size_t k ){
                 // Note: here it might be problematic when j = 0
                 if( n_[k-1][y][j-1] <= 1.0f ){
 
-                    logPosterior = - 2.0f * logf( A[k][j] ) - Global::modelBeta * powf( Global::modelGamma, ( float )k ) / A[k][j];
+                    logPosterior = - 2.0f * logf( A[k][j] ) -
+                            Global::modelBeta * powf( Global::modelGamma, ( float )k ) / A[k][j];
 
                 } else {
                     // the third term of equation 50

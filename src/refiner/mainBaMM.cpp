@@ -110,6 +110,13 @@ int main( int nargs, char* args[] ){
 
         // optimize the model with either EM or Gibbs sampling
         if (Global::EM) {
+            if (Global::verbose) {
+                std::cout << " _________________" << std::endl
+                          << "|*               *|" << std::endl
+                          << "|   EM training   |" << std::endl
+                          << "|*_______________*|" << std::endl
+                          << std::endl;
+            }
             EM model(motif, bgModel, posSet);
 
             if( Global::optimizeQ ) {
@@ -142,6 +149,15 @@ int main( int nargs, char* args[] ){
                       << std::setprecision(4) << model.getQ() << std::endl;
 
         } else if (Global::CGS) {
+
+            if (Global::verbose) {
+                std::cout << " ____________________" << std::endl
+                          << "|*                  *|" << std::endl
+                          << "|   Gibbs sampling   |" << std::endl
+                          << "|*__________________*|" << std::endl
+                          << std::endl;
+            }
+
             GibbsSampling model(motif, bgModel, posSet);
 
             // learn motifs by collapsed Gibbs sampling
