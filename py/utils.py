@@ -130,8 +130,8 @@ def model_sim(model1, model2, min_overlap=2):
         cross_score -= p_bar_entropy.sum()
 
         # calculate similarity score
-        scores.append(alpha * background_score - cross_score)
-
+        #scores.append(alpha * background_score - cross_score)
+        scores.append(alpha * background_score - cross_score + padding_score)
         contributions.append((alpha * background_score, cross_score, padding_score))
         slices.append((sl1, sl2))
 
