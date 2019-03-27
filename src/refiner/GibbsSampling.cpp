@@ -92,12 +92,13 @@ void GibbsSampling::optimize(){
         // extract initial z from the indices of the biggest responsibilities
         for( size_t n = 0; n < seqs_.size(); n++ ){
             size_t L = seqs_[n]->getL();
+            size_t  LW1 = L - W_ + 1;
             float maxR = 0.f;
             size_t maxIdx = 0;
-            for( size_t i = 0; i <= L; i++ ){
-                if( model.getR()[n][L-i] > maxR ){
-                    maxR = model.getR()[n][L-i];
-                    maxIdx = i+1;
+            for( size_t i = 1; i <= LW1; i++ ){
+                if( model.getR()[n][L+padding_-i] > maxR ){
+                    maxR = model.getR()[n][L+padding_-i];
+                    maxIdx = i/*+1*/;
                 }
             }
             z_[n] = maxIdx;
@@ -162,6 +163,8 @@ void GibbsSampling::optimize(){
     // iterate over
     while( iteration < Global::maxIterations ){
 
+        // get parameter variables with highest order before CGS
+        float llikelihood_prev = llikelihood_;
         iteration++;
 
         // Collapsed Gibbs sampling position z
@@ -206,10 +209,14 @@ void GibbsSampling::optimize(){
             std::cout << "Alphas are not optimized." << std::endl;
         }
 
+        // check the change of likelihood for convergence
+        float llikelihood_diff = llikelihood_ - llikelihood_prev;
+
         if( Global::verbose ){
             std::cout << "it=" << iteration
                       << std::fixed
                       << "\tlog likelihood=" << llikelihood_
+                      << "\tllh_diff=" << llikelihood_diff
                       << std::endl;
         }
 
@@ -236,10 +243,9 @@ void GibbsSampling::optimize(){
     // update model parameter v
     motif_->updateV( n_, A_ );
 
-/*
     // run five steps of EM to optimize the final model with
     // the optimum model parameters v's and the fixed alphas
-    EM model( motif_, bg_, seqs_, q_ );
+    EM model( motif_, bg_, seqs_);
 
     for( size_t step = 0; step < 5; step++ ){
 
@@ -249,7 +255,6 @@ void GibbsSampling::optimize(){
         // M-step: update model parameters
         model.MStep();
     }
-*/
 
     // print out the optimized q
     if( Global::verbose and !Global::noQSampling ){
@@ -425,7 +430,9 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
             }
         }
     }
-//    std::cout << "N0=" << N0_ << std::endl;
+    if(Global::verbose){
+        std::cout << "N0=" << N0_ << std::endl;
+    }
 }
 
 void GibbsSampling::Gibbs_sample_q(){
@@ -880,6 +887,13 @@ float GibbsSampling::calc_llikelihood_alphas( float** A, size_t k ){
 float GibbsSampling::getQ(){
     return q_;
 }
+
+void GibbsSampling::printZ(){
+    for(size_t n = 0; n < seqs_.size(); n++ ){
+        std::cout << z_[n] << std::endl;
+    }
+}
+
 void GibbsSampling::print(){
 
     // print out motif parameter v

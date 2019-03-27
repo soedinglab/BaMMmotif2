@@ -21,9 +21,10 @@ public:
     float                   getQ();             // get sampled positional prior q
 
 	void					print();			// print out optimized model v
-
+    void					printZ();			// print out observed motif starting position z
 	void					write( char* odir, std::string basename, bool ss );
 												// write out the optimized (hyper-)parameters
+
 
 private:
 
