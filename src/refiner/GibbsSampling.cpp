@@ -94,9 +94,9 @@ void GibbsSampling::optimize(){
             size_t L = seqs_[n]->getL();
             float maxR = 0.f;
             size_t maxIdx = 0;
-            for( size_t i = 0; i < L/*-W_*/+1; i++ ){
-                if( model.getR()[n][L/*-W_*/-i] > maxR ){
-                    maxR = model.getR()[n][L/*-W_*/-i];
+            for( size_t i = 0; i <= L; i++ ){
+                if( model.getR()[n][L-i] > maxR ){
+                    maxR = model.getR()[n][L-i];
                     maxIdx = i+1;
                 }
             }
@@ -206,6 +206,12 @@ void GibbsSampling::optimize(){
             std::cout << "Alphas are not optimized." << std::endl;
         }
 
+        if( Global::verbose ){
+            std::cout << "it=" << iteration
+                      << std::fixed
+                      << "\tlog likelihood=" << llikelihood_
+                      << std::endl;
+        }
 
         if( Global::makeMovie ) {
             // for making a movie out of all iterations
@@ -272,6 +278,8 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
     // compute log odd scores s[y][j], log likelihoods of the highest order K
     motif_->calculateLinearS( v_bg );
 
+    // reset k_bg
+    size_t k_bg = ( K_ > K_bg_ ) ? K_bg_ : K_;
     // sampling z:
     bool remove_kmer_slowly = false;	// a flag to switch between slow and fast versions for counting k-mers
 
@@ -299,19 +307,19 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
 
                 // for k = 0:
                 size_t y = kmer[z_[n]-1+j] % Global::A2powerK[1];
-                size_t y_bg = y % Global::A2powerK[K_bg_+1];
+                size_t y_bg = y % Global::A2powerK[k_bg+1];
                 n_[0][y][j]--;
 
                 v[0][y][j]= ( n_[0][y][j] + A_[0][j] * v_bg[0][y] ) / ( sumN + A_[0][j] );
 
-                s_[y][j] = v[K_][y][j] / v_bg[K_bg_][y_bg];
+                s_[y][j] = v[K_][y][j] / v_bg[k_bg][y_bg];
 
                 // for 1 <= k <= K_:
                 for( size_t k = 1; k < K_+1; k++ ){
                     y = kmer[z_[n]-1+j] % Global::A2powerK[k+1];
                     size_t y2 = y % Global::A2powerK[k];
                     size_t yk = y / Global::A2powerK[1];
-                    y_bg = y % Global::A2powerK[K_bg_+1];
+                    y_bg = y % Global::A2powerK[k_bg+1];
                     n_[k][y][j]--;
 
                     if( j < K_ ){
@@ -321,7 +329,7 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
                                      / ( n_[k-1][yk][j-1] + A_[k][j] );
                     }
 
-                    s_[y][j] = v[K_][y][j] / v_bg[K_bg_][y_bg];
+                    s_[y][j] = v[K_][y][j] / v_bg[k_bg][y_bg];
                 }
 
             }
@@ -712,7 +720,8 @@ float GibbsSampling::calc_prior_alphas( float** alpha, size_t k ){
         logPrior -= 2.0f * logf( alpha[k][j] );
 
         // the second term of equation 46
-        logPrior -= Global::modelBeta * powf( Global::modelGamma, ( float )k ) / alpha[k][j];
+        logPrior -= Global::modelBeta * powf( Global::modelGamma, ( float )k )
+                    / alpha[k][j];
 
     }
 
