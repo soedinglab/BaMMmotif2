@@ -437,14 +437,13 @@ int EM::mask(){
 
     // initialized positional priors
     updatePos();
-    size_t posN = seqs_.size();
     std::vector<float> r_all;   // add all r's to an array for sorting
     size_t N_position = 0;      // count the number of all possible positions
 
     // calculate responsibilities r at all LW1 positions on sequence n
     // n runs over all sequences
-//#pragma omp parallel for
-    for( size_t n = 0; n < posN; n++ ) {
+#pragma omp parallel for
+    for( size_t n = 0; n < seqs_.size(); n++ ) {
 
         size_t  L = seqs_[n]->getL();
         size_t  *kmer = seqs_[n]->getKmer();
@@ -493,10 +492,10 @@ int EM::mask(){
     float r_cutoff = r_all[size_t( N_position * Global::f )];
 
     // create a vector to store all the r's which are above the cutoff
-    std::vector<std::vector<size_t>> ridx( posN );
+    std::vector<std::vector<size_t>> ridx( seqs_.size() );
 
     // put the index of the f_% r's in an array
-    for( size_t n = 0; n < posN; n++ ){
+    for( size_t n = 0; n < seqs_.size(); n++ ){
         for( size_t i = seqs_[n]->getL() - 1; i >= W_-1; i-- ){
             if( r_[n][i] >= r_cutoff ){
                 ridx[n].push_back( i );
@@ -554,7 +553,7 @@ int EM::mask(){
             // update r based on the log odd ratios
             for( size_t idx = 0; idx < ridx[n].size(); idx++ ){
                 for( size_t j = 0; j < W_; j++ ){
-                    size_t y = kmer[L-ridx[n][idx]+j] % Global::A2powerK[K_+1];
+                    size_t y = kmer[L-ridx[n][idx]-padding_+j] % Global::A2powerK[K_+1];
                     r_[n][ridx[n][idx]] *= s_[y][j];
                 }
                 // calculate the responsibilities and sum them up
@@ -589,13 +588,13 @@ int EM::mask(){
         // compute fractional occurrence counts for the highest order K
         // using the f_% r's
         // n runs over all sequences
-        for( size_t n = 0; n < posN; n++ ){
+        for( size_t n = 0; n < seqs_.size(); n++ ){
             size_t  L = seqs_[n]->getL();
             size_t* kmer = seqs_[n]->getKmer();
 
             for( size_t idx = 0; idx < ridx[n].size(); idx++ ){
                 for( size_t j = 0; j < W_; j++ ){
-                    size_t y = kmer[L-ridx[n][idx]+j] % Global::A2powerK[K_+1];
+                    size_t y = kmer[L-ridx[n][idx]-padding_+j] % Global::A2powerK[K_+1];
                     n_[K_][y][j] += r_[n][ridx[n][idx]];
                 }
             }

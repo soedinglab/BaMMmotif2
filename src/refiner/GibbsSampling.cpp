@@ -98,7 +98,7 @@ void GibbsSampling::optimize(){
             for( size_t i = 1; i <= LW1; i++ ){
                 if( model.getR()[n][L+padding_-i] > maxR ){
                     maxR = model.getR()[n][L+padding_-i];
-                    maxIdx = i/*+1*/;
+                    maxIdx = i;
                 }
             }
             z_[n] = maxIdx;
@@ -242,7 +242,8 @@ void GibbsSampling::optimize(){
 
     // update model parameter v
     motif_->updateV( n_, A_ );
-
+/*
+    // todo: this is still buggy !
     // run five steps of EM to optimize the final model with
     // the optimum model parameters v's and the fixed alphas
     EM model( motif_, bg_, seqs_);
@@ -255,6 +256,7 @@ void GibbsSampling::optimize(){
         // M-step: update model parameters
         model.MStep();
     }
+*/
 
     // print out the optimized q
     if( Global::verbose and !Global::noQSampling ){
@@ -315,7 +317,8 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
                 size_t y_bg = y % Global::A2powerK[k_bg+1];
                 n_[0][y][j]--;
 
-                v[0][y][j]= ( n_[0][y][j] + A_[0][j] * v_bg[0][y] ) / ( sumN + A_[0][j] );
+                v[0][y][j]= ( n_[0][y][j] + A_[0][j] * v_bg[0][y] )
+                            / ( sumN + A_[0][j] );
 
                 s_[y][j] = v[K_][y][j] / v_bg[k_bg][y_bg];
 

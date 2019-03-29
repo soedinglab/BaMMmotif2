@@ -477,11 +477,11 @@ void Global::printPara(){
               << "Background model order\t\t\t" << bgModelOrder << std::endl
               << "BaMM is trained on\t\t\t";
     if( ss ){
-        std::cout << "single-stranded sequences" << std::endl << std::endl;
+        std::cout << "single-stranded sequences" << std::endl;
     } else{
-        std::cout << "double-stranded sequences" << std::endl << std::endl;
+        std::cout << "double-stranded sequences" << std::endl;
     }
-
+    std::cout << "Initial portion q\t\t\t"       << q << std::endl<< std::endl;
 
     // for further functionalities
     std::cout << "Cross-Validation\t\t\t";
