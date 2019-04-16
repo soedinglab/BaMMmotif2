@@ -13,7 +13,6 @@ FDR::FDR( std::vector<Sequence*> posSeqs,
 	occ_frac_	= 0.0f;
 	occ_mult_	= 0.0f;
     q_          = motif_->getQ();
-
 }
 
 FDR::~FDR(){
@@ -22,6 +21,7 @@ FDR::~FDR(){
 
 void FDR::evaluateMotif( size_t perLoopThreads ){
 
+    srand( 42 );
 	std::vector<std::vector<float>> mops_scores;
 	std::vector<float> 				zoops_scores;
     float updatedQ = q_;            // obtain the updated q

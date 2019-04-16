@@ -189,13 +189,15 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_bgset_by_fold(size_t
 
 	calculate_kmer_frequency();
     // todo: can be parallelized
+    size_t c = 1;
 	for( size_t i = 0; i < seqs_.size(); i++ ){
 		for( size_t n = 0; n < fold; n++ ){
             if( genericNeg_ ){
-                negset.push_back( bg_sequence( seqs_[i]->getL() ) );
+                negset.push_back( bg_sequence( seqs_[i]->getL(), c ) );
             } else {
-                negset.push_back( bgseq_on_rescaled_v(seqs_[i]) );
+                negset.push_back( bgseq_on_rescaled_v(seqs_[i], c) );
             }
+            c++;
 		}
 	}
 
@@ -220,12 +222,12 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::sample_bgset_by_num(size_t 
 
 
 // generate each background sequence based on k-mer frequencies from positive set
-std::unique_ptr<Sequence> SeqGenerator::bg_sequence(size_t L){
+std::unique_ptr<Sequence> SeqGenerator::bg_sequence(size_t L, size_t count){
 
     assert( kmer_freq_is_calculated_ );
 
     uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
-	std::string header = "> bg_seq";
+	std::string header = "> bg_seq_"+std::to_string(count);
 
 	// sample the first nucleotide
 	float random = ( float )rand() / ( float )RAND_MAX;
@@ -280,7 +282,7 @@ std::unique_ptr<Sequence> SeqGenerator::bg_sequence(size_t L){
 
 }
 
-std::unique_ptr<Sequence> SeqGenerator::bgseq_on_rescaled_v( Sequence* refSeq ) {
+std::unique_ptr<Sequence> SeqGenerator::bgseq_on_rescaled_v( Sequence* refSeq, size_t count ) {
 
     assert( kmer_freq_is_calculated_ );
 
@@ -290,7 +292,7 @@ std::unique_ptr<Sequence> SeqGenerator::bgseq_on_rescaled_v( Sequence* refSeq ) 
 
     size_t L = refSeq->getL();
     uint8_t* sequence = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
-    std::string header = "> bg_seq";
+    std::string header = "> bg_seq_"+std::to_string(count);
 
     // sample the first nucleotide
     float random = ( float )rand() / ( float )RAND_MAX;

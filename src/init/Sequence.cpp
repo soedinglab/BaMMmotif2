@@ -40,11 +40,11 @@ Sequence::Sequence( uint8_t* sequence,
 }
 
 Sequence::~Sequence(){
-	if( sequence_ != nullptr ){
+	if( sequence_ != NULL ){
 		free( sequence_ );
 	}
 
-    if( kmer_ != nullptr ){
+    if( kmer_ != NULL ){
         free( kmer_ );
     }
 

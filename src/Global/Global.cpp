@@ -675,5 +675,5 @@ Global::~Global(){
     Alphabet::destruct();
     if( alphabetType ) 			            delete[] alphabetType;
     if( posSequenceSet )	 	            delete posSequenceSet;
-    if( negSeqGiven and negSequenceSet )    delete negSequenceSet;
+    //if( negSeqGiven and negSequenceSet )    delete negSequenceSet;
 }

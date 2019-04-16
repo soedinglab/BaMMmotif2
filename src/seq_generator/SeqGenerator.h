@@ -42,8 +42,8 @@ private:
 	void						calculate_kmer_frequency();
     void                        rescale_kmer_frequency( Sequence* refSeq );
 
-	std::unique_ptr<Sequence> 	bg_sequence( size_t L );
-    std::unique_ptr<Sequence>   bgseq_on_rescaled_v( Sequence* refSeq );
+	std::unique_ptr<Sequence> 	bg_sequence( size_t L, size_t count=0);
+    std::unique_ptr<Sequence>   bgseq_on_rescaled_v( Sequence* refSeq, size_t count=0 );
     std::unique_ptr<Sequence> 	raw_seq(Sequence *refSeq);
 	std::unique_ptr<Sequence> 	posseq_motif_embedded( Sequence* seq, size_t at );
 	std::unique_ptr<Sequence>	posseq_motif_masked(Sequence* seq, size_t W, float *r);

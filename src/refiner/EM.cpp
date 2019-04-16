@@ -190,6 +190,16 @@ int EM::optimize(){
         }
     }
 
+    // todo: print out fot checking
+    if(Global::optimizePos){
+        std::string opath = std::string( Global::outputDirectory ) + "/optimized.pi" ;
+        std::ofstream ofile( opath.c_str() );
+        size_t LW1 = seqs_[0]->getL()-W_+1;
+        for(size_t i = 1; i <= LW1; i++ ){
+            ofile << pi_[i] << std::endl;
+        }
+    }
+
     // update probabilities
     motif_->calculateP();
 

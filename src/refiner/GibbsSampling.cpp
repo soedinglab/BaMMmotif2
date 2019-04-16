@@ -165,6 +165,7 @@ void GibbsSampling::optimize(){
 
         // get parameter variables with highest order before CGS
         float llikelihood_prev = llikelihood_;
+
         iteration++;
 
         // Collapsed Gibbs sampling position z
@@ -205,6 +206,7 @@ void GibbsSampling::optimize(){
                     }
                 }
             }
+
         } else {
             std::cout << "Alphas are not optimized." << std::endl;
         }
@@ -238,6 +240,16 @@ void GibbsSampling::optimize(){
                 A_[k][j] = alpha_avg[k][j] / 10.0f;
             }
         }
+    }
+
+    // todo: print out alphas for checking
+    std::string opath = std::string( Global::outputDirectory ) + "/optimized.alphas" ;
+    std::ofstream ofile( opath.c_str() );
+    for( size_t k = 0; k < K_+1; k++ ){
+        for( size_t j = 0; j < W_; j++ ){
+            ofile << A_[k][j] << '\t';
+        }
+        ofile << '\n';
     }
 
     // update model parameter v
