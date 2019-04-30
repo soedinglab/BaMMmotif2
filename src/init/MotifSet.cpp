@@ -181,7 +181,8 @@ MotifSet::MotifSet( char* indir,
 
                     // check if the input BaMM file has the right format
                     if( model_length > 1 and check_lines != model_order ){
-                        std::cerr << "This is not a BaMM-format file: " << indir << std::endl;
+                        std::cerr << "This is not a BaMM-format file: "
+                                  << indir << std::endl;
                         exit( 1 );
                     }
                     check_lines = 0;
@@ -197,7 +198,8 @@ MotifSet::MotifSet( char* indir,
             // adjust model order, extra 1
             model_order -= 1;
             if( model_order > Global::maxOrder ){
-                std::cerr << "The input BaMM model order is too high: " << indir << std::endl;
+                std::cerr << "The input BaMM model order is too high: "
+                          << indir << std::endl;
                 exit( 1 );
             }
 

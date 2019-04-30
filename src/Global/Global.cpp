@@ -27,7 +27,7 @@ char*               Global::intensityFilename = NULL;		// filename of intensity 
 
 char*				Global::alphabetType = NULL;			// alphabet type is defaulted to standard which is ACGT
 bool                Global::ss = false;						// only search on single strand sequences
-std::vector<size_t> Global:: A2powerK;
+std::vector<size_t> Global::A2powerK;
 
 // initial model(s) options
 char*				Global::initialModelFilename = NULL; 	// filename of initial model

@@ -55,6 +55,7 @@ public:
 
     float**                 getR();             // get the responsibility parameter r
     float                   getQ();             // get the optimized positional prior q
+    float*                  getPi();            // get positional prior pi
     void                    printR();           // print out the responsibility parameter r
 
 private:

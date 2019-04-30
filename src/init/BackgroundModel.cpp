@@ -62,7 +62,12 @@ BackgroundModel::BackgroundModel( std::string filePath ){
 			int K;
 			if( fscanf( file, "# K = %d\n", &K ) == 1 ){
 				K_ = static_cast<size_t>( K );
-			} else{
+                if ( K_ != Global::bgModelOrder) {
+                    std::cerr << "Error: The background model order is different from setting: "
+                              << filePath << std::endl;
+                    exit( 1 );
+                }
+			} else {
 				std::cerr << "Error: Wrong BaMM format: "
 						<< filePath << std::endl;
 				exit( 1 );

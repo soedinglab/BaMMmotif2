@@ -190,16 +190,6 @@ int EM::optimize(){
         }
     }
 
-    // todo: print out fot checking
-    if(Global::optimizePos){
-        std::string opath = std::string( Global::outputDirectory ) + "/optimized.pi" ;
-        std::ofstream ofile( opath.c_str() );
-        size_t LW1 = seqs_[0]->getL()-W_+1;
-        for(size_t i = 1; i <= LW1; i++ ){
-            ofile << pi_[i] << std::endl;
-        }
-    }
-
     // update probabilities
     motif_->calculateP();
 
@@ -441,7 +431,8 @@ int EM::mask(){
     // calculate the log odds ratio for k=0
     for( size_t y = 0; y < Global::A2powerK[1]; y++ ){
         for( size_t j = 0; j < W_; j++ ){
-            s_[y][j] = motif_->getV()[0][y][j] / bgModel_->getV()[0][y];
+            s_[y][j] = motif_->getV()[0][y][j]
+                       / bgModel_->getV()[0][y];
         }
     }
 
@@ -452,49 +443,48 @@ int EM::mask(){
 
     // calculate responsibilities r at all LW1 positions on sequence n
     // n runs over all sequences
-#pragma omp parallel for
+//#pragma omp parallel for
     for( size_t n = 0; n < seqs_.size(); n++ ) {
 
         size_t  L = seqs_[n]->getL();
-        size_t  *kmer = seqs_[n]->getKmer();
+        size_t  LW1 = L - W_ + 1;
+        size_t* kmer = seqs_[n]->getKmer();
 
         // initialize r_[n][i]
-        for (size_t i = 0; i <= L+W_; i++) {
+        for( size_t i = 1; i <= LW1; i++ ){
             r_[n][i] = 1.0f;
         }
 
-        // when p(z_n > 0), ij = i+j runs over all positions in sequence
-        // r index goes from (0, L]
-        for (size_t ij = 0; ij < L; ij++) {
-
-            // extract monomer y at position i
-            size_t y = kmer[ij] % Global::A2powerK[1];
-
+        // when p(z_n > 0), it runs over all positions in sequence
+        // in the region of [1, LW1]
+        for( size_t i = 1; i <= LW1; i++ ){
             for( size_t j = 0; j < W_; j++ ){
-                r_[n][L-ij+j] *= s_[y][j];
+                // extract (K+1)-mer y from positions (ij-K,...,ij)
+                size_t y = kmer[i-1+j] % Global::A2powerK[1];
+                r_[n][i] *= s_[y][j];
             }
         }
 
         // calculate the responsibilities and sum them up
-        r_[n][0] = pos_[n][0];
-        for( size_t i = W_-1; i <= L-1; i++ ){
-            r_[n][i] *= pos_[n][L-i];
+        for( size_t i = 0; i <= LW1; i++ ){
+            r_[n][i] *= pos_[n][i];
         }
 
         // add all un-normalized r to a vector
-        r_all.push_back( r_[n][0] );
-        for( size_t i = W_-1; i <= L-1; i++ ){
+        for( size_t i = 0; i <= LW1; i++ ) {
             r_all.push_back( r_[n][i] );
         }
 
         // count the number of all possible motif positions
-        N_position += L-W_+1;
+        N_position += LW1;
     }
 
     /**
-     * found the cutoff of responsibility that covers the top f_% of the motif occurrences
+     * found the cutoff of responsibility that covers the top f_% of
+     * the motif occurrences
      * by applying partition-based selection algorithm, which runs in O(n)
      */
+
     // Sort log odds scores in descending order
     std::sort( r_all.begin(), r_all.end(), std::greater<float>() );
 
@@ -506,7 +496,7 @@ int EM::mask(){
 
     // put the index of the f_% r's in an array
     for( size_t n = 0; n < seqs_.size(); n++ ){
-        for( size_t i = seqs_[n]->getL() - 1; i >= W_-1; i-- ){
+        for( size_t i = 1; i <= seqs_[n]->getL()-W_+1; i++ ){
             if( r_[n][i] >= r_cutoff ){
                 ridx[n].push_back( i );
             }
@@ -549,9 +539,9 @@ int EM::mask(){
 
         // calculate responsibilities r at all LW1 positions on sequence n
         // n runs over all sequences
+#pragma omp parallel for reduction(+:llikelihood)
         for( size_t n = 0; n < seqs_.size(); n++ ){
 
-            size_t 	L = seqs_[n]->getL();
             size_t*	kmer = seqs_[n]->getKmer();
             float 	normFactor = 0.f;
 
@@ -563,11 +553,11 @@ int EM::mask(){
             // update r based on the log odd ratios
             for( size_t idx = 0; idx < ridx[n].size(); idx++ ){
                 for( size_t j = 0; j < W_; j++ ){
-                    size_t y = kmer[L-ridx[n][idx]-padding_+j] % Global::A2powerK[K_+1];
+                    size_t y = kmer[ridx[n][idx]+j-1] % Global::A2powerK[K_+1];
                     r_[n][ridx[n][idx]] *= s_[y][j];
                 }
                 // calculate the responsibilities and sum them up
-                r_[n][ridx[n][idx]] *= pos_[n][L-ridx[n][idx]];
+                r_[n][ridx[n][idx]] *= pos_[n][ridx[n][idx]];
                 normFactor += r_[n][ridx[n][idx]];
             }
 
@@ -583,6 +573,7 @@ int EM::mask(){
         }
 
         llikelihood_ = llikelihood;
+
         /**
          * M-step for f_% motif occurrences
          */
@@ -598,14 +589,16 @@ int EM::mask(){
         // compute fractional occurrence counts for the highest order K
         // using the f_% r's
         // n runs over all sequences
+#pragma omp parallel for
         for( size_t n = 0; n < seqs_.size(); n++ ){
-            size_t  L = seqs_[n]->getL();
+
             size_t* kmer = seqs_[n]->getKmer();
 
             for( size_t idx = 0; idx < ridx[n].size(); idx++ ){
                 for( size_t j = 0; j < W_; j++ ){
-                    size_t y = kmer[L-ridx[n][idx]-padding_+j] % Global::A2powerK[K_+1];
-                    n_[K_][y][j] += r_[n][ridx[n][idx]];
+                    size_t y = kmer[ridx[n][idx]+j-1] % Global::A2powerK[K_+1];
+                    // n_[K_][y][j] += r_[n][ridx[n][idx]];
+                    atomic_float_add(&(n_[K_][y][j]), r_[n][ridx[n][idx]]);
                 }
             }
         }
@@ -636,11 +629,12 @@ int EM::mask(){
 
         // check the change of likelihood for convergence
         llikelihood_diff = llikelihood_ - llikelihood_prev;
-        if( Global::verbose ) std::cout << iteration << " iter, llh=" << llikelihood_
-                                 << ", diff_llh=" << llikelihood_diff
-                                 << ", v_diff=" << v_diff
-                                 << std::endl;
-        if( v_diff < Global::EMepsilon )							iterate = false;
+        if( Global::verbose ) std::cout << iteration
+                                        << " iter, llh=" << llikelihood_
+                                        << ", diff_llh=" << llikelihood_diff
+                                        << ", v_diff=" << v_diff
+                                        << std::endl;
+        if( v_diff < Global::EMepsilon )				iterate = false;
         if( llikelihood_diff < 0 and iteration > 10 )	iterate = false;
     }
 
@@ -947,6 +941,10 @@ float** EM::getR(){
 
 float EM::getQ(){
     return q_;
+}
+
+float* EM::getPi(){
+    return pi_;
 }
 
 void EM::print(){
