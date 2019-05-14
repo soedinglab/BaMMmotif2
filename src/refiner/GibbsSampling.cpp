@@ -22,16 +22,24 @@ GibbsSampling::GibbsSampling( Motif* motif,
     W_      = motif_->getW();
     s_      = motif_->getS();
     A_      = motif_->getA();
-    K_bg_   = Global::bgModelOrder;
+    v_      = motif_->getV();
+
+    K_bg_   = bg_->getOrder();
+    v_bg_   = bg_->getV();
+
     padding_= 1;
 
     // allocate memory for r_[n][i], pos_[n][i], z_[n]
-    r_ = ( float** )calloc( seqs_.size(), sizeof( float* ) );
-    pos_ = ( float** )calloc( seqs_.size(), sizeof( float* ) );
-    z_ = ( size_t* )calloc( seqs_.size(), sizeof( size_t ) );
-    for( size_t n = 0; n < seqs_.size(); n++ ){
-        r_[n] = ( float* )calloc( seqs_[n]->getL()+padding_+W_+1, sizeof( float ) );
-        pos_[n] = ( float* )calloc( seqs_[n]->getL(), sizeof( float ) );
+    size_t N = seqs_.size();
+    r_ = ( float** )calloc( N, sizeof( float* ) );
+    pos_ = ( float** )calloc( N, sizeof( float* ) );
+    z_ = ( size_t* )calloc( N, sizeof( size_t ) );
+    posteriorCum_.resize( N );
+    for( size_t n = 0; n < N; n++ ){
+        size_t L = seqs_[n]->getL();
+        r_[n] = ( float* )calloc( L+padding_+W_+1, sizeof( float ) );
+        pos_[n] = ( float* )calloc( L, sizeof( float ) );
+        posteriorCum_[n].resize( L-W_+2, sizeof( float ) );
     }
 
     // allocate memory for n_[k][y][j] and probs_[k][y][j]
@@ -50,7 +58,7 @@ GibbsSampling::GibbsSampling( Motif* motif,
         m1_t_[k] = ( double* )calloc( W_, sizeof( double ) );
         m2_t_[k] = ( double* )calloc( W_, sizeof( double ) );
     }
-
+    srand( 42 );
 }
 
 GibbsSampling::~GibbsSampling(){
@@ -79,25 +87,31 @@ GibbsSampling::~GibbsSampling(){
 
 void GibbsSampling::optimize(){
 
-    clock_t t0 = clock();
+    if( Global::verbose ) {
+        std::cout << " __________________"  << std::endl
+                  << "|*                *|" << std::endl
+                  << "|  Gibbs Sampling  |" << std::endl
+                  << "|*________________*|" << std::endl
+                  << std::endl;
+    }
 
-    size_t iteration = 0;
-
+    auto t0_wall = std::chrono::high_resolution_clock::now();
     // initialize z for all the sequences
     if( !Global::noInitialZ ){
         EM model( motif_, bg_, seqs_ );
         // E-step: calculate posterior
         model.EStep();
+        float** r = model.getR();
 
         // extract initial z from the indices of the biggest responsibilities
         for( size_t n = 0; n < seqs_.size(); n++ ){
-            size_t L = seqs_[n]->getL();
+            size_t  L = seqs_[n]->getL();
             size_t  LW1 = L - W_ + 1;
             float maxR = 0.f;
             size_t maxIdx = 0;
             for( size_t i = 1; i <= LW1; i++ ){
-                if( model.getR()[n][L+padding_-i] > maxR ){
-                    maxR = model.getR()[n][L+padding_-i];
+                if( r[n][L+padding_-i] > maxR ){
+                    maxR = r[n][L+padding_-i];
                     maxIdx = i;
                 }
             }
@@ -123,6 +137,7 @@ void GibbsSampling::optimize(){
     }
 
     // 2. count k-mers for the highest order K
+#pragma omp parallel for
     for( size_t n = 0; n < seqs_.size(); n++ ){
         if( z_[n] > 0 ){
             size_t* kmer = seqs_[n]->getKmer();
@@ -142,8 +157,8 @@ void GibbsSampling::optimize(){
             }
         }
     }
-/*
 
+/*
     // Gibbs sampling position z using empirical alphas
     for( size_t iter = 0; iter < 10; iter++ ){
         Collapsed_Gibbs_sampling_z();
@@ -160,6 +175,8 @@ void GibbsSampling::optimize(){
         }
     }
 
+    size_t iteration = 0;
+    size_t last_steps= 10;
     // iterate over
     while( iteration < Global::maxIterations ){
 
@@ -187,7 +204,7 @@ void GibbsSampling::optimize(){
 
             GibbsMH_sample_alphas( iteration );
 
-            if( iteration > Global::maxIterations - 10 ){
+            if( iteration > Global::maxIterations - last_steps ){
                 for( size_t k = 0; k < K_+1; k++ ){
                     for( size_t j = 0; j < W_; j++ ){
                         alpha_avg[k][j] += A_[k][j];
@@ -199,7 +216,7 @@ void GibbsSampling::optimize(){
 
             Discrete_sample_alphas( iteration );
 
-            if( iteration > Global::maxIterations - 10 ){
+            if( iteration > Global::maxIterations - last_steps ){
                 for( size_t k = 0; k < K_+1; k++ ){
                     for( size_t j = 0; j < W_; j++ ){
                         alpha_avg[k][j] += A_[k][j];
@@ -227,7 +244,8 @@ void GibbsSampling::optimize(){
             // calculate probabilities
             motif_->calculateP();
             motif_->write(Global::outputDirectory,
-                          Global::outputFileBasename + "_iter_" + std::to_string(iteration));
+                          Global::outputFileBasename + "_iter_"
+                          + std::to_string(iteration));
         }
 
     }
@@ -237,38 +255,129 @@ void GibbsSampling::optimize(){
         // average alphas over the last few (10) steps for GibbsMH
         for( size_t k = 0; k < K_+1; k++ ){
             for( size_t j = 0; j < W_; j++ ){
-                A_[k][j] = alpha_avg[k][j] / 10.0f;
+                A_[k][j] = alpha_avg[k][j] / (float)last_steps;
             }
         }
     }
 
     // todo: print out alphas for checking
-    std::string opath = std::string( Global::outputDirectory ) + "/optimized.alphas" ;
+    std::string opath = std::string( Global::outputDirectory )
+                        + "/optimized.alphas" ;
     std::ofstream ofile( opath.c_str() );
+    for( size_t j = 0; j < W_; j++ ){
+        ofile << "pos " << std::to_string(j+1) << '\t';
+    }
+    ofile << '\n';
     for( size_t k = 0; k < K_+1; k++ ){
         for( size_t j = 0; j < W_; j++ ){
-            ofile << A_[k][j] << '\t';
+            ofile << std::setprecision(4) << A_[k][j] << '\t';
         }
         ofile << '\n';
     }
 
     // update model parameter v
     motif_->updateV( n_, A_ );
-/*
-    // todo: this is still buggy !
-    // run five steps of EM to optimize the final model with
+
+    // run 5-10 steps of EM to optimize the final model with
     // the optimum model parameters v's and the fixed alphas
-    EM model( motif_, bg_, seqs_);
+    for( size_t step = 0; step < last_steps; step++ ){
 
-    for( size_t step = 0; step < 5; step++ ){
+        /**
+         * E-step: calculate posterior
+         */
+        float llikelihood = 0.f;
 
-        // E-step: calculate posterior
-        model.EStep();
+        motif_->calculateLinearS( bg_->getV() );
 
-        // M-step: update model parameters
-        model.MStep();
+        // calculate responsibilities r at all LW1 positions on sequence n
+        // n runs over all sequences
+#pragma omp parallel for reduction(+:llikelihood)
+        for( size_t n = 0; n < seqs_.size(); n++ ){
+
+            size_t 	L = seqs_[n]->getL();
+            size_t 	LW1 = L - W_ + 1;
+            size_t*	kmer = seqs_[n]->getKmer();
+            float 	normFactor = 0.f;
+
+            // initialize r_[n][i] with 1:
+            // note here:   r_[n][0] is the responsibility when motif is absent
+            //              and the indices of r_[n][i] is reverted, which means:
+            //              r_[n][i] is the weight for motif being at position i on sequence n
+            for( size_t i = 0; i <= LW1; i++ ){
+                r_[n][i] = 1.0f;
+            }
+
+            // when p(z_n > 0), it runs over all positions in sequence in the region of [1, LW1]
+            for( size_t i = 1; i <= LW1; i++ ){
+                for( size_t j = 0; j < W_; j++ ){
+                    // extract (K+1)-mer y from positions (ij-K,...,ij)
+                    size_t y = kmer[i-1+j] % Global::A2powerK[K_+1];
+                    r_[n][i] *= s_[y][j];
+                }
+            }
+
+            // calculate the responsibilities and sum them up
+            for( size_t i = 0; i <= LW1; i++ ){
+                r_[n][i] *= pos_[n][i];
+                normFactor += r_[n][i];
+            }
+
+            // normalize responsibilities in the region [0, LW1]
+            for( size_t i = 0; i <= LW1; i++ ){
+                r_[n][i] /= normFactor;
+            }
+
+            // calculate log likelihood over all sequences
+            llikelihood += logf( normFactor );
+        }
+
+        llikelihood_ = llikelihood;
+
+        /**
+         * M-step: update model parameters
+         */
+        // reset the fractional counts n
+        for( size_t k = 0; k < K_+1; k++ ){
+            for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
+                for( size_t j = 0; j < W_; j++ ){
+                    n_[k][y][j] = 0.0f;
+                }
+            }
+        }
+
+        // compute fractional occurrence counts for the highest order K
+        // n runs over all sequences
+#pragma omp parallel for
+        for( size_t n = 0; n < seqs_.size(); n++ ){
+            size_t  L = seqs_[n]->getL();
+            size_t  LW1 = L - W_ + 1;
+            size_t* kmer = seqs_[n]->getKmer();
+
+            // it runs over all positions i on sequence n in the region of [1, LW1]
+            for( size_t i = 1; i <= LW1; i++ ){
+                for (size_t j = 0; j < W_; j++) {
+                    size_t y = kmer[i-1+j] % Global::A2powerK[K_+1];
+                    //n_[K_][y][j] += r_[n][i];
+                    atomic_float_add(&(n_[K_][y][j]), r_[n][i]);
+                }
+            }
+        }
+
+        // compute fractional occurrence counts from higher to lower order
+        // k runs over all lower orders
+        for( size_t k = K_; k > 0; k-- ){
+            for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
+                size_t y2 = y % Global::A2powerK[k];
+                for( size_t j = 0; j < W_; j++ ){
+                    n_[k-1][y2][j] += n_[k][y][j];
+                }
+            }
+        }
+
+        // update model parameters v[k][y][j] with updated k-mer counts, alphas and model order
+        motif_->updateV( n_, A_ );
     }
-*/
+
 
     // print out the optimized q
     if( Global::verbose and !Global::noQSampling ){
@@ -278,8 +387,10 @@ void GibbsSampling::optimize(){
     // calculate probabilities
     motif_->calculateP();
 
-    fprintf( stdout, "\n--- Runtime for Gibbs sampling: %.4f seconds ---\n",
-             ( ( float )( clock() - t0 ) ) / CLOCKS_PER_SEC );
+    auto t1_wall = std::chrono::high_resolution_clock::now();
+    auto t_diff = std::chrono::duration_cast<std::chrono::duration<double>>(t1_wall-t0_wall);
+    std::cout << "\n--- Runtime for Gibbs sampling: " << t_diff.count() << " seconds ---\n";
+
 }
 
 void GibbsSampling::Collapsed_Gibbs_sampling_z(){
@@ -291,21 +402,21 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
     // updated model parameters v excluding the n'th sequence
     motif_->updateV( n_, A_ );
 
-    float*** v = motif_->getV();
-    float** v_bg = bg_->getV();
-
     // compute log odd scores s[y][j], log likelihoods of the highest order K
-    motif_->calculateLinearS( v_bg );
+    motif_->calculateLinearS( v_bg_ );
 
     // reset k_bg
+    // todo: check if this is correct
     size_t k_bg = ( K_ > K_bg_ ) ? K_bg_ : K_;
     // sampling z:
-    bool remove_kmer_slowly = false;	// a flag to switch between slow and fast versions for counting k-mers
+//    bool remove_kmer_slowly = false;	// a flag to switch between slow and fast versions for counting k-mers
 
     // loop over all sequences and drop one sequence each time and update r
+//#pragma omp parallel for
+    // todo: this parallelization does not give the same result yet
     for( size_t n = 0; n < seqs_.size(); n++ ){
 
-        size_t  L = seqs_[n]->getL();
+        size_t  L   = seqs_[n]->getL();
         size_t  LW1 = L - W_ + 1;
         size_t* kmer = seqs_[n]->getKmer();
 
@@ -320,7 +431,7 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
             sumN += n_[0][a][0];
         }
 
-        if( !remove_kmer_slowly && z_[n] > 0 ){
+        if( /* !remove_kmer_slowly && */ z_[n] > 0 ){
 
             for( size_t j = 0; j < W_; j++ ){
 
@@ -329,10 +440,10 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
                 size_t y_bg = y % Global::A2powerK[k_bg+1];
                 n_[0][y][j]--;
 
-                v[0][y][j]= ( n_[0][y][j] + A_[0][j] * v_bg[0][y] )
+                v_[0][y][j]= ( n_[0][y][j] + A_[0][j] * v_bg_[0][y] )
                             / ( sumN + A_[0][j] );
 
-                s_[y][j] = v[K_][y][j] / v_bg[k_bg][y_bg];
+                s_[y][j] = v_[K_][y][j] / v_bg_[k_bg][y_bg];
 
                 // for 1 <= k <= K_:
                 for( size_t k = 1; k < K_+1; k++ ){
@@ -343,21 +454,21 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
                     n_[k][y][j]--;
 
                     if( j < K_ ){
-                        v[k][y][j] = v[k-1][y2][j];
+                        v_[k][y][j] = v_[k-1][y2][j];
                     } else {
-                        v[k][y][j] = ( n_[k][y][j] + A_[k][j] * v[k-1][y2][j] )
+                        v_[k][y][j] = ( n_[k][y][j] + A_[k][j] * v_[k-1][y2][j] )
                                      / ( n_[k-1][yk][j-1] + A_[k][j] );
                     }
 
-                    s_[y][j] = v[K_][y][j] / v_bg[k_bg][y_bg];
+                    s_[y][j] = v_[K_][y][j] / v_bg_[k_bg][y_bg];
                 }
-
             }
         }
 
         /**
          * -------------- slower version of removing k-mer ------------------
          */
+/*
         if( remove_kmer_slowly ){
 
             // remove the k-mer counts from the sequence with the current z
@@ -374,16 +485,15 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
             motif_->updateV( n_, A_ );
             // compute log odd scores s[y][j] of the highest order K
             motif_->calculateLinearS( bg_->getV() );
-
         }
+*/
 
         /**
          * ------- sampling equation -------
          */
-
         // calculate responsibilities and positional priors
         // over all LW1 positions on n'th sequence:
-        float normFactor = 1.0f - q_;
+        float normFactor = 0.f;
         float pos_i = q_ / static_cast<float>( LW1 );
         for( size_t i = 1; i <= LW1; i++ ){
             pos_[n][i] = pos_i;
@@ -397,40 +507,48 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
             size_t y = kmer[ij] % Global::A2powerK[K_+1];
             // j runs over all motif positions
             for( size_t j = 0; j < W_; j++ ){
+                // todo: time-consuming!
                 r_[n][L+padding_-ij+j-1] *= s_[y][j];
             }
         }
 
         // calculate responsibilities and normalize them
-        r_[n][0] = pos_[n][0];
+        posteriorCum_[n][0] = r_[n][0] = pos_[n][0];
+
         normFactor += r_[n][0];
         for( size_t i = 1; i <= LW1; i++ ){
             r_[n][L+padding_-i] *= pos_[n][i];
+            posteriorCum_[n][i] = r_[n][L+padding_-i]+posteriorCum_[n][i-1];
             normFactor += r_[n][L+padding_-i];
         }
 
         // calculate log likelihood of sequences
         llikelihood_ += logf( normFactor );
 
-        // normalize responsibilities
-        r_[n][0] /= normFactor;
-        for( size_t i = 1; i <= LW1; i++ ){
-            r_[n][L+padding_-i] /= normFactor;
-        }
 
+/*
         // normalize responsibilities and append them to a vector of posteriors
         std::vector<float> posteriors;
         // append the posterior of not having any motif on the sequence
         posteriors.push_back( r_[n][0] );
         for( size_t i = 1; i <= LW1; i++ ){
+            // todo: slightly time consuming!
             posteriors.push_back( r_[n][L+padding_-i] );
         }
 
         // draw a new position z from the discrete distribution of posterior
+        // todo: very time-consuming!
         std::discrete_distribution<size_t> posterior_dist( posteriors.begin(),
                                                            posteriors.end() );
-        z_[n] = posterior_dist( Global::rngx );
 
+        z_[n] = posterior_dist( Global::rngx );
+*/
+
+        std::uniform_real_distribution<float> uni_dist(0.f, normFactor);
+        z_[n] = (size_t) std::distance( posteriorCum_[n].begin(),
+                                        std::lower_bound( posteriorCum_[n].begin(),
+                                                          posteriorCum_[n].end(),
+                                                          uni_dist( Global::rngx ) ));
         if( z_[n] == 0 ){
             // count sequences which do not contain motifs.
             N0_++;
@@ -445,6 +563,7 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
             }
         }
     }
+
     if(Global::verbose){
         std::cout << "N0=" << N0_ << std::endl;
     }
@@ -458,7 +577,11 @@ void GibbsSampling::Gibbs_sample_q(){
 
 }
 
-void GibbsSampling::Optimize_alphas_by_SGD_ADAM( size_t K, size_t W_, float eta, size_t iter){
+void GibbsSampling::Optimize_alphas_by_SGD_ADAM( size_t K,
+                                                 size_t W_,
+                                                 float eta,
+                                                 size_t iter)
+{
     // update alphas using stochastic optimization algorithm ADAM
     // (DP Kingma & JL Ba 2015)
 
@@ -467,7 +590,7 @@ void GibbsSampling::Optimize_alphas_by_SGD_ADAM( size_t K, size_t W_, float eta,
     double epsilon = 1e-8;	// cutoff
     double gradient;		// gradient of log posterior of alpha
     double m1;				// first moment vector (the mean)
-    double m2;				// second moment vector (the uncentered variance)
+    double m2;				// second moment vector (the un-centered variance)
 
     double t = static_cast<double>( iter );
 
@@ -507,6 +630,8 @@ void GibbsSampling::Optimize_alphas_by_SGD_ADAM( size_t K, size_t W_, float eta,
 void GibbsSampling::GibbsMH_sample_alphas( size_t iter ){
     // Gibbs sampling alphas in exponential space
     // with Metropolis-Hastings algorithm
+    // build a uniform distribution between 0 and 1
+    std::uniform_real_distribution<float> uniform_dist( 0.0f, 1.0f );
 
     for( size_t k = 0; k < K_+1; k++ ){
 
@@ -534,7 +659,6 @@ void GibbsSampling::GibbsMH_sample_alphas( size_t iter ){
                 accept_ratio = expf( lprob_a_new - lprob_a_prev );
 
                 // draw a random number uniformly between 0 and 1
-                std::uniform_real_distribution<float> uniform_dist( 0.0f, 1.0f );
                 uni_random = uniform_dist( Global::rngx );
 
                 // accept the trial sample if the ratio is not smaller than
@@ -668,7 +792,7 @@ float GibbsSampling::calc_logCondProb_a( size_t iteration, float a, size_t k, si
     // the second term of equation 50
     logCondProbA -= Global::modelBeta * powf( Global::modelGamma, ( float )k ) / alpha;
 
-    if( k == 0 ){
+    if( k == 0 or j==0 ){
 
         for( size_t y = 0; y < Global::A2powerK[k]; y++ ){
 
@@ -703,6 +827,7 @@ float GibbsSampling::calc_logCondProb_a( size_t iteration, float a, size_t k, si
 
                 if( n_[k][ya][j] > 0.0f ){
 
+                    //todo: debug: Invalid read of size 4
                     // the first part of the forth term
                     logCondProbA += boost::math::lgamma( n_[k][ya][j] + alpha * v[k-1][y2][j] );
 
@@ -714,6 +839,7 @@ float GibbsSampling::calc_logCondProb_a( size_t iteration, float a, size_t k, si
 
             // the fifth term
             // Note: here it might be problematic when j = 0
+            // todo: debug: problem when j = 0
             logCondProbA -= boost::math::lgamma( n_[k-1][y][j-1] + alpha );
 
             // !!! important: correction for the occasions when zero

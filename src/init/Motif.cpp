@@ -438,6 +438,7 @@ void Motif::calculateP(){
 
 void Motif::calculateLogS( float** Vbg ){
 
+    // todo: this could be wrong
     size_t k_bg = ( K_ > k_bg_ ) ? k_bg_ : K_;
 	for( size_t y = 0; y < Global::A2powerK[K_+1]; y++ ){
 		size_t y_bg = y % Global::A2powerK[k_bg+1];

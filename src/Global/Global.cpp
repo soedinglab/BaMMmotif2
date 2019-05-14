@@ -341,9 +341,9 @@ int Global::readArguments( int nargs, char* args[] ){
 	// CGS options
 	if( opt >> GetOpt::OptionPresent( "CGS", CGS ) ){
 		opt >> GetOpt::OptionPresent( "noInitialZ", noInitialZ );
-		opt >> GetOpt::OptionPresent( "noAlphaOpti", noAlphaOptimization );
-		opt >> GetOpt::OptionPresent( "GibbsMH", GibbsMHalphas );
-		opt >> GetOpt::OptionPresent( "dissample", dissampleAlphas );
+		opt >> GetOpt::OptionPresent( "noAlphaOptimization", noAlphaOptimization );
+		opt >> GetOpt::OptionPresent( "GibbsMHalphas", GibbsMHalphas );
+		opt >> GetOpt::OptionPresent( "dissampleAlphas", dissampleAlphas );
 		opt >> GetOpt::OptionPresent( "noZSampling", noZSampling );
 		opt >> GetOpt::OptionPresent( "noQSampling", noQSampling );
 	}
@@ -419,18 +419,19 @@ void Global::printPara(){
               << "|*__________________*|" << std::endl
               << std::endl;
 
-    std::cout << "Alphabet type\t\t\t\t" << Alphabet::getAlphabet() << std::endl;
+    std::cout << "Alphabet type\t\t" << Alphabet::getAlphabet()
+              << std::endl << std::endl;
 
     // for positive sequence set
-    std::cout << "Positive sequence set\t\t\t"
+    std::cout << "Positive sequence set\t"
               << posSequenceFilename << std::endl
-              << "Sequence counts\t\t\t\t"
+              << "Sequence counts\t\t"
               << posSequenceSet->getSequences().size()
               << " (max.length: "   << posSequenceSet->getMaxL()
               << ", min.length: "   << posSequenceSet->getMinL()
               << ", total bases: "  << posSequenceSet->getBaseSum()
               << ")" << std::endl
-              << "Base frequencies\t\t\t";
+              << "Base frequencies\t";
     for( size_t i = 0; i < Alphabet::getSize(); i++ ){
         std::cout << posSequenceSet->getBaseFrequencies()[i]
                   << "(" << Alphabet::getAlphabet()[i] << ")"
@@ -446,15 +447,15 @@ void Global::printPara(){
 
     // for negative sequence set
     if( negSeqGiven ){
-        std::cout << "Negative sequence set\t\t\t"
+        std::cout << "Negative sequence set\t\t"
                   << negSequenceBasename << std::endl
-                  << "Sequence counts\t\t\t\t"
+                  << "Sequence counts\t\t\t"
                   << negSequenceSet->getSequences().size()
                   << " (max.length: "   << negSequenceSet->getMaxL()
                   << ", min.length: "   << negSequenceSet->getMinL()
                   << ", total bases: "  << negSequenceSet->getBaseSum()
                   << ")" << std::endl
-                  << "Base frequencies\t\t\t";
+                  << "Base frequencies\t\t";
         for( size_t i = 0; i < Alphabet::getSize(); i++ ){
             std::cout << negSequenceSet->getBaseFrequencies()[i]
                       << "(" << Alphabet::getAlphabet()[i] << ")"
@@ -462,36 +463,37 @@ void Global::printPara(){
         }
         std::cout << std::endl << std::endl;
     } else {
-        std::cout << "Negative sequence set\t\t\t"
+        std::cout << "Negative sequence set\t"
                   << posSequenceSet->getSequences().size() << " x "<< mFold
-                  << " sequences are generated based on cond. prob. of "
-                  << sOrder+1 << "-mers in positive set"
+                  << " sequences are generated " << std::endl
+                  << "\t\t\tbased on cond. prob. of "
+                  << sOrder+1 << "-mers in input set"
                   << std::endl << std::endl;
     }
 
     // for initial model
-    std::cout << "Given initial model\t\t\t"    << initialModelBasename << std::endl
-              << "Given model type\t\t\t"       << initialModelTag << std::endl << std::endl
-              << "MODEL PARAMETERS"             << std::endl
-              << "BaMM model order\t\t\t"       << modelOrder << std::endl
-              << "Background model order\t\t\t" << bgModelOrder << std::endl
-              << "BaMM is trained on\t\t\t";
+    std::cout << "Given seeding model(s)\t"    << initialModelFilename << std::endl
+              << "Given model type\t"       << initialModelTag << std::endl << std::endl
+              << "MODEL PARAMETERS"         << std::endl
+              << "BaMM model order\t"       << modelOrder << std::endl
+              << "Background model order\t" << bgModelOrder << std::endl
+              << "BaMM is trained on\t";
     if( ss ){
-        std::cout << "single-stranded sequences" << std::endl;
+        std::cout << "single-strand" << std::endl;
     } else{
-        std::cout << "double-stranded sequences" << std::endl;
+        std::cout << "double-strand" << std::endl;
     }
-    std::cout << "Initial portion q\t\t\t"       << q << std::endl<< std::endl;
+    std::cout << "Initial portion q\t"  << q << std::endl<< std::endl;
 
     // for further functionalities
-    std::cout << "Cross-Validation\t\t\t";
+    std::cout << "Cross-Validation\t";
     if( FDR ){
         std::cout << "True ("<< cvFold << " folds)" << std::endl;
     } else {
         std::cout << "False" << std::endl;
     }
 
-    std::cout << "Scan positive sequence set\t\t";
+    std::cout << "Scan input set\t\t";
     if( scoreSeqset ){
         std::cout << "True" << std::endl;
     } else {

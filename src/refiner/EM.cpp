@@ -35,6 +35,7 @@ EM::EM( Motif* motif, BackgroundModel* bgModel,
 		}
 	}
 
+/*
     // todo: for positional prior
     beta1_      = 5;                // a hyper-parameter for estimating the positional prior
     beta2_      = 1000;             // for method 2 and 3
@@ -46,6 +47,7 @@ EM::EM( Motif* motif, BackgroundModel* bgModel,
     si_         = Eigen::VectorXf::Zero( LW1_ );
     Ni_         = Eigen::VectorXf::Zero( LW1_ );
     A_matrix_   = getAmatrix( LW1_ );
+*/
 
 }
 
@@ -65,7 +67,7 @@ EM::~EM(){
     }
     free( n_ );
 
-    free( pi_ );
+//    free( pi_ );
 }
 
 int EM::optimize(){
@@ -92,6 +94,7 @@ int EM::optimize(){
     // initialized positional priors
     updatePos();
 
+/*
     // todo: for positional prior
     // todo:=====================================================
     if( Global::optimizePos ) {
@@ -110,6 +113,7 @@ int EM::optimize(){
         }
     }
     // todo:=====================================================
+*/
 
     // iterate over
     size_t iteration = 0;
@@ -138,13 +142,17 @@ int EM::optimize(){
             updatePos();
         }
 
+/*
         // todo: optimize positional prior pos
         // todo:=====================================================
         // note: this only works for sequences with the same length
-        if( Global::optimizePos /*and iteration <= 5*/ ){
+        if( Global::optimizePos */
+/*and iteration <= 5*//*
+ ){
             optimizePos();
         }
         // todo:=====================================================
+*/
 
         // check parameter difference for convergence
         float v_diff = 0.0f;
@@ -662,6 +670,7 @@ void EM::optimizeQ(){
 
 }
 
+/*
 void EM::optimizePos() {
 
     // todo: note this function currently only works for sequences of the same length
@@ -805,9 +814,8 @@ void EM::optimizePos() {
     } else if( method_flag == 4 ){
 
         // todo:=====================================================
-        /**
-         * Use L-BFGS as optimizer
-         */
+        // Use L-BFGS as optimizer
+
         // pre-define parameters
         LBFGSpp::LBFGSParam<float> param;
         param.epsilon   = 1.e-2f;
@@ -862,6 +870,7 @@ void EM::optimizePos() {
     }
 
 }
+
 
 float EM::obj_fun( Eigen::VectorXf& si, Eigen::VectorXf& grad ){
 
@@ -934,6 +943,10 @@ Eigen::MatrixXf EM::getBmatrix( size_t w ) {
     return B_matrix;
 }
 
+float* EM::getPi(){
+    return pi_;
+}
+*/
 
 float** EM::getR(){
     return r_;
@@ -943,9 +956,7 @@ float EM::getQ(){
     return q_;
 }
 
-float* EM::getPi(){
-    return pi_;
-}
+
 
 void EM::print(){
 

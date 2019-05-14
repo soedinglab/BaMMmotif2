@@ -196,7 +196,7 @@ void FDR::calculatePR(){
 	}
 
 	// for ZOOPS model:
-	if( Global::zoops ){
+	 else if( Global::zoops ){
 		// Sort log odds scores in descending order
 		std::sort( posScoreMax_.begin(), posScoreMax_.end(), std::greater<float>() );
 		std::sort( negScoreMax_.begin(), negScoreMax_.end(), std::greater<float>() );

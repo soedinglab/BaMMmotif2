@@ -14,12 +14,14 @@ find_package (Boost REQUIRED)
 include_directories (${Boost_INCLUDE_DIR})
 link_libraries (${Boost_LIBRARIES})
 
+#[[
 # link to Eigen library
 set(EIGEN3_INCLUDE_DIR "~/opt/include/eigen3/")
 if(NOT EIGEN3_INCLUDE_DIR )
     MESSAGE( INSTALLATION_ERROR "Please install eigen3 using ./eigen3.downloader .")
 endif()
 include_directories (${EIGEN3_INCLUDE_DIR})
+]]
 
 # set the version of BaMM!motif
 set (BAMMMOTIF_MAJOR_VERSION 2)
@@ -27,7 +29,10 @@ set (BAMMMOTIF_MINOR_VERSION 0)
 set (BAMMMOTIF_PATCH_VERSION 0)
 set (BAMMMOTIF_VERSION ${BAMMMOTIF_MAJOR_VERSION}.${BAMMMOTIF_MINOR_VERSION}.${BAMMMOTIF_PATCH_VERSION})
 
+# after debugging and optimizing code
 set (CMAKE_CXX_FLAGS "-std=c++11 -Wall")
+# for debugger and profiler
+#set (CMAKE_CXX_FLAGS "-std=c++11 -Wall -g -pg")
 
 find_package(OpenMP)
 if(OPENMP_FOUND OR OpenMP_FOUND OR OpenMP_CXX_FOUND)

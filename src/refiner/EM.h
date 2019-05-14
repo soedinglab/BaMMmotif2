@@ -12,12 +12,14 @@
 #include "../init/MotifSet.h"
 #include "../Global/Global.h"
 
+/*
 // todo: for positional prior
 #include <eigen3/Eigen/Dense>   // e.g. conjugate gradient solver
 #include <eigen3/Eigen/IterativeLinearSolvers>
 #include <eigen3/Eigen/Core>    // e.g. used for LBFGS++
 #include "ObjFun.h"
 #include "../LBFGS/LBFGS.h"
+*/
 
 class EM {
     /**
@@ -35,7 +37,8 @@ public:
     int                     optimize();         // run EM optimization
     int                     mask();             // improve the EM optimization
     void                    print();            // print out optimized model v
-    void					write( char* odir, std::string basename );
+    void					write( char* odir,
+                                   std::string basename );
                                                 // write out the EM parameters such as n, pos, r
 
     void 					EStep();			// E-step
@@ -47,11 +50,13 @@ public:
 
     void                    updatePos();        // initialize the positional prior pos_i
 
+/*
     // todo: for positional prior
     void                    optimizePos();      // optimize the positional prior pos_i
     Eigen::MatrixXf         getAmatrix( size_t w );
     Eigen::MatrixXf         getBmatrix( size_t w );
     float                   obj_fun( Eigen::VectorXf& si, Eigen::VectorXf& grad );
+*/
 
     float**                 getR();             // get the responsibility parameter r
     float                   getQ();             // get the optimized positional prior q
@@ -81,18 +86,19 @@ private:
     size_t                  padding_;
     float 					llikelihood_= 0.0f; // log likelihood for each iteration
 
+/*
     // todo: for positional prior
     float                   beta1_;             // hyper-parameter for smoothness on positional prior
     float                   beta2_;             // hyper-parameter for smoothness on positional prior
     float                   norm_;
     float*                  pi_;                // probability of a motif to start at position i on the longest sequence
-
     float                   N0_;
 
     Eigen::VectorXf         b_vector_;
     Eigen::VectorXf         si_;
     Eigen::VectorXf         Ni_;
     Eigen::MatrixXf         A_matrix_;
+*/
 
 };
 

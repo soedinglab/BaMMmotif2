@@ -34,11 +34,16 @@ private:
 	size_t 					K_;					// the order of the motif model
 	size_t					W_;					// the width of the motif pattern
 	float** 				A_;	        		// pseudo-count hyper-parameter for order k and motif position j
-	size_t 					K_bg_;				// the order of the background model
+	float***                v_;                 // foreground motif model
+
+    size_t 					K_bg_;				// the order of the background model
+    float**                 v_bg_;              // background moif model
 
 	float** 				r_;		        	// responsibilities at all the positions in sequence n
                                                 // Note: here r_[n][i] indicates the responsibility of having a motif
                                                 //      on position L-W-i
+
+    std::vector<std::vector<float>> posteriorCum_;         // posteriors over all positions in all sequences
 
 	float**					s_;					// log odds scores
 	float*** 				n_;	            	// fractional counts n for (k+1)-mers y at motif position j
