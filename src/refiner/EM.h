@@ -56,11 +56,11 @@ public:
     Eigen::MatrixXf         getAmatrix( size_t w );
     Eigen::MatrixXf         getBmatrix( size_t w );
     float                   obj_fun( Eigen::VectorXf& si, Eigen::VectorXf& grad );
-*/
+    float*                  getPi();            // get positional prior pi
+ */
 
     float**                 getR();             // get the responsibility parameter r
     float                   getQ();             // get the optimized positional prior q
-    float*                  getPi();            // get positional prior pi
     void                    printR();           // print out the responsibility parameter r
 
 private:

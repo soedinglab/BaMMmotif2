@@ -126,7 +126,8 @@ int main( int nargs, char* args[] ){
             // learn motifs by EM
             if (!Global::advanceEM) {
                 model.optimize();
-                // todo: print out fot checking
+
+/*                // todo: print out for checking
                 if(Global::optimizePos){
                     std::string opath = std::string( Global::outputDirectory ) + '/'
                                         + Global::outputFileBasename + "_motif_" +
@@ -136,7 +137,8 @@ int main( int nargs, char* args[] ){
                     for(size_t i = 1; i <= LW1; i++ ){
                         ofile << model.getPi()[i] << std::endl;
                     }
-                }
+                }*/
+
             } else {
                 model.mask();
             }
