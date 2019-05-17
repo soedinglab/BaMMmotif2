@@ -117,6 +117,9 @@ int EM::optimize(){
 
     // iterate over
     size_t iteration = 0;
+    float llikelihood_diff_delta = 0.f;
+    float llikelihood_diff_prev = 0.f;
+
     while( iterate && ( iteration < Global::maxIterations ) ){
 
         // get parameter variables with highest order before EM
@@ -164,6 +167,8 @@ int EM::optimize(){
 
         // check the change of likelihood for convergence
         float llikelihood_diff = llikelihood_ - llikelihood_prev;
+        llikelihood_diff_delta = llikelihood_diff_prev - llikelihood_diff;
+        llikelihood_diff_prev = llikelihood_diff;
 
         if( Global::verbose ) {
             std::cout << "it=" << iteration
@@ -175,7 +180,7 @@ int EM::optimize(){
         }
         if( v_diff < Global::EMepsilon ){				iterate = false; }
         if( llikelihood_diff < 0 and iteration > 10 ){	iterate = false; }
-
+        if( llikelihood_diff_delta < 0 and iteration > 10 ){	iterate = false; }
         iteration++;
 
         // todo: for making a movie out of all iterations
