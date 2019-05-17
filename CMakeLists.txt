@@ -14,14 +14,14 @@ find_package (Boost REQUIRED)
 include_directories (${Boost_INCLUDE_DIR})
 link_libraries (${Boost_LIBRARIES})
 
-#[[
+
 # link to Eigen library
-set(EIGEN3_INCLUDE_DIR "~/opt/include/eigen3/")
-if(NOT EIGEN3_INCLUDE_DIR )
-    MESSAGE( INSTALLATION_ERROR "Please install eigen3 using ./eigen3.downloader .")
-endif()
-include_directories (${EIGEN3_INCLUDE_DIR})
-]]
+#set(EIGEN3_INCLUDE_DIR "~/opt/include/eigen3/")
+#if(NOT EIGEN3_INCLUDE_DIR )
+#    MESSAGE( INSTALLATION_ERROR "Please install eigen3 using ./eigen3.downloader .")
+#endif()
+#include_directories (${EIGEN3_INCLUDE_DIR})
+
 
 # set the version of BaMM!motif
 set (BAMMMOTIF_MAJOR_VERSION 2)
