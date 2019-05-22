@@ -304,8 +304,8 @@ void Motif::initFromPWM( float** PWM, SequenceSet* posSeqset, float q ){
 	// for k > 0:
 	for( size_t k = 1; k < K_+1; k++ ){
 		for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
-			size_t y2 = y % Global::A2powerK[k];			// cut off first nt in (k+1)-mer y
-			size_t yk = y / Global::A2powerK[1];			// cut off last nt in (k+1)-mer y
+			size_t y2 = y % Global::A2powerK[k];    // cut off first nt in (k+1)-mer y
+			size_t yk = y / Global::A2powerK[1];    // cut off last nt in (k+1)-mer y
 			for( size_t j = 0; j < k; j++ ){// when j < k, i.e. p(A|CG) = p(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
 			}
@@ -397,9 +397,9 @@ void Motif::calculateV( int*** n ){
 	// for k > 0:
 	for( size_t k = 1; k < K_+1; k++ ){
 		for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
-			size_t y2 = y % Global::A2powerK[k];				// cut off first nucleotide in (k+1)-mer y
-			size_t yk = y / Global::A2powerK[1];				// cut off last nucleotide in (k+1)-mer y
-			for( size_t j = 0; j < k; j++ ){	                // when j < k, i.e. p_j(A|CG) = p_j(A|C)
+			size_t y2 = y % Global::A2powerK[k];    // cut off first nucleotide in (k+1)-mer y
+			size_t yk = y / Global::A2powerK[1];    // cut off last nucleotide in (k+1)-mer y
+			for( size_t j = 0; j < k; j++ ){        // when j < k, i.e. p_j(A|CG) = p_j(A|C)
 				v_[k][y][j] = v_[k-1][y2][j];
 			}
 			for( size_t j = k; j < W_; j++ ){
@@ -423,7 +423,7 @@ void Motif::calculateP(){
 	// when k > 0:
 	for( size_t k = 1; k < K_+1; k++ ){
 		for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
-			size_t yk = y / Global::A2powerK[1];				// cut off last nucleotide in (k+1)-mer
+			size_t yk = y / Global::A2powerK[1];    // cut off last nucleotide in (k+1)-mer
 			// when j < k:
 			for( size_t j = 0; j < k; j++ ){
                 p_[k][y][j] = v_[k][y][j] / Global::A2powerK[k];

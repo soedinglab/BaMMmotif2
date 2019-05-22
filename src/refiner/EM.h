@@ -48,7 +48,7 @@ public:
 
     void                    optimizeQ();        // optimize the hyper-parameter q
 
-    void                    updatePos();        // initialize the positional prior pos_i
+    void                    updatePrior();        // initialize the positional prior pos_i
 
 /*
     // todo: for positional prior
@@ -80,7 +80,7 @@ private:
                                                 //      at position L-W+2-i on the n'th sequence
     float**					s_;					// log odds scores
     float*** 				n_;	            	// fractional counts n for (k+1)-mers y at motif position j
-    float**					pos_;				// positional prior, pos[i][0] indicates the prior for no motif present on sequence i
+    float**					prior_;				// positional prior, pos[i][0] indicates the prior for no motif present on sequence i
 
     float 					q_; 				// hyper-parameter q specifies the fraction of sequences containing motif
     size_t                  padding_;

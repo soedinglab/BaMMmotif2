@@ -60,8 +60,9 @@ float               Global::EMepsilon = 0.001f;             // eps for EM conver
 size_t              Global::maxIterations = 1000;           // maximal iterations
 float				Global::q = 0.3f;						// prior probability for a positive sequence to contain a motif
 bool 				Global::optimizeQ = false;				// optimize hyper-parameter q in EM algorithm
-float               Global::f = 0.05f;                      // fraction of sequences to be masked
+float               Global::fraction = 0.05f;               // fraction of sequences to be masked
 bool                Global::optimizePos = false;            // optimize positional prior in the EM algorithm
+float               Global::rCutoff = 1.e-4f;
 
 // CGS (Collapsed Gibbs sampling) options
 bool				Global::CGS = false;					// flag to trigger Collapsed Gibbs sampling
@@ -81,7 +82,7 @@ size_t				Global::sOrder = 2;						// the k-mer order for sampling negative sequ
 
 // motif occurrence options
 bool                Global::scoreSeqset = false;            // write logOdds Scores of positive sequence set to disk
-float 				Global::pvalCutoff = 0.0001f;			// score cutoff for printing log odds scores as motif hit
+float 				Global::pvalCutoff = 1.e-4f;			// score cutoff for printing log odds scores as motif hit
 
 // sequence simulator options
 bool                Global::maskSeqset = false;
@@ -354,7 +355,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::Option( 'q', q );
 
     // masking options
-	opt >> GetOpt::Option( 'f', f );
+	opt >> GetOpt::Option( 'f', fraction );
 
 	// FDR options
 	if( opt >> GetOpt::OptionPresent( "FDR", FDR ) ){
@@ -419,12 +420,10 @@ void Global::printPara(){
               << "|*__________________*|" << std::endl
               << std::endl;
 
-    std::cout << "Alphabet type\t\t" << Alphabet::getAlphabet()
-              << std::endl << std::endl;
-
     // for positive sequence set
     std::cout << "Positive sequence set\t"
               << posSequenceFilename << std::endl
+              << "Alphabet type\t\t" << Alphabet::getAlphabet() << std::endl
               << "Sequence counts\t\t"
               << posSequenceSet->getSequences().size()
               << " (max.length: "   << posSequenceSet->getMaxL()
@@ -440,7 +439,7 @@ void Global::printPara(){
     std::cout << std::endl << std::endl;
 
     if( advanceEM ){
-        std::cout << "\n    " << f * 100
+        std::cout << "\n    " << fraction * 100
                   << "% of the sequences are used for EM after masking."
                   << std::endl;
     }
@@ -472,7 +471,7 @@ void Global::printPara(){
     }
 
     // for initial model
-    std::cout << "Given seeding model(s)\t"    << initialModelFilename << std::endl
+    std::cout << "Given seeding model(s)\t" << initialModelFilename << std::endl
               << "Given model type\t"       << initialModelTag << std::endl << std::endl
               << "MODEL PARAMETERS"         << std::endl
               << "BaMM model order\t"       << modelOrder << std::endl
@@ -480,15 +479,21 @@ void Global::printPara(){
               << "BaMM is trained on\t";
     if( ss ){
         std::cout << "single-strand" << std::endl;
-    } else{
+    } else {
         std::cout << "double-strand" << std::endl;
+    }
+    if( EM ){
+        std::cout << "Optimizer\t\tEM" << std::endl
+                  << "Convergence epsilon\t" << EMepsilon << std::endl;
+    } else if( CGS ) {
+        std::cout << "Optimizer\t\t\tGibbs sampling" << std::endl;
     }
     std::cout << "Initial portion q\t"  << q << std::endl<< std::endl;
 
     // for further functionalities
-    std::cout << "Cross-Validation\t";
+    std::cout << "Evaluate model(s)\t";
     if( FDR ){
-        std::cout << "True ("<< cvFold << " folds)" << std::endl;
+        std::cout << "True ("<< cvFold << " folds cross-validation)" << std::endl;
     } else {
         std::cout << "False" << std::endl;
     }

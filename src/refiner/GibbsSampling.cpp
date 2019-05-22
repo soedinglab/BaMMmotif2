@@ -29,7 +29,7 @@ GibbsSampling::GibbsSampling( Motif* motif,
 
     padding_= 1;
 
-    // allocate memory for r_[n][i], pos_[n][i], z_[n]
+    // allocate memory for r_[n][i], prior_[n][i], z_[n]
     size_t N = seqs_.size();
     r_ = ( float** )calloc( N, sizeof( float* ) );
     pos_ = ( float** )calloc( N, sizeof( float* ) );
@@ -1076,7 +1076,7 @@ void GibbsSampling::write( char* odir, std::string basename, bool ss ){
         ofile_n << std::endl;
     }
 
-    // output position(s) of motif(s): pos_[n][i]
+    // output position(s) of motif(s): prior_[n][i]
     std::string opath_pos = opath + ".positions";
     std::ofstream ofile_pos( opath_pos.c_str() );
 

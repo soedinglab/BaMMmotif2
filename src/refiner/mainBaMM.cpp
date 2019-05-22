@@ -187,7 +187,7 @@ int main( int nargs, char* args[] ){
                 std::cout << "optimized q = " << model.getQ() << std::endl;
             }
         } else {
-            std::cout << "Note: the model is not optimized!\n";
+            std::cout << "\nNote: the model is not optimized!\n";
         }
 
         // write out the (learned) foreground model

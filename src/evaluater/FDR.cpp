@@ -121,7 +121,7 @@ void FDR::evaluateMotif( size_t perLoopThreads ){
             }
 
         }
-		if( motif ) 				delete motif;
+		if( motif ) delete motif;
 	}
 
     // update Q
@@ -196,7 +196,7 @@ void FDR::calculatePR(){
 	}
 
 	// for ZOOPS model:
-	 else if( Global::zoops ){
+    if( Global::zoops ){
 		// Sort log odds scores in descending order
 		std::sort( posScoreMax_.begin(), posScoreMax_.end(), std::greater<float>() );
 		std::sort( negScoreMax_.begin(), negScoreMax_.end(), std::greater<float>() );

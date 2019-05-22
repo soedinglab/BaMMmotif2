@@ -17,13 +17,13 @@ EM::EM( Motif* motif, BackgroundModel* bgModel,
 	A_          = motif_->getA();
     q_          = motif_->getQ();   // get fractional prior q from initial motifs
 
-    // allocate memory for r_[n][i], pos_[n][i], z_[n]
+    // allocate memory for r_[n][i], prior_[n][i], z_[n]
     padding_    = 1;                // add to reserve enough memory in r for fast EM version
 	r_          = ( float** )calloc( seqs_.size(), sizeof( float* ) );
-	pos_        = ( float** )calloc( seqs_.size(), sizeof( float* ) );
+	prior_      = ( float** )calloc( seqs_.size(), sizeof( float* ) );
 	for( size_t n = 0; n < seqs_.size(); n++ ){
 		r_[n]   = ( float* )calloc( seqs_[n]->getL()+padding_+W_+1, sizeof( float ) );
-		pos_[n] = ( float* )calloc( seqs_[n]->getL()+1, sizeof( float ) );
+		prior_[n] = ( float* )calloc( seqs_[n]->getL()+1, sizeof( float ) );
 	}
 
 	// allocate memory for n_[k][y][j]
@@ -54,10 +54,10 @@ EM::EM( Motif* motif, BackgroundModel* bgModel,
 EM::~EM(){
     for( size_t n = 0; n < seqs_.size(); n++ ){
         free( r_[n] );
-        free( pos_[n] );
+        free( prior_[n] );
     }
     free( r_ );
-    free( pos_ );
+    free( prior_ );
 
     for( size_t k = 0; k < K_+1; k++ ){
         for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
@@ -72,14 +72,6 @@ EM::~EM(){
 
 int EM::optimize(){
 
-    if( Global::verbose ) {
-        std::cout << " ______"  << std::endl
-                  << "|*    *|" << std::endl
-                  << "|  EM  |" << std::endl
-                  << "|*____*|" << std::endl
-                  << std::endl;
-    }
-
     auto    t0_wall = std::chrono::high_resolution_clock::now();
 
     bool 	iterate = true;
@@ -92,7 +84,7 @@ int EM::optimize(){
     }
 
     // initialized positional priors
-    updatePos();
+    updatePrior();
 
 /*
     // todo: for positional prior
@@ -117,9 +109,6 @@ int EM::optimize(){
 
     // iterate over
     size_t iteration = 0;
-    float llikelihood_diff_delta = 0.f;
-    float llikelihood_diff_prev = 0.f;
-
     while( iterate && ( iteration < Global::maxIterations ) ){
 
         // get parameter variables with highest order before EM
@@ -142,7 +131,7 @@ int EM::optimize(){
         // optimize hyper-parameter q in the first step
         if( Global::optimizeQ and iteration <= 5 ) {
             optimizeQ();
-            updatePos();
+            updatePrior();
         }
 
 /*
@@ -167,21 +156,21 @@ int EM::optimize(){
 
         // check the change of likelihood for convergence
         float llikelihood_diff = llikelihood_ - llikelihood_prev;
-        llikelihood_diff_delta = llikelihood_diff_prev - llikelihood_diff;
-        llikelihood_diff_prev = llikelihood_diff;
 
         if( Global::verbose ) {
-            std::cout << "it=" << iteration
+            std::cout << "i=" << iteration
                       << std::fixed
-                      << "\tlog likelihood=" << llikelihood_
+                      << "\tllh=" << llikelihood_
                       << "\tllh_diff=" << llikelihood_diff
                       << "\t\tmodel_diff=" << v_diff
                       << std::endl;
         }
-        if( v_diff < Global::EMepsilon ){				iterate = false; }
-        if( llikelihood_diff < 0 and iteration > 10 ){	iterate = false; }
-        if( llikelihood_diff_delta < 0 and iteration > 10 ){	iterate = false; }
-        iteration++;
+
+        // stopping criteria
+        if( ( llikelihood_diff < Global::EMepsilon or v_diff < Global::EMepsilon )
+            and iteration > 10 ){
+            iterate = false;
+        }
 
         // todo: for making a movie out of all iterations
         if( Global::makeMovie ) {
@@ -189,18 +178,18 @@ int EM::optimize(){
             motif_->calculateP();
             // write out the learned model
             std::string opath = std::string( Global::outputDirectory ) + "/movie_factory" ;
-            std::string filename = "movie_clap";
             char *odir = new char[opath.length() + 1];
             std::strcpy(odir, opath.c_str());
-            motif_->write(odir, filename + std::to_string(iteration));
+            createDirectory( odir );
+            motif_->write(odir, "movie_clap" + std::to_string(iteration));
         }
 
         // todo: print out for checking
         if( Global::debug ) {
             motif_->calculateP();
-            print();
             printR();
         }
+        iteration++;
     }
 
     // update probabilities
@@ -229,8 +218,8 @@ void EM::EStep(){
         size_t*	kmer = seqs_[n]->getKmer();
         float 	normFactor = 0.f;
 
-        // initialize r_[n][i] and pos_[n][i]:
-        // note here:   r_[n][0] and pos_[n][0] are for motif is absent
+        // initialize r_[n][i] and prior_[n][i]:
+        // note here:   r_[n][0] and prior_[n][0] are for motif is absent
         //              and the indices of r_[n][i] is reverted, which means:
         //              r_[n][i] is the weight for motif being at position L-i on sequence n
         //              the purpose of doing the reverting is to improve the computation speed
@@ -251,10 +240,10 @@ void EM::EStep(){
         }
 
         // calculate the responsibilities and sum them up
-        r_[n][0] = pos_[n][0];
+        r_[n][0] = prior_[n][0];
         normFactor += r_[n][0];
         for( size_t i = 1; i <= LW1; i++ ){
-            r_[n][L+padding_-i] *= pos_[n][i];
+            r_[n][L+padding_-i] *= prior_[n][i];
             normFactor += r_[n][L+padding_-i];
         }
 
@@ -316,15 +305,15 @@ void EM::MStep(){
     motif_->updateV( n_, A_ );
 }
 
-void EM::updatePos(){
+void EM::updatePrior(){
 
     for( size_t n = 0; n < seqs_.size(); n++ ){
         size_t 	L = seqs_[n]->getL();
         size_t 	LW1 = L - W_ + 1;
-        pos_[n][0] = 1.0f - q_;                         // probability of having no motif on the sequence
+        prior_[n][0] = 1.0f - q_;                         // probability of having no motif on the sequence
         float pos_i = q_ / static_cast<float>( LW1 );   // probability of having a motif at position i on the sequence
         for( size_t i = 1; i <= L; i++ ){
-            pos_[n][i] = pos_i;
+            prior_[n][i] = pos_i;
         }
     }
 
@@ -368,7 +357,7 @@ void EM::EStep_slow(){
 
         // calculate the responsibilities and sum them up
         for( size_t i = 0; i <= LW1; i++ ){
-            r_[n][i] *= pos_[n][i];
+            r_[n][i] *= prior_[n][i];
             normFactor += r_[n][i];
         }
 
@@ -450,7 +439,7 @@ int EM::mask(){
     }
 
     // initialized positional priors
-    updatePos();
+    updatePrior();
     std::vector<float> r_all;   // add all r's to an array for sorting
     size_t N_position = 0;      // count the number of all possible positions
 
@@ -480,7 +469,7 @@ int EM::mask(){
 
         // calculate the responsibilities and sum them up
         for( size_t i = 0; i <= LW1; i++ ){
-            r_[n][i] *= pos_[n][i];
+            r_[n][i] *= prior_[n][i];
         }
 
         // add all un-normalized r to a vector
@@ -502,7 +491,9 @@ int EM::mask(){
     std::sort( r_all.begin(), r_all.end(), std::greater<float>() );
 
     // find the cutoff with f_% best r's
-    float r_cutoff = r_all[size_t( N_position * Global::f )];
+    float r_cutoff = r_all[size_t( N_position * Global::fraction )];
+    // avoid r_cutoff from being too small
+    r_cutoff = std::max(r_cutoff, Global::rCutoff);
 
     // create a vector to store all the r's which are above the cutoff
     std::vector<std::vector<size_t>> ridx( seqs_.size() );
@@ -554,35 +545,36 @@ int EM::mask(){
         // n runs over all sequences
 #pragma omp parallel for reduction(+:llikelihood)
         for( size_t n = 0; n < seqs_.size(); n++ ){
+            if(ridx[n].size() > 0) {
+                size_t *kmer = seqs_[n]->getKmer();
+                float normFactor = 0.f;
 
-            size_t*	kmer = seqs_[n]->getKmer();
-            float 	normFactor = 0.f;
-
-            // initialize all filtered r_[n][i]
-            for( size_t idx = 0; idx < ridx[n].size(); idx++ ){
-                r_[n][ridx[n][idx]] = 1.0f;
-            }
-
-            // update r based on the log odd ratios
-            for( size_t idx = 0; idx < ridx[n].size(); idx++ ){
-                for( size_t j = 0; j < W_; j++ ){
-                    size_t y = kmer[ridx[n][idx]+j-1] % Global::A2powerK[K_+1];
-                    r_[n][ridx[n][idx]] *= s_[y][j];
+                // initialize all filtered r_[n][i]
+                for (size_t idx = 0; idx < ridx[n].size(); idx++) {
+                    r_[n][ridx[n][idx]] = 1.0f;
                 }
-                // calculate the responsibilities and sum them up
-                r_[n][ridx[n][idx]] *= pos_[n][ridx[n][idx]];
-                normFactor += r_[n][ridx[n][idx]];
-            }
 
-            // normalize responsibilities
-            normFactor += r_[n][0];
-            r_[n][0] /= normFactor;
-            for( size_t idx = 0; idx < ridx[n].size(); idx++ ){
-                r_[n][ridx[n][idx]] /= normFactor;
-            }
+                // update r based on the log odd ratios
+                for (size_t idx = 0; idx < ridx[n].size(); idx++) {
+                    for (size_t j = 0; j < W_; j++) {
+                        size_t y = kmer[ridx[n][idx] + j - 1] % Global::A2powerK[K_ + 1];
+                        r_[n][ridx[n][idx]] *= s_[y][j];
+                    }
+                    // calculate the responsibilities and sum them up
+                    r_[n][ridx[n][idx]] *= prior_[n][ridx[n][idx]];
+                    normFactor += r_[n][ridx[n][idx]];
+                }
 
-            // calculate log likelihood over all sequences
-            llikelihood += logf( normFactor );
+                // normalize responsibilities
+                normFactor += r_[n][0];
+                r_[n][0] /= normFactor;
+                for (size_t idx = 0; idx < ridx[n].size(); idx++) {
+                    r_[n][ridx[n][idx]] /= normFactor;
+                }
+
+                // calculate log likelihood over all sequences
+                llikelihood += logf(normFactor);
+            }
         }
 
         llikelihood_ = llikelihood;
@@ -604,14 +596,14 @@ int EM::mask(){
         // n runs over all sequences
 #pragma omp parallel for
         for( size_t n = 0; n < seqs_.size(); n++ ){
-
-            size_t* kmer = seqs_[n]->getKmer();
-
-            for( size_t idx = 0; idx < ridx[n].size(); idx++ ){
-                for( size_t j = 0; j < W_; j++ ){
-                    size_t y = kmer[ridx[n][idx]+j-1] % Global::A2powerK[K_+1];
-                    // n_[K_][y][j] += r_[n][ridx[n][idx]];
-                    atomic_float_add(&(n_[K_][y][j]), r_[n][ridx[n][idx]]);
+            if(ridx[n].size() > 0) {
+                size_t *kmer = seqs_[n]->getKmer();
+                for (size_t idx = 0; idx < ridx[n].size(); idx++) {
+                    for (size_t j = 0; j < W_; j++) {
+                        size_t y = kmer[ridx[n][idx] + j - 1] % Global::A2powerK[K_ + 1];
+                        // n_[K_][y][j] += r_[n][ridx[n][idx]];
+                        atomic_float_add(&(n_[K_][y][j]), r_[n][ridx[n][idx]]);
+                    }
                 }
             }
         }
@@ -642,11 +634,14 @@ int EM::mask(){
 
         // check the change of likelihood for convergence
         llikelihood_diff = llikelihood_ - llikelihood_prev;
-        if( Global::verbose ) std::cout << iteration
-                                        << " iter, llh=" << llikelihood_
-                                        << ", diff_llh=" << llikelihood_diff
-                                        << ", v_diff=" << v_diff
-                                        << std::endl;
+        if( Global::verbose ) {
+            std::cout << "i=" << iteration
+                      << std::fixed
+                      << "\tllh=" << llikelihood_
+                      << "\tllh_diff=" << llikelihood_diff
+                      << "\t\tmodel_diff=" << v_diff
+                      << std::endl;
+        }
         if( v_diff < Global::EMepsilon )				iterate = false;
         if( llikelihood_diff < 0 and iteration > 10 )	iterate = false;
     }
@@ -870,7 +865,7 @@ void EM::optimizePos() {
     // update pos_ni by pi_i
     for( size_t i = 1; i <= LW1_; i++ ) {
         for (size_t n = 0; n < posN; n++) {
-            pos_[n][i] = pi_[i] * q_;
+            prior_[n][i] = pi_[i] * q_;
         }
     }
 
@@ -1052,7 +1047,7 @@ void EM::printR(){
 
     if( !Global::slowEM ){
         for( size_t n = 0; n < seqs_.size(); n++ ){
-            std::cout << "seq " << n << ":" << std::endl;
+            std::cout << "seq " << n+1 << ":" << std::endl;
             size_t L = seqs_[n]->getL();
             float sum = 0.f;
             std::cout << r_[n][0] << '\t';
@@ -1066,7 +1061,7 @@ void EM::printR(){
         }
     } else {
         for( size_t n = 0; n < seqs_.size(); n++ ){
-            std::cout << "seq " << n << ":" << std::endl;
+            std::cout << "seq " << n+1 << ":" << std::endl;
             size_t L = seqs_[n]->getL();
             float sum = 0.f;
             for( size_t i = 0; i <= L-W_+1; i++ ){
@@ -1103,7 +1098,7 @@ void EM::write( char* odir, std::string basename ){
 		ofile_n << std::endl;
 	}
 
-	// output position(s) of motif(s): pos_[n][i]
+	// output position(s) of motif(s): prior_[n][i]
 	std::string opath_pos = opath + ".positions";
 	std::ofstream ofile_pos( opath_pos.c_str() );
 

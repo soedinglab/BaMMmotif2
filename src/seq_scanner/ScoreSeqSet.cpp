@@ -107,7 +107,7 @@ void ScoreSeqSet::calcPvalues( std::vector<std::vector<float>> pos_scores,
         std::cout << "There are " << posN << " positions in the given set." << std::endl;
     }
 
-    float eps = 1.0e-5f; // to avoid 0 in the denominator
+    float eps = Global::eps; // to avoid 0 in the denominator
 
     bool run_slow = true;
 
@@ -221,7 +221,7 @@ void ScoreSeqSet::calcPvalues( std::vector<std::vector<float>> pos_scores,
         size_t nTop = static_cast<size_t>(std::min(100, (int) negN / 10));
         float S_ntop = neg_all_scores[pidx_neg[nTop]];
         // calculate the rate parameter lambda
-        float lambda = 1.e-5f;  // to avoid lambda from being 0
+        float lambda = Global::eps;  // to avoid lambda from being 0
         for (size_t c = 0; c < nTop; c++) {
             lambda += (neg_all_scores[pidx_neg[c]] - S_ntop);
         }
@@ -281,7 +281,7 @@ void ScoreSeqSet::calcPvalues( std::vector<std::vector<float>> pos_scores,
                     pVal = nTop * expf((S_ntop - Sl) / lambda) / (float) negN;
                 }
 
-                assert( pVal <= 1.00001f and pVal >= 0.f );
+                assert( pVal <= 1.f and pVal >= 0.f );
 
                 n = static_cast<size_t>( std::distance(seql_.begin(),
                                                        std::lower_bound(seql_.begin(),

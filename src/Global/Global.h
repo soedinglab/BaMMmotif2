@@ -90,7 +90,8 @@ public:
 	static bool			EM;						// flag to trigger EM learning
     static float        EMepsilon;              // eps for EM convergence
     static size_t       maxIterations;          // maximal iterations
-    static float        f;                      // fraction of sequences to be masked
+    static float        fraction;                      // fraction of sequences to be masked
+    static float        rCutoff;
 
 	// Gibbs sampling options
 	static bool			CGS;					// flag to trigger Collapsed Gibbs sampling
