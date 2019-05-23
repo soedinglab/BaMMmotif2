@@ -62,7 +62,7 @@ float				Global::q = 0.3f;						// prior probability for a positive sequence to 
 bool 				Global::optimizeQ = false;				// optimize hyper-parameter q in EM algorithm
 float               Global::fraction = 0.05f;               // fraction of sequences to be masked
 bool                Global::optimizePos = false;            // optimize positional prior in the EM algorithm
-float               Global::rCutoff = 1.e-8f;
+float               Global::rCutoff = 1.e-16f;
 
 // CGS (Collapsed Gibbs sampling) options
 bool				Global::CGS = false;					// flag to trigger Collapsed Gibbs sampling
@@ -338,7 +338,7 @@ int Global::readArguments( int nargs, char* args[] ){
 	opt >> GetOpt::OptionPresent( "EM", EM );
     opt >> GetOpt::Option( "EMepsilon", EMepsilon );
     opt >> GetOpt::Option( "maxIterations", maxIterations );
-
+    opt >> GetOpt::Option( "rCutoff", rCutoff );
 	// CGS options
 	if( opt >> GetOpt::OptionPresent( "CGS", CGS ) ){
 		opt >> GetOpt::OptionPresent( "noInitialZ", noInitialZ );

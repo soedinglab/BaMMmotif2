@@ -494,7 +494,7 @@ int EM::mask(){
     float r_cutoff = r_all[size_t( N_position * Global::fraction )];
     // avoid r_cutoff from being too small
     r_cutoff = std::max(r_cutoff, Global::rCutoff);
-    
+
     std::cout << "r cutoff: " << r_cutoff << std::endl;
 
     // create a vector to store all the r's which are above the cutoff
