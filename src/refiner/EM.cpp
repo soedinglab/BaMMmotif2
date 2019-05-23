@@ -197,7 +197,9 @@ int EM::optimize(){
 
     auto t1_wall = std::chrono::high_resolution_clock::now();
     auto t_diff = std::chrono::duration_cast<std::chrono::duration<double>>(t1_wall-t0_wall);
-    std::cout << "\n--- Runtime for EM: " << t_diff.count() << " seconds ---\n";
+    std::cout << "\n--- Runtime for EM: " << t_diff.count()
+              << " seconds (" << std::to_string(iteration)
+              << "iterations) ---\n";
 
     return 0;
 }
@@ -526,8 +528,6 @@ int EM::mask(){
     // iterate over
     while( iterate && ( iteration < Global::maxIterations ) ){
 
-        iteration++;
-
         // get parameter variables with highest order before EM
         llikelihood_prev = llikelihood_;
         for( size_t y = 0; y < Global::A2powerK[K_+1]; y++ ){
@@ -646,6 +646,8 @@ int EM::mask(){
         }
         if( v_diff < Global::EMepsilon )				iterate = false;
         if( llikelihood_diff < 0 and iteration > 10 )	iterate = false;
+
+        iteration++;
     }
 
     // calculate probabilities
@@ -653,7 +655,9 @@ int EM::mask(){
 
     auto t1_wall = std::chrono::high_resolution_clock::now();
     auto t_diff = std::chrono::duration_cast<std::chrono::duration<double>>(t1_wall-t0_wall);
-    std::cout << "\n--- Runtime for EM: " << t_diff.count() << " seconds ---\n";
+    std::cout << "\n--- Runtime for EM: " << t_diff.count()
+              << " seconds ("<< std::to_string(iteration)
+              << "iterations) ---\n";
 
     return 0;
 }
