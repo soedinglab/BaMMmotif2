@@ -199,7 +199,7 @@ int EM::optimize(){
     auto t_diff = std::chrono::duration_cast<std::chrono::duration<double>>(t1_wall-t0_wall);
     std::cout << "\n--- Runtime for EM: " << t_diff.count()
               << " seconds (" << std::to_string(iteration)
-              << "iterations) ---\n";
+              << " iterations) ---\n";
 
     return 0;
 }
@@ -657,7 +657,7 @@ int EM::mask(){
     auto t_diff = std::chrono::duration_cast<std::chrono::duration<double>>(t1_wall-t0_wall);
     std::cout << "\n--- Runtime for EM: " << t_diff.count()
               << " seconds ("<< std::to_string(iteration)
-              << "iterations) ---\n";
+              << " iterations) ---\n";
 
     return 0;
 }
