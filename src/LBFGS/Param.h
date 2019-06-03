@@ -4,7 +4,7 @@
 #ifndef PARAM_H
 #define PARAM_H
 
-#include <eigen3/Eigen/Core>    // e.g. used for LBFGS++
+#include "../eigen3/Eigen/Core" // e.g. used for LBFGS++
 #include <stdexcept>            // std::invalid_argument
 
 namespace LBFGSpp {

@@ -4,8 +4,8 @@
 #ifndef LINE_SEARCH_H
 #define LINE_SEARCH_H
 
-#include <eigen3/Eigen/Core>    // e.g. used for LBFGS++
-#include <stdexcept>            // std::runtime_error
+#include "../eigen3/Eigen/Core"     // e.g. used for LBFGS++
+#include <stdexcept>                // std::runtime_error
 
 namespace LBFGSpp {
 
