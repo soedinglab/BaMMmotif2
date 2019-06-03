@@ -13,9 +13,9 @@
 #include "../Global/Global.h"
 
 // todo: for positional prior
-#include <eigen3/Eigen/Dense>   // e.g. conjugate gradient solver
-#include <eigen3/Eigen/IterativeLinearSolvers>
-#include <eigen3/Eigen/Core>    // e.g. used for LBFGS++
+#include "../eigen3/Eigen/Dense"   // e.g. conjugate gradient solver
+#include "../eigen3/Eigen/IterativeLinearSolvers"
+#include "../eigen3/Eigen/Core"    // e.g. used for LBFGS++
 #include "ObjFun.h"
 #include "../LBFGS/LBFGS.h"
 
