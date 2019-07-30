@@ -100,6 +100,7 @@ bool				Global::savePvalues = false;			// write p-values for each log odds score
 bool				Global::saveLogOdds = false;			// write the log odds of positive and negative sets to disk
 bool				Global::saveInitialBaMMs = false;		// write out the initial model to disk
 bool				Global::saveBgModel = false;			// write out the background model to disk
+bool                Global::savePi = false;
 bool				Global::generatePseudoSet = false;		// test for alpha learning
 std::mt19937		Global::rngx;
 float               Global::eps = 1.e-6f;
@@ -388,6 +389,7 @@ int Global::readArguments( int nargs, char* args[] ){
     opt >> GetOpt::OptionPresent( "makeMovie", makeMovie );
 	opt >> GetOpt::OptionPresent( "optimizeQ", optimizeQ );
     opt >> GetOpt::OptionPresent( "optimizePos", optimizePos );
+    opt >> GetOpt::OptionPresent( "savePi", savePi );
 	opt >> GetOpt::OptionPresent( "B2", B2 );
 	opt >> GetOpt::OptionPresent( "B3", B3 );
 	opt >> GetOpt::OptionPresent( "B3prime", B3prime );

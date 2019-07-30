@@ -2,7 +2,7 @@
 
 **Ba**yesian **M**arkov **M**odel **motif** discovery software (version 2).
 
-(C) Johannes Soeding, Wanwan Ge, Anja Kiesel, Matthias Siebert
+(C) Wanwan Ge, Anja Kiesel, Matthias Siebert, Johannes Soeding
 
 [![Build Status](https://travis-ci.org/soedinglab/BaMMmotif2.svg?branch=master)](https://travis-ci.org/soedinglab/BaMMmotif2)
 
@@ -13,17 +13,17 @@ To compile from source, you need:
   * [CMake](http://cmake.org/) 2.8.11 or later
   
 C++ packages
-  * [Boost](http://www.boost.org/) 
+  * [Boost](http://www.boost.org/), for Linux users, you can install the libboost-all-dev package:
+
+        sudo apt-get install libboost-all-dev
+
 
 To plot BaMM logos you need R and several R packages 
 
   * [R](https://cran.r-project.org/) 2.14.1 or later
-  * install.packages( "zoo" )
-  * install.packages( "argparse" )
-  * install.packages( "fdrtool" )
-  * install.packages( "LSD" )
-  * install.packages( "grid" )
-  * install.packages( "gdata" )
+  * download required R packages by running the command:
+
+        Rscript ./install_packages.R
 
 ## Installation
 

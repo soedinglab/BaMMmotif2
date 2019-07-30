@@ -128,7 +128,8 @@ public:
 	static bool			saveLogOdds;			// write the log odds of positive and negative sets to disk
 	static bool			saveInitialBaMMs;		// write out the initial model to disk
 	static bool 		saveBgModel;			// write out background model to disk
-	static bool			generatePseudoSet;		// test for alpha learning
+	static bool         savePi;                 // write out positional prior pi
+    static bool			generatePseudoSet;		// test for alpha learning
 
 	// flags for developers
 	static bool			makeMovie;				// print out bamms in each iteration while optimizing

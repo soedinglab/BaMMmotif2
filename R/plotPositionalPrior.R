@@ -145,8 +145,10 @@ for( file in Sys.glob(full_glob) ){
     mtext("Position relative to sequence center", side=1, line=4.5, cex=label_size)
     mtext("Positional prior", side=2, line=4, cex=label_size)
     abline(h=0, v=strand_center, col="grey", lwd=lwd_size*2)
-    axis(1, at=c(0, strand_center, strand_length),
-    labels = c(-interval_left, anchorname, interval_right),
+    #axis(1, at=c(0, strand_center, strand_length),
+    #labels = c(-interval_left, anchorname,  interval_right),
+    axis(1, at=c(0, strand_center-10, strand_center, strand_center+10, strand_length),
+    labels = c(-interval_left, -10, anchorname, 10, interval_right),
     tick = FALSE, cex.axis=label_size, line=1)
     axis(2, tick = FALSE, cex.axis=label_size, line=0.5)
     box(lwd=lwd_size)

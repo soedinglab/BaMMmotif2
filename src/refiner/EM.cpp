@@ -65,7 +65,7 @@ EM::~EM(){
     }
     free( n_ );
 
-//    free( pi_ );
+    free( pi_ );
 }
 
 int EM::optimize(){
@@ -125,7 +125,7 @@ int EM::optimize(){
         }
 
         // optimize hyper-parameter q in the first step
-        if( Global::optimizeQ and iteration <= 5 ) {
+        if( Global::optimizeQ and iteration <= 0 ) {
             optimizeQ();
             updatePrior();
         }
@@ -133,7 +133,7 @@ int EM::optimize(){
         // todo: optimize positional prior pos
         // todo:=====================================================
         // note: this only works for sequences with the same length
-        if( Global::optimizePos and iteration <= 5 ){
+        if( Global::optimizePos /*and iteration <= 0*/ ){
             optimizePos();
         }
         // todo:=====================================================
@@ -176,11 +176,26 @@ int EM::optimize(){
             motif_->write(odir, "movie_clap" + std::to_string(iteration));
         }
 
+/*        // todo:
+        if( Global::savePi ){
+            // pre-define hyper-parameters for optimizing position priors
+            size_t LW1 = seqs_[0]->getL()-W_+1;
+            std::string opath = std::string( Global::outputDirectory ) +'/'
+                                + Global::outputFileBasename
+                                + "_movie_clap_" + std::to_string(iteration) + ".pi";
+            std::ofstream ofile( opath.c_str() );;
+            for (size_t i = 1; i <= LW1; i++) {
+                ofile << pi_[i] << std::endl;
+            }
+        }
+*/
+
         // todo: print out for checking
         if( Global::debug ) {
             motif_->calculateP();
             printR();
         }
+
         iteration++;
     }
 
@@ -499,6 +514,8 @@ int EM::mask(){
         for( size_t i = 1; i <= seqs_[n]->getL()-W_+1; i++ ){
             if( r_[n][i] >= r_cutoff ){
                 ridx[n].push_back( i );
+            } else {
+                r_[n][i] = 0.f;
             }
         }
     }
@@ -684,6 +701,7 @@ void EM::optimizePos() {
     }
 
     for( size_t i = 0; i < LW1_; i++ ) {
+        // Ni_[i] = 0;
         for (size_t n = 0; n < posN; n++) {
             Ni_[i] += r_[n][seqs_[n]->getL()-i];
         }
@@ -811,7 +829,6 @@ void EM::optimizePos() {
         }
     } else if( method_flag == 4 ){
 
-        // todo:=====================================================
         // Use L-BFGS as optimizer
 
         // pre-define parameters
@@ -834,7 +851,7 @@ void EM::optimizePos() {
         int niter;
         niter = solver.minimize( func, si_, fx );
         if( Global::verbose ){
-            std::cout << niter << " iterations, f(x)=" << fx << std::endl;
+
         }
 
         // calculate beta2 after optimization of si
@@ -845,7 +862,8 @@ void EM::optimizePos() {
         beta2_ = ( LW1_-1 ) / sumS;
 
         if( Global::verbose ){
-            std::cout << "Optimized beta2 = " << beta2_ << std::endl;
+            std::cout << niter << " iterations, f(x)=" << fx
+                      << ", optimized beta2 = " << beta2_ << std::endl;
         }
         // update pi
         norm_ = 1.e-5f;
@@ -857,7 +875,6 @@ void EM::optimizePos() {
             pi_[i] /= norm_;
         }
 
-        // todo:=====================================================
     }
 
     // update pos_ni by pi_i

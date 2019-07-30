@@ -126,19 +126,6 @@ int main( int nargs, char* args[] ){
             // learn motifs by EM
             if (!Global::advanceEM) {
                 model.optimize();
-
-/*                // todo: print out for checking
-                if(Global::optimizePos){
-                    std::string opath = std::string( Global::outputDirectory ) + '/'
-                                        + Global::outputFileBasename + "_motif_" +
-                                        std::to_string(n + 1)+".pi";
-                    std::ofstream ofile( opath.c_str() );
-                    size_t LW1 = posSet[0]->getL()-motif->getW() +1;
-                    for(size_t i = 1; i <= LW1; i++ ){
-                        ofile << model.getPi()[i] << std::endl;
-                    }
-                }*/
-
             } else {
                 model.mask();
             }
@@ -160,6 +147,18 @@ int main( int nargs, char* args[] ){
             }
             std::cout << std::endl << "After, fraction parameter q="
                       << std::setprecision(4) << model.getQ() << std::endl;
+
+            if( Global::optimizePos and Global::savePi ) {
+                // pre-define hyper-parameters for optimizing position priors
+                size_t LW1 = posSet[0]->getL()-motif->getW()+1;
+                std::string opath = std::string( Global::outputDirectory ) +'/'
+                                    + Global::outputFileBasename + "_motif_"
+                                    + std::to_string(n + 1) + ".pi";
+                std::ofstream ofile( opath.c_str() );;
+                for (size_t i = 1; i <= LW1; i++) {
+                    ofile << model.getPi()[i] << std::endl;
+                }
+            }
 
         } else if (Global::CGS) {
 
