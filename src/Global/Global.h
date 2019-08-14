@@ -119,6 +119,9 @@ public:
     static bool         sampleBgset;
     static size_t       at;
 
+    // kmer affinity predictor options
+    static size_t       kmerLength;
+
 	// other options
 	static bool			verbose;				// verbose printouts, defaults to false
 	static bool         debug;				    // verbose printouts for debugging, defaults to false

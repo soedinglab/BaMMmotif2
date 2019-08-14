@@ -90,6 +90,8 @@ bool                Global::sampleBgset = false;
 bool                Global::embedSeqset = false;
 size_t              Global::at = 0;
 
+// kmer affinity predictor
+size_t              Global::kmerLength = 8;
 
 // printout options
 bool                Global::verbose = false;
@@ -374,6 +376,9 @@ int Global::readArguments( int nargs, char* args[] ){
     if( opt >> GetOpt::OptionPresent( "embedSeqset", embedSeqset ) ){
         opt >> GetOpt::Option( "at", at );
     }
+
+    // kmer affinity predictor options
+    opt >> GetOpt::Option( "kmerLength", kmerLength );
 
     // printout options
 	opt >> GetOpt::OptionPresent( "verbose", verbose );
