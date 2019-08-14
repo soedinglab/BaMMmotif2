@@ -5,16 +5,12 @@
 #ifndef SCOREKMER_H
 #define SCOREKMER_H
 
-
-#include "../init/Motif.h"
-#include "../init/BackgroundModel.h"
 #include "../Global/Global.h"
 
-class ScoreKmer {
+class KmerCounter {
     /**
      * This class is aimed for:
-     * 1) count k-mers from the given sequence set
-     * 2) score k-mers given model and sequence set
+     * count k-mers from the given sequence set
      *
      * k-mers are encoded with IDs
      * Alphabet: ACGT...
@@ -27,20 +23,20 @@ class ScoreKmer {
 public:
 
     // define de-/constructor
-    ScoreKmer( std::vector<Sequence*> seqSet, size_t kmer_length );
-    ~ScoreKmer();
+    KmerCounter( std::vector<Sequence*> seqSet, size_t kmer_length );
+    ~KmerCounter();
 
     // decode kmer ID back to kmer string
     std::string ID2String(const size_t kmer_id);
-    void CountKmer();
-
+    void        countKmer();
+    size_t*     getKmerCounts();
+    void        writeKmerCounts( char* odir, std::string basename );
 
 private:
 
     std::vector<Sequence*> seqSet_;
-    size_t kmer_length_;
-    size_t kmer_size_;
-    size_t* kmer_ids_;
+    size_t  kmer_length_;
+    size_t  kmer_size_;
     size_t* kmer_counts_;
     size_t* size2power_;
 

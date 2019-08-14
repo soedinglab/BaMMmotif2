@@ -4,7 +4,8 @@
 
 #include "../Global/Global.h"
 #include "../init/MotifSet.h"
-
+#include "KmerCounter.h"
+#include "KmerScorer.h"
 
 int main( int nargs, char* args[] ) {
 
@@ -65,15 +66,21 @@ int main( int nargs, char* args[] ) {
         }
     }
 
+    KmerCounter Kd( posSet, Global::kmerLength );
+
     /**
      * Count k-mers
      */
-
+    Kd.countKmer();
+    Kd.writeKmerCounts( Global::outputDirectory,
+                        Global::outputFileBasename );
 
 #pragma omp parallel for
     for( size_t n = 0; n < motif_set.getN(); n++ ) {
         // deep copy each motif in the motif set
         Motif *motif = new Motif( *motif_set.getMotifs()[n] );
+
+        KmerScorer Ks( motif, bgModel );
 
         std::string fileExtension;
         if( Global::initialModelTag == "PWM" ){
@@ -89,17 +96,9 @@ int main( int nargs, char* args[] ) {
         /**
          * Score k-mers
          */
-
-        ScoreSeqSet scorePosSet( motif, bgModel, posSet );
-        scorePosSet.calcLogOdds();
-
-        std::vector<std::vector<float>> posScores = scorePosSet.getMopsScores();
-        scorePosSet.calcPvalues( posScores, negScores );
-
-        scorePosSet.write( Global::outputDirectory,
-                           Global::outputFileBasename + fileExtension,
-                           Global::pvalCutoff,
-                           Global::ss );
+        Ks.scoreKmer();
+        Ks.writeKmerScores( Global::outputDirectory,
+                            Global::outputFileBasename + fileExtension );
 
         delete motif;
     }
