@@ -66,7 +66,7 @@ int main( int nargs, char* args[] ) {
         }
     }
 
-    KmerCounter Kd( posSet, Global::kmerLength );
+    KmerCounter Kd( posSet );
 
     /**
      * Count k-mers
@@ -75,7 +75,6 @@ int main( int nargs, char* args[] ) {
     Kd.writeKmerCounts( Global::outputDirectory,
                         Global::outputFileBasename );
 
-#pragma omp parallel for
     for( size_t n = 0; n < motif_set.getN(); n++ ) {
         // deep copy each motif in the motif set
         Motif *motif = new Motif( *motif_set.getMotifs()[n] );

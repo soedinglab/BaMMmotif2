@@ -17,17 +17,17 @@ class KmerCounter {
      * base     A   C   G   T
      * code     0   1   2   3
      * Alphabet size a (here a=4)
-     * for example: ATGCA <-> ID: 0*a^1 + 3*a^2 + 2*a^3 + 1*a^4 + 0*a^5
+     * for example: ATGCA <-> ID: 0*a^0 + 3*a^1 + 2*a^2 + 1*a^3 + 0*a^4
      */
 
 public:
 
     // define de-/constructor
-    KmerCounter( std::vector<Sequence*> seqSet, size_t kmer_length );
+    KmerCounter( std::vector<Sequence*> seqSet );
     ~KmerCounter();
 
     // decode kmer ID back to kmer string
-    std::string ID2String(const size_t kmer_id);
+    std::string ID2String( size_t kmer_id );
     void        countKmer();
     size_t*     getKmerCounts();
     void        writeKmerCounts( char* odir, std::string basename );

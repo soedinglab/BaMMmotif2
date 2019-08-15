@@ -20,7 +20,7 @@ class KmerScorer {
      * base     A   C   G   T
      * code     0   1   2   3
      * Alphabet size a (here a=4)
-     * for example: ATGCA <-> ID: 0*a^1 + 3*a^2 + 2*a^3 + 1*a^4 + 0*a^5
+     * for example: ATGCA <-> ID: 0*a^0 + 3*a^1 + 2*a^2 + 1*a^3 + 0*a^4
      */
 
 public:
