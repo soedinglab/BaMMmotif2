@@ -4,8 +4,7 @@
 
 #include "../Global/Global.h"
 #include "../init/MotifSet.h"
-#include "KmerCounter.h"
-#include "KmerScorer.h"
+#include "KmerPredicter.h"
 
 int main( int nargs, char* args[] ) {
 
@@ -55,7 +54,7 @@ int main( int nargs, char* args[] ) {
     /**
      * Filter out short sequences
      */
-    std::vector<Sequence*>::iterator it = posSet.begin();
+    auto it = posSet.begin();
     while( it != posSet.end() ){
         if( (*it)->getL() < motif_set.getMaxW() || (*it)->getL() < Global::kmerLength ){
             std::cout << "Warning: remove the short sequence: " << (*it)->getHeader()
@@ -66,20 +65,15 @@ int main( int nargs, char* args[] ) {
         }
     }
 
-    KmerCounter Kd( posSet );
-
     /**
      * Count k-mers
      */
-    Kd.countKmer();
-    Kd.writeKmerCounts( Global::outputDirectory,
-                        Global::outputFileBasename );
+    KmerPredicter Kd( Global::kmerLength );
+    Kd.countKmer( posSet );
 
     for( size_t n = 0; n < motif_set.getN(); n++ ) {
         // deep copy each motif in the motif set
         Motif *motif = new Motif( *motif_set.getMotifs()[n] );
-
-        KmerScorer Ks( motif, bgModel );
 
         std::string fileExtension;
         if( Global::initialModelTag == "PWM" ){
@@ -95,14 +89,14 @@ int main( int nargs, char* args[] ) {
         /**
          * Score k-mers
          */
-        Ks.scoreKmer();
-        Ks.writeKmerScores( Global::outputDirectory,
+        Kd.scoreKmer( motif, bgModel );
+        Kd.writeKmerCounts( Global::outputDirectory,
                             Global::outputFileBasename + fileExtension );
 
         delete motif;
     }
 
-    if( bgModel ) delete bgModel;
+    delete bgModel;
 
     return 0;
 }

@@ -6,8 +6,10 @@
 #define SCOREKMER_H
 
 #include "../Global/Global.h"
+#include "../init/Motif.h"
+#include "../init/BackgroundModel.h"
 
-class KmerCounter {
+class KmerPredicter {
     /**
      * This class is aimed for:
      * count k-mers from the given sequence set
@@ -23,22 +25,25 @@ class KmerCounter {
 public:
 
     // define de-/constructor
-    KmerCounter( std::vector<Sequence*> seqSet );
-    ~KmerCounter();
+    KmerPredicter( size_t kmer_length );
+    ~KmerPredicter();
 
     // decode kmer ID back to kmer string
-    std::string ID2String( size_t kmer_id );
-    void        countKmer();
-    size_t*     getKmerCounts();
-    void        writeKmerCounts( char* odir, std::string basename );
+    std::string         ID2String( size_t kmer_id );
+    void                countKmer( std::vector<Sequence*> seqSet );
+    void                scoreKmer(Motif* motif, BackgroundModel* bg);
+    void                writeKmerCounts( char* odir, std::string basename );
 
 private:
 
-    std::vector<Sequence*> seqSet_;
     size_t  kmer_length_;
     size_t  kmer_size_;
-    size_t* kmer_counts_;
+    float*  enriched_kmer_scores_;
+    size_t* enriched_kmer_ids_;
+    unsigned long* enriched_kmer_counts_;
+    size_t  enriched_kmer_N_;
     size_t* size2power_;
+    bool    kmer_is_counted_;
 
 };
 
