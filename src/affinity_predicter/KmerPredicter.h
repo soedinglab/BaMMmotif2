@@ -32,7 +32,7 @@ public:
     std::string         ID2String( size_t kmer_id );
     void                countKmer( std::vector<Sequence*> seqSet );
     void                scoreKmer(Motif* motif, BackgroundModel* bg);
-    void                writeKmerCounts( char* odir, std::string basename );
+    void                writeKmerStats(char *odir, std::string basename);
 
 private:
 

@@ -90,8 +90,8 @@ int main( int nargs, char* args[] ) {
          * Score k-mers
          */
         Kd.scoreKmer( motif, bgModel );
-        Kd.writeKmerCounts( Global::outputDirectory,
-                            Global::outputFileBasename + fileExtension );
+        Kd.writeKmerStats(Global::outputDirectory,
+                          Global::outputFileBasename + fileExtension);
 
         delete motif;
     }
