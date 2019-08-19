@@ -28,7 +28,6 @@ KmerPredicter::~KmerPredicter() {
 
 void KmerPredicter::countKmer( std::vector<Sequence*> seqSet ) {
 
-    std::cout << "start initializing...\n";
     std::vector<unsigned long> kmer_counts;
     kmer_counts.resize( kmer_size_ );
     for( size_t i = 0; i < kmer_size_; i++ ){
@@ -38,42 +37,48 @@ void KmerPredicter::countKmer( std::vector<Sequence*> seqSet ) {
     for( size_t n = 0; n < seqSet.size(); n++ ){
 
         size_t id = 0;
-        for( size_t pos = 0; pos < kmer_length_; pos++ ) {
-            uint8_t base = seqSet[n]->getSequence()[pos];
-            if ( base > 0 ) {
-                id += (base-1) * size2power_[pos];
-            } else {
-                std::cout << "Note: Skipped undefined alphabet "
-                          << Alphabet::getBase(base) << std::endl;
-            }
-        }
-        kmer_counts[id]++;
+        size_t step = 0;
 
-        for( size_t pos = kmer_length_; pos < seqSet[n]->getL(); pos++ ) {
+        for( size_t pos = 0; pos < seqSet[n]->getL(); pos++ ) {
+
             uint8_t base = seqSet[n]->getSequence()[pos];
+            // to avoid exceeding
+            base = Alphabet::getCode( Alphabet::getBase( base ));
+
             if ( base > 0 ) {
-                id = id / size2power_[1] + (base-1) * size2power_[kmer_length_-1];
+                if( step < kmer_length_ ){
+                    id += (base-1) * size2power_[step];
+                } else {
+                    id = id / size2power_[1] + (base-1) * size2power_[kmer_length_-1];
+                }
+                step++;
+                assert( id < kmer_size_ );
+            } else {
+                //std::cout << "\tNote: Skipped undefined alphabet "
+                //          << Alphabet::getBase(base) << std::endl;
+                id = 0;
+                step = 0;
+            }
+
+            if( step >= kmer_length_ ){
                 kmer_counts[id]++;
-            } else {
-                std::cout << "Note: Skipped undefined alphabet "
-                          << Alphabet::getBase(base) << std::endl;
             }
-        }
 
+        }
     }
 
     /**
-     * Only save k-mers with more than N occurrences
+     * Only save k-mers with more than N_cutoff occurrences
      */
-    size_t n = 0;
+    size_t k = 0;
     for (size_t idx = 0; idx < kmer_size_; idx++) {
         if (kmer_counts[idx] >= Global::kmerNCutoff ) {
-            enriched_kmer_ids_[n] = idx;
-            enriched_kmer_counts_[n] = kmer_counts[idx];
-            n++;
+            enriched_kmer_ids_[k] = idx;
+            enriched_kmer_counts_[k] = kmer_counts[idx];
+            k++;
         }
     }
-    enriched_kmer_N_ = n;
+    enriched_kmer_N_ = k;
 
     kmer_is_counted_ = true;
 }
@@ -152,6 +157,7 @@ std::string KmerPredicter::ID2String( size_t kmer_id ){
 }
 
 void KmerPredicter::writeKmerStats(char *odir, std::string basename) {
+
     /**
      * save kmer counts in .kmerstats
      */

@@ -81,7 +81,7 @@ void Sequence::setWeight( float weight ){
 
 void Sequence::print(){
 
-	std::cout << ">" << header_ << std::endl;
+	std::cout << header_ << std::endl;
 	for( size_t i = 0; i < L_; i++ ){
 		std::cout << Alphabet::getBase( sequence_[i] );
 	}
@@ -90,6 +90,7 @@ void Sequence::print(){
 
 void Sequence::appendRevComp( uint8_t* sequence, size_t L ){
 
+    sequence_[L] = 0;
 	for( size_t i = 0; i < L; i++ ){
 		// the forward sequence
 		sequence_[i] = sequence[i];
