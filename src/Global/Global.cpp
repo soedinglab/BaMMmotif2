@@ -93,6 +93,7 @@ size_t              Global::at = 0;
 // kmer affinity predictor
 size_t              Global::kmerLength = 8;
 size_t              Global::kmerNCutoff = 1;
+size_t              Global::kmerOverlap = 4;
 
 // printout options
 bool                Global::verbose = false;
@@ -381,6 +382,7 @@ int Global::readArguments( int nargs, char* args[] ){
     // kmer affinity predictor options
     opt >> GetOpt::Option( "kmerLength", kmerLength );
     opt >> GetOpt::Option( "kmerNCutoff", kmerNCutoff );
+    opt >> GetOpt::Option( "kmerOverlap", kmerOverlap );
 
     // printout options
 	opt >> GetOpt::OptionPresent( "verbose", verbose );

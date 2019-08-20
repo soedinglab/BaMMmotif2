@@ -122,6 +122,7 @@ public:
     // kmer affinity predictor options
     static size_t       kmerLength;
     static size_t       kmerNCutoff;
+    static size_t       kmerOverlap;
 
 	// other options
 	static bool			verbose;				// verbose printouts, defaults to false

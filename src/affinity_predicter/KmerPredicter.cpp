@@ -92,58 +92,53 @@ void KmerPredicter::scoreKmer(Motif* motif, BackgroundModel* bg) {
     /**
      * get linear score between Vmotif and Vbg
      */
-    motif->calculateLinearS( bg->getV() );
+    motif->calculateLogS( bg->getV() );
 
-    if( kmer_length_ <= W_ ){
-        /**
-         * when k-mer is no longer than the motif
-         */
-        for( size_t idx = 0; idx < enriched_kmer_N_; idx++ ) {
-            float best_score = 0.f;
-            for (size_t i = 0; i <= W_ - kmer_length_; i++ ){
-                float score = 1.f;
-                // initialize y with a random (K+1)-mer
-                size_t y_prev = 0;
-                for (size_t j = 0; j < K_+1; j++ ){
-                    y_prev += ( rand() % size2power_[1] ) * size2power_[K_-j] ;
-                }
+    /**
+     * when k-mer is no longer than the motif
+     */
+    for( size_t idx = 0; idx < enriched_kmer_N_; idx++ ) {
 
-                // calculate y for each position
-                for (size_t pos = 0; pos < kmer_length_; pos++) {
-                    size_t base = ( enriched_kmer_ids_[idx] % size2power_[pos+1] ) / size2power_[pos];
-                    size_t y_new = y_prev % size2power_[K_] * size2power_[1] + base;
-                    score *= motif->getS()[y_new][pos+i];
-                    y_prev = y_new;
-                }
-                best_score = ( best_score > score) ? best_score : score;
+        //std::cout << ID2String(enriched_kmer_ids_[idx]) << ": ";
+
+        float best_score = 0.f;
+
+        for (size_t i = 0; i < W_ + kmer_length_-1; i++ ){
+
+            float score = 0.f;
+            // initialize y with a random (K+1)-mer
+            size_t y_prev = 0;
+            for (size_t j = 0; j < K_+1; j++ ){
+                y_prev += ( rand() % size2power_[1] ) * size2power_[K_-j] ;
             }
-            enriched_kmer_scores_[idx] = best_score;
-        }
-    } else {
-        /**
-         * when k-mer is longer than the motif
-         */
-        for( size_t idx = 0; idx < enriched_kmer_N_; idx++ ) {
-            float best_score = 0.f;
-            for (size_t i = 0; i < kmer_length_ - W_; i++ ){
-                float score = 0.f;
-                // initialize y with a random (K+1)-mer
-                size_t y_prev = 0;
-                for (size_t j = 0; j < K_+1; j++ ){
-                    y_prev += ( rand() % size2power_[1] ) * size2power_[K_-j] ;
-                }
-                // calculate y for each position
-                for (size_t pos = 0; pos < W_; pos++) {
-                    size_t base = ( enriched_kmer_ids_[idx] % size2power_[pos+1] ) / size2power_[pos];
+            size_t y_prev2 = y_prev;
+
+            // calculate y for each position
+            for (size_t pos = 0; pos < W_; pos++) {
+                if( i+pos >= W_-1 and i+pos < kmer_length_+W_-1 ){
+                    size_t j = i+pos-W_+1;
+                    size_t base = ( enriched_kmer_ids_[idx] % size2power_[j+1] ) / size2power_[j];
+                    //std::cout << Alphabet::getBase( base+1 );
                     size_t y_new = y_prev % size2power_[K_] * size2power_[1] + base;
-                    score *= motif->getS()[y_new][pos];
                     y_prev = y_new;
+                    score += motif->getS()[y_new][pos];
+                } else {
+
                 }
-                best_score = (best_score > score) ? best_score:score;
+                if (i >= W_-1){
+                    size_t j = i-W_+1;
+                    size_t base = ( enriched_kmer_ids_[idx] % size2power_[j+1] ) / size2power_[j];
+                    y_prev = y_prev2 % size2power_[K_] * size2power_[1] + base;
+                    y_prev2 = y_prev;
+                }
             }
-            enriched_kmer_scores_[idx] = best_score;
+            //std::cout << "(" << score << ")"<< '\t';
+            best_score = ( best_score > score) ? best_score : score;
         }
+        //std::cout << "best score:" << best_score << '\n';
+        enriched_kmer_scores_[idx] = best_score;
     }
+
 }
 
 std::string KmerPredicter::ID2String( size_t kmer_id ){
