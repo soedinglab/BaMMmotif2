@@ -120,6 +120,7 @@ public:
     static size_t       at;
 
     // kmer affinity predictor options
+    static bool         predKmer;
     static size_t       kmerLength;
     static size_t       kmerNCutoff;
     static size_t       kmerOverlap;

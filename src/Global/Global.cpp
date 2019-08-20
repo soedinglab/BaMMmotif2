@@ -91,6 +91,7 @@ bool                Global::embedSeqset = false;
 size_t              Global::at = 0;
 
 // kmer affinity predictor
+bool                Global::predKmer = false;
 size_t              Global::kmerLength = 8;
 size_t              Global::kmerNCutoff = 1;
 size_t              Global::kmerOverlap = 4;
@@ -380,6 +381,7 @@ int Global::readArguments( int nargs, char* args[] ){
     }
 
     // kmer affinity predictor options
+    opt >> GetOpt::OptionPresent( "predKmer", predKmer );
     opt >> GetOpt::Option( "kmerLength", kmerLength );
     opt >> GetOpt::Option( "kmerNCutoff", kmerNCutoff );
     opt >> GetOpt::Option( "kmerOverlap", kmerOverlap );
@@ -511,6 +513,13 @@ void Global::printPara(){
 
     std::cout << "Scan input set\t\t";
     if( scoreSeqset ){
+        std::cout << "True" << std::endl;
+    } else {
+        std::cout << "False" << std::endl;
+    }
+
+    std::cout << "Predict K-mer affinity\t";
+    if( predKmer ){
         std::cout << "True" << std::endl;
     } else {
         std::cout << "False" << std::endl;

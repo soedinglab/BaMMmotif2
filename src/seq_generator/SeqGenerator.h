@@ -9,12 +9,12 @@
 
 class SeqGenerator {
 
-	/*
+	/**
 	 * This class generates artificial sequences sets as listed:
 	 * 1. negative sequence set, by using s-mer frequencies;
 	 * 2. simulated positive sequence set, by inserting motif into the negative sequence set;
 	 * 3. negative sequence set with motif patterns masked from the positive sequences.
-	 * Prerequisite:
+	 * Prerequisites:
 	 * 1. sequences set for calculating s-mer frequencies;
 	 * 2. the order of s-mer for sampling, s = 2 by default;
 	 * 3. (optional) the motif model for embedding or masking.

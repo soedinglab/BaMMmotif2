@@ -1,10 +1,15 @@
+//
+// Created by wanwan on 20.08.19.
+//
+
 #include <iomanip>
 #include <chrono>
 
-#include "../Global/Global.h"
-#include "EM.h"
-#include "GibbsSampling.h"
-#include "../evaluater/FDR.h"
+#include "Global.h"
+#include "../motif_refiner/EM.h"
+#include "../motif_refiner/GibbsSampling.h"
+#include "../motif_evaluater/FDR.h"
+#include "../affinity_predicter/KmerPredicter.h"
 
 int main( int nargs, char* args[] ){
 
@@ -27,13 +32,13 @@ int main( int nargs, char* args[] ){
     /**
      * Build up the background model
      */
-	BackgroundModel* bgModel;
-	if( !Global::bgModelGiven ){
-		bgModel = new BackgroundModel( Global::posSequenceSet->getSequences(),
+    BackgroundModel* bgModel;
+    if( !Global::bgModelGiven ){
+        bgModel = new BackgroundModel( Global::posSequenceSet->getSequences(),
                                        Global::outputFileBasename );
     } else {
-		bgModel = new BackgroundModel( Global::bgModelFilename );
-	}
+        bgModel = new BackgroundModel( Global::bgModelFilename );
+    }
 
     // always save the background model
     bgModel->write( Global::outputDirectory, Global::outputFileBasename );
@@ -45,7 +50,7 @@ int main( int nargs, char* args[] ){
     /**
      * Initialize the model
      */
-	MotifSet motif_set( Global::initialModelFilename,
+    MotifSet motif_set( Global::initialModelFilename,
                         Global::addColumns.at(0),
                         Global::addColumns.at(1),
                         Global::initialModelTag,
@@ -94,6 +99,16 @@ int main( int nargs, char* args[] ){
         }
 
     }
+
+    KmerPredicter Kd(Global::kmerLength);
+    if( Global::predKmer ){
+        /**
+         * Count k-mers
+         */
+        Kd.countKmer(posSet);
+    }
+
+
 
     /**
      * Train the model(s)
@@ -257,23 +272,32 @@ int main( int nargs, char* args[] ){
 
         }
 
+        if( Global::predKmer ) {
+            /**
+             * predict k-mer affinities
+             */
+            Kd.scoreKmer( motif, bgModel );
+            Kd.writeKmerStats(Global::outputDirectory,
+                              Global::outputFileBasename + "_motif_" + std::to_string( n+1 ));
+        }
+
         if (motif) delete motif;
     }
 
     // evaluate motifs
-	if( Global::FDR ){
+    if( Global::FDR ){
         /**
          * cross-validate the motif model
          */
 //#pragma omp parallel for
         for( size_t n = 0; n < motif_set.getN(); n++ ){
-			Motif* motif = new Motif( *motif_set.getMotifs()[n] );
-			FDR fdr( posSet, negSet, motif, bgModel );
-			fdr.evaluateMotif();
-			fdr.write( Global::outputDirectory,
+            Motif* motif = new Motif( *motif_set.getMotifs()[n] );
+            FDR fdr( posSet, negSet, motif, bgModel );
+            fdr.evaluateMotif();
+            fdr.write( Global::outputDirectory,
                        Global::outputFileBasename + "_motif_" + std::to_string( n+1 ) );
-			if( motif )		delete motif;
-		}
+            if( motif )		delete motif;
+        }
 
     }
 
@@ -281,13 +305,13 @@ int main( int nargs, char* args[] ){
     auto t_diff = std::chrono::duration_cast<std::chrono::duration<double>>(t1_wall-t0_wall);
     std::cout << std::endl << "---- Total Runtime: " << t_diff.count() <<" seconds ----" << std::endl;
 
-	// free memory
-	if( bgModel ) delete bgModel;
+    // free memory
+    if( bgModel ) delete bgModel;
     if( !Global::negSeqGiven and negSet.size() ){
         for (size_t n = 0; n < negSet.size(); n++) {
             delete negSet[n];
         }
     }
 
-	return 0;
+    return 0;
 }

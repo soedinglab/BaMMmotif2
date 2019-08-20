@@ -2,14 +2,14 @@
 // Created by wanwan on 18.09.17.
 //
 
-/*
- * This function is used for simulating sequences given different parameters.
+/**
+ * This function is used for simulating sequences
+ * given different parameters.
  */
 
-#include "../Global/Global.h"
 #include "SeqGenerator.h"
 #include "../init/MotifSet.h"
-#include "../refiner/EM.h"
+#include "../motif_refiner/EM.h"
 
 int main( int nargs, char* args[] ){
 

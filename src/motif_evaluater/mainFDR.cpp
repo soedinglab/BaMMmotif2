@@ -2,8 +2,8 @@
 // Created by wanwan on 03.09.17.
 //
 
-#include "../Global/Global.h"
 #include "FDR.h"
+#include "../Global/Global.h"
 
 int main( int nargs, char* args[] ){
 

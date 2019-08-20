@@ -4,8 +4,8 @@
 #include "../init/BackgroundModel.h"
 #include "../init/Motif.h"
 #include "../Global/utils.h"
-#include "../refiner/EM.h"
-#include "../refiner/GibbsSampling.h"
+#include "../motif_refiner/EM.h"
+#include "../motif_refiner/GibbsSampling.h"
 #include "../seq_generator/SeqGenerator.h"
 #include "../seq_scanner/ScoreSeqSet.h"
 

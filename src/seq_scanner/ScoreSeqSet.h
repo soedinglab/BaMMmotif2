@@ -13,7 +13,7 @@
 #include "../Global/Global.h"
 
 class ScoreSeqSet{
-	/*
+	/**
 	 * This class is aimed for:
 	 * scoring sequences from the given sequence set
 	 * using the (learned) model and background model,

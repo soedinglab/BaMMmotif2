@@ -3,7 +3,6 @@
 // This function is used for scanning motif occurrences in a sequence set
 //
 
-#include "../Global/Global.h"
 #include "ScoreSeqSet.h"
 #include "../init/MotifSet.h"
 #include "../seq_generator/SeqGenerator.h"
