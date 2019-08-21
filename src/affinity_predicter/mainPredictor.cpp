@@ -4,7 +4,7 @@
 
 #include "../Global/Global.h"
 #include "../init/MotifSet.h"
-#include "KmerPredicter.h"
+#include "KmerPredictor.h"
 
 int main( int nargs, char* args[] ) {
 
@@ -68,7 +68,7 @@ int main( int nargs, char* args[] ) {
     /**
      * Count k-mers
      */
-    KmerPredicter Kd( Global::kmerLength );
+    KmerPredictor Kd( Global::kmerLength );
     Kd.countKmer( posSet );
 
     for( size_t n = 0; n < motif_set.getN(); n++ ) {

@@ -9,7 +9,7 @@
 #include "../motif_refiner/EM.h"
 #include "../motif_refiner/GibbsSampling.h"
 #include "../motif_evaluater/FDR.h"
-#include "../affinity_predicter/KmerPredicter.h"
+#include "../affinity_predicter/KmerPredictor.h"
 
 int main( int nargs, char* args[] ){
 
@@ -100,12 +100,13 @@ int main( int nargs, char* args[] ){
 
     }
 
-    KmerPredicter Kd(Global::kmerLength);
+    KmerPredictor Kd(Global::kmerLength );
     if( Global::predKmer ){
         /**
          * Count k-mers
          */
         Kd.countKmer(posSet);
+
     }
 
 

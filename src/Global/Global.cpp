@@ -93,7 +93,7 @@ size_t              Global::at = 0;
 // kmer affinity predictor
 bool                Global::predKmer = false;
 size_t              Global::kmerLength = 8;
-size_t              Global::kmerNCutoff = 1;
+size_t              Global::kmerNCutoff = 0;
 size_t              Global::kmerOverlap = 4;
 
 // printout options
@@ -159,6 +159,11 @@ Global::Global( int nargs, char* args[] ){
         if ( posN * mFold < minNegN ) {
             mFold = minNegN / posN + rest;
         }
+    }
+
+    if( !kmerNCutoff ){
+        kmerNCutoff = posSequenceSet->getBaseSum()
+                      / ipow( Alphabet::getSize(), kmerLength);
     }
 
     // optional: read in sequence intensities (header and intensity columns?)

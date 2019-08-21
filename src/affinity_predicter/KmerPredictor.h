@@ -9,7 +9,8 @@
 #include "../init/Motif.h"
 #include "../init/BackgroundModel.h"
 
-class KmerPredicter {
+class KmerPredictor {
+
     /**
      * This class is aimed for:
      * count k-mers from the given sequence set
@@ -25,25 +26,37 @@ class KmerPredicter {
 public:
 
     // define de-/constructor
-    KmerPredicter( size_t kmer_length );
-    ~KmerPredicter();
+    KmerPredictor( size_t kmer_length );
+    ~KmerPredictor();
 
-    // decode kmer ID back to kmer string
-    std::string         ID2String( size_t kmer_id );
+    // decode k-mer ID back to k-mer string
+    std::string         encode2string(unsigned long kmer_encode);
     void                countKmer( std::vector<Sequence*> seqSet );
     void                scoreKmer(Motif* motif, BackgroundModel* bg);
     void                writeKmerStats(char *odir, std::string basename);
+    void                calcRevComp();
 
 private:
 
     size_t  kmer_length_;
     size_t  kmer_size_;
-    float*  enriched_kmer_scores_;
-    size_t* enriched_kmer_ids_;
-    unsigned long* enriched_kmer_counts_;
-    size_t  enriched_kmer_N_;
     size_t* size2power_;
+    unsigned long* kmer2encode_;
+    unsigned long* encode2revcomp_;
+    unsigned long* encode2index_;
+    size_t  kmer_N_;
     bool    kmer_is_counted_;
+
+    std::vector<unsigned long> index2encode_;
+
+    std::vector<float>  enriched_kmer_scores_;
+    std::vector<size_t> enriched_kmer_encodes_;
+    std::vector<size_t> enriched_kmer_counts_;
+
+    size_t  enriched_kmer_N_;
+
+
+
 
 };
 
