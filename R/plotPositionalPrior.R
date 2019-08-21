@@ -79,7 +79,7 @@ for( file in Sys.glob(full_glob) ){
     # read in the data
     table <- try(read.table(filename,
                             fileEncoding="latin1", as.is=TRUE, na.strings = "NA",
-                            fill = TRUE, strip.white = TRUE, skip=1, sep = '\t'))
+                            fill = TRUE, quote="", strip.white = TRUE, skip=1, sep = '\t'))
 
     motif_positions     = c(table$V1)
     whole_region        = line_number

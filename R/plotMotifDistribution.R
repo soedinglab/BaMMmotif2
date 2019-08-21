@@ -111,7 +111,7 @@ for( file in Sys.glob(full_glob) ){
         # read in the data
         table <- try(read.table(filename,
                                 fileEncoding="latin1", as.is=TRUE, na.strings = "NA",
-                                fill = TRUE, strip.white = TRUE, skip=1, sep = '\t'))
+                                fill = TRUE, quote="", strip.white = TRUE, skip=1, sep = '\t'))
 
         seqCount            = line_number - 1
         strand_length       = c(table$V2)
