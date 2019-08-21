@@ -23,7 +23,6 @@ KmerPredictor::KmerPredictor( size_t kmer_length ){
     kmer_N_ = 0;
     enriched_kmer_N_ = 0;
     index2encode_.resize(0);
-
     enriched_kmer_encodes_.resize(0);
     enriched_kmer_counts_.resize(0);
     enriched_kmer_scores_.resize(0);
@@ -71,18 +70,19 @@ void KmerPredictor::countKmer( std::vector<Sequence*> seqSet ) {
                 }
                 step++;
             } else {
-                //std::cout << "\tNote: Skipped undefined alphabet "
-                //          << Alphabet::getBase(base) << std::endl;
                 encode = 0;
                 step = 0;
+                if( Global::verbose ){
+                    std::cout << "\tNote: While counting k-mers, skipped undefined alphabet "
+                              << Alphabet::getBase(base) << std::endl;
+                }
             }
 
             if( step >= kmer_length_ ){
-                size_t new_encode;
                 size_t revcomp = encode2revcomp_[encode];
-                new_encode = ( encode <= revcomp ) ? encode : revcomp;
-                assert( encode2index_[new_encode] < kmer_N_ );
-                kmer_counts[encode2index_[new_encode]]++;
+                size_t min_encode = ( encode <= revcomp ) ? encode : revcomp;
+                assert( encode2index_[min_encode] < kmer_N_ );
+                kmer_counts[encode2index_[min_encode]]++;
             }
         }
     }
