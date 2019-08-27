@@ -390,13 +390,13 @@ void ScoreSeqSet::writeLogOdds( char* odir, std::string basename, bool ss ){
 	 */
 
     size_t 	end; 				// end of motif match
-
-    std::string opath = std::string( odir )  + '/' + basename + ".logOddsZoops";
+    size_t  n_top = 2;
+    std::string opath = std::string( odir )  + '/' + basename + ".logOdds";
 
     std::ofstream ofile( opath );
 
     // add a header to the results
-    ofile << "seq\tlength\tstrand\tstart..end\tpattern\tzoops_score" << std::endl;
+    ofile << "seq\tlength\tstrand\tstart..end\tpattern\tzoops_score\tmops_score" << std::endl;
 
     for( size_t n = 0; n < seqSet_.size(); n++ ){
         size_t seqlen = seqSet_[n]->getL();
@@ -404,6 +404,14 @@ void ScoreSeqSet::writeLogOdds( char* odir, std::string basename, bool ss ){
             seqlen = ( seqlen - 1 ) / 2;
         }
 
+        float mops_sum = 0.f;
+
+        // sort mops scores and sum up the top N scores
+        sort(mops_scores_[n].begin(), mops_scores_[n].end(), std::greater<float>());
+
+        for( size_t i = 0; i < n_top; i++ ){
+            mops_sum += mops_scores_[n][i];
+        }
         // >header:sequence_length
         ofile << seqSet_[n]->getHeader() << '\t' << seqlen << '\t';
 
@@ -415,9 +423,9 @@ void ScoreSeqSet::writeLogOdds( char* odir, std::string basename, bool ss ){
         for( size_t m = z_[n]; m < end; m++ ){
             ofile << Alphabet::getBase( seqSet_[n]->getSequence()[m] );
         }
-        ofile << '\t' << std::setprecision( 3 ) << zoops_scores_[n] << std::endl;
-
-
+        ofile << std::setprecision( 3 )
+              << '\t' << zoops_scores_[n]
+              << '\t' << mops_sum << std::endl;
     }
 
 }

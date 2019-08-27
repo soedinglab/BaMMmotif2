@@ -55,7 +55,8 @@ void KmerPredictor::countKmer( std::vector<Sequence*> seqSet ) {
         size_t encode = 0;
         size_t step = 0;
 
-        for( size_t pos = 0; pos < seqSet[n]->getL(); pos++ ) {
+        size_t seq_length = (Global::ss) ? seqSet[n]->getL() : ( seqSet[n]->getL()-1 ) / 2;
+        for( size_t pos = 0; pos < seq_length; pos++ ) {
 
             uint8_t base = seqSet[n]->getSequence()[pos];
             // to avoid exceeding
@@ -81,6 +82,8 @@ void KmerPredictor::countKmer( std::vector<Sequence*> seqSet ) {
             if( step >= kmer_length_ ){
                 size_t revcomp = encode2revcomp_[encode];
                 size_t min_encode = ( encode <= revcomp ) ? encode : revcomp;
+                //size_t min_encode = encode;
+                // todo: there is a bug in double counting!!!
                 assert( encode2index_[min_encode] < kmer_N_ );
                 kmer_counts[encode2index_[min_encode]]++;
             }

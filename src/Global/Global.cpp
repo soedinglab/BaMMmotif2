@@ -164,6 +164,9 @@ Global::Global( int nargs, char* args[] ){
     if( !kmerNCutoff ){
         kmerNCutoff = posSequenceSet->getBaseSum()
                       / ipow( Alphabet::getSize(), kmerLength);
+        if( !ss ){
+            kmerNCutoff *= 2;
+        }
     }
 
     // optional: read in sequence intensities (header and intensity columns?)
@@ -525,7 +528,7 @@ void Global::printPara(){
 
     std::cout << "Predict K-mer affinity\t";
     if( predKmer ){
-        std::cout << "True" << std::endl;
+        std::cout << "True (cutoff of k-mer counts = " << kmerNCutoff << ")" << std::endl;
     } else {
         std::cout << "False" << std::endl;
     }

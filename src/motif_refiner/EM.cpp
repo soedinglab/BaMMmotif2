@@ -176,8 +176,8 @@ int EM::optimize(){
             motif_->write(odir, "movie_clap" + std::to_string(iteration));
         }
 
-/*        // todo:
-        if( Global::savePi ){
+        // todo:
+        if( Global::makeMovie and Global::savePi ){
             // pre-define hyper-parameters for optimizing position priors
             size_t LW1 = seqs_[0]->getL()-W_+1;
             std::string opath = std::string( Global::outputDirectory ) +'/'
@@ -188,7 +188,6 @@ int EM::optimize(){
                 ofile << pi_[i] << std::endl;
             }
         }
-*/
 
         // todo: print out for checking
         if( Global::debug ) {

@@ -9,7 +9,7 @@
 #include "../motif_refiner/EM.h"
 #include "../motif_refiner/GibbsSampling.h"
 #include "../motif_evaluater/FDR.h"
-#include "../affinity_predicter/KmerPredictor.h"
+#include "../affinity_predictor/KmerPredictor.h"
 
 int main( int nargs, char* args[] ){
 
@@ -21,7 +21,7 @@ int main( int nargs, char* args[] ){
               << "=      Welcome to use BaMM!motif     =" << std::endl
               << "=                    Version 2.0     =" << std::endl
               << "=               by Soeding Group     =" << std::endl
-              << "=  http://www.mpibpc.mpg.de/soeding  =" << std::endl
+              << "= https://www.mpibpc.mpg.de/soeding  =" << std::endl
               << "======================================" << std::endl;
 
     /**
