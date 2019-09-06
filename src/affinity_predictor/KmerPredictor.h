@@ -33,6 +33,7 @@ public:
     std::string         encode2string(unsigned long kmer_encode);
     void                countKmer( std::vector<Sequence*> seqSet );
     void                scoreKmer(Motif* motif, BackgroundModel* bg);
+    void                expectKmer(Motif* motif, BackgroundModel* bg);
     void                writeKmerStats(char *odir, std::string basename);
     void                calcRevComp();
 
@@ -52,6 +53,7 @@ private:
     std::vector<float>  enriched_kmer_scores_;
     std::vector<size_t> enriched_kmer_encodes_;
     std::vector<size_t> enriched_kmer_counts_;
+    std::vector<float>  enriched_kmer_expects_;
 
     size_t  enriched_kmer_N_;
 

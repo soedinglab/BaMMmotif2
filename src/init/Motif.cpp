@@ -508,6 +508,34 @@ void Motif::print(){
 
 }
 
+void Motif::printS(){
+    std::cout << " _________________" << std::endl
+              << "|                 |" << std::endl
+              << "| Log Odds Scores |" << std::endl
+              << "|_________________|" << std::endl
+              << std::endl;
+
+    std::vector<float> sum_score;
+    sum_score.resize(W_);
+    for( size_t j = 0; j < W_; j++ ) {
+        sum_score[j] = 0.f;
+    }
+    for (size_t y = 0; y < Global::A2powerK[K_+1]; y++) {
+        for( size_t j = 0; j < W_; j++ ) {
+            std::cout << std::setprecision(2) << s_[y][j] << '\t';
+            sum_score[j] += s_[y][j];
+        }
+        std::cout << std::endl;
+    }
+
+    // print the sum of scores on each position
+    std::cout << "sum scores at each position:" << std::endl;
+    for( size_t j = 0; j < W_; j++ ) {
+        std::cout << sum_score[j] << '\t';
+    }
+    std::cout << std::endl;
+}
+
 void Motif::write( char* odir, std::string basename ){
 
 	/**

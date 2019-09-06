@@ -507,7 +507,7 @@ void Global::printPara(){
         std::cout << "Optimizer\t\tEM" << std::endl
                   << "Convergence epsilon\t" << EMepsilon << std::endl;
     } else if( CGS ) {
-        std::cout << "Optimizer\t\t\tGibbs sampling" << std::endl;
+        std::cout << "Optimizer\t\tGibbs sampler" << std::endl;
     }
     std::cout << "Initial portion q\t"  << q << std::endl<< std::endl;
 

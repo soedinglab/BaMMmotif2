@@ -263,6 +263,7 @@ void EM::EStep(){
 
         // calculate log likelihood over all sequences
         llikelihood += logf( normFactor );
+
     }
 
     llikelihood_ = llikelihood;
@@ -1071,7 +1072,7 @@ void EM::printR(){
                 std::cout << r_[n][L+padding_-i] << '\t';
             }
             std::cout << /*"sum=" << sum << */std::endl;
-            assert( fabsf( sum-1.0f ) < 1.e-4f );
+            //assert( fabsf( sum-1.0f ) < 1.e-4f );
         }
     } else {
         for( size_t n = 0; n < seqs_.size(); n++ ){

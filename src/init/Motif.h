@@ -40,6 +40,7 @@ public:
 	void				calculateLinearS( float** v_bg ); // calculate S in linear space for speeding up
 
 	void 				print();					// print v to console
+    void                printS();                   // print log odds scores
 	void 				write( char* odir, std::string basename );
 
 private:

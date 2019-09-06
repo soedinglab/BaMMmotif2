@@ -190,12 +190,16 @@ int main( int nargs, char* args[] ){
 
             // learn motifs by collapsed Gibbs sampling
             model.optimize();
+
             // write model parameters on the disc
             if (Global::saveBaMMs) {
                 model.write(Global::outputDirectory,
                             Global::outputFileBasename + "_motif_" + std::to_string(n + 1),
                             Global::ss);
             }
+            // save optimized alphas
+            model.writeAlphas(Global::outputDirectory,
+                              Global::outputFileBasename + "_motif_" + std::to_string(n + 1));
 
             if( Global::optimizeQ ) {
                 // print out the optimized q for checking:

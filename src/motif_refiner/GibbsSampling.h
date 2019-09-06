@@ -24,7 +24,7 @@ public:
     void					printZ();			// print out observed motif starting position z
 	void					write( char* odir, std::string basename, bool ss );
 												// write out the optimized (hyper-)parameters
-
+    void                    writeAlphas(char* odir, std::string basename);
 
 private:
 
@@ -43,7 +43,7 @@ private:
                                                 // Note: here r_[n][i] indicates the responsibility of having a motif
                                                 //      on position L-W-i
 
-    std::vector<std::vector<float>> posteriorCum_;         // posteriors over all positions in all sequences
+    std::vector<std::vector<float>> posteriorCum_; // posteriors over all positions in all sequences
 
 	float**					s_;					// log odds scores
 	float*** 				n_;	            	// fractional counts n for (k+1)-mers y at motif position j
@@ -61,8 +61,17 @@ private:
 	double**				m1_t_;				// first moment for alpha optimizer (ADAM)
 	double**				m2_t_;				// second moment for alpha optimizer (ADAM)
 
+                            // initialize motif position z
+    void                    initialize_z();
+
+                            // count k-mers based on z
+    void                    count_kmer_on_z();
+
+                            // update kmer counts after sampling z
+    void                    update_kmer_count_on_z();
+
 							// sample motif position z by collapsed Gibbs sampling
-	void					Collapsed_Gibbs_sampling_z();
+	void					collapsed_Gibbs_sampling_z();
 
 							// sample sequence fraction q for motif by regular Gibbs sampling
 	void					Gibbs_sample_q();

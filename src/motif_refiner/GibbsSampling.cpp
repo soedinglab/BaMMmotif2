@@ -87,84 +87,22 @@ GibbsSampling::~GibbsSampling(){
 
 void GibbsSampling::optimize(){
 
-    if( Global::verbose ) {
-        std::cout << " __________________"  << std::endl
-                  << "|*                *|" << std::endl
-                  << "|  Gibbs Sampling  |" << std::endl
-                  << "|*________________*|" << std::endl
-                  << std::endl;
-    }
-
     auto t0_wall = std::chrono::high_resolution_clock::now();
-    // initialize z for all the sequences
-    if( !Global::noInitialZ ){
-        EM model( motif_, bg_, seqs_ );
-        // E-step: calculate posterior
-        model.EStep();
-        float** r = model.getR();
 
-        // extract initial z from the indices of the biggest responsibilities
-        for( size_t n = 0; n < seqs_.size(); n++ ){
-            size_t  L = seqs_[n]->getL();
-            size_t  LW1 = L - W_ + 1;
-            float maxR = 0.f;
-            size_t maxIdx = 0;
-            for( size_t i = 1; i <= LW1; i++ ){
-                if( r[n][L+padding_-i] > maxR ){
-                    maxR = r[n][L+padding_-i];
-                    maxIdx = i;
-                }
-            }
-            z_[n] = maxIdx;
-        }
+    /**
+     * initialize z[n] for all the sequences
+     */
+    initialize_z();
 
-    } else {
-        // initialize z with a random number
-        for( size_t n = 0; n < seqs_.size(); n++ ){
-            size_t LW2 = seqs_[n]->getL() - W_ + 2;
-            z_[n] = static_cast<size_t>( rand() ) % LW2;
-        }
-    }
+    /**
+     * count the k-mers
+     */
+    count_kmer_on_z();
 
-    // count the k-mers
-    // 1. reset n_z_[k][y][j] to 0
-    for( size_t k = 0; k < K_+1; k++ ){
-        for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
-            for( size_t j = 0; j < W_; j++ ){
-                n_[k][y][j] = 0.0f;
-            }
-        }
-    }
-
-    // 2. count k-mers for the highest order K
-#pragma omp parallel for
-    for( size_t n = 0; n < seqs_.size(); n++ ){
-        if( z_[n] > 0 ){
-            size_t* kmer = seqs_[n]->getKmer();
-            for( size_t j = 0; j < W_; j++ ){
-                size_t y = kmer[z_[n]-1+j] % Global::A2powerK[K_+1];
-                n_[K_][y][j]++;
-            }
-        }
-    }
-
-    // compute k-mer counts for all the lower orders
-    for( size_t k = K_; k > 0; k-- ){
-        for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
-            size_t y2 = y % Global::A2powerK[k];
-            for( size_t j = 0; j < W_; j++ ){
-                n_[k-1][y2][j] += n_[k][y][j];
-            }
-        }
-    }
-
-/*
     // Gibbs sampling position z using empirical alphas
     for( size_t iter = 0; iter < 10; iter++ ){
-        Collapsed_Gibbs_sampling_z();
+        collapsed_Gibbs_sampling_z();
     }
-
-*/
 
     // vector to store the last a few alphas for certain sampling methods
     std::vector<std::vector<float>> alpha_avg( K_+1 );
@@ -177,6 +115,8 @@ void GibbsSampling::optimize(){
 
     size_t iteration = 0;
     size_t last_steps= 10;
+    llikelihood_ = 0.f;
+
     // iterate over
     while( iteration < Global::maxIterations ){
 
@@ -187,7 +127,8 @@ void GibbsSampling::optimize(){
 
         // Collapsed Gibbs sampling position z
         if( !Global::noZSampling ) {
-            Collapsed_Gibbs_sampling_z();
+            collapsed_Gibbs_sampling_z();
+
         }
 
         // Gibbs sampling fraction q
@@ -258,21 +199,6 @@ void GibbsSampling::optimize(){
                 A_[k][j] = alpha_avg[k][j] / (float)last_steps;
             }
         }
-    }
-
-    // todo: print out alphas for checking
-    std::string opath = std::string( Global::outputDirectory )
-                        + "/optimized.alphas" ;
-    std::ofstream ofile( opath.c_str() );
-    for( size_t j = 0; j < W_; j++ ){
-        ofile << "pos " << std::to_string(j+1) << '\t';
-    }
-    ofile << '\n';
-    for( size_t k = 0; k < K_+1; k++ ){
-        for( size_t j = 0; j < W_; j++ ){
-            ofile << std::setprecision(4) << A_[k][j] << '\t';
-        }
-        ofile << '\n';
     }
 
     // update model parameter v
@@ -393,7 +319,79 @@ void GibbsSampling::optimize(){
 
 }
 
-void GibbsSampling::Collapsed_Gibbs_sampling_z(){
+void GibbsSampling::initialize_z() {
+
+    if( !Global::noInitialZ ){
+        // initialize z[n] by the largest r[n][i]
+        EM model( motif_, bg_, seqs_ );
+        // E-step: calculate posterior
+        model.updatePrior();
+        model.EStep();
+        float** r = model.getR();
+
+        // extract initial z from the indices of the biggest responsibilities
+        for( size_t n = 0; n < seqs_.size(); n++ ){
+            size_t  L = seqs_[n]->getL();
+            size_t  LW1 = L - W_ + 1;
+            float maxR = 0.f;
+            size_t maxIdx = 0;
+            for( size_t i = 1; i <= LW1; i++ ){
+                if( r[n][L+padding_-i] > maxR ){
+                    maxR = r[n][L+padding_-i];
+                    maxIdx = i;
+                }
+            }
+            z_[n] = maxIdx;
+        }
+    } else {
+        // initialize z with a random number
+        for( size_t n = 0; n < seqs_.size(); n++ ){
+            size_t LW2 = seqs_[n]->getL() - W_ + 2;
+            z_[n] = static_cast<size_t>( rand() ) % LW2;
+        }
+    }
+}
+
+void GibbsSampling::count_kmer_on_z() {
+
+    N0_ = 0;        // reset N0
+
+    // 1. reset n_z_[k][y][j] to 0
+    for( size_t k = 0; k < K_+1; k++ ){
+        for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
+            for( size_t j = 0; j < W_; j++ ){
+                n_[k][y][j] = 0.0f;
+            }
+        }
+    }
+
+    // 2. count k-mers for the highest order K
+//#pragma omp parallel for
+    for( size_t n = 0; n < seqs_.size(); n++ ){
+        if( z_[n] > 0 ){
+            size_t* kmer = seqs_[n]->getKmer();
+            for( size_t j = 0; j < W_; j++ ){
+                size_t y = kmer[z_[n]-1+j] % Global::A2powerK[K_+1];
+                n_[K_][y][j]++;
+            }
+        } else {
+            N0_++;
+        }
+    }
+
+    // 3. compute k-mer counts for all the lower orders
+    for( size_t k = K_; k > 0; k-- ){
+        for( size_t y = 0; y < Global::A2powerK[k+1]; y++ ){
+            size_t y2 = y % Global::A2powerK[k];
+            for( size_t j = 0; j < W_; j++ ){
+                n_[k-1][y2][j] += n_[k][y][j];
+            }
+        }
+    }
+
+}
+
+void GibbsSampling::collapsed_Gibbs_sampling_z(){
 
     N0_ = 0;		// reset N0
 
@@ -408,10 +406,12 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
     // reset k_bg
     // todo: check if this is correct
     size_t k_bg = ( K_ > K_bg_ ) ? K_bg_ : K_;
-    // sampling z:
-//    bool remove_kmer_slowly = false;	// a flag to switch between slow and fast versions for counting k-mers
 
-    // loop over all sequences and drop one sequence each time and update r
+    bool remove_kmer_slowly = true;	// a flag to switch between slow and fast versions for counting k-mers
+
+    /**
+     * Sample z[n] for all sequences
+     */
 //#pragma omp parallel for
     // todo: this parallelization does not give the same result yet
     for( size_t n = 0; n < seqs_.size(); n++ ){
@@ -420,19 +420,22 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
         size_t  LW1 = L - W_ + 1;
         size_t* kmer = seqs_[n]->getKmer();
 
+        /**
+         * ----------- Remove previous kmers w.r.t. z[n] -----------
+         */
         // count k-mers at position z_i+j except the n'th sequence
         // remove the k-mer counts from the sequence with the current z
         // and re-calculate the log odds scores in linear space
-        /**
-         * -------------- faster version of removing k-mer ------------------
-         */
+
         float sumN = 0.0f;
         for( size_t a = 0; a < Global::A2powerK[1]; a++ ){
             sumN += n_[0][a][0];
         }
 
-        if( /* !remove_kmer_slowly && */ z_[n] > 0 ){
-
+        if( z_[n] > 0 and !remove_kmer_slowly ){
+            /**
+             * ----------- faster version -----------
+             */
             for( size_t j = 0; j < W_; j++ ){
 
                 // for k = 0:
@@ -463,21 +466,14 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
                     s_[y][j] = v_[K_][y][j] / v_bg_[k_bg][y_bg];
                 }
             }
-        }
-
-        /**
-         * -------------- slower version of removing k-mer ------------------
-         */
-/*
-        if( remove_kmer_slowly ){
-
-            // remove the k-mer counts from the sequence with the current z
-            if( z_[n] > 0 ){
-                for( size_t j = 0; j < W_; j++ ){
-                    for( size_t k = 0; k < K_+1; k++ ){
-                        size_t y = kmer[z_[n]-1+j] % Global::A2powerK[k+1];
-                        n_[k][y][j]--;
-                    }
+        } else if( z_[n] > 0 and remove_kmer_slowly ){
+            /**
+             * --------- slower version -----------
+             */
+            for( size_t j = 0; j < W_; j++ ){
+                for( size_t k = 0; k < K_+1; k++ ){
+                    size_t y = kmer[z_[n]-1+j] % Global::A2powerK[k+1];
+                    n_[k][y][j]--;
                 }
             }
 
@@ -486,7 +482,6 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
             // compute log odd scores s[y][j] of the highest order K
             motif_->calculateLinearS( bg_->getV() );
         }
-*/
 
         /**
          * ------- sampling equation -------
@@ -495,6 +490,7 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
         // over all LW1 positions on n'th sequence:
         float normFactor = 0.f;
         float pos_i = q_ / static_cast<float>( LW1 );
+        float pos_0 = 1.f - q_;
         for( size_t i = 1; i <= LW1; i++ ){
             pos_[n][i] = pos_i;
             r_[n][L+padding_-i] = 1.0f;
@@ -513,7 +509,8 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
         }
 
         // calculate responsibilities and normalize them
-        posteriorCum_[n][0] = r_[n][0] = pos_[n][0];
+        r_[n][0] = pos_0;
+        posteriorCum_[n][0] = r_[n][0];
 
         normFactor += r_[n][0];
         for( size_t i = 1; i <= LW1; i++ ){
@@ -524,7 +521,6 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
 
         // calculate log likelihood of sequences
         llikelihood_ += logf( normFactor );
-
 
 /*
         // normalize responsibilities and append them to a vector of posteriors
@@ -549,24 +545,22 @@ void GibbsSampling::Collapsed_Gibbs_sampling_z(){
                                         std::lower_bound( posteriorCum_[n].begin(),
                                                           posteriorCum_[n].end(),
                                                           uni_dist( Global::rngx ) ));
-        if( z_[n] == 0 ){
-            // count sequences which do not contain motifs.
-            N0_++;
-
-        } else {
-            // add the k-mer counts from the current sequence with the updated z
+        
+        // add the k-mer counts from the sequence with the current z
+        if( z_[n] > 0 ){
             for( size_t j = 0; j < W_; j++ ){
                 for( size_t k = 0; k < K_+1; k++ ){
                     size_t y = kmer[z_[n]-1+j] % Global::A2powerK[k+1];
                     n_[k][y][j]++;
                 }
             }
+        } else {
+            N0_++;
         }
     }
 
-    if(Global::verbose){
-        std::cout << "N0=" << N0_ << std::endl;
-    }
+    //std::cout << "N0=" << N0_ << std::endl;
+
 }
 
 void GibbsSampling::Gibbs_sample_q(){
@@ -574,6 +568,11 @@ void GibbsSampling::Gibbs_sample_q(){
     // sampling the fraction of sequences which contain the motif
     boost::math::beta_distribution<float> q_beta_dist( ( float )seqs_.size() - ( float )N0_ + 1.0f, ( float )N0_ + 1.0f );
     q_ = quantile( q_beta_dist, ( float )rand() / ( float )RAND_MAX );
+
+    // todo: only for checking
+    if( Global::verbose ){
+        std::cout << "optimized Q=" << q_ << std::endl;
+    }
 
 }
 
@@ -1125,4 +1124,24 @@ void GibbsSampling::write( char* odir, std::string basename, bool ss ){
             ofile_r << std::endl;
         }
     }
+}
+
+void GibbsSampling::writeAlphas(char *odir, std::string basename) {
+    // todo: print out alphas for checking
+    std::string opath = std::string( odir ) + '/' + basename
+                        + "_optimized.alphas" ;
+    std::ofstream ofile( opath.c_str() );
+    ofile << "position\t";
+    for( size_t j = 0; j < W_; j++ ){
+        ofile << std::to_string(j+1) << '\t';
+    }
+    ofile << '\n';
+    for( size_t k = 0; k < K_+1; k++ ){
+        ofile << "order " << k<< "\t\t";
+        for( size_t j = 0; j < W_; j++ ){
+            ofile << std::setprecision(4) << A_[k][j] << '\t';
+        }
+        ofile << '\n';
+    }
+
 }
