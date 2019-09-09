@@ -118,7 +118,7 @@ void GibbsSampling::optimize(){
     llikelihood_ = 0.f;
 
     // iterate over
-    while( iteration < Global::maxIterations ){
+    while( iteration < Global::maxSamplingIterations ){
 
         // get parameter variables with highest order before CGS
         float llikelihood_prev = llikelihood_;
@@ -145,7 +145,7 @@ void GibbsSampling::optimize(){
 
             GibbsMH_sample_alphas( iteration );
 
-            if( iteration > Global::maxIterations - last_steps ){
+            if( iteration > Global::maxSamplingIterations - last_steps ){
                 for( size_t k = 0; k < K_+1; k++ ){
                     for( size_t j = 0; j < W_; j++ ){
                         alpha_avg[k][j] += A_[k][j];
@@ -157,7 +157,7 @@ void GibbsSampling::optimize(){
 
             Discrete_sample_alphas( iteration );
 
-            if( iteration > Global::maxIterations - last_steps ){
+            if( iteration > Global::maxSamplingIterations - last_steps ){
                 for( size_t k = 0; k < K_+1; k++ ){
                     for( size_t j = 0; j < W_; j++ ){
                         alpha_avg[k][j] += A_[k][j];
@@ -545,7 +545,7 @@ void GibbsSampling::collapsed_Gibbs_sampling_z(){
                                         std::lower_bound( posteriorCum_[n].begin(),
                                                           posteriorCum_[n].end(),
                                                           uni_dist( Global::rngx ) ));
-        
+
         // add the k-mer counts from the sequence with the current z
         if( z_[n] > 0 ){
             for( size_t j = 0; j < W_; j++ ){

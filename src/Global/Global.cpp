@@ -73,6 +73,7 @@ bool				Global::dissampleAlphas = false;		// enable alpha sampling in CGS using 
 bool				Global::noZSampling = false;			// disable q sampling in CGS
 bool				Global::noQSampling = false;			// disable q sampling in CGS
 bool				Global::debugAlphas = false;
+size_t              Global::maxSamplingIterations = 100;
 
 // FDR options
 bool				Global::FDR = false;					// triggers False-Discovery-Rate (FDR) estimation

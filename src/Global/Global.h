@@ -102,6 +102,7 @@ public:
 	static bool			noZSampling;			// disable sampling of z in CGS
 	static bool			noQSampling;			// disable sampling of q in CGS
 	static bool			debugAlphas;
+    static size_t       maxSamplingIterations;
 
 	// FDR options
 	static bool			FDR;					// triggers False-Discovery-Rate (FDR) estimation
