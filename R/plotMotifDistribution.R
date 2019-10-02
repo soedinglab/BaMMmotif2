@@ -68,13 +68,12 @@ for( file in Sys.glob(full_glob) ){
     file_name = paste(c(file_prefix, motif_id, file_suffix), collapse="")
     filename = file.path(maindir, file_name)
     line_number = as.integer(system2("wc", args=c("-l", filename, " | awk '{print $1}'" ), stdout = TRUE))
-
-    if( line_number <= 2 ){
-        print("Warning: The input file is empty. Query motif has <3 occurrences in the sequence set.")
-        # print out an empty image
-
-	    picname <- paste(c(file_prefix, motif_id, "_distribution.png"), collapse="")
-	    picname <- file.path(maindir, picname)
+	print(line_number)
+    if( line_number <= 3 ){
+        print("Warning: The input file is empty. Query motif has <3 occurrences in the sequence set.")     
+	# print out an empty image
+	picname <- paste(c(file_prefix, motif_id, "_distribution.png"), collapse="")
+	picname <- file.path(maindir, picname)
 
         png(filename=picname, width=png_width, height=png_height)
         par(oma=c(0,0,0,0), mar=c(6,6.5,5,2))
