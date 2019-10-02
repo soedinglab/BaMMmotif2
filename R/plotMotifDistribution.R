@@ -68,7 +68,7 @@ for( file in Sys.glob(full_glob) ){
     file_name = paste(c(file_prefix, motif_id, file_suffix), collapse="")
     filename = file.path(maindir, file_name)
     line_number = as.integer(system2("wc", args=c("-l", filename, " | awk '{print $1}'" ), stdout = TRUE))
-	print(line_number)
+
     if( line_number <= 3 ){
         print("Warning: The input file is empty. Query motif has <3 occurrences in the sequence set.")     
 	# print out an empty image
