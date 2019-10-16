@@ -102,6 +102,7 @@ public:
 	static bool			noZSampling;			// disable sampling of z in CGS
 	static bool			noQSampling;			// disable sampling of q in CGS
 	static bool			debugAlphas;
+    static bool         optimizeMotifLength;
     static size_t       maxSamplingIterations;
 
 	// FDR options

@@ -31,8 +31,12 @@ public:
 	float***    		getV();						// get conditional probabilities v
     float***    		getP();						// get probabilities v
     float**				getS();						// get log odds scores for the highest order K at position j
+    size_t              getLOffset();
+    size_t              getROffset();
 
 	void        		updateV( float*** n, float** alpha );
+    void                optimizeMotifLength();
+    void                copyOptimalMotif(Motif *motif, size_t l_offset, size_t r_offset);
 
 	void				calculateP();				// calculate probabilities p with null model
 
@@ -51,12 +55,14 @@ private:
 	size_t 				W_;							// motif length
 	size_t				K_;							// motif model order
     float_t             q_;                         // estimated motif fraction on the sequences
-	float**			 	A_;							// hyperparameter alphas
+	float**			 	A_;							// hyper-parameter alphas
 	float***    		v_;				        	// conditional probabilities for (k+1)-mers y at motif position j
     size_t              k_bg_;                      // order of background model
 	float***			p_;							// probabilities for (k+1)-mers y at motif position j
 	float**				s_;							// log odds scores for (K+1)-mers y at motif position j
 	int***			    n_;							// exact counts of (k+1)-mer for all y at motif position j
+    size_t              l_offset_;
+    size_t              r_offset_;                  // the left and right offsets for optimizing motif length
 
 	void 				calculateV( int*** n );	    // calculate v from k-mer counts n and global alphas
 

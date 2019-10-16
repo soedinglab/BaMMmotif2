@@ -201,9 +201,15 @@ int main( int nargs, char* args[] ){
             model.writeAlphas(Global::outputDirectory,
                               Global::outputFileBasename + "_motif_" + std::to_string(n + 1));
 
-            if( Global::optimizeQ ) {
-                // print out the optimized q for checking:
-                std::cout << "optimized q = " << model.getQ() << std::endl;
+            if( Global::optimizeMotifLength ) {
+                motif->optimizeMotifLength();
+                size_t l_offset = motif->getLOffset();
+                size_t r_offset = motif->getROffset();
+                size_t optimal_motif_length = motif->getW() - l_offset - r_offset;
+                Motif* optimal_motif = new Motif(optimal_motif_length);
+                optimal_motif->copyOptimalMotif( motif, l_offset, r_offset );
+                optimal_motif->write(Global::outputDirectory,
+                                     Global::outputFileBasename + "_optimal_motif_" + std::to_string(n + 1));
             }
         } else {
             std::cout << "\nNote: the model is not optimized!\n";

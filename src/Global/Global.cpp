@@ -73,6 +73,7 @@ bool				Global::dissampleAlphas = false;		// enable alpha sampling in CGS using 
 bool				Global::noZSampling = false;			// disable q sampling in CGS
 bool				Global::noQSampling = false;			// disable q sampling in CGS
 bool				Global::debugAlphas = false;
+bool                Global::optimizeMotifLength = false;
 size_t              Global::maxSamplingIterations = 100;
 
 // FDR options
@@ -362,6 +363,7 @@ int Global::readArguments( int nargs, char* args[] ){
 		opt >> GetOpt::OptionPresent( "dissampleAlphas", dissampleAlphas );
 		opt >> GetOpt::OptionPresent( "noZSampling", noZSampling );
 		opt >> GetOpt::OptionPresent( "noQSampling", noQSampling );
+        opt >> GetOpt::OptionPresent( "optimizeMotifLength", optimizeMotifLength );
 	}
 	opt >> GetOpt::OptionPresent( "debugAlphas", debugAlphas );
 	opt >> GetOpt::OptionPresent( "generatePseudoSet", generatePseudoSet );

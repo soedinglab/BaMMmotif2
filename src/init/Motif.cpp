@@ -35,6 +35,9 @@ Motif::Motif( size_t length ){
 		s_[y] = ( float* )calloc( W_, sizeof( float ) );
 	}
 
+    l_offset_ = 0;
+    r_offset_ = 0;
+
     srand( 42 );
 }
 
@@ -77,6 +80,9 @@ Motif::Motif( const Motif& other ){ 		// copy constructor
 			s_[y][j] = other.s_[y][j];
 		}
 	}
+
+    l_offset_ = other.l_offset_;
+    r_offset_ = other.r_offset_;
 
 	k_bg_ = other.k_bg_;
 
@@ -383,6 +389,66 @@ float** Motif::getS(){
 	return s_;
 }
 
+size_t Motif::getLOffset() {
+    return l_offset_;
+}
+
+size_t Motif::getROffset() {
+    return r_offset_;
+}
+
+void Motif::optimizeMotifLength(){
+
+    /**
+     *  optimize motif length according to optimized alphas
+     */
+    float alpha_zero_cutoff = 4.f;
+    size_t min_motif_length = 4;
+    //float alpha_one_cutoff = 16.f;
+
+    size_t l_pointer = 0;
+    size_t r_pointer = W_;
+    for (size_t j = 0; j < W_; j++ ){
+        if ( A_[1][j] > alpha_zero_cutoff ){
+            l_pointer ++;
+        } else {
+            break;
+        }
+    }
+    for (size_t j = 0; j < W_; j++ ){
+        if ( A_[1][W_-j] > alpha_zero_cutoff ){
+            r_pointer ++;
+        } else {
+            break;
+        }
+    }
+    if (r_pointer - l_pointer > min_motif_length ){
+        l_offset_ = l_pointer;
+        r_offset_ = r_pointer;
+    } else {
+        std::cout << "Warning: the cutoff of alpha for motif length optimization is not proper.\n"
+                  << "Please either make it larger or first extend core motif length.\n";
+    }
+}
+
+void Motif::copyOptimalMotif(Motif *motif, size_t l_offset, size_t r_offset){
+
+    // get the v's from the original motif with only the core regions
+    for (size_t j = 0; j < motif->getW() - l_offset - r_offset; j++) {
+        // loop over order k
+        for (size_t k = 0; k < K_ + 1; k++) {
+            for (size_t y = 0; y < Global::A2powerK[k + 1]; y++) {
+                v_[k][y][j] = motif->getV()[k][y][j+l_offset];
+            }
+            A_[k][j] = motif->getA()[k][j+l_offset];
+        }
+    }
+
+    // calculate probabilities p
+    calculateP();
+
+}
+
 void Motif::calculateV( int*** n ){
 	// Note: This function is written for reading in binding site files.
 
@@ -439,7 +505,8 @@ void Motif::calculateP(){
 void Motif::calculateLogS( float** Vbg ){
 
     // todo: this could be wrong
-    size_t k_bg = ( K_ > k_bg_ ) ? k_bg_ : K_;
+    //size_t k_bg = ( K_ > k_bg_ ) ? k_bg_ : K_;
+    size_t  k_bg = k_bg_;
 	for( size_t y = 0; y < Global::A2powerK[K_+1]; y++ ){
 		size_t y_bg = y % Global::A2powerK[k_bg+1];
 		for( size_t j = 0; j < W_; j++ ){

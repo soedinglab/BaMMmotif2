@@ -1137,4 +1137,35 @@ void EM::write( char* odir, std::string basename ){
             }
         }
     }
+
+    // output weights r for each position on each sequence
+    std::string opath_w = opath + ".weights";
+    std::ofstream ofile_w( opath_w.c_str() );
+
+    if( !Global::slowEM ){
+        for( size_t n = 0; n < seqs_.size(); n++ ){
+            size_t L = seqs_[n]->getL();
+            float sum = 0.f;
+            ofile_w << r_[n][0] << '\t';
+            sum += r_[n][0];
+            for( size_t i = 1; i <= L-W_+1; i++ ){
+                sum += r_[n][L+padding_-i];
+                ofile_w << r_[n][L+padding_-i] << '\t';
+            }
+            ofile_w << /*"sum=" << sum << */std::endl;
+            //assert( fabsf( sum-1.0f ) < 1.e-4f );
+        }
+    } else {
+        for( size_t n = 0; n < seqs_.size(); n++ ){
+            ofile_w << "seq " << n+1 << ":" << std::endl;
+            size_t L = seqs_[n]->getL();
+            float sum = 0.f;
+            for( size_t i = 0; i <= L-W_+1; i++ ){
+                sum += r_[n][i];
+                ofile_w << r_[n][i] << '\t';
+            }
+            ofile_w << /*"sum=" << sum <<*/ std::endl;
+            assert( fabsf( sum-1.0f ) < 1.e-4f );
+        }
+    }
 }
