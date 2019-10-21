@@ -69,17 +69,18 @@ int main( int nargs, char* args[] ) {
     /**
      * Sample negative sequence set based on s-mer frequencies
      */
-    std::vector<Sequence*>  negSet;
     // sample negative sequence set B1set based on s-mer frequencies
     // from positive training sequence set
+    std::vector<Sequence*>  negSet;
     std::vector<std::unique_ptr<Sequence>> negSeqs;
     SeqGenerator negseq( posSet );
     size_t posN = posSet.size();
-    bool rest = Global::minNegN % posN;
+
     if ( posN * Global::mFold < Global::minNegN ) {
+        bool rest = Global::minNegN % posN;
         Global::mFold = Global::minNegN / posN + rest;
     }
-    
+
     negSeqs = negseq.sample_bgset_by_fold( Global::mFold );
     if( Global::verbose ) {
         std::cout << "\n" << negSeqs.size()

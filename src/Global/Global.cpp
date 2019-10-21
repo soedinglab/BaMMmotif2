@@ -238,6 +238,7 @@ int Global::readArguments( int nargs, char* args[] ){
     if( opt >> GetOpt::Option( "negN", negN ) ){
         fixedNegN = true;
     }
+    opt >> GetOpt::Option( "minNegN", minNegN);
     opt >> GetOpt::OptionPresent( "genericNeg", genericNeg );
 
     // Alphabet Type
