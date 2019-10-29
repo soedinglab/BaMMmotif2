@@ -243,15 +243,7 @@ int main( int nargs, char* args[] ){
             }
 
             ScoreSeqSet scoreNegSet(motif, bg, negSet);
-
             scoreNegSet.calcLogOdds();
-
-            // print out log odds scores for checking before re-ranking
-            if (Global::saveLogOdds) {
-                scoreNegSet.writeLogOdds(Global::outputDirectory,
-                                         Global::outputFileBasename + ".negSet",
-                                         Global::ss);
-            }
 
             std::vector<std::vector<float>> negAllScores = scoreNegSet.getMopsScores();
             std::vector<float> negScores;
@@ -279,6 +271,7 @@ int main( int nargs, char* args[] ){
             scorePosSet.write(Global::outputDirectory,
                               Global::outputFileBasename + "_motif_" + std::to_string(n + 1),
                               Global::pvalCutoff,
+                              Global::logOddsCutoff,
                               Global::ss);
 
         }

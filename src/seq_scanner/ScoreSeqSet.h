@@ -34,7 +34,7 @@ public:
 	std::vector<std::vector<float>> getMopsScores();
 	std::vector<float> 				getZoopsScores();
 
-	void write( char* odir, std::string basename, float pvalCutoff, bool ss );
+	void write( char* odir, std::string basename, float pvalCutoff, float logOddsCutoff, bool ss );
     void writeLogOdds( char* odir, std::string basename, bool ss );
     void printLogOdds();
 

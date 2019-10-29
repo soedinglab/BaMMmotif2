@@ -56,12 +56,12 @@ std::vector<float>	Global::bgModelAlpha( bgModelOrder+1, 1.f );// background mod
 
 // EM options
 bool				Global::EM = false;						// flag to trigger EM learning
+bool 				Global::optimizeQ = false;				// optimize hyper-parameter q in EM algorithm
+bool                Global::optimizePos = false;            // optimize positional prior in the EM algorithm
 float               Global::EMepsilon = 0.001f;             // eps for EM convergence
 size_t              Global::maxIterations = 1000;           // maximal iterations
 float				Global::q = 0.3f;						// prior probability for a positive sequence to contain a motif
-bool 				Global::optimizeQ = false;				// optimize hyper-parameter q in EM algorithm
 float               Global::fraction = 0.05f;               // fraction of sequences to be masked
-bool                Global::optimizePos = false;            // optimize positional prior in the EM algorithm
 float               Global::rCutoff = 1.e-8f;
 
 // CGS (Collapsed Gibbs sampling) options
@@ -84,7 +84,9 @@ size_t				Global::sOrder = 2;						// the k-mer order for sampling negative sequ
 
 // motif occurrence options
 bool                Global::scoreSeqset = false;            // write logOdds Scores of positive sequence set to disk
+bool                Global::noNegset = false;
 float 				Global::pvalCutoff = 1.e-4f;			// score cutoff for printing log odds scores as motif hit
+float               Global::logOddsCutoff = 8.0f;
 
 // sequence simulator options
 bool                Global::maskSeqset = false;
@@ -148,7 +150,7 @@ Global::Global( int nargs, char* args[] ){
     }
 
     // check if the input sequences are too few
-    if( posSequenceSet->getSequences().size() < cvFold ){
+    if( !Global::noNegset and posSequenceSet->getSequences().size() < cvFold ){
         std::cerr << "Error: Input sequences are too few for training! \n"
                   << std::endl;
         exit( 1 );
@@ -383,7 +385,9 @@ int Global::readArguments( int nargs, char* args[] ){
 	}
 	// motif occurrence option
 	opt >> GetOpt::OptionPresent( "scoreSeqset", scoreSeqset );
+    opt >> GetOpt::OptionPresent( "noNegset", noNegset );
 	opt >> GetOpt::Option( "pvalCutoff", pvalCutoff );
+    opt >> GetOpt::Option( "logOddsCutoff", logOddsCutoff );
 
     // sequence simulator options
     opt >> GetOpt::OptionPresent( "maskSeqset", maskSeqset );

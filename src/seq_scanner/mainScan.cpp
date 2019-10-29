@@ -66,32 +66,34 @@ int main( int nargs, char* args[] ) {
         }
     }
 
-    /**
-     * Sample negative sequence set based on s-mer frequencies
-     */
-    // sample negative sequence set B1set based on s-mer frequencies
-    // from positive training sequence set
-    std::vector<Sequence*>  negSet;
-    std::vector<std::unique_ptr<Sequence>> negSeqs;
-    SeqGenerator negseq( posSet );
-    size_t posN = posSet.size();
+    std::vector<Sequence *> negSet;
+    if( !Global::noNegset ) {
+        /**
+         * Sample negative sequence set based on s-mer frequencies
+         */
+        // sample negative sequence set B1set based on s-mer frequencies
+        // from positive training sequence set
+        std::vector<std::unique_ptr<Sequence>> negSeqs;
+        SeqGenerator negseq(posSet);
+        size_t posN = posSet.size();
 
-    if ( posN * Global::mFold < Global::minNegN ) {
-        bool rest = Global::minNegN % posN;
-        Global::mFold = Global::minNegN / posN + rest;
-    }
+        if (posN * Global::mFold < Global::minNegN) {
+            bool rest = Global::minNegN % posN;
+            Global::mFold = Global::minNegN / posN + rest;
+        }
 
-    negSeqs = negseq.sample_bgset_by_fold( Global::mFold );
-    if( Global::verbose ) {
-        std::cout << "\n" << negSeqs.size()
-                  << " background sequences are generated."
-                  << std::endl;
-    }
+        negSeqs = negseq.sample_bgset_by_fold(Global::mFold);
+        if (Global::verbose) {
+            std::cout << "\n" << negSeqs.size()
+                      << " background sequences are generated."
+                      << std::endl;
+        }
 
-    // convert unique_ptr to regular pointer
-    for( size_t n = 0; n < negSeqs.size(); n++ ) {
-        negSet.push_back( negSeqs[n].release() );
-        negSeqs[n].get_deleter();
+        // convert unique_ptr to regular pointer
+        for (size_t n = 0; n < negSeqs.size(); n++) {
+            negSet.push_back(negSeqs[n].release());
+            negSeqs[n].get_deleter();
+        }
     }
 
 #pragma omp parallel for
@@ -110,28 +112,31 @@ int main( int nargs, char* args[] ) {
                           Global::outputFileBasename + fileExtension );
         }
 
-        // score negative sequence set
-        ScoreSeqSet scoreNegSet( motif, bgModel, negSet );
-        scoreNegSet.calcLogOdds();
-        std::vector<std::vector<float>> negAllScores = scoreNegSet.getMopsScores();
-        std::vector<float> negScores;
-        for( size_t i = 0; i < negSet.size(); i++ ){
-            negScores.insert( std::end( negScores ),
-                              std::begin( negAllScores[i] ),
-                              std::end( negAllScores[i] ) );
-        }
-
         // score positive sequence set
         // calculate p-values based on positive and negative scores
         ScoreSeqSet scorePosSet( motif, bgModel, posSet );
         scorePosSet.calcLogOdds();
 
-        std::vector<std::vector<float>> posScores = scorePosSet.getMopsScores();
-        scorePosSet.calcPvalues( posScores, negScores );
+
+        if( !Global::noNegset ) {
+            // score negative sequence set
+            ScoreSeqSet scoreNegSet(motif, bgModel, negSet);
+            scoreNegSet.calcLogOdds();
+            std::vector<std::vector<float>> negAllScores = scoreNegSet.getMopsScores();
+            std::vector<float> negScores;
+            for (size_t i = 0; i < negSet.size(); i++) {
+                negScores.insert(std::end(negScores),
+                                 std::begin(negAllScores[i]),
+                                 std::end(negAllScores[i]));
+            }
+            std::vector<std::vector<float>> posScores = scorePosSet.getMopsScores();
+            scorePosSet.calcPvalues( posScores, negScores );
+        }
 
         scorePosSet.write( Global::outputDirectory,
                            Global::outputFileBasename + fileExtension,
                            Global::pvalCutoff,
+                           Global::logOddsCutoff,
                            Global::ss );
 
         delete motif;

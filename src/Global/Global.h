@@ -113,7 +113,9 @@ public:
 
 	// motif occurrence options
 	static bool         scoreSeqset;			// write logOdds Scores of positive sequence set to disk
-	static float        pvalCutoff;			    // cutoff for logOdds scores to print out as motif hits
+	static bool         noNegset;               // only scan the positive sequences
+    static float        pvalCutoff;			    // cutoff for p-values to print out as motif hits
+    static float        logOddsCutoff;          // cutoff for logOdds scores to print out as motif hits
 
     // sequence simulator options
     static bool         maskSeqset;
