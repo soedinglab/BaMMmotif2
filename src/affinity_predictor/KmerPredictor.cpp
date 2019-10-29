@@ -58,6 +58,7 @@ void KmerPredictor::countKmer( std::vector<Sequence*> seqSet ) {
         size_t step = 0;
 
         size_t seq_length = (Global::ss) ? seqSet[n]->getL() : ( seqSet[n]->getL()-1 ) / 2;
+
         for( size_t pos = 0; pos < seq_length; pos++ ) {
 
             uint8_t base = seqSet[n]->getSequence()[pos];
@@ -105,6 +106,7 @@ void KmerPredictor::countKmer( std::vector<Sequence*> seqSet ) {
     }
     enriched_kmer_N_ = k;
     enriched_kmer_scores_.resize( enriched_kmer_N_ );
+    enriched_kmer_expects_.resize( enriched_kmer_N_ );
 
     kmer_is_counted_ = true;
 }
@@ -113,206 +115,179 @@ void KmerPredictor::scoreKmer(Motif* motif, BackgroundModel* bg) {
 
     assert( kmer_is_counted_ );
 
-    size_t W_ = motif->getW();
-    size_t K_ = motif->getK();
+    size_t W = motif->getW();
+    size_t K = motif->getK();
 
     /**
      * get log odds score between Vmotif and Vbg
      */
-    //motif->calculateLogS( bg->getV() );
+    motif->calculateLogS( bg->getV() );
 
     for( size_t idx = 0; idx < enriched_kmer_N_; idx++ ) {
 
         size_t encode = enriched_kmer_encodes_[idx];
         size_t revcomp = encode2revcomp_[encode];
 
-        //std::cout << encode <<'\t' << encode2string(encode) << std::endl;
-
         float best_score = 0.f;
 
-        if(encode == 7755 or encode == 7468) std::cout << encode2string(encode) << std::endl;
+        for (size_t i = 0; i < W + kmer_length_-1; i++ ){
 
-        for (size_t i = 0; i < W_ + kmer_length_-1; i++ ){
-
+            /**
+             * calculate score for forward motif
+             */
             // initialize y with a random (K+1)-mer
             size_t y_prev = 0;
-            for (size_t j = 0; j < K_+1; j++ ){
-                y_prev += ( rand() % size2power_[1] ) * size2power_[K_-j] ;
+            for (size_t j = 0; j < K+1; j++ ){
+                y_prev += ( rand() % size2power_[1] ) * size2power_[K-j] ;
             }
             size_t y_prev2 = y_prev;
 
-            /**
-             * calculate score for initial motif
-             */
-            float score = 1.f;
+            float score = 0.f;
+            //float score = 1.f;
             // calculate y for each position
-            for (size_t pos = 0; pos < W_; pos++) {
-                if( i+pos >= W_-1 and i+pos < kmer_length_+W_-1 ){
-                    size_t j = i+pos-W_+1;
-                    size_t base = ( encode % size2power_[j+1] ) / size2power_[j];
-                    size_t y_new = y_prev % size2power_[K_] * size2power_[1] + base;
-                    y_prev = y_new;
-                    //score += motif->getS()[y_new][pos];
-                    score *= motif->getV()[K_][y_new][pos];
-                    if(encode == 7755 or encode == 7468)  std::cout << motif->getV()[K_][y_new][pos] << "(" <<  Alphabet::getBase(base+1)  << ")\t";
+            for (size_t pos = 0; pos < W; pos++) {
 
+                if( i+pos >= W-1 and i+pos < kmer_length_+W-1 ){
+
+                    size_t j = i+pos-W+1;
+                    size_t base = ( encode % size2power_[j+1] ) / size2power_[j];
+                    size_t y_new = y_prev % size2power_[K] * size2power_[1] + base;
+                    y_prev = y_new;
+                    score += motif->getS()[y_new][pos];
+                    //score *= motif->getV()[K][y_new][pos];
                 } else {
                     ;
                 }
-                if( i >= W_-1 ){
-                    size_t j = i-W_+1;
+                if( i >= W-1 ){
+                    size_t j = i-W+1;
                     size_t base = ( encode % size2power_[j+1] ) / size2power_[j];
-                    y_prev = y_prev2 % size2power_[K_] * size2power_[1] + base;
+                    y_prev = y_prev2 % size2power_[K] * size2power_[1] + base;
                     y_prev2 = y_prev;
                 }
             }
 
-            if(encode == 7755 or encode == 7468 ) std::cout << score << "[direct]\t";
+            // take the best score within the motif region
+            best_score = ( best_score > score) ? best_score : score;
 
-            //best_score = ( best_score > score) ? best_score : score;
-            best_score += score;
+            // sum up all the scores within the motif region
+            //best_score += score;
+
             /**
              * calculate score for the reverse complement motif
              */
-            score = 1.f;
             y_prev = 0;
-
-            for (size_t j = 0; j < K_+1; j++ ){
-                y_prev += ( rand() % size2power_[1] ) * size2power_[K_-j] ;
+            for (size_t j = 0; j < K+1; j++ ){
+                y_prev += ( rand() % size2power_[1] ) * size2power_[K-j] ;
             }
             y_prev2 = y_prev;
+
+            score = 0.f;
+            //score = 1.f;
             // calculate y for each position
-            for (size_t pos = 0; pos < W_; pos++) {
-                if( i+pos >= W_-1 and i+pos < kmer_length_+W_-1 ){
-                    size_t j = i+pos-W_+1;
+            for (size_t pos = 0; pos < W; pos++) {
+                if( i+pos >= W-1 and i+pos < kmer_length_+W-1 ){
+                    size_t j = i+pos-W+1;
                     size_t base = ( revcomp % size2power_[j+1] ) / size2power_[j];
-                    size_t y_new = y_prev % size2power_[K_] * size2power_[1] + base;
+                    size_t y_new = y_prev % size2power_[K] * size2power_[1] + base;
                     y_prev = y_new;
-                    //score += motif->getS()[y_new][pos];
-                    score *= motif->getV()[K_][y_new][pos];
-                    if(encode == 7755 or encode == 7468)  std::cout << motif->getV()[K_][y_new][pos] << "(" << Alphabet::getBase(base+1) << ")\t";
+                    score += motif->getS()[y_new][pos];
+                    //score *= motif->getV()[K][y_new][pos];
+
                 } else {
                     ;
                 }
-                if (i >= W_-1){
-                    size_t j = i-W_+1;
+                if (i >= W-1){
+                    size_t j = i-W+1;
                     size_t base = ( revcomp % size2power_[j+1] ) / size2power_[j];
-                    y_prev = y_prev2 % size2power_[K_] * size2power_[1] + base;
+                    y_prev = y_prev2 % size2power_[K] * size2power_[1] + base;
                     y_prev2 = y_prev;
                 }
             }
-            //best_score = ( best_score > score) ? best_score : score;
-            best_score += score;
-            if(encode == 7755 or encode == 7468) std::cout << score << "[reverse]\t" << best_score << "[final]" << std::endl;
+            best_score = ( best_score > score) ? best_score : score;
+            //best_score += score;
         }
 
         //float pred_score = expf( best_score ) / (1+expf( best_score ));
         //enriched_kmer_scores_[idx] = pred_score;
         enriched_kmer_scores_[idx] = best_score;
-
     }
 
 }
 
-void KmerPredictor::expectKmer(Motif *motif, BackgroundModel *bg) {
+void KmerPredictor::predictKmer( SequenceSet* seqSet, Motif *motif, BackgroundModel *bg) {
 
     assert( kmer_is_counted_ );
 
-    size_t W_ = motif->getW();
-    size_t K_ = motif->getK();
+    size_t W = motif->getW();
+    size_t K = motif->getK();
 
-    for( size_t idx = 0; idx < enriched_kmer_N_; idx++ ) {
+    // pre-calculate log odds scores given motif and bg model
+    motif->calculateLogS( bg->getV() );
+    float** s = motif->getS();
+    std::vector<float> scores;
+    size_t seqN = seqSet->getSequences().size();
 
-        size_t encode = enriched_kmer_encodes_[idx];
-        size_t revcomp = encode2revcomp_[encode];
+    // convert all sequences to strings
+    std::vector<std::string> seqs = seqSet->sequence2string();
 
-        //std::cout << encode <<'\t' << encode2string(encode) << std::endl;
+    /**
+     * store the log odds scores at all positions of each sequence
+     */
+    for( size_t n = 0; n < seqN; n++ ){
 
-        float best_score = 0.f;
+        size_t 	LW1 = seqSet->getSequences()[n]->getL() - W + 1;
+        size_t* kmer = seqSet->getSequences()[n]->getKmer();
+        float   score = 0.f;
 
-        if (encode == 7755 or encode == 7468) std::cout << encode2string(encode) << std::endl;
-
-        for (size_t i = 0; i < W_ + kmer_length_ - 1; i++) {
-
-            // initialize y with a random (K+1)-mer
-            size_t y_prev = 0;
-            for (size_t j = 0; j < K_ + 1; j++) {
-                y_prev += (rand() % size2power_[1]) * size2power_[K_ - j];
+        for( size_t i = 0; i < LW1; i++ ) {
+            float logOdds = 0.0f;
+            for (size_t j = 0; j < W; j++) {
+                size_t y = kmer[i+j] % Global::A2powerK[K+1];
+                logOdds += s[y][j];
             }
-            size_t y_prev2 = y_prev;
-
-            /**
-             * calculate score for initial motif
-             */
-            float score = 0.f;
-            // calculate y for each position
-            for (size_t pos = 0; pos < W_; pos++) {
-                if (i + pos >= W_ - 1 and i + pos < kmer_length_ + W_ - 1) {
-                    size_t j = i + pos - W_ + 1;
-                    size_t base = (encode % size2power_[j + 1]) / size2power_[j];
-                    size_t y_new = y_prev % size2power_[K_] * size2power_[1] + base;
-                    y_prev = y_new;
-                    //score += motif->getS()[y_new][pos];
-                    score += motif->getV()[K_][y_new][pos];
-                    if (encode == 7755 or encode == 7468)
-                        std::cout << motif->getV()[K_][y_new][pos] << "(" << Alphabet::getBase(base + 1) << ")\t";
-
-                } else { ;
-                }
-                if (i >= W_ - 1) {
-                    size_t j = i - W_ + 1;
-                    size_t base = (encode % size2power_[j + 1]) / size2power_[j];
-                    y_prev = y_prev2 % size2power_[K_] * size2power_[1] + base;
-                    y_prev2 = y_prev;
-                }
-            }
-
-            if (encode == 7755 or encode == 7468) std::cout << score << "[direct]\t";
-
-            best_score = (best_score > score) ? best_score : score;
-
-            /**
-             * calculate score for the reverse complement motif
-             */
-            score = 0.f;
-            y_prev = 0;
-
-            for (size_t j = 0; j < K_ + 1; j++) {
-                y_prev += (rand() % size2power_[1]) * size2power_[K_ - j];
-            }
-            y_prev2 = y_prev;
-            // calculate y for each position
-            for (size_t pos = 0; pos < W_; pos++) {
-                if (i + pos >= W_ - 1 and i + pos < kmer_length_ + W_ - 1) {
-                    size_t j = i + pos - W_ + 1;
-                    size_t base = (revcomp % size2power_[j + 1]) / size2power_[j];
-                    size_t y_new = y_prev % size2power_[K_] * size2power_[1] + base;
-                    y_prev = y_new;
-                    //score += motif->getS()[y_new][pos];
-                    score += motif->getV()[K_][y_new][pos];
-                    if (encode == 7755 or encode == 7468)
-                        std::cout << motif->getV()[K_][y_new][pos] << "(" << Alphabet::getBase(base + 1) << ")\t";
-                } else { ;
-                }
-                if (i >= W_ - 1) {
-                    size_t j = i - W_ + 1;
-                    size_t base = (revcomp % size2power_[j + 1]) / size2power_[j];
-                    y_prev = y_prev2 % size2power_[K_] * size2power_[1] + base;
-                    y_prev2 = y_prev;
-                }
-            }
-            best_score = (best_score > score) ? best_score : score;
-
-            if (encode == 7755 or encode == 7468)
-                std::cout << score << "[reverse]\t" << best_score << "[final]" << std::endl;
+            // take all the log odds scores for MOPS model:
+            score += expf(logOdds);
+            //score += logOdds;
         }
 
-        //float pred_score = expf( best_score ) / (1+expf( best_score ));
-        //enriched_kmer_scores_[idx] = pred_score;
-        enriched_kmer_scores_[idx] = best_score;
+        scores.push_back(score);
+    }
 
+    /**
+     * Scan the whole sequences set and sum up scores
+     * of which sequence contains motif
+     */
+    for( size_t idx = 0; idx < enriched_kmer_N_; idx++ ) {
+
+        size_t      encode = enriched_kmer_encodes_[idx];
+        std::string kmer_string = encode2string(encode);
+        size_t      revcomp = encode2revcomp_[encode];
+        std::string kmer_revcomp_string = encode2string(revcomp);
+
+        /**
+         * pre-calculate p_bg
+         */
+        float   p_bg = 1.f;
+        size_t  k_bg = bg->getOrder();
+        std::vector<size_t> kmers = string2kmer(kmer_string, k_bg);
+        for (size_t j = 0; j < kmer_length_; j++) {
+            size_t y = kmers[j];
+            p_bg *= bg->getV()[k_bg][y];
+        }
+
+        float sum_score = 0.f;
+
+        for (size_t n = 0; n < seqN; n++) {
+            std::string sequence = seqs[n];
+
+            if (sequence.find(kmer_string) != std::string::npos or
+               (Global::ss and sequence.find(kmer_revcomp_string) != std::string::npos)) {
+                sum_score += scores[n] * p_bg / (seqs[n].size() - W);
+            }
+        }
+        enriched_kmer_expects_[idx] = sum_score;
     }
-    }
+}
 
 std::string KmerPredictor::encode2string(unsigned long kmer_encode){
 
@@ -322,6 +297,26 @@ std::string KmerPredictor::encode2string(unsigned long kmer_encode){
         kmer_string += Alphabet::getBase( code + 1 );
     }
     return kmer_string;
+}
+
+std::vector<size_t> KmerPredictor::string2kmer(std::string kmer_string, size_t k_bg) {
+
+    std::vector<size_t> kmer;
+    kmer.resize(kmer_length_);
+
+    for( size_t i = 0; i < kmer_length_; i++ ){
+        kmer[i] = 0;
+        //for( size_t k = i < Global::bgModelOrder ? i+1 : Global::bgModelOrder+1; k > 0; k-- ){
+        for( size_t k = 0; k <= k_bg; k++ ){
+            size_t base = ( i < k ) ?
+                          ( size_t )rand() % Global::A2powerK[1] :
+                          ( size_t )Alphabet::getCode(kmer_string[i-k])-1;
+            kmer[i] += base * Global::A2powerK[k];
+        }
+    }
+
+    return kmer;
+
 }
 
 void KmerPredictor::calcRevComp() {
@@ -349,9 +344,7 @@ void KmerPredictor::calcRevComp() {
     kmer_N_ = index;
 
     if( Global::verbose ) {
-        /**
-         * Printout for checking
-         */
+
         std::cout << "There are " << kmer_N_ << " kmer indices.\n";
         for (size_t index = 0; index < kmer_N_; index++) {
             size_t encode = index2encode_[index];
@@ -364,8 +357,6 @@ void KmerPredictor::calcRevComp() {
                       << std::endl;
         }
     }
-
-
 }
 
 void KmerPredictor::writeKmerStats(char *odir, std::string basename) {
@@ -377,11 +368,11 @@ void KmerPredictor::writeKmerStats(char *odir, std::string basename) {
     std::ofstream ofile( opath );
 
     // add a header to the results
-    ofile << "kmer_IUPAC\tkmer_count\tkmer_score" << std::endl;
+    ofile << "kmer_IUPAC\tkmer_count\tkmer_score\texpected_kmer" << std::endl;
     for( size_t i = 0; i < enriched_kmer_N_; i++ ){
         ofile << encode2string(enriched_kmer_encodes_[i]) << '\t'
               << enriched_kmer_counts_[i] << '\t'
-              << enriched_kmer_scores_[i] /*<< '\t'
-              << enriched_kmer_expects_[i] */<< std::endl;
+              << std::setprecision(4) << enriched_kmer_scores_[i] << '\t'
+              << enriched_kmer_expects_[i] << std::endl;
     }
 }

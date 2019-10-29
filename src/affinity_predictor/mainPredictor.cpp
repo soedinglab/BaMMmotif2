@@ -87,6 +87,12 @@ int main( int nargs, char* args[] ) {
         }
 
         /**
+         * Predict kmer occurrences
+         */
+        Kd.predictKmer( Global::posSequenceSet,
+                        motif, bgModel );
+
+        /**
          * Score k-mers
          */
         Kd.scoreKmer( motif, bgModel );

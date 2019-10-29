@@ -26,7 +26,19 @@ SequenceSet::SequenceSet( std::string sequenceFilepath,
 		readIntensities();
 	}
 
+}
 
+std::vector<std::string> SequenceSet::sequence2string(){
+    std::vector<std::string> sequences;
+    for( size_t n = 0; n< sequences_.size(); n++){
+        std::string sequence;
+        for(size_t i = 0; i < sequences_[n]->getL(); i++){
+            sequence += Alphabet::getBase(sequences_[n]->getSequence()[i]);
+        }
+        sequences.push_back(sequence);
+        //std::cout << sequence << std::endl;
+    }
+    return sequences;
 }
 
 SequenceSet::~SequenceSet(){

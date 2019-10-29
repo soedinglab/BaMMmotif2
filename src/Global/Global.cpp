@@ -164,7 +164,7 @@ Global::Global( int nargs, char* args[] ){
     }
 
     if( !kmerNCutoff ){
-        kmerNCutoff = posSequenceSet->getBaseSum()
+        kmerNCutoff = posSequenceSet->getBaseSum() * 2
                       / ipow( Alphabet::getSize(), kmerLength);
         if( !ss ){
             kmerNCutoff *= 2;

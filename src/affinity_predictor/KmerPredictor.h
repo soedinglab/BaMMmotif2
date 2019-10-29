@@ -31,11 +31,12 @@ public:
 
     // decode k-mer ID back to k-mer string
     std::string         encode2string(unsigned long kmer_encode);
-    void                countKmer( std::vector<Sequence*> seqSet );
+    void                countKmer(std::vector<Sequence*> seqSet);
     void                scoreKmer(Motif* motif, BackgroundModel* bg);
-    void                expectKmer(Motif* motif, BackgroundModel* bg);
+    void                predictKmer(SequenceSet* seqSet, Motif* motif, BackgroundModel* bg);
     void                writeKmerStats(char *odir, std::string basename);
     void                calcRevComp();
+    std::vector<size_t> string2kmer(std::string kmer_string, size_t k_bg);
 
 private:
 

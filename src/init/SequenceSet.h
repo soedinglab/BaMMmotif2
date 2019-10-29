@@ -25,6 +25,7 @@ public:
 	std::string				getSequenceFilepath();
 	std::string				getIntensityFilepath();
 	std::vector<Sequence*> 	getSequences();
+    std::vector<std::string> sequence2string();
 	size_t 					getMinL();
 	size_t					getMaxL();
     size_t                  getBaseSum();

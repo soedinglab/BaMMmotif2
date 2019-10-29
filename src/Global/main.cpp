@@ -284,10 +284,27 @@ int main( int nargs, char* args[] ){
         }
 
         if( Global::predKmer ) {
+
+            KmerPredictor Kd( Global::kmerLength );
             /**
-             * predict k-mer affinities
+             * Count k-mers
+             */
+            Kd.countKmer( posSet );
+
+            /**
+             * Predict kmer occurrences
+             */
+            Kd.predictKmer( Global::posSequenceSet,
+                            motif, bgModel );
+
+            /**
+             * Score k-mers
              */
             Kd.scoreKmer( motif, bgModel );
+
+            /**
+             * Write out k-mer statistics
+             */
             Kd.writeKmerStats(Global::outputDirectory,
                               Global::outputFileBasename + "_motif_" + std::to_string( n+1 ));
         }
