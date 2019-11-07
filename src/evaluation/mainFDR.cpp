@@ -4,6 +4,7 @@
 
 #include "GFdr.h"
 #include "FDR.h"
+#include "../refinement/Global.h"
 
 int main( int nargs, char* args[] ){
 
@@ -68,6 +69,11 @@ int main( int nargs, char* args[] ){
      * Optional: subsample input sequence set when it is too large
      */
     size_t posN = posSet.size();
+    if( posN < GFdr::cvFold ){
+        std::cerr << "There are " << posN << " sequences longer than input motif. Exit!\n";
+        exit( 1 );
+    }
+
     if( GFdr::fixedPosN and GFdr::maxPosN < posN ){
         std::random_shuffle(posSet.begin(), posSet.end());
         for( size_t n = posN-GFdr::maxPosN; n > 0; n-- ){

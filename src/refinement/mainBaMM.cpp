@@ -82,6 +82,12 @@ int main( int nargs, char* args[] ){
         }
     }
 
+    size_t posN = posSet.size();
+    if( posN < Global::cvFold ){
+        std::cerr << "There are " << posN << " sequences longer than input motif. Exit!\n";
+        exit( 1 );
+    }
+
 	if( Global::verbose ){
         std::cout << std::endl
                   << "*********************" << std::endl
