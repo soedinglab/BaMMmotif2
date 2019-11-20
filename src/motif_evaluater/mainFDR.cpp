@@ -42,7 +42,7 @@ int main( int nargs, char* args[] ){
      */
     std::vector<Sequence*> posSet = Global::posSequenceSet->getSequences();
     size_t count = 0;
-    std::vector<Sequence*>::iterator it = posSet.begin();
+    auto it = posSet.begin();
     while( it != posSet.end() ){
         if( (*it)->getL() < motif_set.getMaxW() ){
             if( Global::verbose ){
@@ -90,10 +90,15 @@ int main( int nargs, char* args[] ){
             std::cout << Global::mFold << " x " << posN
                       << " background sequences are generated." << std::endl;
         } else if( !Global::fixedNegN and posN < Global::negN ){
-            bool rest = Global::negN % posN;
-            Global::mFold = Global::negN / posN + rest;
-            negSeqs = negseq.sample_bgset_by_fold(Global::mFold);
-            std::cout << Global::mFold << " x " << posN
+
+            size_t mFold = Global::mFold;
+            if (posN * mFold < Global::minNegN) {
+                auto rest = bool(Global::minNegN % posN);
+                mFold = Global::minNegN / posN + rest;
+            }
+
+            negSeqs = negseq.sample_bgset_by_fold(mFold);
+            std::cout << mFold << " x " << posN
                       << " background sequences are generated." << std::endl;
         } else {
             negSeqs = negseq.sample_bgset_by_num(Global::negN,

@@ -321,17 +321,6 @@ std::vector<float> ScoreSeqSet::getZoopsScores(){
 	return zoops_scores_;
 }
 
-void ScoreSeqSet::printLogOdds(){
-    for( size_t n = 0; n < seqSet_.size(); n++ ){
-        std::cout << "seq " << n << ":" << std::endl;
-        std::cout << zoops_scores_[n] << '\t';
-        for( size_t i = 0; i < mops_scores_[n].size(); i++ ){
-            std::cout << mops_scores_[n][i] << '\t';
-        }
-        std::cout << std::endl;
-    }
-}
-
 void ScoreSeqSet::write( char* odir, std::string basename,
                          float pvalCutoff, float logOddsCutoff,
                          bool ss ){
@@ -367,7 +356,8 @@ void ScoreSeqSet::write( char* odir, std::string basename,
 
                     // start:end:score:strand:sequence_matching
                     end = i + motif_->getW();
-                    
+
+                
                     ofile << ( ( i < seqlen ) ? '+' : '-' ) << '\t'
                           << i+1 << ".." << end << '\t';
                     for( size_t m = i; m < end; m++ ){

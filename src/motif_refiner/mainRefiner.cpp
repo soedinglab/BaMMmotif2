@@ -47,7 +47,7 @@ int main( int nargs, char* args[] ){
      * Filter out short sequences
      */
     std::vector<Sequence*> posSet = Global::posSequenceSet->getSequences();
-    std::vector<Sequence*>::iterator it = posSet.begin();
+    auto it = posSet.begin();
     while( it != posSet.end() ){
         if( (*it)->getL() < motif_set.getMaxW() ){
             if( Global::verbose ){

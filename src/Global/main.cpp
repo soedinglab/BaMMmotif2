@@ -77,6 +77,12 @@ int main( int nargs, char* args[] ){
         }
     }
 
+    size_t posN = posSet.size();
+    if( posN < Global::cvFold ){
+        std::cerr << "There are " << posN << " sequences longer than input motif. Exit!\n";
+        exit( 1 );
+    }
+
     /**
      * Generate negative sequence set
      * for training, scoring and cross-validation
@@ -108,8 +114,6 @@ int main( int nargs, char* args[] ){
         Kd.countKmer(posSet);
 
     }
-
-
 
     /**
      * Train the model(s)

@@ -2,8 +2,7 @@
 #include <boost/algorithm/string.hpp>
 
 SequenceSet::SequenceSet( std::string sequenceFilepath,
-							bool singleStrand,
-							std::string intensityFilepath ){
+                          bool singleStrand ){
 
 	if( Alphabet::getSize() == 0 ){
 		std::cerr << "Error: Initialize Alphabet before "
@@ -20,12 +19,6 @@ SequenceSet::SequenceSet( std::string sequenceFilepath,
     isSingleStranded_ = singleStrand;
 
 	readFASTA();
-
-	if( !( intensityFilepath.empty() ) ){
-		intensityFilepath_ = intensityFilepath;
-		readIntensities();
-	}
-
 }
 
 std::vector<std::string> SequenceSet::sequence2string(){
@@ -36,7 +29,6 @@ std::vector<std::string> SequenceSet::sequence2string(){
             sequence += Alphabet::getBase(sequences_[n]->getSequence()[i]);
         }
         sequences.push_back(sequence);
-        //std::cout << sequence << std::endl;
     }
     return sequences;
 }
@@ -51,10 +43,6 @@ SequenceSet::~SequenceSet(){
 
 std::string SequenceSet::getSequenceFilepath(){
 	return sequenceFilepath_;
-}
-
-std::string SequenceSet::getIntensityFilepath(){
-	return intensityFilepath_;
 }
 
 std::vector<Sequence*> SequenceSet::getSequences(){
@@ -75,10 +63,6 @@ size_t SequenceSet::getBaseSum(){
 
 float* SequenceSet::getBaseFrequencies(){
 	return baseFrequencies_;
-}
-
-bool SequenceSet::isSingleStranded() {
-    return isSingleStranded_;
 }
 
 void SequenceSet::print(){
@@ -121,22 +105,23 @@ int SequenceSet::readFASTA(){
 							// translate sequence into encoding
 							uint8_t* encoding = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
 
+                            size_t n_count = 0;
 							for( size_t i = 0; i < L; i++ ){
 
                                 encoding[i] = Alphabet::getCode( sequence[i] );
-								if( encoding[i] == 0 ){
-
-//									std::cerr << "Warning: The FASTA file contains an undefined base: "
-//                                            << sequence[i] << " at sequence " << header << std::endl;
-
-									continue; // exclude undefined base from base counts
-
+								if( encoding[i] == 0 ){ // there is an unknown letter N
+                                    n_count ++;
+									continue;           // exclude undefined base from base counts
 								}
                                 baseCounts[encoding[i]-1]++; // count base
 							}
 
-                            sequences_.push_back( new Sequence( encoding, L, header, isSingleStranded_ ) );
-
+                            if( n_count < L ) {
+                                sequences_.push_back(new Sequence(encoding, L, header, isSingleStranded_));
+                            } else{
+                                std::cerr << "Warning: " << header
+                                          << " contains only unknown alphabet and is filtered." << std::endl;
+                            }
 							sequence.clear();
 							header.clear();
 
@@ -190,23 +175,25 @@ int SequenceSet::readFASTA(){
                 // translate sequence into encoding
                 uint8_t* encoding = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
 
+                size_t n_count = 0;
                 for( size_t i = 0; i < L; i++ ){
 
                     encoding[i] = Alphabet::getCode( sequence[i] );
 
-                    if( encoding[i] == 0 ){
-
-//					    std::cerr << "Warning: The FASTA file contains an undefined base: "
-//                                << sequence[i] << " at sequence " << header << std::endl;
-
-                        continue; // exclude undefined base from base counts
+                    if( encoding[i] == 0 ){ // there is an unknown letter N
+                        n_count++;
+                        continue;           // exclude undefined base from base counts
 
                     }
-
                     baseCounts[encoding[i]-1]++; // count base
                 }
 
-                sequences_.push_back( new Sequence( encoding, L, header, isSingleStranded_ ) );
+                if( n_count < L ) {
+                    sequences_.push_back(new Sequence(encoding, L, header, isSingleStranded_));
+                } else{
+                    std::cerr << "Warning: " << header
+                              << " contains only unknown alphabet and is filtered." << std::endl;
+                }
 
 				sequence.clear();
 				header.clear();
@@ -215,7 +202,8 @@ int SequenceSet::readFASTA(){
 
 			} else {
 
-				std::cerr << "Warning: Ignore FASTA entry without sequence: " << sequenceFilepath_ << std::endl;
+				std::cerr << "Warning: Ignore FASTA entry without sequence: "
+                          << sequenceFilepath_ << std::endl;
 				header.clear();
 			}
 		}
@@ -224,7 +212,8 @@ int SequenceSet::readFASTA(){
 
 	} else {
 
-		std::cerr << "Error: Cannot open FASTA file: " << sequenceFilepath_ << std::endl;
+		std::cerr << "Error: Cannot open FASTA file: "
+                  << sequenceFilepath_ << std::endl;
 		exit( 1 );
 	}
 
@@ -236,6 +225,7 @@ int SequenceSet::readFASTA(){
 	for( size_t i = 0; i < Alphabet::getSize(); i++ ){
 		baseSum_ += baseCounts[i];
 	}
+    baseSum_ = (baseSum_ == 0) ? 1: baseSum_;
 
 	// calculate base frequencies
 	for( size_t i = 0; i < Alphabet::getSize(); i++ ){
@@ -243,10 +233,4 @@ int SequenceSet::readFASTA(){
 	}
 
 	return 0;
-}
-
-int SequenceSet::readIntensities(){
-
-	std::cerr << "Error: sequenceSet::readIntensities() is not implemented so far." << std::endl;
-	exit( 1 );
 }

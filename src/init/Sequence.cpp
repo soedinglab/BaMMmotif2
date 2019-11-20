@@ -63,22 +63,6 @@ std::string Sequence::getHeader(){
 	return header_;
 }
 
-float Sequence::getIntensity(){
-	return intensity_;
-}
-
-float Sequence::getWeight(){
-	return weight_;
-}
-
-void Sequence::setIntensity( float intensity ){
-	intensity_ = intensity;
-}
-
-void Sequence::setWeight( float weight ){
-	weight_ = weight;
-}
-
 void Sequence::print(){
 
 	std::cout << header_ << std::endl;

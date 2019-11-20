@@ -34,23 +34,21 @@ public:
 	std::vector<std::vector<float>> getMopsScores();
 	std::vector<float> 				getZoopsScores();
 
-	void write( char* odir, std::string basename, float pvalCutoff, float logOddsCutoff, bool ss );
+	void write( char* odir, std::string basename,
+                float pvalCutoff, float logOddsCutoff, bool ss );
     void writeLogOdds( char* odir, std::string basename, bool ss );
-    void printLogOdds();
 
 private:
 
 	Motif* 							motif_;
 	BackgroundModel* 				bg_;
 	std::vector<Sequence*>			seqSet_;
-
-    std::vector<float>				zoops_scores_;
     std::vector<size_t>             seql_;          // create a vector to store the cumulative positive sequence lengths
-	std::vector<std::vector<float>>	mops_scores_;
+    std::vector<float>				zoops_scores_;
+    std::vector<std::vector<float>>	mops_scores_;
     std::vector<std::vector<float>> mops_p_values_;
     std::vector<std::vector<float>> mops_e_values_;
     std::vector<size_t>             z_;
-
     bool                            pval_is_calulated_;
 
 };

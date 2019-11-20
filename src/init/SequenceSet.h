@@ -17,27 +17,21 @@ class SequenceSet{
 public:
 
 	SequenceSet( std::string sequenceFilepath,
-			bool singleStrand = false,
-			std::string intensityFilepath = "" );
-
+                 bool singleStrand = false );
 	~SequenceSet();
 
 	std::string				getSequenceFilepath();
-	std::string				getIntensityFilepath();
 	std::vector<Sequence*> 	getSequences();
     std::vector<std::string> sequence2string();
 	size_t 					getMinL();
 	size_t					getMaxL();
     size_t                  getBaseSum();
 	float* 					getBaseFrequencies();
-    bool                    isSingleStranded();
 	void					print();			// print sequences
 
 private:
 
 	std::string				sequenceFilepath_;	// path to FASTA file
-	std::string				intensityFilepath_;	// path to intensity file
-
 	std::vector<Sequence*>	sequences_;			// sequences
 	size_t 					minL_;				// length of the shortest sequence
 	size_t 					maxL_;				// length of the longest sequence
@@ -46,7 +40,6 @@ private:
     bool                    isSingleStranded_;  // flag for searching on single strand
 
 	int 					readFASTA();        // read in FASTA file
-	int 					readIntensities();	// read in intensity file
 };
 
 #endif /* SEQUENCESET_H_ */

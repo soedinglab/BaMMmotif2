@@ -12,7 +12,6 @@ int main( int nargs, char* args[] ) {
     /**
      * initialization
      */
-
 	Global G( nargs, args );
 
     /**
@@ -55,10 +54,11 @@ int main( int nargs, char* args[] ) {
     /**
      * Filter out short sequences
      */
-    std::vector<Sequence*>::iterator it = posSet.begin();
+    auto it = posSet.begin();
     while( it != posSet.end() ){
         if( (*it)->getL() < motif_set.getMaxW() ){
-            std::cout << "Warning: remove the short sequence: " << (*it)->getHeader()
+            std::cout << "Warning: remove the short sequence: "
+                      << (*it)->getHeader()
                       << std::endl;
             posSet.erase(it);
         } else {
@@ -77,12 +77,13 @@ int main( int nargs, char* args[] ) {
         SeqGenerator negseq(posSet);
         size_t posN = posSet.size();
 
-        if (posN * Global::mFold < Global::minNegN) {
-            bool rest = Global::minNegN % posN;
-            Global::mFold = Global::minNegN / posN + rest;
+        size_t mFold = Global::mFold;
+        if (posN * mFold < Global::minNegN) {
+            auto rest = bool(Global::minNegN % posN);
+            mFold = Global::minNegN / posN + rest;
         }
 
-        negSeqs = negseq.sample_bgset_by_fold(Global::mFold);
+        negSeqs = negseq.sample_bgset_by_fold(mFold);
         if (Global::verbose) {
             std::cout << "\n" << negSeqs.size()
                       << " background sequences are generated."
@@ -90,13 +91,14 @@ int main( int nargs, char* args[] ) {
         }
 
         // convert unique_ptr to regular pointer
-        for (size_t n = 0; n < negSeqs.size(); n++) {
+        size_t negN = negSeqs.size();
+        for (size_t n = 0; n < negN; n++) {
             negSet.push_back(negSeqs[n].release());
             negSeqs[n].get_deleter();
         }
     }
 
-#pragma omp parallel for
+//#pragma omp parallel for
     for( size_t n = 0; n < motif_set.getN(); n++ ) {
         // deep copy each motif in the motif set
         Motif *motif = new Motif( *motif_set.getMotifs()[n] );
@@ -142,7 +144,7 @@ int main( int nargs, char* args[] ) {
         delete motif;
     }
 
-    if( bgModel ) delete bgModel;
+    delete bgModel;
 
     return 0;
 }

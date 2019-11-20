@@ -214,7 +214,8 @@ void KmerPredictor::scoreKmer(Motif* motif, BackgroundModel* bg) {
 
 }
 
-void KmerPredictor::predictKmer( SequenceSet* seqSet, Motif *motif, BackgroundModel *bg) {
+void KmerPredictor::predictKmer( SequenceSet* seqSet,
+                                 Motif *motif, BackgroundModel *bg) {
 
     assert( kmer_is_counted_ );
 
