@@ -468,7 +468,7 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::seqset_with_best_motif_mask
     size_t W = motif_->getW();
 
     for( size_t n = 0; n < seqs_.size(); n++ ){
-        seqset.push_back(posseq_best_motif_masked(seqs_[n], W, r[n]) );
+        seqset.push_back(posseq_best_motif_masked(seqs_[n], n, W, r[n]) );
     }
 
     return seqset;
@@ -502,7 +502,7 @@ std::unique_ptr<Sequence> SeqGenerator::posseq_motif_masked(Sequence *posseq, si
 	return seq_mask_motif;
 }
 
-std::unique_ptr<Sequence> SeqGenerator::posseq_best_motif_masked(Sequence *posseq, size_t W, float *r){
+std::unique_ptr<Sequence> SeqGenerator::posseq_best_motif_masked(Sequence *posseq, size_t n, size_t W, float *r){
 
 
     size_t L = posseq->getL();
@@ -535,7 +535,7 @@ std::unique_ptr<Sequence> SeqGenerator::posseq_best_motif_masked(Sequence *posse
         }
     }
 
-    std::string header = "> seq with best motif masked";
+    std::string header = "> seq_"+std::to_string(n)+" with best motif masked";
 
     std::unique_ptr<Sequence> seq_mask_motif = util::make_unique<Sequence>( masked_seq, L, header, true );
 

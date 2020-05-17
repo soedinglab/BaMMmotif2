@@ -48,7 +48,7 @@ private:
     std::unique_ptr<Sequence> 	raw_seq(Sequence *refSeq);
 	std::unique_ptr<Sequence> 	posseq_motif_embedded( Sequence* seq, size_t at );
 	std::unique_ptr<Sequence>	posseq_motif_masked(Sequence* seq, size_t W, float *r);
-    std::unique_ptr<Sequence>	posseq_best_motif_masked(Sequence* seq, size_t W, float *r);
+    std::unique_ptr<Sequence>	posseq_best_motif_masked(Sequence* seq, size_t n, size_t W, float *r);
 
 	std::vector<Sequence*> 		seqs_;			// positive sequence set
 
