@@ -29,6 +29,7 @@ public:
     std::vector<std::unique_ptr<Sequence>> sample_bgset_by_num(size_t negN, size_t maxL);
 	std::vector<std::unique_ptr<Sequence>> arti_posset_motif_embedded(size_t at);
 	std::vector<std::unique_ptr<Sequence>> seqset_with_motif_masked(float **r);
+    std::vector<std::unique_ptr<Sequence>> seqset_with_best_motif_masked(float **r);
 
 	void write( char* odir,
 				std::string basename,
@@ -47,6 +48,7 @@ private:
     std::unique_ptr<Sequence> 	raw_seq(Sequence *refSeq);
 	std::unique_ptr<Sequence> 	posseq_motif_embedded( Sequence* seq, size_t at );
 	std::unique_ptr<Sequence>	posseq_motif_masked(Sequence* seq, size_t W, float *r);
+    std::unique_ptr<Sequence>	posseq_best_motif_masked(Sequence* seq, size_t W, float *r);
 
 	std::vector<Sequence*> 		seqs_;			// positive sequence set
 

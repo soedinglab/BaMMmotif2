@@ -462,6 +462,19 @@ std::vector<std::unique_ptr<Sequence>> SeqGenerator::seqset_with_motif_masked(fl
 	return seqset;
 }
 
+std::vector<std::unique_ptr<Sequence>> SeqGenerator::seqset_with_best_motif_masked(float **r){
+
+    std::vector<std::unique_ptr<Sequence>> seqset;
+    size_t W = motif_->getW();
+
+    for( size_t n = 0; n < seqs_.size(); n++ ){
+        seqset.push_back(posseq_best_motif_masked(seqs_[n], W, r[n]) );
+    }
+
+    return seqset;
+}
+
+
 std::unique_ptr<Sequence> SeqGenerator::posseq_motif_masked(Sequence *posseq, size_t W, float *r){
 
 	float cutoff = 0.3f;
@@ -488,6 +501,47 @@ std::unique_ptr<Sequence> SeqGenerator::posseq_motif_masked(Sequence *posseq, si
 
 	return seq_mask_motif;
 }
+
+std::unique_ptr<Sequence> SeqGenerator::posseq_best_motif_masked(Sequence *posseq, size_t W, float *r){
+
+
+    size_t L = posseq->getL();
+
+    float r_max = -1000.f;
+    size_t idx_max = -1;
+    for(size_t idx = 1; idx < L-W; idx++ ){
+        if(r[idx] > r_max){
+            r_max = r[idx];
+            idx_max = idx;
+        }
+    }
+
+    uint8_t* masked_seq = ( uint8_t* )calloc( L, sizeof( uint8_t ) );
+    // copy the original sequence from a C-array to a vector
+    // and mask patterns with a weight larger than certain cutoff
+    size_t i = 0;
+    size_t j = 0;
+
+    while( i < L ){
+        if(i == L-idx_max ){
+            for (size_t n = 0; n < W; n++){
+                masked_seq[i+n] = 'N';
+            }
+            i += W;
+        } else {
+            masked_seq[i] = posseq->getSequence()[i];
+            i++;
+            j++;
+        }
+    }
+
+    std::string header = "> seq with best motif masked";
+
+    std::unique_ptr<Sequence> seq_mask_motif = util::make_unique<Sequence>( masked_seq, L, header, true );
+
+    return seq_mask_motif;
+}
+
 
 void SeqGenerator::write( char* odir,
                           std::string basename,

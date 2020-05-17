@@ -51,6 +51,7 @@ int main( int nargs, char* args[] ){
                  * optimize motif using EM
                  */
                 EM model( motif, bgModel, Global::posSequenceSet->getSequences() );
+                model.updatePrior();
                 model.EStep();
                 /**
                  * Mask the given motif from the input sequence set
@@ -59,6 +60,21 @@ int main( int nargs, char* args[] ){
                 seq_generator.write(Global::outputDirectory,
                                     Global::posSequenceBasename + "_motif_" + std::to_string(n+1) + "_masked",
                                     seq_generator.seqset_with_motif_masked( model.getR() ));
+            } else if ( Global::maskBestSeqset ) {
+                /**
+                 * optimize motif using EM
+                 */
+                EM model( motif, bgModel, Global::posSequenceSet->getSequences() );
+                model.updatePrior();
+                model.EStep();
+                /**
+                 * Mask the given motif from the input sequence set
+                 */
+                SeqGenerator seq_generator( Global::posSequenceSet->getSequences(), motif );
+                seq_generator.write(Global::outputDirectory,
+                                    Global::posSequenceBasename + "_motif_" + std::to_string(n+1) + "_best_masked",
+                                    seq_generator.seqset_with_best_motif_masked( model.getR() ));
+
             } else if ( Global::embedSeqset ) {
                 /**
                  * embed the given motifs into the input sequence set

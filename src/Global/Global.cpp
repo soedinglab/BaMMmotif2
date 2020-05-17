@@ -90,6 +90,7 @@ float               Global::logOddsCutoff = 8.0f;
 
 // sequence simulator options
 bool                Global::maskSeqset = false;
+bool                Global::maskBestSeqset = false;
 bool                Global::sampleBgset = false;
 bool                Global::embedSeqset = false;
 size_t              Global::at = 0;
@@ -391,6 +392,7 @@ int Global::readArguments( int nargs, char* args[] ){
 
     // sequence simulator options
     opt >> GetOpt::OptionPresent( "maskSeqset", maskSeqset );
+    opt >> GetOpt::OptionPresent( "maskBestSeqset", maskBestSeqset );
     opt >> GetOpt::OptionPresent( "sampleBgset", sampleBgset );
     if( opt >> GetOpt::OptionPresent( "embedSeqset", embedSeqset ) ){
         opt >> GetOpt::Option( "at", at );

@@ -128,7 +128,6 @@ void GibbsSampling::optimize(){
         // Collapsed Gibbs sampling position z
         if( !Global::noZSampling ) {
             collapsed_Gibbs_sampling_z();
-
         }
 
         // Gibbs sampling fraction q

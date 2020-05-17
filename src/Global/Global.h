@@ -119,6 +119,7 @@ public:
 
     // sequence simulator options
     static bool         maskSeqset;
+    static bool         maskBestSeqset;
     static bool         embedSeqset;
     static bool         sampleBgset;
     static size_t       at;
