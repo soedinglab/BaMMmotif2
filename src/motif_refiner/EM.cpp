@@ -925,7 +925,7 @@ Eigen::MatrixXf EM::getAmatrix( size_t w ) {
         for( size_t j = 0; j < w; j++ ){
             if( i == j ) {
                 A_matrix(i, j) = 2;
-            } else if( abs( i-j ) == 1 ){
+            } else if( abs( int(i-j )) == 1 ){
                 A_matrix(i, j) = -1;
             }
         }
@@ -944,9 +944,9 @@ Eigen::MatrixXf EM::getBmatrix( size_t w ) {
         for( size_t j = 0; j < w; j++ ){
             if( i == j ) {
                 B_matrix(i, j) = 6;
-            } else if( std::abs( i-j ) == 1 ){
+            } else if( std::abs( int(i-j )) == 1 ){
                 B_matrix(i, j) = -4;
-            } else if( std::abs( i-j ) == 2 ){
+            } else if( std::abs( int(i-j ) )== 2 ){
                 B_matrix(i, j) = 1;
             }
         }
